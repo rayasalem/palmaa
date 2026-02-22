@@ -754,7 +754,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
                    <div className="p-6 sm:p-8 grid md:grid-cols-2 gap-8">
                       <div className="space-y-4">
                         {orderItems.length > 0 ? orderItems.map((item: OrderItem | CartItem, idx: number) => {
-                          const productId = item.product_id ?? (item as { productId?: string }).productId;
+                          const productId = item.product_id ?? item.productId;
                           const prod = marketStore.getProducts().find((p) => p.id === productId);
                           return (
                             <div key={item.id || `oi-${idx}`} className="flex items-center gap-4">
@@ -763,7 +763,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
                                </div>
                                <div className="min-w-0">
                                   <p className="text-xs font-bold text-slate-900 truncate mb-0.5">{prod?.name}</p>
-                                  <p className="text-[10px] font-medium text-slate-500">Qty: {item.quantity} × ₪{item.price ?? (item as { price_ils?: number }).price_ils ?? 0}</p>
+                                  <p className="text-[10px] font-medium text-slate-500">Qty: {item.quantity} × ₪{item.price ?? item.price_ils ?? 0}</p>
                                </div>
                             </div>
                           );

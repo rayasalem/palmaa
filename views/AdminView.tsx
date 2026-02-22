@@ -129,7 +129,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
           ? `Congratulations! Your merchant account for "${user.companyName || user.name}" has been approved. You can now log in and start selling.` 
           : `We regret to inform you that your account application has been rejected.`;
         
-        logEmail(user.email, subject, message);
+        logEmail(user.email ?? '', subject, message);
         
         showToast(`${user.name} has been ${status.toLowerCase()}`, status === 'APPROVED' ? 'success' : 'info');
       } else {
@@ -147,7 +147,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
     const w = withdrawals.find(x => x.id === id);
     if (w) {
       const u = allUsers.find(user => user.id === w.userId);
-      if (u) logEmail(u.email, `Withdrawal Update: ${status}`, `Your withdrawal request for ${w.amount} ILS has been ${status}.`);
+      if (u) logEmail(u.email ?? '', `Withdrawal Update: ${status}`, `Your withdrawal request for ${w.amount} ILS has been ${status}.`);
       showToast(`Withdrawal request ${status.toLowerCase()}`, status === 'APPROVED' ? 'success' : 'info');
     }
     // Update local withdrawal state

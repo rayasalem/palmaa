@@ -139,6 +139,7 @@ export interface CartItem extends Product {
   quantity: number;
   price: number; // Ensure compatibility
   product_id?: string; // API compat (cart item key)
+  productId?: string; // API compat (alternate key)
 }
 
 export enum OrderStatus {
@@ -169,8 +170,10 @@ export interface OrderItem {
   id: string;
   order_id: string;
   product_id: string;
+  productId?: string; // API compat (alternate key)
   quantity: number;
   price: number;
+  price_ils?: number; // API compat
 }
 
 export interface Order {

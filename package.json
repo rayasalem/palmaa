@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "node node_modules/vite/bin/vite.js build",
+    "preview": "vite preview",
+    "postinstall": "node -e \"try{if(process.platform!=='win32')require('fs').chmodSync('node_modules/.bin/vite',0o755);}catch(e){}\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.7",
