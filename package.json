@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "npx tsc && npx vite build",
     "preview": "vite preview",
     "dev:server": "cd server && npm run dev",
     "start:all": "concurrently \"npm run dev:server\" \"npm run dev\""
