@@ -318,16 +318,3 @@ END $$;
 -- =============================================================================
 NOTIFY pgrst, 'reload schema';
 
--- =============================================================================
--- 5. MOCK DATA INSERTION
--- =============================================================================
-
-DO $$
-DECLARE
-    admin_id UUID := 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
-BEGIN
-    INSERT INTO public.users (id, email, name, role, status, is_approved, password, city, company_name, email_verified)
-    VALUES 
-    (admin_id, 'admin@palma.com', 'Palma Admin', 'ADMIN', 'APPROVED', true, crypt('password', gen_salt('bf', 12)), 'Ramallah', 'Palma HQ', true)
-    ON CONFLICT (id) DO NOTHING;
-END $$;

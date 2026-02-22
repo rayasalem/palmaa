@@ -375,33 +375,6 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
           </div>
         </div>
 
-        {/* Quick Demo Footer */}
-        <div className="mt-10 text-center">
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Quick Demo Access</p>
-            <div className="flex flex-wrap justify-center gap-2.5">
-              {[
-                { role: 'CUSTOMER', label: 'Customer', email: 'customer@palma.com' },
-                { role: 'MERCHANT', label: 'Merchant', email: 'merchant@store.com' },
-                { role: 'BROKER', label: 'Broker', email: 'broker@deals.com' },
-                { role: 'ADMIN', label: 'Admin', email: 'admin@palma.com' },
-              ].map(demo => (
-                <button 
-                  key={demo.role}
-                  type="button" 
-                  onClick={() => {
-                    setView('LOGIN');
-                    setEmail(demo.email);
-                    setPassword('password');
-                    setError('');
-                  }} 
-                  className="px-4 py-2 bg-white text-slate-500 text-[9px] font-bold uppercase rounded-xl hover:bg-palma-navy hover:text-white transition-all border border-slate-100 shadow-sm hover:shadow-md"
-                >
-                  {demo.label}
-                </button>
-              ))}
-            </div>
-        </div>
-
         <div className="mt-8 text-center">
            <p className="text-[10px] font-bold text-slate-300">© 2024 Palma Commerce. All rights reserved.</p>
         </div>
