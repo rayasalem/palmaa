@@ -14,7 +14,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  phone: string;
+  phone?: string;
   phone2?: string;
   role: UserRole | Role;
   status?: UserStatus;
@@ -60,6 +60,7 @@ export interface Product {
   merchant_id?: string; // New
   merchantName?: string;
   name: string;
+  title?: string; // Alias for name / API compat
   description: string;
   shortDescription?: string;
   price?: number; // Legacy
@@ -137,6 +138,7 @@ export interface Comment {
 export interface CartItem extends Product {
   quantity: number;
   price: number; // Ensure compatibility
+  product_id?: string; // API compat (cart item key)
 }
 
 export enum OrderStatus {

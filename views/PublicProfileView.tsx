@@ -53,7 +53,8 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({ lang, currentUser
           const u: User = {
             id: res.user.id,
             name: res.user.name,
-            email: '',
+            email: res.user.email ?? '',
+            phone: res.user.phone,
             role: res.user.role as Role,
             city: res.user.city,
             bio: res.user.bio,

@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Environment (لا ترفع ملفات البيئة على GitHub)
+.env
+.env.local
+.env.*.local
+
+# Build
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

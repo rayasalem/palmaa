@@ -1,5 +1,5 @@
 
-import { Product, User, PaymentMethod, OrderStatus, Order, CartItem, ShipmentType } from '../types';
+import { Product, User, PaymentMethod, OrderStatus, Order, OrderItem, CartItem, ShipmentType } from '../types';
 import { marketStore, paymentProcessor } from '../store';
 import { productService } from '../services/productService';
 import { Language, translations } from '../translations';
@@ -753,7 +753,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
                    
                    <div className="p-6 sm:p-8 grid md:grid-cols-2 gap-8">
                       <div className="space-y-4">
-                        {orderItems.length > 0 ? orderItems.map((item, idx) => {
+                        {orderItems.length > 0 ? orderItems.map((item: OrderItem | CartItem, idx: number) => {
                           const prod = marketStore.getProducts().find((p) => p.id === (item.product_id || item.productId));
                           return (
                             <div key={item.id || `oi-${idx}`} className="flex items-center gap-4">

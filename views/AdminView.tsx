@@ -12,7 +12,7 @@ import { useToast } from '../components/ToastProvider';
 
 interface AdminUser extends User {
   isMock?: boolean;
-  source?: 'API';
+  source?: 'API' | 'SEED';
 }
 
 type AdminTab = 'users' | 'products' | 'orders' | 'treasury';
