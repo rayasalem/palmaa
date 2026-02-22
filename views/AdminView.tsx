@@ -12,7 +12,7 @@ import { useToast } from '../components/ToastProvider';
 
 interface AdminUser extends User {
   isMock?: boolean;
-  source?: 'API' | 'SEED';
+  source?: 'API' | 'SEED' | 'CLOUD';
 }
 
 type AdminTab = 'users' | 'products' | 'orders' | 'treasury';
@@ -176,8 +176,8 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
       const lower = searchTerm.toLowerCase();
       result = result.filter(u => 
         u.name.toLowerCase().includes(lower) || 
-        u.email.toLowerCase().includes(lower) ||
-        u.phone.includes(lower)
+        (u.email ?? '').toLowerCase().includes(lower) ||
+        (u.phone ?? '').includes(lower)
       );
     }
 
@@ -229,7 +229,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
 
   const getSourceLabel = (user: AdminUser) => {
     if (user.source === 'API') return { label: t.common.realData, icon: <Database className="w-3 h-3" />, color: 'bg-slate-100 text-slate-500' };
-    if (user.source === 'CLOUD') return { label: 'Database', icon: <Globe className="w-3 h-3" />, color: 'bg-indigo-50 text-indigo-600' };
+    if (user.source && user.source === 'CLOUD') return { label: 'Database', icon: <Globe className="w-3 h-3" />, color: 'bg-indigo-50 text-indigo-600' };
     return { label: 'Registered', icon: <Check className="w-3 h-3" />, color: 'bg-palma-primary/10 text-palma-primary' };
   };
 
