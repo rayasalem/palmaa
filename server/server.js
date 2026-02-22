@@ -1,0 +1,138 @@
+/**
+ * Palma Marketplace Backend – production-ready.
+ * Security: Helmet, rate limit, CORS, compression, JWT auth, env validation.
+ * Run: npm run dev | npm start
+ */
+
+import 'dotenv/config';
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import cors from 'cors';
+import compression from 'compression';
+import cookieParser from 'cookie-parser';
+
+import { validateEnv, getEnv, isProduction } from './config/env.js';
+import {
+  helmetMiddleware,
+  generalLimiter,
+  paymentLimiter,
+} from './middlewares/security.js';
+import httpsEnforce from './middlewares/httpsEnforce.js';
+import requestLogger from './middlewares/requestLogger.js';
+import errorHandler from './middlewares/errorHandler.js';
+import sanitizeErrorResponse from './middlewares/sanitizeErrorResponse.js';
+
+import orderRoutes from './routes/orderRoutes.js';
+import productRoutes from './routes/productRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
+import shipmentRoutes from './routes/shipmentRoutes.js';
+// Prefer compiled TypeScript auth routes when present (run: npm run build)
+let authRoutes;
+try {
+  authRoutes = (await import('./dist/auth/routes.js')).default;
+} catch {
+  authRoutes = (await import('./routes/authRoutes.js')).default;
+}
+import addressRoutes from './routes/addressRoutes.js';
+import cartRoutes from './routes/cartRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import brokerRoutes from './routes/brokerRoutes.js';
+import sharedProductsRoutes from './routes/sharedProductsRoutes.js';
+import followRoutes from './routes/followRoutes.js';
+import merchantRoutes from './routes/merchantRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
+
+import logger from './utils/logger.js';
+
+validateEnv();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+const PORT = Number(getEnv('PORT')) || 5000;
+
+app.disable('x-powered-by');
+app.use(helmetMiddleware());
+if (isProduction()) app.use(httpsEnforce);
+app.use(compression());
+app.use(cookieParser(getEnv('COOKIE_SECRET')));
+app.use(express.json({ limit: '1mb' }));
+
+const frontendUrl = getEnv('FRONTEND_URL');
+const origins = frontendUrl
+  ? frontendUrl.split(',').map((u) => u.trim()).filter(Boolean)
+  : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+if (!origins.includes('http://localhost:3000')) origins.push('http://localhost:3000');
+if (!origins.includes('http://127.0.0.1:3000')) origins.push('http://127.0.0.1:3000');
+app.use(cors({ origin: origins, credentials: true }));
+
+app.use(generalLimiter());
+app.use(requestLogger);
+app.use(sanitizeErrorResponse);
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.use('/api/orders', orderRoutes);
+app.use('/api/products', productRoutes);
+
+const paymentRouter = express.Router();
+paymentRouter.use(paymentLimiter());
+paymentRouter.use(paymentRoutes);
+try {
+  const { default: arabicBankPaymentRoutes } = await import(
+    './payment/dist/index.js'
+  );
+  paymentRouter.use(arabicBankPaymentRoutes);
+  logger.info('Arabic Bank payment routes mounted');
+} catch (e) {
+  logger.warn('Arabic Bank payment module not loaded. Run: npm run build:payment');
+}
+app.use('/api/payment', paymentRouter);
+
+app.use('/api/shipment', shipmentRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/addresses', addressRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/broker', brokerRoutes);
+app.use('/api/shared-products', sharedProductsRoutes);
+app.use('/api/follow', followRoutes);
+app.use('/api/merchant', merchantRoutes);
+app.use('/api/notifications', notificationRoutes);
+
+app.get('/sandbox-pay', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'sandbox-pay.html'));
+});
+
+app.get('/health', (req, res) => {
+  res.json({ ok: true, timestamp: new Date().toISOString() });
+});
+
+app.use((req, res) => res.status(404).json({ error: 'Not found' }));
+app.use(errorHandler);
+
+const server = app.listen(PORT, () => {
+  logger.info('Server listening', {
+    port: PORT,
+    nodeEnv: getEnv('NODE_ENV') || 'development',
+  });
+});
+
+function gracefulShutdown(signal) {
+  logger.info('Received', { signal });
+  server.close(() => {
+    logger.info('Server closed');
+    process.exit(0);
+  });
+  setTimeout(() => {
+    logger.error('Forced shutdown');
+    process.exit(1);
+  }, 10000);
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+export default app;

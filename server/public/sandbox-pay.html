@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sandbox Payment</title>
+  <style>
+    body { font-family: sans-serif; max-width: 420px; margin: 2rem auto; padding: 1rem; text-align: center; }
+    h1 { font-size: 1.25rem; }
+    .amount { font-size: 1.5rem; font-weight: 700; margin: 1rem 0; }
+    button { padding: 0.75rem 1.5rem; margin: 0.5rem; cursor: pointer; font-size: 1rem; border: none; border-radius: 8px; }
+    .success { background: #22c55e; color: #fff; }
+    .fail { background: #ef4444; color: #fff; }
+    .msg { margin-top: 1rem; color: #666; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>Sandbox Payment</h1>
+  <p>Order: <strong id="orderId"></strong></p>
+  <p class="amount">Amount: <span id="amount"></span></p>
+  <p>Simulate payment result:</p>
+  <button class="success" id="btnSuccess">Pay (Success)</button>
+  <button class="fail" id="btnFail">Cancel (Fail)</button>
+  <p id="msg" class="msg"></p>
+  <script>
+    var params = new URLSearchParams(window.location.search);
+    var orderId = params.get('orderId');
+    var amount = params.get('amount');
+    var returnUrl = params.get('return_url') || (window.location.origin + '/');
+    document.getElementById('orderId').textContent = orderId || '—';
+    document.getElementById('amount').textContent = amount ? amount + ' (units)' : '—';
+    function setMsg(t) { document.getElementById('msg').textContent = t; }
+    function redirect(success) {
+      var url = returnUrl + (returnUrl.indexOf('?') >= 0 ? '&' : '?') + 'orderId=' + encodeURIComponent(orderId) + '&payment=' + (success ? 'success' : 'failed');
+      window.location.href = url;
+    }
+    function doCallback(status, success) {
+      setMsg('Processing…');
+      fetch('/api/payment/callback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: orderId, status: status })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function () { redirect(success); })
+        .catch(function (e) {
+          setMsg('Error: ' + e.message);
+          setTimeout(function () { redirect(success); }, 1500);
+        });
+    }
+    document.getElementById('btnSuccess').onclick = function () { doCallback('success', true); };
+    document.getElementById('btnFail').onclick = function () { doCallback('failed', false); };
+  </script>
+</body>
+</html>

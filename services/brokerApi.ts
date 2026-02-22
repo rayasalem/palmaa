@@ -1,0 +1,42 @@
+/**
+ * Broker API – shared products (persist to Supabase).
+ */
+
+const API_BASE = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_URL) || 'http://localhost:5000';
+
+async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...(options.headers as object) },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as any).error || (data as any).message || `HTTP ${res.status}`);
+  return data as T;
+}
+
+export async function upsertSharedProduct(
+  productId: string,
+  data: { marketing_title?: string; marketing_description?: string; custom_discount_text?: string; is_featured?: boolean }
+): Promise<{ success: boolean; shared: any }> {
+  return api(`/api/broker/shared-products/${productId}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function listSharedProducts(): Promise<{ success: boolean; shared: any[] }> {
+  return api('/api/broker/shared-products');
+}
+
+export async function removeSharedProduct(productId: string): Promise<{ success: boolean }> {
+  return api(`/api/broker/shared-products/${productId}`, { method: 'DELETE' });
+}
+
+export async function toggleSharedFeatured(shareId: string): Promise<{ success: boolean; shared: any }> {
+  return api(`/api/broker/shared-products/featured/${shareId}`, { method: 'PATCH' });
+}
+
+export async function getPublicSharedProducts(brokerId: string): Promise<{ success: boolean; shared: any[] }> {
+  return api(`/api/shared-products?broker_id=${encodeURIComponent(brokerId)}`);
+}
