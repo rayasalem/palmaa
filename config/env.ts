@@ -32,6 +32,10 @@ export const env = {
     SENDGRID_API_KEY: getEnvVar('VITE_SENDGRID_API_KEY', ''),
     SENDER_EMAIL: getEnvVar('VITE_SENDER_EMAIL', 'noreply@palma.ps'),
   },
+  /** Backend API (orders, auth, checkout). Use VITE_API_URL; default: Render. */
+  BACKEND: {
+    API_URL: getEnvVar('VITE_API_URL', 'https://palmaa.onrender.com'),
+  },
   FLASHLINE: {
     API_URL: getEnvVar('VITE_FLASHLINE_API_URL', 'https://apisv2.logestechs.com/api'),
     // In a real app, secrets should not be client-side. This is for the simulation/mock.

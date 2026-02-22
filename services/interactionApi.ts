@@ -3,7 +3,7 @@
  * All requests use credentials: 'include' for JWT cookie.
  */
 
-const API_BASE = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_URL) || 'http://localhost:5000';
+const API_BASE = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_URL) || 'https://palmaa.onrender.com';
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = path.startsWith('http') ? path : `${API_BASE}${path}`;

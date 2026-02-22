@@ -6,7 +6,7 @@
 import { User } from '../types';
 import type { ActionResponse } from '../types';
 
-const API_BASE = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_URL) || 'http://localhost:5000';
+const API_BASE = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_URL) || 'https://palmaa.onrender.com';
 
 function mapApiUserToUser(apiUser: any): User {
   return {

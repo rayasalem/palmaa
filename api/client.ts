@@ -8,11 +8,11 @@
 // Configuration
 // -----------------------------------------------------------------------------
 
-/** Base URL for backend; from Vite env (VITE_API_URL) or default localhost:5000 */
+/** Base URL for backend; from Vite env (VITE_API_URL) or default Render backend */
 const API_BASE: string =
   (typeof import.meta !== 'undefined' &&
     (import.meta as { env?: { VITE_API_URL?: string } }).env?.VITE_API_URL) ||
-  'http://localhost:5000';
+  'https://palmaa.onrender.com';
 
 // -----------------------------------------------------------------------------
 // Helpers (single-responsibility)

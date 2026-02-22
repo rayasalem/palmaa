@@ -6,7 +6,7 @@
 import { db } from './core/storage';
 import type { Product, ActionResponse } from '../types';
 
-const API_BASE = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_URL) || 'http://localhost:5000';
+const API_BASE = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_URL) || 'https://palmaa.onrender.com';
 
 async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
