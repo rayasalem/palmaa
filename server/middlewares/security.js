@@ -12,6 +12,7 @@ export function helmetMiddleware() {
   return helmet({
     contentSecurityPolicy: isProd,
     crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' }, // allow Vercel frontend to fetch API
     hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
   });
 }

@@ -53,23 +53,34 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = Number(getEnv('PORT')) || 5000;
 
-app.disable('x-powered-by');
-app.use(helmetMiddleware());
-if (isProduction()) app.use(httpsEnforce);
-app.use(compression());
-app.use(cookieParser(getEnv('COOKIE_SECRET')));
-app.use(express.json({ limit: '1mb' }));
-
+// CORS first so preflight (OPTIONS) and all responses get headers
 const frontendUrl = getEnv('FRONTEND_URL');
 const origins = frontendUrl
   ? frontendUrl.split(',').map((u) => u.trim()).filter(Boolean)
   : ['http://localhost:3000', 'http://127.0.0.1:3000'];
 if (!origins.includes('http://localhost:3000')) origins.push('http://localhost:3000');
 if (!origins.includes('http://127.0.0.1:3000')) origins.push('http://127.0.0.1:3000');
-// Production frontend on Vercel (so CORS works when FRONTEND_URL not set on Render)
 const vercelOrigin = 'https://palmaa.vercel.app';
 if (!origins.includes(vercelOrigin)) origins.push(vercelOrigin);
-app.use(cors({ origin: origins, credentials: true }));
+
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true); // same-origin or tools like Postman
+    if (origins.includes(origin)) return cb(null, true);
+    return cb(null, false);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200,
+}));
+
+app.disable('x-powered-by');
+app.use(helmetMiddleware());
+if (isProduction()) app.use(httpsEnforce);
+app.use(compression());
+app.use(cookieParser(getEnv('COOKIE_SECRET')));
+app.use(express.json({ limit: '1mb' }));
 
 app.use(generalLimiter());
 app.use(requestLogger);
