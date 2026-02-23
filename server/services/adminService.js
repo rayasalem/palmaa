@@ -1,5 +1,5 @@
 /**
- * Admin service: list users, update user status, list orders, products (Supabase).
+ * Admin service: list users, update user status, list orders, products, platform earnings (Supabase).
  */
 
 import { supabase } from '../config/supabaseClient.js';
@@ -7,6 +7,7 @@ import { supabase } from '../config/supabaseClient.js';
 const USERS_TABLE = 'users';
 const ORDERS_TABLE = 'orders';
 const PRODUCTS_TABLE = 'products';
+const TRANSACTIONS_TABLE = 'transactions';
 
 async function listUsers() {
   const { data, error } = await supabase
@@ -135,4 +136,28 @@ async function adminDeleteProduct(productId) {
   return { error: null };
 }
 
-export { listUsers, updateUserStatus, listOrders, listProducts, adminUpdateProduct, adminDeleteProduct };
+async function getPlatformEarnings() {
+  const { data: rows, error } = await supabase
+    .from(TRANSACTIONS_TABLE)
+    .select('commission_amount, tax_penalty_amount, order_id, created_at')
+    .eq('type', 'order_settlement');
+  if (error) {
+    console.error('[adminService] getPlatformEarnings error:', error.message);
+    return { data: null, error };
+  }
+  const list = rows || [];
+  const total_commission = list.reduce((s, r) => s + Number(r.commission_amount || 0), 0);
+  const total_tax_penalty = list.reduce((s, r) => s + Number(r.tax_penalty_amount || 0), 0);
+  const platform_earnings = total_commission + total_tax_penalty;
+  return {
+    data: {
+      total_commission: Math.round(total_commission * 100) / 100,
+      total_tax_penalty: Math.round(total_tax_penalty * 100) / 100,
+      platform_earnings: Math.round(platform_earnings * 100) / 100,
+      transactions_count: list.length,
+    },
+    error: null,
+  };
+}
+
+export { listUsers, updateUserStatus, listOrders, listProducts, adminUpdateProduct, adminDeleteProduct, getPlatformEarnings };

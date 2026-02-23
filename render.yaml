@@ -1,0 +1,12 @@
+# Render Blueprint: Backend (Node) service only.
+# Use this when linking the repo to Render, or set the same in Dashboard manually.
+services:
+  - type: web
+    name: palmaa-backend
+    runtime: node
+    rootDir: server
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { User, WithdrawalRequest } from '../types';
 import { marketStore } from '../store';
 import { userService } from '../services/userService';
-import { getAdminProducts, updateAdminProduct, deleteAdminProduct, getAdminOrders } from '../services/adminApi';
+import { getAdminProducts, updateAdminProduct, deleteAdminProduct, getAdminOrders, getAdminSettings, updateAdminSettings, getAdminPlatformEarnings } from '../services/adminApi';
 import { translations } from '../translations';
 import { logEmail } from '../services/emailService';
 import { resolveLocationName } from '../services/flashlineService';
@@ -15,7 +15,7 @@ interface AdminUser extends User {
   source?: 'API' | 'SEED' | 'CLOUD';
 }
 
-type AdminTab = 'users' | 'products' | 'orders' | 'treasury';
+type AdminTab = 'users' | 'products' | 'orders' | 'treasury' | 'platform';
 
 interface AdminViewProps {
   view?: string;
@@ -34,6 +34,8 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
     orders: 'orders',
     withdrawals: 'treasury',
     treasury: 'treasury',
+    platform: 'platform',
+    settings: 'platform',
   };
   const [activeTab, setActiveTab] = useState<AdminTab>(viewToTab[view] || 'users');
   const [allUsers, setAllUsers] = useState<AdminUser[]>([]);
@@ -47,6 +49,11 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'APPROVED' | 'PENDING'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [productSearch, setProductSearch] = useState('');
+  const [platformSettings, setPlatformSettings] = useState<{ commission_rate: number; tax_penalty_rate: number } | null>(null);
+  const [platformEarnings, setPlatformEarnings] = useState<{ total_commission: number; total_tax_penalty: number; platform_earnings: number; transactions_count: number } | null>(null);
+  const [platformLoading, setPlatformLoading] = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsForm, setSettingsForm] = useState({ commission_rate: 15, tax_penalty_rate: 16 });
 
   useEffect(() => {
     setActiveTab(viewToTab[view] || 'users');
@@ -95,9 +102,55 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
     }
   };
 
+  const loadPlatform = async () => {
+    setPlatformLoading(true);
+    try {
+      const [settingsRes, earningsRes] = await Promise.all([getAdminSettings(), getAdminPlatformEarnings()]);
+      if (settingsRes.success && settingsRes.settings) {
+        setPlatformSettings(settingsRes.settings);
+        setSettingsForm({
+          commission_rate: Math.round((settingsRes.settings.commission_rate || 0.15) * 100),
+          tax_penalty_rate: Math.round((settingsRes.settings.tax_penalty_rate || 0.16) * 100),
+        });
+      }
+      if (earningsRes.success) {
+        setPlatformEarnings({
+          total_commission: earningsRes.total_commission ?? 0,
+          total_tax_penalty: earningsRes.total_tax_penalty ?? 0,
+          platform_earnings: earningsRes.platform_earnings ?? 0,
+          transactions_count: earningsRes.transactions_count ?? 0,
+        });
+      }
+    } catch (e) {
+      showToast(t.common.error, 'error');
+    } finally {
+      setPlatformLoading(false);
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    setSettingsSaving(true);
+    try {
+      await updateAdminSettings({
+        commission_rate: settingsForm.commission_rate / 100,
+        tax_penalty_rate: settingsForm.tax_penalty_rate / 100,
+      });
+      setPlatformSettings({
+        commission_rate: settingsForm.commission_rate / 100,
+        tax_penalty_rate: settingsForm.tax_penalty_rate / 100,
+      });
+      showToast(lang === 'ar' ? 'تم حفظ الإعدادات' : 'Settings saved', 'success');
+    } catch (e) {
+      showToast(t.common.error, 'error');
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'products') loadProducts();
     if (activeTab === 'orders') loadOrders();
+    if (activeTab === 'platform') loadPlatform();
   }, [activeTab]);
 
   const handleStatusChange = async (userId: string, status: 'APPROVED' | 'REJECTED' | 'SUSPENDED' | 'PENDING') => {
@@ -166,7 +219,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
     
     // Status Filter
     if (filterStatus === 'APPROVED') {
-      result = result.filter(u => (u.status === 'APPROVED' || u.isApproved) && u.status !== 'SUSPENDED');
+      result = result.filter(u => (u.status === 'APPROVED' || u.status === 'ACTIVE' || u.isApproved) && u.status !== 'SUSPENDED');
     } else if (filterStatus === 'PENDING') {
       result = result.filter(u => u.status === 'PENDING' && !u.isApproved);
     }
@@ -260,6 +313,9 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
                <Banknote className="w-3.5 h-3.5" /> {t.common.withdrawals}
                {pendingWithdrawals.length > 0 && <span className="bg-red-500 text-white w-4 h-4 flex items-center justify-center rounded-full text-[8px]">{pendingWithdrawals.length}</span>}
             </button>
+            <button onClick={() => setActiveTab('platform')} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${activeTab === 'platform' ? 'bg-palma-navy text-white shadow-lg' : 'text-palma-muted hover:bg-slate-50'}`}>
+               <Settings className="w-3.5 h-3.5" /> {lang === 'ar' ? 'إعدادات المنصة' : 'Platform'}
+            </button>
          </div>
       </div>
 
@@ -320,7 +376,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
                    <tbody className="divide-y divide-slate-50 font-bold">
                      {filteredUsers.map(user => {
                        const isSuspended = user.status === 'SUSPENDED';
-                       const isApproved = (user.status === 'APPROVED' || user.isApproved) && !isSuspended;
+                       const isApproved = (user.status === 'APPROVED' || user.status === 'ACTIVE' || user.isApproved) && !isSuspended;
                        const statusLabel = isSuspended ? (lang === 'ar' ? 'موقوف' : 'Suspended') : isApproved ? t.common.approved : t.common.pending;
                        const statusColor = isSuspended ? 'bg-red-50 text-red-600 border-red-100' : isApproved ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100';
                        const sourceMeta = getSourceLabel(user);
@@ -623,6 +679,91 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
                   </table>
                </div>
             )}
+        </div>
+      )}
+
+      {activeTab === 'platform' && (
+        <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+          <h3 className="font-black text-palma-muted uppercase tracking-[0.15em] text-xs flex items-center gap-3">
+            <span className="w-2.5 h-2.5 rounded-full bg-palma-primary animate-pulse"></span>
+            {lang === 'ar' ? 'إعدادات المنصة وأرباح العمولة' : 'Platform settings & commission earnings'}
+          </h3>
+
+          {platformLoading ? (
+            <div className="text-center py-20">
+              <div className="w-10 h-10 border-4 border-slate-200 border-t-palma-primary rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-xs font-black uppercase text-slate-400 tracking-widest">{t.common.loading}</p>
+            </div>
+          ) : (
+            <>
+              {/* أرباح المنصة: عمولة 15% + غرامة ضريبية */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-soft">
+                  <div className="flex items-center gap-3 text-slate-500 mb-2">
+                    <Percent className="w-5 h-5" />
+                    <span className="text-xs font-black uppercase tracking-widest">{lang === 'ar' ? 'إجمالي العمولة (15%)' : 'Total commission (15%)'}</span>
+                  </div>
+                  <p className="text-2xl font-black text-palma-navy">₪{platformEarnings?.total_commission?.toFixed(2) ?? '0.00'}</p>
+                </div>
+                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-soft">
+                  <div className="flex items-center gap-3 text-slate-500 mb-2">
+                    <Banknote className="w-5 h-5" />
+                    <span className="text-xs font-black uppercase tracking-widest">{lang === 'ar' ? 'غرامة عدم الفاتورة (16%)' : 'Tax penalty (16%)'}</span>
+                  </div>
+                  <p className="text-2xl font-black text-palma-navy">₪{platformEarnings?.total_tax_penalty?.toFixed(2) ?? '0.00'}</p>
+                </div>
+                <div className="bg-white p-6 rounded-2xl border border-palma-primary/20 shadow-soft bg-palma-primary/5">
+                  <div className="flex items-center gap-3 text-palma-primary mb-2">
+                    <Shield className="w-5 h-5" />
+                    <span className="text-xs font-black uppercase tracking-widest">{lang === 'ar' ? 'أرباح المنصة' : 'Platform earnings'}</span>
+                  </div>
+                  <p className="text-2xl font-black text-palma-primary">₪{platformEarnings?.platform_earnings?.toFixed(2) ?? '0.00'}</p>
+                  <p className="text-[10px] text-slate-500 mt-1">{platformEarnings?.transactions_count ?? 0} {lang === 'ar' ? 'عملية تسوية' : 'settlements'}</p>
+                </div>
+              </div>
+
+              {/* خانة دفع: نسبة العمولة ونسبة الغرامة الضريبية (قابلة للتعديل من الأدمن) */}
+              <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-soft">
+                <h4 className="text-sm font-black text-slate-700 mb-4 flex items-center gap-2">
+                  <Settings className="w-4 h-4" />
+                  {lang === 'ar' ? 'نسب الخصم (قابلة للتعديل)' : 'Commission & tax penalty rates'}
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-xl">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-2">{lang === 'ar' ? 'نسبة العمولة %' : 'Commission %'}</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.5}
+                      value={settingsForm.commission_rate}
+                      onChange={(e) => setSettingsForm((s) => ({ ...s, commission_rate: Number(e.target.value) || 0 }))}
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:border-palma-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-2">{lang === 'ar' ? 'نسبة غرامة عدم الفاتورة %' : 'Tax penalty %'}</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.5}
+                      value={settingsForm.tax_penalty_rate}
+                      onChange={(e) => setSettingsForm((s) => ({ ...s, tax_penalty_rate: Number(e.target.value) || 0 }))}
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:border-palma-primary"
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={handleSaveSettings}
+                  disabled={settingsSaving}
+                  className="mt-6 px-8 py-3 bg-palma-navy text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-palma-navy/90 transition disabled:opacity-50"
+                >
+                  {settingsSaving ? (lang === 'ar' ? 'جاري الحفظ...' : 'Saving...') : (lang === 'ar' ? 'حفظ الإعدادات' : 'Save settings')}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

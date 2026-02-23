@@ -17,5 +17,8 @@ router.get('/orders', adminController.getOrders);
 router.get('/products', adminController.getProducts);
 router.put('/products/:id', adminController.updateProduct);
 router.delete('/products/:id', adminController.deleteProduct);
+router.get('/settings', adminController.getSettings);
+router.patch('/settings', adminController.updateSettings);
+router.get('/platform-earnings', adminController.getPlatformEarnings);
 
 export default router;

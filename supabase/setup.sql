@@ -67,7 +67,43 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'terms_version') THEN
         ALTER TABLE public.users ADD COLUMN terms_version TEXT;
     END IF;
+    -- Subscription (اشتراك فعلي للمتاجر)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'subscription_type') THEN
+        ALTER TABLE public.users ADD COLUMN subscription_type TEXT DEFAULT 'free';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'subscription_start_date') THEN
+        ALTER TABLE public.users ADD COLUMN subscription_start_date TIMESTAMPTZ;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'subscription_end_date') THEN
+        ALTER TABLE public.users ADD COLUMN subscription_end_date TIMESTAMPTZ;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'subscription_status') THEN
+        ALTER TABLE public.users ADD COLUMN subscription_status TEXT DEFAULT 'active';
+    END IF;
 END $$;
+
+-- Orders: فاتورة ضريبية (لاحتساب خصم 16% عند الدفع الإلكتروني بدون فاتورة)
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS invoice_uploaded BOOLEAN DEFAULT FALSE;
+
+-- Transactions: أعمدة تسوية الطلبات (عمولة المنصة + غرامة ضريبية + صافي التاجر)
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS merchant_id UUID REFERENCES public.users(id) ON DELETE SET NULL;
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS total_amount NUMERIC;
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS commission_amount NUMERIC;
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS tax_penalty_amount NUMERIC;
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS merchant_net_amount NUMERIC;
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS payment_method TEXT;
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS invoice_uploaded BOOLEAN DEFAULT FALSE;
+
+-- إعدادات المنصة (عمولة % وغرامة ضريبية % - للأدمن)
+CREATE TABLE IF NOT EXISTS public.platform_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+INSERT INTO public.platform_settings (key, value) VALUES
+  ('commission_rate', '0.15'),
+  ('tax_penalty_rate', '0.16')
+ON CONFLICT (key) DO NOTHING;
 
 -- MERCHANT PROFILES
 CREATE TABLE IF NOT EXISTS public.merchant_profiles (
@@ -279,6 +315,7 @@ ALTER TABLE public.likes DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.comments DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.carts DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.cart_items DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.platform_settings DISABLE ROW LEVEL SECURITY;
 
 GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
 
@@ -317,4 +354,23 @@ END $$;
 -- 4. CRITICAL: RELOAD SCHEMA CACHE (Fixes PGRST204)
 -- =============================================================================
 NOTIFY pgrst, 'reload schema';
+
+-- =============================================================================
+-- 5. SEED DEMO USERS (ادمن، تاجر، وسيط، زبون)
+-- =============================================================================
+-- كلمات السر: Admin@123456, Merchant@123456, Broker@123456, Customer@123456
+INSERT INTO public.users (email, name, role, status, email_verified, terms_accepted, password)
+VALUES
+  ('admin@palma.demo', 'أدمن بالما', 'ADMIN', 'ACTIVE', TRUE, TRUE, crypt('Admin@123456', gen_salt('bf'))),
+  ('merchant@palma.demo', 'تاجر تجريبي', 'MERCHANT', 'ACTIVE', TRUE, TRUE, crypt('Merchant@123456', gen_salt('bf'))),
+  ('broker@palma.demo', 'وسيط تجريبي', 'BROKER', 'ACTIVE', TRUE, TRUE, crypt('Broker@123456', gen_salt('bf'))),
+  ('customer@palma.demo', 'زبون تجريبي', 'CUSTOMER', 'ACTIVE', TRUE, FALSE, crypt('Customer@123456', gen_salt('bf')))
+ON CONFLICT (email) DO UPDATE SET
+  name = EXCLUDED.name,
+  role = EXCLUDED.role,
+  status = EXCLUDED.status,
+  email_verified = EXCLUDED.email_verified,
+  terms_accepted = EXCLUDED.terms_accepted,
+  password = EXCLUDED.password,
+  updated_at = NOW();
 

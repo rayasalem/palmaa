@@ -1,9 +1,10 @@
 /**
- * Admin controller: users list, update user status, orders list.
+ * Admin controller: users list, update user status, orders list, platform settings & earnings.
  * All routes require ADMIN role.
  */
 
 import * as adminService from '../services/adminService.js';
+import * as platformSettings from '../services/platformSettingsService.js';
 import logger from '../utils/logger.js';
 
 async function getUsers(req, res) {
@@ -101,4 +102,53 @@ async function deleteProduct(req, res) {
   }
 }
 
-export { getUsers, updateUserStatus, getOrders, getProducts, updateProduct, deleteProduct };
+async function getSettings(req, res) {
+  try {
+    const { commission_rate, tax_penalty_rate, error } = await platformSettings.getRates();
+    if (error) {
+      return res.status(500).json({ success: false, error: error.message || 'Failed to fetch settings' });
+    }
+    return res.status(200).json({
+      success: true,
+      settings: { commission_rate, tax_penalty_rate },
+    });
+  } catch (err) {
+    logger.error('admin getSettings unexpected', { message: err.message });
+    return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
+  }
+}
+
+async function updateSettings(req, res) {
+  try {
+    const body = req.body || {};
+    const { data, error } = await platformSettings.updateSettings(body);
+    if (error) {
+      return res.status(400).json({ success: false, error: error.message || 'Failed to update settings' });
+    }
+    return res.status(200).json({
+      success: true,
+      settings: {
+        commission_rate: data.commission_rate,
+        tax_penalty_rate: data.tax_penalty_rate,
+      },
+    });
+  } catch (err) {
+    logger.error('admin updateSettings unexpected', { message: err.message });
+    return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
+  }
+}
+
+async function getPlatformEarnings(req, res) {
+  try {
+    const { data, error } = await adminService.getPlatformEarnings();
+    if (error) {
+      return res.status(500).json({ success: false, error: error.message || 'Failed to fetch earnings' });
+    }
+    return res.status(200).json({ success: true, ...data });
+  } catch (err) {
+    logger.error('admin getPlatformEarnings unexpected', { message: err.message });
+    return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
+  }
+}
+
+export { getUsers, updateUserStatus, getOrders, getProducts, updateProduct, deleteProduct, getSettings, updateSettings, getPlatformEarnings };

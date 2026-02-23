@@ -1,15 +1,17 @@
 /**
- * Transaction service: record order settlement (commission 15%, tax penalty 16% if online and no invoice).
+ * Transaction service: record order settlement.
+ * Commission and tax penalty rates from platform_settings (admin-editable); default 15%, 16% when online and no invoice.
  */
 
 import { supabase } from '../config/supabaseClient.js';
 import * as orderService from './orderService.js';
 import * as productService from './productService.js';
+import * as platformSettings from './platformSettingsService.js';
 
 const TRANSACTIONS_TABLE = 'transactions';
 
-const COMMISSION_RATE = 0.15;   // 15%
-const TAX_PENALTY_RATE = 0.16;  // 16% when payment is online and no invoice
+const COMMISSION_RATE = 0.15;   // default 15%
+const TAX_PENALTY_RATE = 0.16;  // default 16% when payment is online and no invoice
 
 /**
  * Derive merchant_id from order (first item's product merchant).
@@ -35,10 +37,13 @@ async function getOrderMerchantId(orderId) {
 async function recordOrderSettlement(orderId, totalAmount, paymentMethod, invoiceUploaded) {
   const { merchantId } = await getOrderMerchantId(orderId);
   const total = Number(totalAmount) || 0;
-  const commissionAmount = Math.round(total * COMMISSION_RATE * 100) / 100;
+  const { commission_rate, tax_penalty_rate } = await platformSettings.getRates();
+  const rateComm = Number(commission_rate) || COMMISSION_RATE;
+  const rateTax = Number(tax_penalty_rate) || TAX_PENALTY_RATE;
+  const commissionAmount = Math.round(total * rateComm * 100) / 100;
   const isOnline = String(paymentMethod).toLowerCase() === 'online';
   const applyTaxPenalty = isOnline && !invoiceUploaded;
-  const taxPenaltyAmount = applyTaxPenalty ? Math.round(total * TAX_PENALTY_RATE * 100) / 100 : 0;
+  const taxPenaltyAmount = applyTaxPenalty ? Math.round(total * rateTax * 100) / 100 : 0;
   const merchantNetAmount = Math.round((total - commissionAmount - taxPenaltyAmount) * 100) / 100;
 
   const { data: existing } = await supabase

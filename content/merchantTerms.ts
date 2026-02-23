@@ -1,7 +1,6 @@
 /**
  * الشروط والأحكام الخاصة بالمتاجر المشتركة في المنصة
- * Professional Arabic Terms & Conditions for marketplace merchants.
- * All clauses kept exactly as provided; structure with numbered sections.
+ * تُعرض في صفحة تسجيل التاجر وفي صفحة الشروط المستقلة.
  */
 
 export const MERCHANT_TERMS_TITLE_AR = 'الشروط والأحكام الخاصة بالمتاجر المشتركة في المنصة';
@@ -13,7 +12,7 @@ export const merchantTermsAr = {
       number: 1,
       title: 'الاشتراك',
       items: [
-        'الاشتراك الشهري مجاني لمدة ثلاثة (3) أشهر ابتداءً من تاريخ التسجيل.',
+        'الاشتراك الشهري مجاني.',
         'بعد انتهاء الفترة المجانية، تطبق رسوم الاشتراك وفق ما تحدده إدارة الموقع.',
       ],
     },
@@ -21,7 +20,7 @@ export const merchantTermsAr = {
       number: 2,
       title: 'العمولة',
       items: [
-        'تستوفي إدارة الموقع عمولة بنسبة 15% من إجمالي قيمة المبيعات المنجزة عبر المنصة.',
+        'تستوفي إدارة الموقع عمولة بنسبة %15 من إجمالي قيمة المبيعات المنجزة عبر المنصة.',
       ],
     },
     {
@@ -29,7 +28,8 @@ export const merchantTermsAr = {
       title: 'الفواتير الضريبية',
       items: [
         'يلتزم المتجر بتقديم فاتورة ضريبية رسمية عن كل عملية بيع.',
-        'في حال عدم تقديم الفاتورة الضريبية، يحق لإدارة الموقع خصم نسبة إضافية مقدارها 16% من قيمة المبيعات.',
+        'في حال عدم تقديم الفاتورة الضريبية، يحق لإدارة الموقع خصم نسبة إضافية مقدارها %16 من قيمة المبيعات اذا كان التسديد الكتروني.',
+        'في حال التسديد النقدي لا يشترط تقديم فاتورة ضريبة ويتم استيفاء رسوم العمولة المذكورة في رقم (2) فقط.',
       ],
     },
     {
@@ -78,9 +78,9 @@ export const merchantTermsAr = {
 export const merchantTermsEn = {
   title: 'Terms and Conditions for Marketplace Merchants',
   sections: [
-    { number: 1, title: 'Subscription', items: ['Monthly subscription is free for three (3) months from the date of registration.', 'After the free period, subscription fees apply as determined by the site management.'] },
+    { number: 1, title: 'Subscription', items: ['Monthly subscription is free.', 'After the free period, subscription fees apply as determined by the site management.'] },
     { number: 2, title: 'Commission', items: ['The site management shall charge a commission of 15% on the total value of sales completed through the platform.'] },
-    { number: 3, title: 'Tax Invoices', items: ['The store is committed to providing an official tax invoice for each sale.', 'If the tax invoice is not provided, the site management has the right to deduct an additional 16% of the sales value.'] },
+    { number: 3, title: 'Tax Invoices', items: ['The store is committed to providing an official tax invoice for each sale.', 'If the tax invoice is not provided, the site management has the right to deduct an additional 16% of the sales value when payment is electronic.', 'For cash payment, a tax invoice is not required; only the commission in (2) applies.'] },
     { number: 4, title: 'Accuracy of Information', items: ['The store is committed to providing correct and accurate data about itself and the products offered.', 'Products shipped must match the images and specifications listed on the product page and consumer order.'] },
     { number: 5, title: 'Prohibited Products', items: ['It is prohibited to display or sell any products that violate laws, harm health, or are contrary to public morals.', 'The site management has the right to remove any non-compliant product without prior notice.'] },
     { number: 6, title: 'Membership Management', items: ['The site management reserves the right to suspend or cancel the membership of any store that violates these terms and policies.'] },
