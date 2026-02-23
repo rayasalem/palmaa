@@ -11,13 +11,17 @@ const PRODUCTS_TABLE = 'products';
 async function listUsers() {
   const { data, error } = await supabase
     .from(USERS_TABLE)
-    .select('id, email, name, role, status, is_email_verified, phone, created_at, updated_at, terms_accepted, terms_accepted_at, subscription_type, subscription_start_date, subscription_end_date, subscription_status')
+    .select('id, email, name, role, status, phone, created_at, updated_at, terms_accepted, terms_accepted_at, email_verified')
     .order('created_at', { ascending: false });
   if (error) {
     console.error('[adminService] listUsers error:', error.message);
     return { data: [], error };
   }
-  return { data: data || [], error: null };
+  const list = (data || []).map((u) => ({
+    ...u,
+    is_email_verified: u.email_verified ?? false,
+  }));
+  return { data: list, error: null };
 }
 
 async function updateUserStatus(userId, status) {
