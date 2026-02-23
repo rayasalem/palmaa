@@ -60,9 +60,9 @@ export const authService = {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         currentUser = null;
-        return { success: false, error: (data as any).error || 'Not authenticated' };
+        return { success: false, error: (data && typeof data === 'object' && (data as any).error) || 'Not authenticated' };
       }
-      const apiUser = (data as any).user;
+      const apiUser = data && typeof data === 'object' ? (data as any).user : undefined;
       if (!apiUser) return { success: false, error: 'Invalid response' };
       const user = mapApiUserToUser(apiUser);
       currentUser = user;

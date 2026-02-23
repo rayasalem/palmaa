@@ -145,11 +145,19 @@ async function registerUser(params) {
     insertPayload.subscription_end_date = trialEnd.toISOString();
     insertPayload.subscription_status = 'active';
   }
-  const { data: user, error: insertError } = await supabase
-    .from(USERS_TABLE)
-    .insert(insertPayload)
-    .select()
-    .single();
+  let result = await supabase.from(USERS_TABLE).insert(insertPayload).select().single();
+  if (result.error) {
+    const msg = (result.error.message || '').toLowerCase();
+    const isMissingColumn = result.error.code === '42703' || /column\s+.*\s+(does\s*not\s*exist|of\s+relation)/i.test(result.error.message || '');
+    if (isMissingColumn && roleVal === 'MERCHANT') {
+      delete insertPayload.subscription_type;
+      delete insertPayload.subscription_start_date;
+      delete insertPayload.subscription_end_date;
+      delete insertPayload.subscription_status;
+      result = await supabase.from(USERS_TABLE).insert(insertPayload).select().single();
+    }
+  }
+  const { data: user, error: insertError } = result;
   if (insertError) {
     console.error('[authService] registerUser insert error:', insertError.message);
     return { user: null, error: insertError };

@@ -8,7 +8,8 @@ import { translations } from '../translations';
 import Logo from './Logo';
 import { getInternalCities, getInternalVillages } from '../services/flashlineService';
 import { useToast } from './ToastProvider';
-import { Mail, CheckCircle, RefreshCcw } from 'lucide-react';
+import { Mail, CheckCircle, RefreshCcw, FileText } from 'lucide-react';
+import { merchantTermsAr, merchantTermsEn } from '../content/merchantTerms';
 
 interface RegisterMerchantProps {
   onRegister: (user: User) => void;
@@ -323,39 +324,56 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({ onRegister, onBackT
                 <input required type="password" name="password" className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none" value={formData.password} onChange={handleChange} />
               </div>
 
-              <div className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  id="acceptTerms"
-                  checked={acceptedTerms}
-                  onChange={(e) => setAcceptedTerms(e.target.checked)}
-                  className="mt-1 rounded border-slate-300 text-palma-primary focus:ring-palma-primary"
-                />
-                <label htmlFor="acceptTerms" className="text-xs text-slate-600">
-                  {lang === 'ar' ? (
-                    <>
-                      أوافق على{' '}
-                      {onOpenTerms ? (
-                        <button type="button" onClick={onOpenTerms} className="text-palma-primary font-bold underline hover:no-underline">
-                          الشروط والأحكام الخاصة بالمتاجر المشتركة في المنصة
-                        </button>
-                      ) : (
-                        <span className="font-bold">الشروط والأحكام الخاصة بالمتاجر المشتركة في المنصة</span>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      I agree to the{' '}
-                      {onOpenTerms ? (
-                        <button type="button" onClick={onOpenTerms} className="text-palma-primary font-bold underline hover:no-underline">
-                          Terms and Conditions for marketplace merchants
-                        </button>
-                      ) : (
-                        <span className="font-bold">Terms and Conditions for marketplace merchants</span>
-                      )}
-                    </>
-                  )}
-                </label>
+              {/* الشروط والأحكام الخاصة بالمتاجر المشتركة في المنصة - ملخص عند تسجيل التاجر */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 space-y-3">
+                <div className="flex items-center gap-2 text-slate-700">
+                  <FileText className="w-4 h-4 text-palma-primary" />
+                  <span className="text-xs font-black uppercase tracking-wider">
+                    {lang === 'ar' ? 'الشروط والأحكام الخاصة بالمتاجر المشتركة في المنصة' : 'Terms and Conditions for Marketplace Merchants'}
+                  </span>
+                </div>
+                <ol className="text-[11px] text-slate-600 space-y-1 list-decimal list-inside">
+                  {(lang === 'ar' ? merchantTermsAr : merchantTermsEn).sections.map((s) => (
+                    <li key={s.number}>
+                      <span className="font-semibold text-slate-700">{s.title}</span>
+                    </li>
+                  ))}
+                </ol>
+                {onOpenTerms && (
+                  <button type="button" onClick={onOpenTerms} className="text-[11px] text-palma-primary font-bold underline hover:no-underline">
+                    {lang === 'ar' ? 'اقرأ النص الكامل للشروط والأحكام' : 'Read full terms and conditions'}
+                  </button>
+                )}
+                <div className="flex items-start gap-3 pt-2">
+                  <input
+                    type="checkbox"
+                    id="acceptTerms"
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    className="mt-1 rounded border-slate-300 text-palma-primary focus:ring-palma-primary"
+                  />
+                  <label htmlFor="acceptTerms" className="text-xs text-slate-600">
+                    {lang === 'ar' ? (
+                      <>
+                        أوافق على الشروط والأحكام أعلاه{' '}
+                        {onOpenTerms && (
+                          <button type="button" onClick={onOpenTerms} className="text-palma-primary font-bold underline hover:no-underline">
+                            (النص الكامل)
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        I agree to the terms and conditions above{' '}
+                        {onOpenTerms && (
+                          <button type="button" onClick={onOpenTerms} className="text-palma-primary font-bold underline hover:no-underline">
+                            (full text)
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </label>
+                </div>
               </div>
 
               <button type="submit" disabled={isUploading || loading} className="w-full py-5 bg-palma-primary text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-palma-primary/20 mt-4 disabled:opacity-50 hover:brightness-110 transition-all active:scale-95">

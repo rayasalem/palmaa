@@ -314,7 +314,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
                {pendingWithdrawals.length > 0 && <span className="bg-red-500 text-white w-4 h-4 flex items-center justify-center rounded-full text-[8px]">{pendingWithdrawals.length}</span>}
             </button>
             <button onClick={() => setActiveTab('platform')} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${activeTab === 'platform' ? 'bg-palma-navy text-white shadow-lg' : 'text-palma-muted hover:bg-slate-50'}`}>
-               <Settings className="w-3.5 h-3.5" /> {lang === 'ar' ? 'إعدادات المنصة' : 'Platform'}
+               <Shield className="w-3.5 h-3.5" /> {lang === 'ar' ? 'إعدادات المنصة' : 'Platform'}
             </button>
          </div>
       </div>
@@ -700,7 +700,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-soft">
                   <div className="flex items-center gap-3 text-slate-500 mb-2">
-                    <Percent className="w-5 h-5" />
+                    <Banknote className="w-5 h-5" />
                     <span className="text-xs font-black uppercase tracking-widest">{lang === 'ar' ? 'إجمالي العمولة (15%)' : 'Total commission (15%)'}</span>
                   </div>
                   <p className="text-2xl font-black text-palma-navy">₪{platformEarnings?.total_commission?.toFixed(2) ?? '0.00'}</p>
@@ -725,7 +725,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
               {/* خانة دفع: نسبة العمولة ونسبة الغرامة الضريبية (قابلة للتعديل من الأدمن) */}
               <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-soft">
                 <h4 className="text-sm font-black text-slate-700 mb-4 flex items-center gap-2">
-                  <Settings className="w-4 h-4" />
+                  <Shield className="w-4 h-4" />
                   {lang === 'ar' ? 'نسب الخصم (قابلة للتعديل)' : 'Commission & tax penalty rates'}
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-xl">

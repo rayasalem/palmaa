@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Layout from './components/Layout';
 import { Auth } from './components/Auth';
 import PublicWebsite from './components/PublicWebsite';
@@ -57,6 +57,65 @@ const AppContent: React.FC = () => {
   const [showApiCheckout, setShowApiCheckout] = useState(false);
   const [checkoutCart, setCheckoutCart] = useState<CartItem[]>([]);
   const [showMerchantTermsPage, setShowMerchantTermsPage] = useState(false);
+  const isApplyingHashRef = useRef(false);
+
+  /** Update browser URL hash so the path changes when navigating (e.g. palma.ps/#/catalog, #/admin) */
+  const updateHash = useCallback((path: string) => {
+    if (isApplyingHashRef.current) return;
+    const value = path ? `#/${path}` : '#/';
+    if (window.location.hash !== value) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search + value);
+    }
+  }, []);
+
+  /** Read hash and apply to state so back/forward and bookmarks work */
+  const applyHashToState = useCallback(() => {
+    const raw = window.location.hash.replace(/^#\/?/, '').trim() || '';
+    const parts = raw.split('/').filter(Boolean);
+    const top = parts[0] || '';
+    isApplyingHashRef.current = true;
+    if (top === 'catalog') {
+      setPublicState('CATALOG');
+      setCurrentView('home');
+    } else if (top === 'login') {
+      setPublicState('AUTH');
+      setAuthView('LOGIN');
+    } else if (top === 'register-merchant') {
+      setPublicState('AUTH');
+      setAuthView('REGISTER_MERCHANT');
+    } else if (top === 'register-broker') {
+      setPublicState('AUTH');
+      setAuthView('REGISTER_BROKER');
+    } else if (top === 'register') {
+      setPublicState('AUTH');
+      setAuthView('REGISTER_CUSTOMER');
+    } else if (top === 'terms') {
+      setShowMerchantTermsPage(true);
+    } else if (top === 'product' && parts[1]) {
+      setSelectedProductId(parts[1]);
+      setPublicState('PRODUCT_DETAILS');
+      setCurrentView('product_details');
+    } else if (top === 'profile' && parts[1]) {
+      setSelectedProfileId(parts[1]);
+      setPublicState('PUBLIC_PROFILE');
+      setCurrentView('public_profile');
+    } else if (top === 'broker' && parts[1]) {
+      setPublicBrokerId(parts[1]);
+      setPublicState('BROKER_PAGE');
+    } else if (['admin', 'dashboard', 'home', 'cart', 'products', 'notifications', 'profile', 'orders'].includes(top)) {
+      setCurrentView(top === 'orders' ? 'orders_customer' : top);
+      if (top !== 'product_details') setSelectedProductId(null);
+      if (top !== 'public_profile') setSelectedProfileId(null);
+    }
+    setTimeout(() => { isApplyingHashRef.current = false; }, 0);
+  }, []);
+
+  useEffect(() => {
+    applyHashToState();
+    const onHashChange = () => applyHashToState();
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, [applyHashToState]);
 
   // Sync language with document for components that rely on DOM direction
   useEffect(() => {
@@ -78,9 +137,9 @@ const AppContent: React.FC = () => {
       }
 
       if (brokerRef) {
-        // Legacy Broker link support
         setPublicBrokerId(brokerRef);
         setPublicState('BROKER_PAGE');
+        updateHash(`broker/${brokerRef}`);
       }
 
       if (profileRef) {
@@ -154,10 +213,9 @@ const AppContent: React.FC = () => {
   };
 
   const setDefaultView = (u: User) => {
-    if (u.role === 'MERCHANT') setCurrentView('dashboard');
-    else if (u.role === 'ADMIN') setCurrentView('dashboard');
-    else if (u.role === 'BROKER') setCurrentView('dashboard');
-    else setCurrentView('home');
+    const tab = u.role === 'MERCHANT' || u.role === 'ADMIN' || u.role === 'BROKER' ? 'dashboard' : 'home';
+    setCurrentView(tab);
+    updateHash(tab);
   };
 
   const handleLogin = (loggedInUser: User) => {
@@ -177,6 +235,7 @@ const AppContent: React.FC = () => {
     setCurrentView('home');
     setPublicState('LANDING');
     setAuthView('LOGIN');
+    updateHash('');
   };
 
   /** Add to cart: uses backend when user is set, else local state + localStorage (multi-user safe) */
@@ -246,10 +305,13 @@ const AppContent: React.FC = () => {
   const openAuth = (view: typeof authView) => {
     setAuthView(view);
     setPublicState('AUTH');
+    const path = view === 'REGISTER_MERCHANT' ? 'register-merchant' : view === 'REGISTER_BROKER' ? 'register-broker' : view === 'REGISTER_CUSTOMER' ? 'register' : 'login';
+    updateHash(path);
   };
 
   const handleViewProduct = (productId: string) => {
     setSelectedProductId(productId);
+    updateHash(`product/${productId}`);
     if (user) {
         setCurrentView('product_details');
     } else {
@@ -259,6 +321,7 @@ const AppContent: React.FC = () => {
 
   const handleViewProfile = (profileId: string) => {
     setSelectedProfileId(profileId);
+    updateHash(`profile/${profileId}`);
     if (user) {
         setCurrentView('public_profile');
     } else {
@@ -303,7 +366,7 @@ const AppContent: React.FC = () => {
           lang={lang}
           user={null}
           productId={selectedProductId}
-          onBack={() => setPublicState('CATALOG')}
+          onBack={() => { setPublicState('CATALOG'); updateHash('catalog'); }}
           onLoginClick={() => openAuth('LOGIN')}
           addToCart={addToCart}
         />
@@ -316,7 +379,7 @@ const AppContent: React.FC = () => {
           lang={lang}
           currentUser={null}
           profileId={selectedProfileId}
-          onBack={() => setPublicState('LANDING')}
+          onBack={() => { setPublicState('LANDING'); updateHash(''); }}
           onProductClick={handleViewProduct}
           onLoginClick={() => openAuth('LOGIN')}
           toggleLang={toggleLang}
@@ -329,7 +392,7 @@ const AppContent: React.FC = () => {
         <PublicBrokerPage 
           lang={lang}
           brokerId={publicBrokerId}
-          onBack={() => setPublicState('LANDING')}
+          onBack={() => { setPublicState('LANDING'); updateHash(''); }}
           onProductClick={handleViewProduct}
           onLoginClick={() => openAuth('LOGIN')}
           toggleLang={toggleLang}
@@ -341,7 +404,7 @@ const AppContent: React.FC = () => {
       return (
         <MerchantTermsView
           lang={lang}
-          onBack={() => setShowMerchantTermsPage(false)}
+          onBack={() => { setShowMerchantTermsPage(false); updateHash(''); }}
         />
       );
     }
@@ -354,7 +417,7 @@ const AppContent: React.FC = () => {
           onLoginClick={() => openAuth('LOGIN')}
           onJoinMerchant={() => openAuth('REGISTER_MERCHANT')}
           onJoinBroker={() => openAuth('REGISTER_BROKER')}
-          onExploreProducts={() => setPublicState('CATALOG')}
+          onExploreProducts={() => { setPublicState('CATALOG'); updateHash('catalog'); }}
           onViewProduct={handleViewProduct}
           onOpenTerms={() => setShowMerchantTermsPage(true)}
         />
@@ -364,7 +427,7 @@ const AppContent: React.FC = () => {
     if (publicState === 'CATALOG') {
       return (
         <PublicCatalog 
-          onBack={() => setPublicState('LANDING')}
+          onBack={() => { setPublicState('LANDING'); updateHash(''); }}
           onLoginClick={() => openAuth('LOGIN')}
           onProductClick={handleViewProduct} 
         />
@@ -414,6 +477,8 @@ const AppContent: React.FC = () => {
         setCurrentView(tab);
         if (tab !== 'product_details') setSelectedProductId(null);
         if (tab !== 'public_profile') setSelectedProfileId(null);
+        const path = tab === 'orders_customer' ? 'orders' : tab;
+        updateHash(path);
       }}
       cartCount={cart.reduce((a, b) => a + b.quantity, 0)}
     >
