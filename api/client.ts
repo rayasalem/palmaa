@@ -8,21 +8,14 @@
 // Configuration
 // -----------------------------------------------------------------------------
 
-/** Production backend URL (Render). Never use localhost in production build. */
+/** Production backend URL (Render). Used whenever build is production (Vercel). */
 const PRODUCTION_API = 'https://palmaa.onrender.com';
 
-const rawBase =
-  (typeof import.meta !== 'undefined' &&
-    (import.meta as { env?: { VITE_API_URL?: string }; PROD?: boolean }).env?.VITE_API_URL) ||
-  PRODUCTION_API;
-
-/** Base URL for backend. In production build, never use localhost (fixes wrong env on Vercel). */
+/** Base URL. In production build (import.meta.env.PROD) always PRODUCTION_API so Vercel never hits localhost. */
 const API_BASE: string =
-  typeof import.meta !== 'undefined' &&
-  (import.meta as { env?: { PROD?: boolean } }).env?.PROD &&
-  (rawBase.includes('localhost') || rawBase.includes('127.0.0.1'))
+  (import.meta as { env?: { PROD?: boolean; VITE_API_URL?: string } }).env?.PROD
     ? PRODUCTION_API
-    : rawBase;
+    : ((import.meta as { env?: { VITE_API_URL?: string } }).env?.VITE_API_URL || PRODUCTION_API);
 
 // -----------------------------------------------------------------------------
 // Helpers (single-responsibility)
