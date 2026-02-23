@@ -138,6 +138,12 @@ async function registerUser(params) {
     if (termsVersion) insertPayload.terms_version = termsVersion;
     insertPayload.status = 'APPROVED';
     insertPayload.is_approved = true;
+    const trialEnd = new Date();
+    trialEnd.setDate(trialEnd.getDate() + 30);
+    insertPayload.subscription_type = 'free';
+    insertPayload.subscription_start_date = now;
+    insertPayload.subscription_end_date = trialEnd.toISOString();
+    insertPayload.subscription_status = 'active';
   }
   const { data: user, error: insertError } = await supabase
     .from(USERS_TABLE)
@@ -252,6 +258,9 @@ async function login(email, password) {
 
   if (!userRow || !userRow.password) {
     return { user: null, error: { message: 'Invalid credentials' } };
+  }
+  if (userRow.status === 'SUSPENDED') {
+    return { user: null, error: { message: 'Account suspended. Contact support.' } };
   }
 
   // Handle legacy plain-text password (e.g. mock admin) - only for development

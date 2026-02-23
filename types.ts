@@ -8,7 +8,7 @@ export enum Role {
 
 export type UserRole = 'CUSTOMER' | 'MERCHANT' | 'BROKER' | 'ADMIN';
 
-export type UserStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type UserStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
 
 export interface User {
   id: string;

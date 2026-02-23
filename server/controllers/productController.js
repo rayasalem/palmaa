@@ -5,6 +5,7 @@
 
 import * as productService from '../services/productService.js';
 import * as notificationService from '../services/notificationService.js';
+import * as subscriptionService from '../services/subscriptionService.js';
 import logger from '../utils/logger.js';
 
 async function list(req, res) {
@@ -52,6 +53,13 @@ async function create(req, res) {
   try {
     const merchantId = req.auth?.sub;
     if (!merchantId) return res.status(401).json({ success: false, error: 'Authentication required' });
+    const { allowed, reason } = await subscriptionService.canAddProducts(merchantId);
+    if (!allowed) {
+      const msg = reason === 'MERCHANT_SUSPENDED'
+        ? 'Your store has been suspended. Contact support.'
+        : 'Subscription expired. Please renew to add new products.';
+      return res.status(403).json({ success: false, error: msg, code: reason });
+    }
     const body = req.body || {};
     const name = body.name ?? body.title;
     if (!name || String(name).trim() === '') {

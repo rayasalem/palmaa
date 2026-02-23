@@ -5,7 +5,7 @@
 
 import { User, Role, MerchantProfile, ActionResponse, UserStatus } from '../types';
 
-const API_BASE = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_URL) || 'https://palmaa.onrender.com';
+import { API_BASE } from '../api/client';
 
 async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {

@@ -3,23 +3,34 @@
  */
 
 import { supabase } from '../config/supabaseClient.js';
+import * as productService from './productService.js';
 
 const ORDERS_TABLE = 'orders';
 const ORDER_ITEMS_TABLE = 'order_items';
 
 async function createOrder(params) {
-  const { recipient_name, address, city, phone, amount, weight, customer_id, items } = params;
+  const { recipient_name, address, city, phone, amount, weight, customer_id, broker_id, items, payment_method } = params;
   const now = new Date().toISOString();
+  let merchant_id = null;
+  if (items && Array.isArray(items) && items.length > 0) {
+    const firstProductId = items[0].product_id || items[0].productId;
+    if (firstProductId) {
+      const { data: product } = await productService.getProductById(firstProductId);
+      if (product?.merchant_id) merchant_id = product.merchant_id;
+    }
+  }
   const orderRow = {
     status: 'PENDING',
     total_amount: Number(amount),
     shipping_name: recipient_name || null,
     shipping_phone: phone || null,
     shipping_address: address || null,
-    payment_method: 'COD',
+    payment_method: payment_method || 'COD',
     created_at: now,
   };
   if (customer_id) orderRow.customer_id = customer_id;
+  if (broker_id) orderRow.broker_id = broker_id;
+  if (merchant_id) orderRow.merchant_id = merchant_id;
 
   const { data: order, error } = await supabase
     .from(ORDERS_TABLE)
@@ -102,4 +113,41 @@ async function cancelOrder(orderId, customerId) {
   return { data: updated, error: null };
 }
 
-export { createOrder, getOrderById, getOrdersByCustomerId, cancelOrder, ORDERS_TABLE, ORDER_ITEMS_TABLE };
+async function updateOrderInvoice(orderId, invoiceUrl) {
+  const { data, error } = await supabase
+    .from(ORDERS_TABLE)
+    .update({
+      invoice_uploaded: true,
+      invoice_file_url: invoiceUrl,
+      invoice_verified_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', orderId)
+    .select()
+    .single();
+  if (error) {
+    console.error('[orderService] updateOrderInvoice error:', error.message);
+    return { data: null, error };
+  }
+  return { data, error: null };
+}
+
+async function completeOrder(orderId) {
+  const { data, error } = await supabase
+    .from(ORDERS_TABLE)
+    .update({
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', orderId)
+    .select()
+    .single();
+  if (error) {
+    console.error('[orderService] completeOrder error:', error.message);
+    return { data: null, error };
+  }
+  return { data, error: null };
+}
+
+export { createOrder, getOrderById, getOrdersByCustomerId, cancelOrder, updateOrderInvoice, completeOrder, ORDERS_TABLE, ORDER_ITEMS_TABLE };

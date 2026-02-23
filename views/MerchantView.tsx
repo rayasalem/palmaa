@@ -5,8 +5,9 @@ import { marketStore } from '../store';
 import { productService } from '../services/productService'; 
 import { storageService } from '../services/storageService'; // Updated import
 import { FlashLineService, cancelLogestechsShipment } from '../services/flashlineService';
+import { getMerchantDashboard, type MerchantDashboardResponse } from '../services/merchantDashboardService';
 import { translations } from '../translations';
-import { Package, Truck, Plus, Trash2, Image as ImageIcon, Search, LayoutDashboard, DollarSign, Box, ExternalLink, XCircle, MoreHorizontal, Filter, AlertCircle, Edit, Eye, EyeOff, X } from 'lucide-react';
+import { Package, Truck, Plus, Trash2, Image as ImageIcon, Search, LayoutDashboard, DollarSign, Box, ExternalLink, XCircle, MoreHorizontal, Filter, AlertCircle, Edit, Eye, EyeOff, X, CreditCard, Receipt } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
 
 interface MerchantViewProps {
@@ -25,6 +26,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders'>('dashboard');
+  const [dashboardData, setDashboardData] = useState<MerchantDashboardResponse | null>(null);
 
   // Product Form State (Add/Edit)
   const [isEditing, setIsEditing] = useState(false);
@@ -52,13 +54,18 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
   const refreshData = async () => {
     try {
       setLoading(true);
-      // Fetch products from database
       const myProducts = await productService.getByMerchantId(user.id);
       setProducts(myProducts);
 
-      // Orders still on store mock for now, can be upgraded similarly
       const allOrders = marketStore.getOrders();
       setOrders(allOrders.filter(o => o.merchantId === user.id || o.merchant_id === user.id));
+
+      try {
+        const dash = await getMerchantDashboard();
+        setDashboardData(dash);
+      } catch {
+        setDashboardData(null);
+      }
     } catch (e) {
       console.error(e);
       showToast(t.common.error, 'error');
@@ -303,26 +310,57 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
 
       {/* Content */}
       {activeTab === 'dashboard' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-           <StatCard 
-             title={t.common.totalRevenue} 
-             value={`${orders.reduce((acc, o) => acc + (o.totalAmount || 0), 0).toLocaleString()} ₪`}
-             icon={DollarSign}
-             color="bg-palma-primary"
-             trend="12%"
-           />
-           <StatCard 
-             title={t.common.pendingOrders} 
-             value={orders.filter(o => o.status === 'PENDING').length}
-             icon={Truck}
-             color="bg-blue-600"
-           />
-           <StatCard 
-             title={t.common.totalInventory} 
-             value={products.length}
-             icon={Package}
-             color="bg-purple-600"
-           />
+        <div className="space-y-6">
+          {dashboardData && !dashboardData.subscription.is_active && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
+              <AlertCircle className="w-6 h-6 text-amber-600 shrink-0" />
+              <div>
+                <p className="font-bold text-amber-800">{lang === 'ar' ? 'انتهت فترة الاشتراك' : 'Subscription expired'}</p>
+                <p className="text-sm text-amber-700">{lang === 'ar' ? 'يجب تجديد الاشتراك لإضافة منتجات جديدة.' : 'Please renew your subscription to add new products.'}</p>
+              </div>
+            </div>
+          )}
+          {dashboardData && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard title={lang === 'ar' ? 'إجمالي المبيعات' : 'Total sales'} value={`₪${(dashboardData.stats.total_sales || 0).toLocaleString()}`} icon={DollarSign} color="bg-palma-primary" />
+              <StatCard title={lang === 'ar' ? 'العمولة المخصومة' : 'Commission'} value={`₪${(dashboardData.stats.total_commission || 0).toLocaleString()}`} icon={Receipt} color="bg-blue-600" />
+              <StatCard title={lang === 'ar' ? 'خصم ضريبي' : 'Tax penalty'} value={`₪${(dashboardData.stats.total_tax_penalty || 0).toLocaleString()}`} icon={Receipt} color="bg-amber-600" />
+              <StatCard title={lang === 'ar' ? 'صافي الأرباح' : 'Net profit'} value={`₪${(dashboardData.stats.net_profit || 0).toLocaleString()}`} icon={CreditCard} color="bg-emerald-600" />
+            </div>
+          )}
+          {dashboardData?.subscription && (
+            <div className="bg-white p-6 rounded-3xl shadow-card border border-slate-100">
+              <h3 className="text-sm font-black text-palma-navy uppercase tracking-wider mb-3">{lang === 'ar' ? 'حالة الاشتراك' : 'Subscription status'}</h3>
+              <div className="flex flex-wrap gap-4 text-sm">
+                <span><strong>{lang === 'ar' ? 'النوع:' : 'Type:'}</strong> {dashboardData.subscription.subscription_type === 'paid' ? (lang === 'ar' ? 'مدفوع' : 'Paid') : (lang === 'ar' ? 'مجاني' : 'Free')}</span>
+                <span><strong>{lang === 'ar' ? 'الحالة:' : 'Status:'}</strong> {dashboardData.subscription.is_active ? (lang === 'ar' ? 'نشط' : 'Active') : (lang === 'ar' ? 'منتهي' : 'Expired')}</span>
+                {dashboardData.subscription.subscription_end_date && (
+                  <span><strong>{lang === 'ar' ? 'ينتهي:' : 'Ends:'}</strong> {new Date(dashboardData.subscription.subscription_end_date).toLocaleDateString()}</span>
+                )}
+              </div>
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+             <StatCard 
+               title={t.common.totalRevenue} 
+               value={`${orders.reduce((acc, o) => acc + (o.totalAmount || 0), 0).toLocaleString()} ₪`}
+               icon={DollarSign}
+               color="bg-palma-primary"
+               trend="12%"
+             />
+             <StatCard 
+               title={t.common.pendingOrders} 
+               value={orders.filter(o => o.status === 'PENDING').length}
+               icon={Truck}
+               color="bg-blue-600"
+             />
+             <StatCard 
+               title={t.common.totalInventory} 
+               value={products.length}
+               icon={Package}
+               color="bg-purple-600"
+             />
+          </div>
         </div>
       )}
 
@@ -330,6 +368,11 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           {/* Add/Edit Product Form */}
           <div className="xl:col-span-1">
+            {dashboardData && !dashboardData.subscription.is_active && !isEditing && (
+              <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 text-sm">
+                {lang === 'ar' ? 'لا يمكن إضافة منتجات جديدة حتى تجديد الاشتراك.' : 'You cannot add new products until you renew your subscription.'}
+              </div>
+            )}
             <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-card border border-slate-100 sticky top-28 transition-all">
               <div className="flex items-center justify-between gap-4 mb-6">
                  <div className="flex items-center gap-3">
@@ -414,7 +457,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                     )}
                 </div>
 
-                <button type="submit" disabled={loading} className="w-full bg-palma-navy text-white py-4 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-palma-navy/20 hover:bg-palma-primary transition-all active:scale-[0.98] flex items-center justify-center gap-2.5">
+                <button type="submit" disabled={loading || (!isEditing && !!dashboardData && !dashboardData.subscription.is_active)} className="w-full bg-palma-navy text-white py-4 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-palma-navy/20 hover:bg-palma-primary transition-all active:scale-[0.98] flex items-center justify-center gap-2.5 disabled:opacity-50">
                    {isUploading ? (
                      <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/> {t.common.uploading}</>
                    ) : (

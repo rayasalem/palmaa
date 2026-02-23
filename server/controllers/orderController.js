@@ -7,7 +7,7 @@ import * as orderService from '../services/orderService.js';
 
 async function createOrder(req, res) {
   try {
-    const { recipient_name, address, city, phone, amount, weight, items } = req.body || {};
+    const { recipient_name, address, city, phone, amount, weight, items, payment_method } = req.body || {};
     if (recipient_name == null || String(recipient_name).trim() === '') {
       return res.status(400).json({ success: false, error: 'recipient_name is required' });
     }
@@ -30,6 +30,7 @@ async function createOrder(req, res) {
     }
 
     const customer_id = req.auth?.sub || null;
+    const broker_id = req.body?.broker_id || req.body?.brokerId || null;
 
     const { data, error } = await orderService.createOrder({
       recipient_name,
@@ -39,7 +40,9 @@ async function createOrder(req, res) {
       amount: numAmount,
       weight: numWeight,
       customer_id,
+      broker_id: broker_id || undefined,
       items: Array.isArray(items) ? items : undefined,
+      payment_method: payment_method || 'COD',
     });
     if (error) {
       console.error('[orderController] createOrder error:', error);
@@ -98,4 +101,41 @@ async function cancelOrder(req, res) {
   }
 }
 
-export { createOrder, getOrder, listMyOrders, cancelOrder };
+async function updateOrderInvoice(req, res) {
+  try {
+    const orderId = req.params.id;
+    const { invoiceUrl } = req.body || {};
+    if (!orderId) return res.status(400).json({ success: false, error: 'Order id is required' });
+    if (!invoiceUrl || String(invoiceUrl).trim() === '') {
+      return res.status(400).json({ success: false, error: 'invoiceUrl is required' });
+    }
+    const { data: order, error: fetchErr } = await orderService.getOrderById(orderId);
+    if (fetchErr || !order) return res.status(404).json({ success: false, error: 'Order not found' });
+    const merchantId = req.auth?.sub;
+    const isAdmin = req.auth?.role === 'ADMIN';
+    if (order.merchant_id !== merchantId && !isAdmin) {
+      return res.status(403).json({ success: false, error: 'Not authorized to update this order invoice' });
+    }
+    const { data: updated, error } = await orderService.updateOrderInvoice(orderId, invoiceUrl.trim());
+    if (error) return res.status(500).json({ success: false, error: error.message });
+    return res.status(200).json({ success: true, order: updated });
+  } catch (err) {
+    console.error('[orderController] updateOrderInvoice unexpected:', err);
+    return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
+  }
+}
+
+async function completeOrder(req, res) {
+  try {
+    const orderId = req.params.id;
+    if (!orderId) return res.status(400).json({ success: false, error: 'Order id is required' });
+    const { data, error } = await orderService.completeOrder(orderId);
+    if (error) return res.status(400).json({ success: false, error: error.message });
+    return res.status(200).json({ success: true, order: data });
+  } catch (err) {
+    console.error('[orderController] completeOrder unexpected:', err);
+    return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
+  }
+}
+
+export { createOrder, getOrder, listMyOrders, cancelOrder, updateOrderInvoice, completeOrder };

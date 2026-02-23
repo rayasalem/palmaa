@@ -3,7 +3,7 @@
  * Base URL: VITE_API_URL or https://palmaa.onrender.com
  */
 
-const API_BASE = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_URL) || 'https://palmaa.onrender.com';
+import { API_BASE } from '../api/client';
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = path.startsWith('http') ? path : `${API_BASE}${path}`;
@@ -29,6 +29,8 @@ export interface CreateOrderBody {
   phone: string;
   amount: number;
   weight: number;
+  /** عند الشراء عبر رابط الوسيط: يُمرَّر لاحتساب 3% للوسيط و 12% للمتجر */
+  broker_id?: string;
   items?: { product_id: string; quantity: number; price: number }[];
 }
 

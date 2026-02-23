@@ -100,7 +100,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
     if (activeTab === 'orders') loadOrders();
   }, [activeTab]);
 
-  const handleStatusChange = async (userId: string, status: 'APPROVED' | 'REJECTED') => {
+  const handleStatusChange = async (userId: string, status: 'APPROVED' | 'REJECTED' | 'SUSPENDED' | 'PENDING') => {
     setActionLoading(userId);
     const user = allUsers.find(u => u.id === userId);
     if (!user) return;
@@ -109,7 +109,6 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
       const response = await userService.updateUserStatus(userId, status);
       
       if (response.success) {
-        // Update local state immediately for better UX
         const updatedUsers = allUsers.map(u => {
           if (u.id === userId) {
             return { 
@@ -123,10 +122,11 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
         });
         setAllUsers(updatedUsers);
 
-        // Send Email Notification
-        const subject = status === 'APPROVED' ? 'Account Approved' : 'Account Update';
+        const subject = status === 'APPROVED' ? 'Account Approved' : status === 'SUSPENDED' ? 'Account Suspended' : 'Account Update';
         const message = status === 'APPROVED' 
           ? `Congratulations! Your merchant account for "${user.companyName || user.name}" has been approved. You can now log in and start selling.` 
+          : status === 'SUSPENDED'
+          ? `Your store account has been suspended. Contact support for more information.`
           : `We regret to inform you that your account application has been rejected.`;
         
         logEmail(user.email ?? '', subject, message);
@@ -166,7 +166,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
     
     // Status Filter
     if (filterStatus === 'APPROVED') {
-      result = result.filter(u => u.status === 'APPROVED' || u.isApproved);
+      result = result.filter(u => (u.status === 'APPROVED' || u.isApproved) && u.status !== 'SUSPENDED');
     } else if (filterStatus === 'PENDING') {
       result = result.filter(u => u.status === 'PENDING' && !u.isApproved);
     }
@@ -319,9 +319,10 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
                    </thead>
                    <tbody className="divide-y divide-slate-50 font-bold">
                      {filteredUsers.map(user => {
-                       const isApproved = user.status === 'APPROVED' || user.isApproved;
-                       const statusLabel = isApproved ? t.common.approved : t.common.pending;
-                       const statusColor = isApproved ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100';
+                       const isSuspended = user.status === 'SUSPENDED';
+                       const isApproved = (user.status === 'APPROVED' || user.isApproved) && !isSuspended;
+                       const statusLabel = isSuspended ? (lang === 'ar' ? 'موقوف' : 'Suspended') : isApproved ? t.common.approved : t.common.pending;
+                       const statusColor = isSuspended ? 'bg-red-50 text-red-600 border-red-100' : isApproved ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100';
                        const sourceMeta = getSourceLabel(user);
                        const isProcessing = actionLoading === user.id;
 
@@ -364,14 +365,24 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
                                      <Eye className="w-4 h-4" />
                                    </button>
                                  )}
-                                 {!isApproved && (
+                                 {!isApproved && !isSuspended && (
                                    <button onClick={() => handleStatusChange(user.id, 'APPROVED')} className="p-2 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition" title={t.common.approve}>
                                      <Check className="w-4 h-4" />
                                    </button>
                                  )}
-                                 {user.status !== 'REJECTED' && (
+                                 {isSuspended && (user.role === 'MERCHANT' || user.role === 'BROKER') && (
+                                   <button onClick={() => handleStatusChange(user.id, 'APPROVED')} className="p-2 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition" title={lang === 'ar' ? 'إعادة التفعيل' : 'Reactivate'}>
+                                     <Check className="w-4 h-4" />
+                                   </button>
+                                 )}
+                                 {!isSuspended && user.status !== 'REJECTED' && (
                                    <button onClick={() => handleStatusChange(user.id, 'REJECTED')} className="p-2 bg-rose-100 text-rose-700 rounded-lg hover:bg-rose-200 transition" title={t.common.reject}>
                                      <X className="w-4 h-4" />
+                                   </button>
+                                 )}
+                                 {(user.role === 'MERCHANT' || user.role === 'BROKER') && isApproved && (
+                                   <button onClick={() => handleStatusChange(user.id, 'SUSPENDED')} className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition" title={lang === 'ar' ? 'تعليق المتجر' : 'Suspend store'}>
+                                     <Shield className="w-4 h-4" />
                                    </button>
                                  )}
                                </div>

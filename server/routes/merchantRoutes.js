@@ -1,14 +1,17 @@
 /**
  * Merchant routes: public profile, followers count, optional auth for is-following.
+ * GET /dashboard: merchant-only dashboard (subscription + stats).
  */
 
 import express from 'express';
 import * as followController from '../controllers/followController.js';
 import * as merchantController from '../controllers/merchantController.js';
-import { optionalAuth } from '../middlewares/authMiddleware.js';
+import { authenticate, optionalAuth } from '../middlewares/authMiddleware.js';
+import { requireRole } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
+router.get('/dashboard', authenticate, requireRole('MERCHANT'), merchantController.getDashboard);
 router.get('/:id/followers-count', followController.getFollowersCount);
 router.get('/:id/following', optionalAuth, followController.getIsFollowing);
 router.get('/:id', merchantController.getPublicProfile);

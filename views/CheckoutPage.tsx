@@ -162,6 +162,15 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
     return true;
   };
 
+  const brokerIdFromUrl = (() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('broker') || params.get('brokerId') || null;
+    } catch {
+      return null;
+    }
+  })();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
@@ -175,6 +184,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
         phone: form.phone.trim(),
         amount: totalAmount,
         weight: form.weight,
+        ...(brokerIdFromUrl ? { broker_id: brokerIdFromUrl } : {}),
         items: cart.map((item) => ({
           product_id: (item as any).id,
           quantity: item.quantity,

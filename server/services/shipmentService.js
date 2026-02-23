@@ -69,13 +69,21 @@ async function callCreateShipmentApi(body) {
 
 async function updateOrderShipment(orderId, shipmentId, shipmentStatus) {
   console.log('[shipmentService] Updating order shipment:', { orderId, shipmentId, shipmentStatus });
+  const now = new Date().toISOString();
+  const isDelivered = String(shipmentStatus || '').toLowerCase() === 'delivered';
+  const updatePayload = {
+    delivery_id: shipmentId,
+    delivery_status: shipmentStatus,
+    updated_at: now,
+  };
+  if (isDelivered) {
+    updatePayload.completed_at = now;
+    updatePayload.delivery_confirmed_at = now;
+    updatePayload.status = 'completed';
+  }
   const { data, error } = await supabase
     .from(ORDERS_TABLE)
-    .update({
-      delivery_id: shipmentId,
-      delivery_status: shipmentStatus,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updatePayload)
     .eq('id', orderId)
     .select()
     .single();

@@ -8,7 +8,7 @@ import { supabase } from '../config/supabaseClient.js';
 const PRODUCTS_TABLE = 'products';
 
 async function getActiveProducts() {
-  const { data, error } = await supabase
+  const { data: products, error } = await supabase
     .from(PRODUCTS_TABLE)
     .select('*')
     .or('status.eq.active,is_active.eq.true')
@@ -17,7 +17,17 @@ async function getActiveProducts() {
     console.error('[productService] getActiveProducts error:', error.message);
     return { data: [], error };
   }
-  return { data: data || [], error: null };
+  const list = products || [];
+  const merchantIds = [...new Set(list.map((p) => p.merchant_id).filter(Boolean))];
+  if (merchantIds.length === 0) return { data: list, error: null };
+  const { data: suspended } = await supabase
+    .from('users')
+    .select('id')
+    .in('id', merchantIds)
+    .eq('status', 'SUSPENDED');
+  const suspendedSet = new Set((suspended || []).map((u) => u.id));
+  const filtered = list.filter((p) => !suspendedSet.has(p.merchant_id));
+  return { data: filtered, error: null };
 }
 
 async function getProductById(id) {

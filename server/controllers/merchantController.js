@@ -4,6 +4,8 @@
  */
 
 import { supabase } from '../config/supabaseClient.js';
+import * as subscriptionService from '../services/subscriptionService.js';
+import * as transactionService from '../services/transactionService.js';
 import logger from '../utils/logger.js';
 
 async function getPublicProfile(req, res) {
@@ -58,4 +60,34 @@ async function getPublicProfile(req, res) {
   }
 }
 
-export { getPublicProfile };
+/**
+ * Merchant dashboard: subscription + stats (sales, commission, tax penalty, net).
+ * Requires MERCHANT role.
+ */
+async function getDashboard(req, res) {
+  try {
+    const merchantId = req.auth?.sub;
+    if (!merchantId) return res.status(401).json({ success: false, error: 'Authentication required' });
+    const [sub, stats] = await Promise.all([
+      subscriptionService.getSubscription(merchantId),
+      transactionService.getMerchantStats(merchantId),
+    ]);
+    if (sub.error) return res.status(500).json({ success: false, error: sub.error.message });
+    if (stats.error) return res.status(500).json({ success: false, error: stats.error.message });
+    const subscription = sub.data;
+    const isActive = subscriptionService.isActive(subscription);
+    return res.status(200).json({
+      success: true,
+      subscription: {
+        ...subscription,
+        is_active: isActive,
+      },
+      stats: stats.data,
+    });
+  } catch (err) {
+    logger.error('getDashboard unexpected', { message: err.message });
+    return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
+  }
+}
+
+export { getPublicProfile, getDashboard };
