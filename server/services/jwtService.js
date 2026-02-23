@@ -8,7 +8,9 @@ import { getEnv } from '../config/env.js';
 
 const rawSecret = getEnv('JWT_SECRET') || getEnv('JWT_SECRET_KEY');
 if (!rawSecret && getEnv('NODE_ENV') === 'production') {
-  throw new Error('JWT_SECRET is required in production. Set it in server/.env');
+  throw new Error(
+    'JWT_SECRET is required in production. Set it in server/.env (local) or in Environment variables on Render/Vercel.'
+  );
 }
 const DEFAULT_DEV = 'dev-fallback-secret-change-in-production-64chars-minimum-required';
 const SECRET = rawSecret || DEFAULT_DEV;
@@ -40,7 +42,8 @@ export function getCookieOptions() {
   return {
     httpOnly: true,
     secure: isProd,
-    sameSite: isProd ? 'strict' : 'lax',
+    // none so cookie is sent when frontend (Vercel) and API (Render) are on different domains
+    sameSite: isProd ? 'none' : 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000,
     path: '/',
   };

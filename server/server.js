@@ -5,6 +5,17 @@
  */
 
 import 'dotenv/config';
+
+// Log uncaught errors so Render/PM2 show the real cause of exit 1
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] uncaughtException:', err?.message || err);
+  if (err?.stack) console.error(err.stack);
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[FATAL] unhandledRejection:', reason);
+  process.exit(1);
+});
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -28,13 +39,8 @@ import orderRoutes from './routes/orderRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import shipmentRoutes from './routes/shipmentRoutes.js';
-// Prefer compiled TypeScript auth routes when present (run: npm run build)
-let authRoutes;
-try {
-  authRoutes = (await import('./dist/auth/routes.js')).default;
-} catch {
-  authRoutes = (await import('./routes/authRoutes.js')).default;
-}
+// Use JS auth routes (dist/auth has wrong relative paths to middlewares when run from server/)
+const { default: authRoutes } = await import('./routes/authRoutes.js');
 import addressRoutes from './routes/addressRoutes.js';
 import cartRoutes from './routes/cartRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
