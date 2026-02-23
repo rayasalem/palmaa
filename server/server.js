@@ -13,6 +13,7 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 
 import { validateEnv, getEnv, isProduction } from './config/env.js';
+import { corsMiddleware } from './middlewares/corsMiddleware.js';
 import {
   helmetMiddleware,
   generalLimiter,
@@ -53,27 +54,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = Number(getEnv('PORT')) || 5000;
 
-// CORS first so preflight (OPTIONS) and all responses get headers
-const frontendUrl = getEnv('FRONTEND_URL');
-const origins = frontendUrl
-  ? frontendUrl.split(',').map((u) => u.trim()).filter(Boolean)
-  : ['http://localhost:3000', 'http://127.0.0.1:3000'];
-if (!origins.includes('http://localhost:3000')) origins.push('http://localhost:3000');
-if (!origins.includes('http://127.0.0.1:3000')) origins.push('http://127.0.0.1:3000');
-const vercelOrigin = 'https://palmaa.vercel.app';
-if (!origins.includes(vercelOrigin)) origins.push(vercelOrigin);
-
-app.use(cors({
-  origin: (origin, cb) => {
-    if (!origin) return cb(null, true); // same-origin or tools like Postman
-    if (origins.includes(origin)) return cb(null, true);
-    return cb(null, false);
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  optionsSuccessStatus: 200,
-}));
+// CORS first: manual headers + OPTIONS 204 so preflight always gets Access-Control-* (fixes Render/Vercel)
+app.use(corsMiddleware(getEnv('FRONTEND_URL')));
+app.use(cors({ origin: true, credentials: true }));
 
 app.disable('x-powered-by');
 app.use(helmetMiddleware());

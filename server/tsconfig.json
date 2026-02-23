@@ -14,6 +14,6 @@
     "declaration": true,
     "allowSyntheticDefaultImports": true
   },
-  "include": ["types/**/*.ts", "auth/**/*.ts"],
+  "include": ["types/**/*.ts", "auth/**/*.ts", "typings.d.ts"],
   "exclude": ["node_modules", "dist", "payment"]
 }
