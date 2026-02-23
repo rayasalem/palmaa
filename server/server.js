@@ -66,6 +66,9 @@ const origins = frontendUrl
   : ['http://localhost:3000', 'http://127.0.0.1:3000'];
 if (!origins.includes('http://localhost:3000')) origins.push('http://localhost:3000');
 if (!origins.includes('http://127.0.0.1:3000')) origins.push('http://127.0.0.1:3000');
+// Production frontend on Vercel (so CORS works when FRONTEND_URL not set on Render)
+const vercelOrigin = 'https://palmaa.vercel.app';
+if (!origins.includes(vercelOrigin)) origins.push(vercelOrigin);
 app.use(cors({ origin: origins, credentials: true }));
 
 app.use(generalLimiter());
