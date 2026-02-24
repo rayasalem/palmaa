@@ -5,7 +5,7 @@
 
 import { User } from '../types';
 import type { ActionResponse } from '../types';
-import { API_BASE } from '../api/client';
+import { getApiBase } from '../api/client';
 
 function mapApiUserToUser(apiUser: any): User {
   return {
@@ -28,7 +28,7 @@ export const authService = {
    */
   async login(email: string, password: string): Promise<ActionResponse<{ user: User; token: string }>> {
     try {
-      const res = await fetch(`${API_BASE}/api/auth/login`, {
+      const res = await fetch(`${getApiBase()}/api/auth/login`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -56,7 +56,7 @@ export const authService = {
    */
   async getMe(): Promise<ActionResponse<{ user: User }>> {
     try {
-      const res = await fetch(`${API_BASE}/api/auth/me`, { credentials: 'include' });
+      const res = await fetch(`${getApiBase()}/api/auth/me`, { credentials: 'include' });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         currentUser = null;
@@ -76,7 +76,7 @@ export const authService = {
   /** Logout: clear cookie on server and clear local current user. */
   async logout(): Promise<void> {
     try {
-      await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST', credentials: 'include' });
+      await fetch(`${getApiBase()}/api/auth/logout`, { method: 'POST', credentials: 'include' });
     } finally {
       currentUser = null;
     }
@@ -96,7 +96,7 @@ export const authService = {
   /** Request password reset OTP via email. */
   async forgotPassword(email: string): Promise<ActionResponse<void>> {
     try {
-      const res = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+      const res = await fetch(`${getApiBase()}/api/auth/forgot-password`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -113,7 +113,7 @@ export const authService = {
   /** Reset password with OTP via backend API. */
   async resetPassword(email: string, otp: string, newPassword: string): Promise<ActionResponse<void>> {
     try {
-      const res = await fetch(`${API_BASE}/api/auth/reset-password`, {
+      const res = await fetch(`${getApiBase()}/api/auth/reset-password`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

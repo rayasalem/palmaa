@@ -5,10 +5,10 @@
 
 import { db } from './core/storage';
 import type { Product, ActionResponse } from '../types';
-import { API_BASE } from '../api/client';
+import { getApiBase } from '../api/client';
 
 async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${getApiBase()}${path}`, {
     ...options,
     credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...(options.headers as object) },

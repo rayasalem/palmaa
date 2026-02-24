@@ -8,38 +8,42 @@
 // Configuration
 // -----------------------------------------------------------------------------
 
-/** Production backend URL (Render). */
+/** Production backend URL (Render). Never use an email or non-URL here. */
 const PRODUCTION_API = 'https://palmaa.onrender.com';
 
 function isHttpUrl(s: string): boolean {
   return typeof s === 'string' && (s.startsWith('http://') || s.startsWith('https://'));
 }
 
-/** Resolve API base at runtime. When site is on palma.ps or production host, always use PRODUCTION_API (fixes EBADNAME if build had wrong env). */
-function resolveApiBase(): string {
+/**
+ * Resolve API base on every call (not cached) so wrong build env can never stick.
+ * - If we're in browser on palma.ps or any non-localhost → PRODUCTION_API.
+ * - Else only use env if it's a valid http(s) URL; never use email-like values.
+ */
+function getApiBase(): string {
   if (typeof window !== 'undefined' && window.location?.hostname) {
     const h = window.location.hostname.toLowerCase();
     if (h === 'palma.ps' || h.endsWith('.palma.ps')) return PRODUCTION_API;
-    if (h !== 'localhost' && h !== '127.0.0.1') return PRODUCTION_API;
+    if (h && h !== 'localhost' && h !== '127.0.0.1') return PRODUCTION_API;
   }
   const env = (import.meta as { env?: { PROD?: boolean; VITE_API_URL?: string } }).env;
-  const candidate = env?.PROD ? PRODUCTION_API : ((env?.VITE_API_URL || '').trim() || PRODUCTION_API);
+  const candidate = (env?.VITE_API_URL || '').trim() || (env?.PROD ? PRODUCTION_API : '');
   return isHttpUrl(candidate) ? candidate : PRODUCTION_API;
 }
 
-const API_BASE: string = resolveApiBase();
+/** @deprecated Use getApiBase() so URL is resolved at request time (avoids EBADNAME). */
+const API_BASE = getApiBase();
 
 // -----------------------------------------------------------------------------
 // Helpers (single-responsibility)
 // -----------------------------------------------------------------------------
 
 /**
- * Builds full URL from path. If path starts with http, returns as-is.
- * @param path - Relative path (e.g. /api/auth/login) or absolute URL
- * @returns Full URL string
+ * Builds full URL from path. Resolves API base on each call to avoid EBADNAME.
  */
 function buildUrl(path: string): string {
-  return path.startsWith('http') ? path : `${API_BASE}${path}`;
+  if (path.startsWith('http')) return path;
+  return `${getApiBase()}${path}`;
 }
 
 /**
@@ -100,4 +104,4 @@ export async function api<T = unknown>(path: string, options: RequestInit = {}):
   return data as T;
 }
 
-export { API_BASE };
+export { API_BASE, getApiBase };

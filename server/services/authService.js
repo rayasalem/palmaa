@@ -176,9 +176,11 @@ async function registerUser(params) {
     html
   );
   if (!emailResult.success) {
-    const isNotConfigured = (emailResult.error?.message || '').toLowerCase().includes('not configured');
-    if (isNotConfigured) {
-      console.warn('[authService] registerUser: email not configured; returning success with code so user can verify.');
+    const msg = (emailResult.error?.message || '').toLowerCase();
+    const isNotConfigured = msg.includes('not configured');
+    const isDnsOrNetwork = /ebadname|enotfound|econnrefused|getaddrinfo|dns|network|timeout/i.test(msg) || (emailResult.error?.code && ['ENOTFOUND', 'ECONNREFUSED', 'ETIMEDOUT'].includes(emailResult.error.code));
+    if (isNotConfigured || isDnsOrNetwork) {
+      console.warn('[authService] registerUser: email send failed (config/DNS/network); returning success with code so user can verify.');
       return { user, error: null, emailSent: false, verificationCode: code };
     }
     console.error('[authService] registerUser sendEmail failed');

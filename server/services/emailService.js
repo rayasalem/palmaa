@@ -1,40 +1,73 @@
 /**
- * Email service: send emails via Nodemailer SMTP.
- * Replace EMAIL_* in .env with your SMTP credentials (e.g. Gmail).
+ * Email service: send via Resend API (HTTPS, works on Render) or fallback to Nodemailer SMTP.
+ * - Prefer Resend: set RESEND_API_KEY on Render (no SMTP/DNS issues).
+ * - Optional RESEND_FROM: sender address (default onboarding@resend.dev for testing).
  */
 
 import nodemailer from 'nodemailer';
 
-// Create transporter from env. Replace with your SMTP host (e.g. smtp.gmail.com), port (587), user, pass.
-const getTransporter = () => {
+const RESEND_API = 'https://api.resend.com/emails';
+
+/** Send via Resend API (HTTPS). Works on Render without SMTP/DNS. */
+async function sendViaResend(to, subject, text, html) {
+  const apiKey = (process.env.RESEND_API_KEY || '').trim();
+  if (!apiKey) return null;
+  const from = (process.env.RESEND_FROM || '').trim() || 'Palma <onboarding@resend.dev>';
+  try {
+    const res = await fetch(RESEND_API, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'User-Agent': 'Palma-Marketplace/1.0',
+      },
+      body: JSON.stringify({
+        from,
+        to: [to],
+        subject,
+        html: html || (text ? text.replace(/\n/g, '<br>') : ''),
+        text: text || (html ? html.replace(/<[^>]*>/g, '') : ''),
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      console.error('[emailService] Resend API error:', res.status, data);
+      return { success: false, error: { message: data?.message || `Resend ${res.status}` } };
+    }
+    console.log('[emailService] Resend sent to', to, subject);
+    return { success: true };
+  } catch (err) {
+    console.error('[emailService] Resend fetch error:', err.message);
+    return { success: false, error: err };
+  }
+}
+
+function getTransporter() {
   const host = process.env.EMAIL_HOST;
   const port = Number(process.env.EMAIL_PORT) || 587;
   const user = process.env.EMAIL_USER?.trim();
   const pass = (process.env.EMAIL_PASS || '').replace(/\s+/g, '').trim();
-  if (!host || !user || !pass) {
-    console.warn('[emailService] EMAIL_HOST, EMAIL_USER, EMAIL_PASS required. Set in .env.');
-    return null;
-  }
+  if (!host || !user || !pass) return null;
   return nodemailer.createTransport({
     host,
     port,
     secure: port === 465,
     auth: { user, pass },
   });
-};
+}
 
 /**
- * Send an email. Supports both text and html (prefer html if provided).
- * @param {string} to - Recipient email
- * @param {string} subject - Subject line
- * @param {string} [text] - Plain text body
- * @param {string} [html] - HTML body (optional)
+ * Send an email. Tries Resend first (if RESEND_API_KEY set), then SMTP.
  * @returns {Promise<{ success: boolean, error?: object }>}
  */
 async function sendEmail(to, subject, text, html) {
+  if (process.env.RESEND_API_KEY) {
+    const res = await sendViaResend(to, subject, text, html);
+    if (res) return res;
+  }
   const transporter = getTransporter();
   if (!transporter) {
-    console.error('[emailService] No transporter; skipping send.');
+    console.error('[emailService] No Resend key and no SMTP; skipping send.');
     return { success: false, error: { message: 'Email not configured' } };
   }
   try {
@@ -45,10 +78,10 @@ async function sendEmail(to, subject, text, html) {
       text: text || (html ? html.replace(/<[^>]*>/g, '') : ''),
       html: html || undefined,
     });
-    console.log('[emailService] Sent to', to, subject);
+    console.log('[emailService] SMTP sent to', to, subject);
     return { success: true };
   } catch (err) {
-    console.error('[emailService] Send error:', err.message);
+    console.error('[emailService] SMTP error:', err.message);
     return { success: false, error: err };
   }
 }

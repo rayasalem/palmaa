@@ -3,10 +3,10 @@
  * Base URL: VITE_API_URL or https://palmaa.onrender.com
  */
 
-import { API_BASE } from '../api/client';
+import { getApiBase } from '../api/client';
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const url = path.startsWith('http') ? path : `${API_BASE}${path}`;
+  const url = path.startsWith('http') ? path : `${getApiBase()}${path}`;
   const res = await fetch(url, {
     ...options,
     credentials: 'include',
