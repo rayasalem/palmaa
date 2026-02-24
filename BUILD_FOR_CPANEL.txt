@@ -1,0 +1,9 @@
+ليشغل تسجيل الدخول والـ API، لازم تبني الفرونت مع رابط الباكند:
+
+  Windows (PowerShell):
+    $env:VITE_API_URL="https://palmaa.onrender.com"
+    npm run build
+
+  (إذا الباكند على رابط ثاني، غيّر الرابط فوق.)
+
+بعدين ارفع محتويات مجلد dist إلى cPanel.

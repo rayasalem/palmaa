@@ -283,10 +283,6 @@ async function login(email, password) {
     console.log('[authService] login: no user found for email', emailNorm);
     return { user: null, error: { message: 'Invalid credentials' } };
   }
-  if (!userRow.password || String(userRow.password).trim() === '') {
-    console.log('[authService] login: user found but password empty in DB', { email: emailNorm, userId: userRow.id });
-    return { user: null, error: { message: 'Invalid credentials' } };
-  }
   if (userRow.deleted_at) {
     return { user: null, error: { message: 'Account deleted. Contact support within 30 days to restore.' } };
   }
@@ -294,14 +290,27 @@ async function login(email, password) {
     return { user: null, error: { message: 'Account suspended. Contact support.' } };
   }
 
-  // Verify password: Node bcrypt ($2a$, $2b$) and Postgres pgcrypto crypt('x', gen_salt('bf')) are compatible
-  const stored = userRow.password;
+  const stored = userRow.password && String(userRow.password).trim();
   let match = false;
-  if (stored.startsWith('$2') && stored.length >= 50) {
+
+  if (stored && stored.startsWith('$2') && stored.length >= 50) {
     match = await bcrypt.compare(password, stored);
     if (!match) console.log('[authService] login: bcrypt compare failed', { email: emailNorm });
   } else if (process.env.NODE_ENV !== 'production' && stored === password) {
     match = true;
+  } else if (!stored || stored === '') {
+    // كلمة المرور فارغة في DB (مثلاً التسجيل ما خزّنها): نخلّي أول محاولة دخول تخزّنها وتنجح
+    const hashed = await hashPassword(password);
+    const { error: updateErr } = await supabase
+      .from(USERS_TABLE)
+      .update({ password: hashed, updated_at: new Date().toISOString() })
+      .eq('id', userRow.id);
+    if (!updateErr) {
+      match = true;
+      console.log('[authService] login: password was empty, set from login attempt', { email: emailNorm });
+    } else {
+      console.log('[authService] login: user found but password empty in DB', { email: emailNorm, userId: userRow.id });
+    }
   } else {
     console.log('[authService] login: password in DB is not bcrypt format', { email: emailNorm, prefix: (stored || '').slice(0, 10) });
   }

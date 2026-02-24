@@ -76,8 +76,7 @@ app.use(generalLimiter());
 app.use(requestLogger);
 app.use(sanitizeErrorResponse);
 
-app.use(express.static(path.join(__dirname, 'public')));
-
+// API routes BEFORE static so /api/* never returns 404 when this server is hit
 app.use('/api/orders', orderRoutes);
 app.use('/api/products', productRoutes);
 
@@ -106,13 +105,14 @@ app.use('/api/follow', followRoutes);
 app.use('/api/merchant', merchantRoutes);
 app.use('/api/notifications', notificationRoutes);
 
-app.get('/sandbox-pay', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'sandbox-pay.html'));
-});
-
 app.get('/health', (req, res) => {
   res.json({ ok: true, timestamp: new Date().toISOString() });
 });
+
+app.get('/sandbox-pay', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'sandbox-pay.html'));
+});
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.use((req, res) => res.status(404).json({ error: 'Not found' }));
 app.use(errorHandler);
