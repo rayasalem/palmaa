@@ -170,6 +170,24 @@ async function registerUser(params) {
     console.error('[authService] registerUser insert error:', insertError.message);
     return { user: null, error: insertError };
   }
+  // التحقق أن كلمة المرور خزّنت ويمكن التحقق منها (لتشخيص فشل تسجيل الدخول لاحقاً)
+  try {
+    if (user && user.id) {
+      const { data: row, error: selErr } = await supabase.from(USERS_TABLE).select('password').eq('id', user.id).single();
+      if (selErr) {
+        console.warn('[authService] registerUser: could not read password after insert:', selErr.message);
+      } else if (row && row.password && row.password.startsWith('$2')) {
+        const verifyMatch = await bcrypt.compare(password, row.password);
+        if (!verifyMatch) {
+          console.warn('[authService] registerUser: password in DB but bcrypt.compare failed. Login will fail for this user.');
+        }
+      } else {
+        console.warn('[authService] registerUser: password column missing or not bcrypt after insert. Check Supabase table has "password" column and service role can read it.');
+      }
+    }
+  } catch (e) {
+    console.warn('[authService] registerUser: post-insert check failed', e?.message);
+  }
   // لا نستخدم OTP أو إرسال بريد هنا حالياً
   return { user, error: null, emailSent: false };
 }

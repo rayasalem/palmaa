@@ -64,3 +64,8 @@ In Render → your backend service → **Logs**. After a failed login you should
 - `[authService] login: user found but password empty in DB` → عمود كلمة المرور فارغ (تأكد أن التسجيل يخزن في عمود `password` وأن Supabase يستخدم **Service Role Key** في متغير `SUPABASE_SERVICE_KEY`).
 - `[authService] login: bcrypt compare failed` → كلمة المرور خاطئة.
 - `[authService] login: password in DB is not bcrypt format` → كلمة المرور في قاعدة البيانات ليست بصيغة bcrypt (يجب أن تبدأ بـ `$2a$` أو `$2b$`).
+
+**التسجيل ينجح لكن تسجيل الدخول يفشل:**  
+بعد كل تسجيل جديد، الباكند يتحقق أن كلمة المرور خزّنت ويطبع تحذيراً في الـ Logs إن لم تكن صحيحة:
+- `registerUser: password in DB but bcrypt.compare failed` → الكلمة مخزنة لكن المقارنة فشلت (مشكلة ترميز أو salt).
+- `registerUser: password column missing or not bcrypt after insert` → عمود `password` غير موجود في جدول `users` أو Supabase لا يرجعه. الحل: نفّذ سكربت `supabase/setup.sql` في Supabase → SQL Editor، وتأكد أن جدول `public.users` فيه عمود `password TEXT`. وتأكد أن الباكند يستخدم **Service Role Key** (متغير `SUPABASE_SERVICE_KEY`) وليس المفتاح العام.
