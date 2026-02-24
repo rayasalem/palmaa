@@ -165,8 +165,13 @@ const AppContent: React.FC = () => {
       }
 
       // 2. Restore session from backend (JWT cookie) or fallback to localStorage
-      const meResult = await authService.getMe();
-      const u = meResult.success && meResult.data?.user ? meResult.data.user : null;
+      let meResult;
+      try {
+        meResult = await authService.getMe();
+      } catch (_) {
+        meResult = { success: false as const, error: 'Request failed' };
+      }
+      const u = meResult && meResult.success && meResult.data?.user ? meResult.data.user : null;
       if (u) {
         authService.setCurrentUser(u);
         setUser(u);

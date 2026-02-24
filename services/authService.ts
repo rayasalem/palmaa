@@ -58,18 +58,22 @@ export const authService = {
     try {
       const res = await fetch(`${getApiBase()}/api/auth/me`, { credentials: 'include' });
       const data = await res.json().catch(() => ({}));
+      const dataObj = data && typeof data === 'object' ? data as Record<string, unknown> : {};
       if (!res.ok) {
         currentUser = null;
-        return { success: false, error: (data && typeof data === 'object' && (data as any).error) || 'Not authenticated' };
+        const msg = (res.status === 404)
+          ? 'Auth API not found. Set VITE_API_URL to your backend URL if frontend and backend are on different hosts.'
+          : (dataObj.error as string) || 'Not authenticated';
+        return { success: false, error: msg };
       }
-      const apiUser = data && typeof data === 'object' ? (data as any).user : undefined;
-      if (!apiUser) return { success: false, error: 'Invalid response' };
-      const user = mapApiUserToUser(apiUser);
+      const apiUser = dataObj.user;
+      if (!apiUser || typeof apiUser !== 'object') return { success: false, error: 'Invalid response' };
+      const user = mapApiUserToUser(apiUser as any);
       currentUser = user;
       return { success: true, data: { user } };
     } catch (e: any) {
       currentUser = null;
-      return { success: false, error: e.message || 'Request failed' };
+      return { success: false, error: e?.message || 'Request failed' };
     }
   },
 

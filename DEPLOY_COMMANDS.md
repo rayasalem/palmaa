@@ -1,4 +1,4 @@
-# أوامر رفع المشروع: Git → GitHub → Vercel + الباكند
+# أوامر رفع المشروع: Git → GitHub → (الفرونت: Vercel أو cPanel) + الباكند Render
 
 استخدم الأوامر التالية بالترتيب.
 
@@ -92,9 +92,11 @@ git push
 
 ## الجزء 4: ربط الواجهة بالباكند
 
-1. **Vercel:** مشروع الواجهة → **Settings** → **Environment Variables** → عدّل `VITE_API_URL` إلى رابط الباكند (مثل: `https://palma-api.onrender.com`) → **Save**.
+1. **Vercel:** مشروع الواجهة → **Settings** → **Environment Variables** → عدّل `VITE_API_URL` إلى **رابط الباكند فقط** (مثل: `https://palma-api.onrender.com` أو الرابط الذي يعطيك إياه Render للـ Web Service) → **Save**.
 2. **Vercel:** **Deployments** → آخر نشر → **⋯** → **Redeploy** (كي تُبنى الواجهة من جديد مع الرابط الصحيح).
 3. **Render:** مشروع الباكند → **Environment** → تأكد أن `FRONTEND_URL` = رابط الواجهة على Vercel.
+
+**مهم:** إذا ظهر عندك خطأ 404 على `palmaa.onrender.com/api/auth/me` فمعناه أن طلبات الـ API تذهب لسيرفر الواجهة (الستاتيك) وليس للباكند. الحل: تأكد أن `VITE_API_URL` في مشروع الواجهة = رابط خدمة الباكند على Render (وليست رابط صفحة الواجهة نفسها).
 
 ---
 
@@ -119,3 +121,65 @@ git push
 ```
 
 بعد `git push`، كل من Vercel و Render (إذا ربطتهما بنفس المستودع) سيعيدان النشر تلقائياً عند كل دفع على الفرع المربوط (مثلاً `main`).
+
+---
+
+## رفع الواجهة (Frontend) على cPanel
+
+إذا الفرونت على **cPanel** (وليس Vercel)، اتبع التالي.
+
+### 1. بناء الواجهة مع رابط الباكند
+
+على جهازك (أو أي مكان تشغّل فيه المشروع)، شغّل الأوامر مع تعيين **رابط الباكند** قبل البناء حتى تُضمَّن في الملفات:
+
+**Windows (PowerShell):**
+```powershell
+cd "c:\Users\ٍSsS-73\Downloads\palma-marketplace (10)"
+$env:VITE_API_URL="https://palmaa.onrender.com"
+npm run build
+```
+
+**أو إذا الباكند على رابط آخر (مثل palma-api):**
+```powershell
+$env:VITE_API_URL="https://palma-api.onrender.com"
+npm run build
+```
+
+**Windows (CMD):**
+```cmd
+set VITE_API_URL=https://palmaa.onrender.com
+npm run build
+```
+
+**Mac/Linux:**
+```bash
+cd /path/to/palma-marketplace
+VITE_API_URL=https://palmaa.onrender.com npm run build
+```
+
+استبدل `https://palmaa.onrender.com` برابط خدمة الباكند الفعلي من Render.
+
+### 2. رفع مجلد البناء إلى cPanel
+
+- بعد البناء يظهر مجلد **`dist`** داخل المشروع.
+- ادخل **cPanel** → **File Manager** (أو FTP).
+- اذهب لمجلد الواجهة (مثلاً `public_html` أو `public_html/موقعك`).
+- ارفع **كل محتويات** مجلد `dist` (الملفات والمجلدات داخله) إلى ذلك المجلد، مع استبدال الملفات القديمة إن وُجدت.
+
+يعني: محتويات `dist/` (مثل `index.html`، `assets/`، إلخ) تكون في جذر الدومين أو المسار الذي يفتحه المستخدم.
+
+### 3. ربط الباكند بالواجهة (CORS)
+
+في **Render** → مشروع الباكند → **Environment**:
+- ضبط **`FRONTEND_URL`** = رابط موقعك على cPanel (مثل `https://yourdomain.com` أو `https://www.yourdomain.com`).
+
+بدون هذا قد يرفض الباكند طلبات القادمة من دومين cPanel.
+
+### 4. عند أي تعديل على الواجهة
+
+- عدّل الكود ثم شغّل مرة أخرى:
+  - `$env:VITE_API_URL="https://palmaa.onrender.com"` (أو الرابط الصحيح)
+  - `npm run build`
+- ثم ارفع محتويات `dist` من جديد إلى cPanel (استبدال الملفات القديمة).
+
+**مهم:** إذا نسيت تعيين `VITE_API_URL` قبل `npm run build`، طلبات تسجيل الدخول والـ API ستذهب لرابط خاطئ وستظهر أخطاء 404 أو لا يعمل الدخول. لذلك دائماً شغّل البناء مع `VITE_API_URL` = رابط الباكند على Render.
