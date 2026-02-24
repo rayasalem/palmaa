@@ -454,7 +454,8 @@ const AppContent: React.FC = () => {
   // تم تعطيل خطوة التحقق من الإيميل مؤقتاً
 
   const roleUpper = (user.role || '').toUpperCase();
-  if ((user.status === 'PENDING' || user.status === 'REJECTED') && roleUpper !== 'ADMIN' && roleUpper !== 'MERCHANT') {
+  // فقط الحسابات المرفوضة تبقى محجوبة؛ التسجيل الجديد يدخل مباشرة لصفحته
+  if (user.status === 'REJECTED' && roleUpper !== 'ADMIN') {
     return <PendingReview user={user} onLogout={handleLogout} lang={lang} />;
   }
 

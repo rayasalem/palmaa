@@ -125,7 +125,16 @@ async function registerUser(req, res) {
       message: emailSent !== false
         ? 'Check your email for OTP to verify your account.'
         : 'Account created. Email is not configured; use the code below to verify.',
-      user: user ? { id: user.id, email: user.email, role: user.role, is_email_verified: user.is_email_verified } : null,
+      user: user
+        ? {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            status: user.status,
+            is_email_verified: user.is_email_verified,
+          }
+        : null,
       emailSent: emailSent !== false,
     };
     if (verificationCode) payload.verificationCode = verificationCode;

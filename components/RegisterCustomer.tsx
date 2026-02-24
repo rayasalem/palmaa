@@ -39,7 +39,6 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -124,37 +123,6 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
     setLoading(false);
   };
 
-  // Helper for Input Field
-  const InputField = ({ 
-    name, 
-    type = "text", 
-    label, 
-    placeholder, 
-    icon: Icon 
-  }: { name: string, type?: string, label: string, placeholder: string, icon: any }) => (
-    <div className="space-y-2 group">
-      <label className={`text-[10px] font-black uppercase tracking-widest transition-colors duration-300 ${focusedField === name ? 'text-palma-primary' : 'text-slate-400'}`}>
-        {label}
-      </label>
-      <div className={`relative flex items-center bg-slate-50 border-2 rounded-2xl transition-all duration-300 ${focusedField === name ? 'border-palma-primary bg-white shadow-soft' : 'border-transparent hover:bg-slate-100'}`}>
-        <div className={`p-4 ${focusedField === name ? 'text-palma-primary' : 'text-slate-400'}`}>
-          <Icon className="w-5 h-5 transition-colors" />
-        </div>
-        <input 
-          required 
-          type={type} 
-          name={name} 
-          className="w-full bg-transparent p-4 pl-0 rtl:pr-0 rtl:pl-4 text-sm font-bold text-slate-900 outline-none placeholder:text-slate-300 placeholder:font-normal"
-          placeholder={placeholder}
-          defaultValue={formData[name as keyof typeof formData] as string}
-          onChange={handleChange}
-          onFocus={() => setFocusedField(name)}
-          onBlur={() => setFocusedField(null)}
-        />
-      </div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen flex bg-white font-sans text-slate-900" dir={isRtl ? 'rtl' : 'ltr'}>
       
@@ -186,44 +154,100 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
               )}
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                <InputField 
-                  name="name" 
-                  label={t.auth.name} 
-                  placeholder={lang === 'en' ? "Your full name" : "الاسم الكامل"} 
-                  icon={UserIcon} 
-                />
-                
-                <InputField 
-                  name="email" 
-                  type="email"
-                  label={t.auth.email} 
-                  placeholder="name@example.com" 
-                  icon={Mail} 
-                />
+                {/* Full name */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">
+                    {t.auth.name}
+                  </label>
+                  <div className="relative group">
+                    <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-palma-primary transition-colors" />
+                    <input
+                      required
+                      type="text"
+                      name="name"
+                      className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-bold text-palma-navy focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 outline-none transition-all placeholder:text-slate-300"
+                      placeholder={lang === 'en' ? 'Your full name' : 'الاسم الكامل'}
+                      defaultValue={formData.name}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
 
-                <InputField 
-                  name="phone" 
-                  type="tel"
-                  label={t.auth.phone} 
-                  placeholder="05x-xxxxxxx" 
-                  icon={Phone} 
-                />
+                {/* Email */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">
+                    {t.auth.email}
+                  </label>
+                  <div className="relative group">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-palma-primary transition-colors" />
+                    <input
+                      required
+                      type="email"
+                      name="email"
+                      className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-bold text-palma-navy focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 outline-none transition-all placeholder:text-slate-300"
+                      placeholder="name@example.com"
+                      defaultValue={formData.email}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
 
+                {/* Phone */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">
+                    {t.auth.phone}
+                  </label>
+                  <div className="relative group">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-palma-primary transition-colors" />
+                    <input
+                      required
+                      type="tel"
+                      name="phone"
+                      className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-bold text-palma-navy focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 outline-none transition-all placeholder:text-slate-300"
+                      placeholder="05x-xxxxxxx"
+                      defaultValue={formData.phone}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+
+                {/* Passwords */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <InputField 
-                    name="password" 
-                    type="password"
-                    label={t.auth.password} 
-                    placeholder="••••••••" 
-                    icon={Lock} 
-                  />
-                  <InputField 
-                    name="confirmPassword" 
-                    type="password"
-                    label={lang === 'en' ? 'Confirm Password' : 'تأكيد كلمة المرور'} 
-                    placeholder="••••••••" 
-                    icon={Lock} 
-                  />
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">
+                      {t.auth.password}
+                    </label>
+                    <div className="relative group">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-palma-primary transition-colors" />
+                      <input
+                        required
+                        type="password"
+                        name="password"
+                        className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-bold text-palma-navy focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 outline-none transition-all placeholder:text-slate-300"
+                        placeholder="••••••••"
+                        defaultValue={formData.password}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">
+                      {lang === 'en' ? 'Confirm Password' : 'تأكيد كلمة المرور'}
+                    </label>
+                    <div className="relative group">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-palma-primary transition-colors" />
+                      <input
+                        required
+                        type="password"
+                        name="confirmPassword"
+                        className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-bold text-palma-navy focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 outline-none transition-all placeholder:text-slate-300"
+                        placeholder="••••••••"
+                        defaultValue={formData.confirmPassword}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="pt-6 space-y-6">

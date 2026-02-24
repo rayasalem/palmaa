@@ -133,6 +133,8 @@ async function registerUser(params) {
     email_verified: true,
     created_at: now,
   };
+
+  // Merchants: تبقى بحاجة موافقة خاصة مع اشتراك تجريبي
   if (roleVal === 'MERCHANT' && termsAccepted) {
     insertPayload.terms_accepted = true;
     insertPayload.terms_accepted_at = now;
@@ -145,6 +147,11 @@ async function registerUser(params) {
     insertPayload.subscription_start_date = now;
     insertPayload.subscription_end_date = trialEnd.toISOString();
     insertPayload.subscription_status = 'active';
+  }
+  // Customers & brokers: تفعيل مباشر بدون مراجعة أدمن
+  else if (roleVal === 'CUSTOMER' || roleVal === 'BROKER') {
+    insertPayload.status = 'ACTIVE';
+    insertPayload.is_approved = true;
   }
   let result = await supabase.from(USERS_TABLE).insert(insertPayload).select().single();
   if (result.error) {
