@@ -130,6 +130,36 @@ export const userService = {
     }
   },
 
+  /**
+   * Soft delete user (admin only).
+   * يضع الحالة كـ DELETED مع تخزين سبب الحذف وتاريخ الحذف.
+   */
+  async softDeleteUser(userId: string, reason: string): Promise<ActionResponse<void>> {
+    try {
+      await api(`/api/admin/users/${userId}/delete`, {
+        method: 'POST',
+        body: JSON.stringify({ reason }),
+      });
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message || 'Failed to delete user' };
+    }
+  },
+
+  /**
+   * Restore a soft-deleted user within 30 days.
+   */
+  async restoreUser(userId: string): Promise<ActionResponse<void>> {
+    try {
+      await api(`/api/admin/users/${userId}/restore`, {
+        method: 'POST',
+      });
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message || 'Failed to restore user' };
+    }
+  },
+
   async verifyEmail(email: string, otp: string): Promise<ActionResponse<{ user: User }>> {
     try {
       const data = await api<{ success: boolean; user?: any }>('/api/auth/verify-email', {

@@ -13,6 +13,8 @@ router.use(requireRole('ADMIN'));
 
 router.get('/users', adminController.getUsers);
 router.patch('/users/:id/status', adminController.updateUserStatus);
+router.post('/users/:id/delete', adminController.softDeleteUser);
+router.post('/users/:id/restore', adminController.restoreUser);
 router.get('/orders', adminController.getOrders);
 router.get('/products', adminController.getProducts);
 router.put('/products/:id', adminController.updateProduct);

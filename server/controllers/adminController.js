@@ -37,6 +37,40 @@ async function updateUserStatus(req, res) {
   }
 }
 
+async function softDeleteUser(req, res) {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body || {};
+    if (!id) return res.status(400).json({ success: false, error: 'User id is required' });
+    if (!reason || typeof reason !== 'string' || !reason.trim()) {
+      return res.status(400).json({ success: false, error: 'Deletion reason is required' });
+    }
+    const { data, error } = await adminService.softDeleteUser(id, reason.trim());
+    if (error) {
+      return res.status(400).json({ success: false, error: error.message || 'Failed to delete user' });
+    }
+    return res.status(200).json({ success: true, user: data });
+  } catch (err) {
+    logger.error('admin softDeleteUser unexpected', { message: err.message });
+    return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
+  }
+}
+
+async function restoreUser(req, res) {
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ success: false, error: 'User id is required' });
+    const { data, error } = await adminService.restoreUser(id);
+    if (error) {
+      return res.status(400).json({ success: false, error: error.message || 'Failed to restore user' });
+    }
+    return res.status(200).json({ success: true, user: data });
+  } catch (err) {
+    logger.error('admin restoreUser unexpected', { message: err.message });
+    return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
+  }
+}
+
 async function getOrders(req, res) {
   try {
     const { data, error } = await adminService.listOrders();
@@ -151,4 +185,16 @@ async function getPlatformEarnings(req, res) {
   }
 }
 
-export { getUsers, updateUserStatus, getOrders, getProducts, updateProduct, deleteProduct, getSettings, updateSettings, getPlatformEarnings };
+export {
+  getUsers,
+  updateUserStatus,
+  softDeleteUser,
+  restoreUser,
+  getOrders,
+  getProducts,
+  updateProduct,
+  deleteProduct,
+  getSettings,
+  updateSettings,
+  getPlatformEarnings,
+};

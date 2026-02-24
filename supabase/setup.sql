@@ -79,6 +79,13 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'subscription_status') THEN
         ALTER TABLE public.users ADD COLUMN subscription_status TEXT DEFAULT 'active';
     END IF;
+    -- Soft delete support (إلغاء تنشيط المستخدم مع إمكانية الاسترجاع خلال فترة محددة)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'deleted_at') THEN
+        ALTER TABLE public.users ADD COLUMN deleted_at TIMESTAMPTZ;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'deleted_reason') THEN
+        ALTER TABLE public.users ADD COLUMN deleted_reason TEXT;
+    END IF;
 END $$;
 
 -- Orders: فاتورة ضريبية (لاحتساب خصم 16% عند الدفع الإلكتروني بدون فاتورة)

@@ -65,9 +65,9 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
            <div className="max-w-7xl mx-auto px-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
                  <div className="text-center group cursor-default">
-                    <div className="text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">500+</div>
+                    <div className="text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">+500</div>
                     <div className="text-[10px] font-black uppercase tracking-[0.2em] text-palma-muted">
-                      {lang === 'ar' ? 'تاجر جديد شهرياً' : 'New merchants / month'}
+                      {lang === 'ar' ? 'تاجر جديد شهريا' : 'New merchants per month'}
                     </div>
                  </div>
                  <div className="text-center group cursor-default">
@@ -77,15 +77,15 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                     </div>
                  </div>
                  <div className="text-center group cursor-default">
-                    <div className="text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">50,000</div>
+                    <div className="text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">50 الف</div>
                     <div className="text-[10px] font-black uppercase tracking-[0.2em] text-palma-muted">
-                      {lang === 'ar' ? 'زبون نشط شهرياً' : 'Active customers / month'}
+                      {lang === 'ar' ? 'زبون شهريا' : 'Customers per month'}
                     </div>
                  </div>
                  <div className="text-center group cursor-default">
                     <div className="text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">1,000,000</div>
                     <div className="text-[10px] font-black uppercase tracking-[0.2em] text-palma-muted">
-                      {lang === 'ar' ? 'زائر موثّق سنوياً' : 'Verified visits / year'}
+                      {lang === 'ar' ? 'زائر موثّق سنوياً' : 'Verified visits per year'}
                     </div>
                  </div>
               </div>

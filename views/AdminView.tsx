@@ -54,6 +54,9 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
   const [platformLoading, setPlatformLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsForm, setSettingsForm] = useState({ commission_rate: 15, tax_penalty_rate: 16 });
+  const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null);
+  const [deleteReason, setDeleteReason] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     setActiveTab(viewToTab[view] || 'users');
@@ -258,6 +261,66 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
     }
   };
 
+  const openDeleteUserModal = (user: AdminUser) => {
+    setUserToDelete(user);
+    setDeleteReason('');
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+    if (!deleteReason.trim()) {
+      showToast(lang === 'ar' ? 'يرجى إدخال سبب الحذف' : 'Please enter a deletion reason', 'error');
+      return;
+    }
+    setDeleteLoading(true);
+    try {
+      const res = await userService.softDeleteUser(userToDelete.id, deleteReason.trim());
+      if (!res.success) {
+        showToast(res.error || (lang === 'ar' ? 'فشل حذف المستخدم' : 'Failed to delete user'), 'error');
+      } else {
+        setAllUsers(prev =>
+          prev.map(u =>
+            u.id === userToDelete.id
+              ? { ...u, status: 'DELETED' as any }
+              : u
+          )
+        );
+        showToast(
+          lang === 'ar' ? 'تم إرسال المستخدم إلى المسودة وسيتم حذفه نهائياً بعد 30 يوماً' : 'User moved to draft and will be permanently removed after 30 days',
+          'success'
+        );
+        setUserToDelete(null);
+        setDeleteReason('');
+      }
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleRestoreUser = async (user: AdminUser) => {
+    setActionLoading(user.id);
+    try {
+      const res = await userService.restoreUser(user.id);
+      if (!res.success) {
+        showToast(
+          res.error || (lang === 'ar' ? 'تعذر استرجاع المستخدم (قد تكون مدة 30 يوماً انتهت)' : 'Failed to restore user (restore window may have expired)'),
+          'error'
+        );
+      } else {
+        setAllUsers(prev =>
+          prev.map(u =>
+            u.id === user.id
+              ? { ...u, status: 'PENDING' as any }
+              : u
+          )
+        );
+        showToast(lang === 'ar' ? 'تم استرجاع المستخدم للحالة قيد المراجعة' : 'User restored to pending status', 'success');
+      }
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleProductDelete = async (id: string, name: string) => {
     if (!window.confirm(lang === 'ar' ? `حذف "${name}"؟` : `Delete "${name}"?`)) return;
     setActionLoading(id);
@@ -321,6 +384,59 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
 
       {activeTab === 'users' && (
         <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+          {/* Delete User Confirmation Modal */}
+          {userToDelete && (
+            <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" onClick={() => !deleteLoading && setUserToDelete(null)}>
+              <div
+                className="bg-white rounded-[2.5rem] max-w-lg w-full p-8 space-y-6 shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="text-xl font-black text-palma-navy mb-2">
+                  {lang === 'ar' ? 'تأكيد حذف المستخدم' : 'Confirm user deletion'}
+                </h3>
+                <p className="text-sm text-slate-600">
+                  {lang === 'ar'
+                    ? 'سيتم نقل الحساب إلى وضع المسودة ولن يتمكن صاحبه من تسجيل الدخول، وسيُحذف نهائياً بعد 30 يوماً ما لم يتم استرجاعه.'
+                    : 'The account will be moved to draft, the user will not be able to log in, and it will be permanently removed after 30 days unless restored.'}
+                </p>
+                <div className="bg-slate-50 rounded-2xl p-4 text-xs font-bold text-slate-700">
+                  <div>{userToDelete.name}</div>
+                  <div className="text-slate-500 font-mono mt-1">{userToDelete.email}</div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
+                    {lang === 'ar' ? 'سبب الحذف (يظهر في السجل الداخلي)' : 'Deletion reason (internal log)'}
+                  </label>
+                  <textarea
+                    className="w-full border border-slate-200 rounded-2xl p-3 text-sm font-medium bg-slate-50 focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 outline-none resize-none"
+                    rows={3}
+                    value={deleteReason}
+                    onChange={(e) => setDeleteReason(e.target.value)}
+                    placeholder={lang === 'ar' ? 'مثال: طلب المستخدم إغلاق الحساب / نشاط مخالف / حساب مكرر...' : 'e.g. User requested closure / policy violation / duplicate account...'}
+                    disabled={deleteLoading}
+                  />
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={confirmDeleteUser}
+                    disabled={deleteLoading}
+                    className="flex-1 py-3.5 bg-red-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-lg shadow-red-600/30 hover:bg-red-700 active:scale-95 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {deleteLoading
+                      ? (lang === 'ar' ? 'جاري الحذف...' : 'Deleting...')
+                      : (lang === 'ar' ? 'تأكيد الحذف' : 'Confirm delete')}
+                  </button>
+                  <button
+                    onClick={() => !deleteLoading && setUserToDelete(null)}
+                    disabled={deleteLoading}
+                    className="flex-1 py-3.5 bg-slate-100 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 active:scale-95 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {t.common.cancel}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* Filters Bar */}
           <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-soft flex flex-col lg:flex-row justify-between items-center gap-6">
@@ -374,11 +490,24 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
                      </tr>
                    </thead>
                    <tbody className="divide-y divide-slate-50 font-bold">
-                     {filteredUsers.map(user => {
-                       const isSuspended = user.status === 'SUSPENDED';
-                       const isApproved = (user.status === 'APPROVED' || user.status === 'ACTIVE' || user.isApproved) && !isSuspended;
-                       const statusLabel = isSuspended ? (lang === 'ar' ? 'موقوف' : 'Suspended') : isApproved ? t.common.approved : t.common.pending;
-                       const statusColor = isSuspended ? 'bg-red-50 text-red-600 border-red-100' : isApproved ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100';
+                    {filteredUsers.map(user => {
+                      const isSuspended = user.status === 'SUSPENDED';
+                      const isDeleted = user.status === 'DELETED';
+                      const isApproved = (user.status === 'APPROVED' || user.status === 'ACTIVE' || (user as any).isApproved) && !isSuspended && !isDeleted;
+                      const statusLabel = isDeleted
+                        ? (lang === 'ar' ? 'محذوف (مسودة 30 يوم)' : 'Deleted (30-day draft)')
+                        : isSuspended
+                        ? (lang === 'ar' ? 'موقوف' : 'Suspended')
+                        : isApproved
+                        ? t.common.approved
+                        : t.common.pending;
+                      const statusColor = isDeleted
+                        ? 'bg-slate-100 text-slate-500 border-slate-200'
+                        : isSuspended
+                        ? 'bg-red-50 text-red-600 border-red-100'
+                        : isApproved
+                        ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                        : 'bg-amber-50 text-amber-600 border-amber-100';
                        const sourceMeta = getSourceLabel(user);
                        const isProcessing = actionLoading === user.id;
 
@@ -421,24 +550,41 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
                                      <Eye className="w-4 h-4" />
                                    </button>
                                  )}
-                                 {!isApproved && !isSuspended && (
+                                 {!isDeleted && !isApproved && !isSuspended && (
                                    <button onClick={() => handleStatusChange(user.id, 'APPROVED')} className="p-2 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition" title={t.common.approve}>
                                      <Check className="w-4 h-4" />
                                    </button>
                                  )}
-                                 {isSuspended && (user.role === 'MERCHANT' || user.role === 'BROKER') && (
+                                 {isSuspended && (user.role === 'MERCHANT' || user.role === 'BROKER') && !isDeleted && (
                                    <button onClick={() => handleStatusChange(user.id, 'APPROVED')} className="p-2 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition" title={lang === 'ar' ? 'إعادة التفعيل' : 'Reactivate'}>
                                      <Check className="w-4 h-4" />
                                    </button>
                                  )}
-                                 {!isSuspended && user.status !== 'REJECTED' && (
+                                 {!isDeleted && !isSuspended && user.status !== 'REJECTED' && (
                                    <button onClick={() => handleStatusChange(user.id, 'REJECTED')} className="p-2 bg-rose-100 text-rose-700 rounded-lg hover:bg-rose-200 transition" title={t.common.reject}>
                                      <X className="w-4 h-4" />
                                    </button>
                                  )}
-                                 {(user.role === 'MERCHANT' || user.role === 'BROKER') && isApproved && (
+                                 {(user.role === 'MERCHANT' || user.role === 'BROKER') && isApproved && !isDeleted && (
                                    <button onClick={() => handleStatusChange(user.id, 'SUSPENDED')} className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition" title={lang === 'ar' ? 'تعليق المتجر' : 'Suspend store'}>
                                      <Shield className="w-4 h-4" />
+                                   </button>
+                                 )}
+                                 {isDeleted ? (
+                                   <button
+                                     onClick={() => handleRestoreUser(user)}
+                                     className="p-2 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition"
+                                     title={lang === 'ar' ? 'استرجاع المستخدم' : 'Restore user'}
+                                   >
+                                     <Check className="w-4 h-4" />
+                                   </button>
+                                 ) : (
+                                   <button
+                                     onClick={() => openDeleteUserModal(user)}
+                                     className="p-2 bg-slate-100 text-slate-500 rounded-lg hover:bg-red-50 hover:text-red-600 transition"
+                                     title={lang === 'ar' ? 'حذف المستخدم (مسودة 30 يوم)' : 'Delete user (30-day draft)'}
+                                   >
+                                     <Trash2 className="w-4 h-4" />
                                    </button>
                                  )}
                                </div>

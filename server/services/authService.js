@@ -235,7 +235,7 @@ async function login(email, password) {
   let userRow = null;
   let err = null;
 
-  const selectCols = 'id, email, password, name, role, status, created_at, email_verified';
+  const selectCols = 'id, email, password, name, role, status, created_at, email_verified, deleted_at';
   const { data: exact, error: exactErr } = await supabase
     .from(USERS_TABLE)
     .select(selectCols)
@@ -256,6 +256,9 @@ async function login(email, password) {
 
   if (!userRow || !userRow.password) {
     return { user: null, error: { message: 'Invalid credentials' } };
+  }
+  if (userRow.deleted_at) {
+    return { user: null, error: { message: 'Account deleted. Contact support within 30 days to restore.' } };
   }
   if (userRow.status === 'SUSPENDED') {
     return { user: null, error: { message: 'Account suspended. Contact support.' } };
@@ -319,14 +322,18 @@ async function resendVerification(email) {
 async function getUserById(userId) {
   const { data, error } = await supabase
     .from(USERS_TABLE)
-    .select('id, email, name, role, status, phone, created_at, updated_at, email_verified')
+    .select('id, email, name, role, status, phone, created_at, updated_at, email_verified, deleted_at')
     .eq('id', userId)
     .single();
   if (error) {
     console.error('[authService] getUserById error:', error.message);
     return { data: null, error };
   }
-  if (data) data.is_email_verified = data.email_verified ?? data.is_email_verified ?? false;
+  if (!data) return { data: null, error: null };
+  if (data.deleted_at) {
+    return { data: null, error: { message: 'User deleted' } };
+  }
+  data.is_email_verified = data.email_verified ?? data.is_email_verified ?? false;
   return { data, error: null };
 }
 
