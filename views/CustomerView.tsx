@@ -124,6 +124,9 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
   const [products, setProducts] = useState<Product[]>(() => marketStore.getProducts().filter(p => p.isActive !== false));
   const [apiOrders, setApiOrders] = useState<any[]>([]);
   const [selectedCartIds, setSelectedCartIds] = useState<Set<string>>(() => new Set(cart.map(c => c.id)));
+  const [shopSearch, setShopSearch] = useState('');
+  const [shopCategoryId, setShopCategoryId] = useState<string>('all');
+  const categories = useMemo(() => marketStore.getAllUniqueCategories(), []);
 
   useEffect(() => {
     const load = async () => {
@@ -170,6 +173,21 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
     window.addEventListener('palma-refresh-orders', handler);
     return () => window.removeEventListener('palma-refresh-orders', handler);
   }, [loadApiOrders]);
+
+  const filteredShopProducts = useMemo<Product[]>(() => {
+    let base = products;
+    if (shopCategoryId !== 'all') {
+      base = base.filter(p => p.category === shopCategoryId);
+    }
+    const term = shopSearch.trim().toLowerCase();
+    if (term) {
+      base = base.filter(p =>
+        p.name.toLowerCase().includes(term) ||
+        (p.category || '').toLowerCase().includes(term)
+      );
+    }
+    return base;
+  }, [products, shopCategoryId, shopSearch]);
 
   useEffect(() => {
     if (activeTab === 'orders' && apiOrders.length === 0) {
@@ -667,35 +685,104 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
       )}
 
       {activeTab === 'shop' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
-          {products.map(p => {
-            const merchantId = p.merchant_id || p.merchantId || '';
-            const merchantName = marketStore.getMerchantNameByUserId(merchantId);
-            const displayImage = p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/400x400?text=No+Image';
-            return (
-              <div key={p.id} className="bg-white rounded-3xl p-4 border border-slate-100 group shadow-card hover:shadow-hover transition-all duration-300 flex flex-col hover:-translate-y-1">
-                 <div className="aspect-[4/5] rounded-2xl overflow-hidden bg-slate-50 mb-4 relative cursor-pointer" onClick={() => onViewProduct && onViewProduct(p.id)}>
-                    <img src={displayImage} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt={p.name} />
-                    <div className={`absolute top-3 ${lang === 'en' ? 'right-3' : 'left-3'} bg-white/90 backdrop-blur px-3 py-1.5 rounded-xl text-xs font-black shadow-sm text-palma-navy border border-slate-100`}>₪{p.price || p.price_ils}</div>
+        <div className="space-y-6">
+          {/* Search + category filter for shop */}
+          <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-card flex flex-col md:flex-row items-center gap-4">
+            <div className="relative flex-1 w-full">
+              <input
+                type="text"
+                placeholder={t.common.search}
+                className="w-full px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold text-palma-navy focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 outline-none transition-all"
+                value={shopSearch}
+                onChange={(e) => setShopSearch(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-wrap gap-2 w-full md:w-auto">
+              <button
+                type="button"
+                onClick={() => setShopCategoryId('all')}
+                className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                  shopCategoryId === 'all'
+                    ? 'bg-palma-navy text-white border-palma-navy shadow-md'
+                    : 'bg-slate-50 text-slate-500 border-slate-200 hover:border-palma-primary/40'
+                }`}
+              >
+                {t.common.allCategories}
+              </button>
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setShopCategoryId(cat)}
+                  className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                    shopCategoryId === cat
+                      ? 'bg-palma-navy text-white border-palma-navy shadow-md'
+                      : 'bg-slate-50 text-slate-500 border-slate-200 hover:border-palma-primary/40'
+                  }`}
+                >
+                  {t.categories[cat as keyof typeof t.categories] || cat}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
+            {filteredShopProducts.map((p) => {
+              const merchantId = p.merchant_id || p.merchantId || '';
+              const merchantName = marketStore.getMerchantNameByUserId(merchantId);
+              const displayImage = p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/400x400?text=No+Image';
+              return (
+                <div
+                  key={p.id}
+                  className="bg-white rounded-3xl p-4 border border-slate-100 group shadow-card hover:shadow-hover transition-all duration-300 flex flex-col hover:-translate-y-1"
+                >
+                  <div
+                    className="aspect-[4/5] rounded-2xl overflow-hidden bg-slate-50 mb-4 relative cursor-pointer"
+                    onClick={() => onViewProduct && onViewProduct(p.id)}
+                  >
+                    <img
+                      src={displayImage}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      alt={p.name}
+                    />
+                    <div
+                      className={`absolute top-3 ${
+                        lang === 'en' ? 'right-3' : 'left-3'
+                      } bg-white/90 backdrop-blur px-3 py-1.5 rounded-xl text-xs font-black shadow-sm text-palma-navy border border-slate-100`}
+                    >
+                      ₪{p.price || p.price_ils}
+                    </div>
                   </div>
                   <div className="px-1 space-y-3 flex-1 flex flex-col">
                     <div className="flex-1">
                       <button
                         type="button"
-                        onClick={(e) => { e.stopPropagation(); if (merchantId && onViewProfile) onViewProfile(merchantId); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (merchantId && onViewProfile) onViewProfile(merchantId);
+                        }}
                         className="text-[9px] font-black text-palma-muted uppercase tracking-widest mb-1 block text-left hover:text-palma-primary hover:underline transition-colors"
                       >
                         {merchantName || (lang === 'ar' ? 'التاجر' : 'Merchant')}
                       </button>
-                      <h4 className="font-bold text-slate-900 text-sm leading-snug line-clamp-2 cursor-pointer" onClick={() => onViewProduct && onViewProduct(p.id)}>{p.name}</h4>
+                      <h4
+                        className="font-bold text-slate-900 text-sm leading-snug line-clamp-2 cursor-pointer"
+                        onClick={() => onViewProduct && onViewProduct(p.id)}
+                      >
+                        {p.name}
+                      </h4>
                     </div>
-                    <button onClick={() => handleAddToCart(p)} className="w-full py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-palma-green transition-all shadow-md active:scale-95 flex items-center justify-center gap-2">
-                       <ShoppingBag className="w-3.5 h-3.5" /> {t.product.addToCart}
+                    <button
+                      onClick={() => handleAddToCart(p)}
+                      className="w-full py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-palma-green transition-all shadow-md active:scale-95 flex items-center justify-center gap-2"
+                    >
+                      <ShoppingBag className="w-3.5 h-3.5" /> {t.product.addToCart}
                     </button>
                   </div>
-              </div>
-            );
-          })}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

@@ -119,15 +119,9 @@ const ComingSoonHero: React.FC<Props> = ({ lang, onJoinMerchant, onExploreProduc
         {/* Headlines */}
         <div className="space-y-6 max-w-4xl">
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white tracking-tighter leading-[1.1] drop-shadow-2xl">
-            {lang === 'ar' ? (
-              <>
-                سوق فلسطين الرقمي
-                <br />
-                <span className="block mt-2">نحو الأسواق المحلية والعالمية</span>
-              </>
-            ) : (
-              t.comingSoon.headline
-            )}
+            {lang === 'ar'
+              ? 'سوق فلسطين الرقمي'
+              : t.comingSoon.headline}
           </h1>
           <p className="text-base sm:text-lg text-slate-200 max-w-2xl mx-auto font-medium leading-relaxed">
             {t.comingSoon.subheadline}

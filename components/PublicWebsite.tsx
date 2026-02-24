@@ -71,21 +71,21 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                     </div>
                  </div>
                  <div className="text-center group cursor-default">
-                    <div className="text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">1,000,000</div>
+                    <div className="text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">10K</div>
                     <div className="text-[10px] font-black uppercase tracking-[0.2em] text-palma-muted">
-                      {lang === 'ar' ? 'منتج في الكتالوج' : 'Products in catalog'}
+                      {lang === 'ar' ? '10 الاف منتج' : '10,000 products'}
                     </div>
                  </div>
                  <div className="text-center group cursor-default">
-                    <div className="text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">50 الف</div>
+                    <div className="text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">50K</div>
                     <div className="text-[10px] font-black uppercase tracking-[0.2em] text-palma-muted">
-                      {lang === 'ar' ? 'زبون شهريا' : 'Customers per month'}
+                      {lang === 'ar' ? '50 الف زبون شهريا' : '50K customers per month'}
                     </div>
                  </div>
                  <div className="text-center group cursor-default">
-                    <div className="text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">1,000,000</div>
+                    <div className="text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">1M</div>
                     <div className="text-[10px] font-black uppercase tracking-[0.2em] text-palma-muted">
-                      {lang === 'ar' ? 'زائر موثّق سنوياً' : 'Verified visits per year'}
+                      {lang === 'ar' ? '1 مليون زائر موثّق سنوياً' : '1M verified visits per year'}
                     </div>
                  </div>
               </div>
