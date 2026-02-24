@@ -4,8 +4,12 @@
  */
 
 const ALLOWED_ORIGINS = [
-  'https://palmaa.vercel.app',
+  // الإنتاج الرئيسي على الدومين الرسمي
+  'https://www.palma.ps',
   'https://palma.ps',
+  // نسخة Vercel الاحتياطية / القديمة
+  'https://palmaa.vercel.app',
+  // التطوير المحلي
   'http://localhost:3000',
   'http://127.0.0.1:3000',
 ];
