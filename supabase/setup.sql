@@ -351,6 +351,21 @@ BEGIN
 END $$;
 
 -- =============================================================================
+-- OTP CODES (لتحقق البريد وكلمة المرور عند التسجيل)
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS public.otp_codes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  email TEXT NOT NULL,
+  code TEXT NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('email_verification', 'password_reset')),
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_otp_codes_email_type ON public.otp_codes(email, type);
+ALTER TABLE public.otp_codes DISABLE ROW LEVEL SECURITY;
+GRANT ALL ON public.otp_codes TO anon, authenticated, service_role;
+
+-- =============================================================================
 -- 4. CRITICAL: RELOAD SCHEMA CACHE (Fixes PGRST204)
 -- =============================================================================
 NOTIFY pgrst, 'reload schema';

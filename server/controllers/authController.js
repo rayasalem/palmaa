@@ -113,7 +113,12 @@ async function registerUser(req, res) {
         return res.status(409).json({ success: false, error: 'An account with this email already exists' });
       }
       logger.warn('registerUser error', { error: error.message });
-      return res.status(500).json({ success: false, error: error.message || 'Registration failed' });
+      const msg = (error.message || '').toLowerCase();
+      const isDbSetup = /relation|otp_codes|column|does not exist|syntax/.test(msg);
+      const userMsg = isDbSetup
+        ? 'إعداد قاعدة البيانات ناقص. شغّل سكربت الإعداد (setup.sql) في Supabase SQL Editor ثم أعد المحاولة.'
+        : (error.message || 'Registration failed');
+      return res.status(500).json({ success: false, error: userMsg });
     }
     return res.status(201).json({
       success: true,
