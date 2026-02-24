@@ -204,11 +204,15 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                       setError(result.error || 'Request failed');
                     }
                   }} className="space-y-4">
+                    <label htmlFor="forgot-email" className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                      {t.auth.email}
+                    </label>
                     <input
                       id="forgot-email"
                       name="forgotEmail"
                       required
                       type="email"
+                      autoComplete="email"
                       placeholder="email@example.com"
                       value={forgotEmail}
                       onChange={e => setForgotEmail(e.target.value)}
@@ -325,12 +329,15 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
             {view === 'LOGIN' && !showForgotPassword && (
               <form onSubmit={handleLogin} className="space-y-6 animate-fade-in">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">{t.auth.email}</label>
+                  <label htmlFor="login-email" className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">{t.auth.email}</label>
                   <div className="relative group">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-palma-primary transition-colors" />
                     <input 
+                      id="login-email"
+                      name="email"
                       required 
                       type="email" 
+                      autoComplete="email"
                       className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-bold text-palma-navy focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 outline-none transition-all placeholder:text-slate-300" 
                       placeholder="name@email.com" 
                       value={email} 
@@ -341,14 +348,17 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center px-1">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.auth.password}</label>
+                    <label htmlFor="login-password" className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.auth.password}</label>
                     <button type="button" onClick={() => { setShowForgotPassword(true); setError(''); setForgotEmail(email); setForgotStep('email'); setForgotOtp(''); setForgotNewPassword(''); setForgotConfirmPassword(''); }} className="text-[10px] font-bold text-palma-primary hover:underline">{t.auth.forgot}</button>
                   </div>
                   <div className="relative group">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-palma-primary transition-colors" />
                     <input 
+                      id="login-password"
+                      name="password"
                       required 
                       type="password" 
+                      autoComplete="current-password"
                       className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-bold text-palma-navy focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 outline-none transition-all placeholder:text-slate-300" 
                       placeholder="••••••••" 
                       value={password} 

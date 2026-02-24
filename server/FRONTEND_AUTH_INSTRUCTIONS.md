@@ -42,3 +42,18 @@ Use these flows with the backend auth endpoints. Show success or error messages 
 ## API base URL
 
 Use the same backend base URL as checkout (e.g. `VITE_API_URL` or `http://localhost:5000`). All auth routes are under `/api/auth/`.
+
+---
+
+## Troubleshooting (404 / 401)
+
+- **404 on `/api/auth/me`**  
+  The request is hitting a server that does not have the API routes (e.g. a static host). Fix: ensure the frontend’s API base URL is the **Node backend** that runs `server/server.js`. If the frontend is on a different host (e.g. Vercel), set `VITE_API_URL` to the backend URL (e.g. `https://palmaa.onrender.com` if that is where the Node app runs). The same host must serve both the SPA and the API, or `VITE_API_URL` must point to the API host.
+
+- **401 on `/api/auth/login`**  
+  The backend returns 401 when credentials are wrong or the account is restricted. The response body includes an `error` message, e.g.:
+  - `Invalid credentials` – wrong email or password, or the user row has no `password` / password not stored as bcrypt.
+  - `Account suspended. Contact support.` – status is SUSPENDED.
+  - `Account deleted. Contact support within 30 days to restore.` – soft-deleted.
+
+  Ensure the `users` table has a `password` column and that registration stores bcrypt hashes (the default backend does this). If you use a different DB schema, the login logic must read the same column used at registration.

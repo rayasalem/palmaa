@@ -7,11 +7,16 @@ const ALLOWED_ORIGINS = [
   // الإنتاج الرئيسي على الدومين الرسمي
   'https://www.palma.ps',
   'https://palma.ps',
+  // Render (واجهة + API قد تكون نفس المنشأ)
+  'https://palmaa.onrender.com',
+  'http://palmaa.onrender.com',
   // نسخة Vercel الاحتياطية / القديمة
   'https://palmaa.vercel.app',
   // التطوير المحلي
   'http://localhost:3000',
   'http://127.0.0.1:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
 ];
 
 function getAllowedOrigins(envFrontendUrl) {
