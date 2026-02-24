@@ -102,7 +102,7 @@ const AppContent: React.FC = () => {
     } else if (top === 'broker' && parts[1]) {
       setPublicBrokerId(parts[1]);
       setPublicState('BROKER_PAGE');
-    } else if (['admin', 'dashboard', 'home', 'cart', 'products', 'notifications', 'profile', 'orders'].includes(top)) {
+    } else if (['admin', 'dashboard', 'home', 'cart', 'shop', 'products', 'notifications', 'profile', 'orders'].includes(top)) {
       setCurrentView(top === 'orders' ? 'orders_customer' : top);
       if (top !== 'product_details') setSelectedProductId(null);
       if (top !== 'public_profile') setSelectedProfileId(null);
@@ -557,7 +557,28 @@ const AppContent: React.FC = () => {
             </div>
           )}
 
-          {user.role === 'MERCHANT' && (
+          {user.role === 'MERCHANT' && (currentView === 'shop' || currentView === 'cart') && (
+            <div className="block">
+              <CustomerView
+                user={user}
+                view={currentView}
+                cart={cart}
+                addToCart={addToCart}
+                removeFromCart={removeFromCart}
+                updateQuantity={updateQuantity}
+                clearCart={clearCart}
+                lang={lang}
+                onRefresh={refreshUser}
+                onViewProduct={(id) => { setSelectedProductId(id); setCurrentView('product_details'); }}
+                onViewProfile={(id) => { setSelectedProfileId(id); setCurrentView('public_profile'); }}
+                onTabChange={(tab) => { if (tab === 'shop' || tab === 'cart') setCurrentView(tab); updateHash(tab); }}
+                onProceedToApiCheckout={(items) => { setCheckoutCart(items); setShowApiCheckout(true); }}
+                shopOnlySection
+              />
+            </div>
+          )}
+
+          {user.role === 'MERCHANT' && currentView !== 'shop' && currentView !== 'cart' && (
             <MerchantView 
               user={user} 
               view={currentView} 
@@ -574,7 +595,28 @@ const AppContent: React.FC = () => {
               />
           )}
 
-          {user.role === 'BROKER' && (
+          {user.role === 'BROKER' && (currentView === 'shop' || currentView === 'cart') && (
+            <div className="block">
+              <CustomerView
+                user={user}
+                view={currentView}
+                cart={cart}
+                addToCart={addToCart}
+                removeFromCart={removeFromCart}
+                updateQuantity={updateQuantity}
+                clearCart={clearCart}
+                lang={lang}
+                onRefresh={refreshUser}
+                onViewProduct={(id) => { setSelectedProductId(id); setCurrentView('product_details'); }}
+                onViewProfile={(id) => { setSelectedProfileId(id); setCurrentView('public_profile'); }}
+                onTabChange={(tab) => { if (tab === 'shop' || tab === 'cart') setCurrentView(tab); updateHash(tab); }}
+                onProceedToApiCheckout={(items) => { setCheckoutCart(items); setShowApiCheckout(true); }}
+                shopOnlySection
+              />
+            </div>
+          )}
+
+          {user.role === 'BROKER' && currentView !== 'shop' && currentView !== 'cart' && (
             <BrokerView 
               user={user} 
               lang={lang}

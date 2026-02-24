@@ -77,11 +77,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
     (async () => {
       try {
         const res = await getVillages({ cityId: form.cityId });
-        if (res.success) {
-          setVillages(res.data);
-        }
+        setVillages(res?.success && Array.isArray(res.data) ? res.data : []);
       } catch (e) {
         console.error('[Checkout] getVillages error:', e);
+        setVillages([]);
       }
     })();
   }, [form.cityId]);

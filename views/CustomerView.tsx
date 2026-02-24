@@ -54,18 +54,25 @@ interface Props {
   onViewProduct?: (id: string) => void;
   onViewProfile?: (profileId: string) => void;
   onProceedToApiCheckout?: (items: CartItem[]) => void;
+  /** When true (e.g. for MERCHANT/BROKER), show only shop + cart in a dedicated section with sub-tabs */
+  shopOnlySection?: boolean;
 }
 
-export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCart, removeFromCart, updateQuantity, clearCart, onRefresh, onTabChange, onViewProduct, onViewProfile, onProceedToApiCheckout }) => {
+export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCart, removeFromCart, updateQuantity, clearCart, onRefresh, onTabChange, onViewProduct, onViewProfile, onProceedToApiCheckout, shopOnlySection }) => {
   const t = translations[lang];
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'shop' | 'cart' | 'orders'>('shop');
   
   useEffect(() => {
-    if (view === 'orders' || view === 'orders_customer') setActiveTab('orders');
-    else if (view === 'cart') setActiveTab('cart');
-    else if (view === 'home' || view === 'shop') setActiveTab('shop');
-  }, [view]);
+    if (shopOnlySection) {
+      if (view === 'cart') setActiveTab('cart');
+      else setActiveTab('shop');
+    } else {
+      if (view === 'orders' || view === 'orders_customer') setActiveTab('orders');
+      else if (view === 'cart') setActiveTab('cart');
+      else if (view === 'home' || view === 'shop') setActiveTab('shop');
+    }
+  }, [view, shopOnlySection]);
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingCancelId, setProcessingCancelId] = useState<string | null>(null);
@@ -469,9 +476,39 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
     </div>
   );
 
+  const setShopOrCart = (tab: 'shop' | 'cart') => {
+    setActiveTab(tab);
+    onTabChange?.(tab);
+  };
+
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-20">
       
+      {/* Shop/Cart sub-tabs for MERCHANT/BROKER (خانة التسوق) */}
+      {shopOnlySection && (
+        <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl w-fit">
+          <button
+            type="button"
+            onClick={() => setShopOrCart('shop')}
+            className={`px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'shop' ? 'bg-white text-palma-primary shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+          >
+            {lang === 'ar' ? 'التسوق' : 'Shop'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShopOrCart('cart')}
+            className={`px-6 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'cart' ? 'bg-white text-palma-primary shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+          >
+            {lang === 'ar' ? 'السلة' : 'Cart'}
+            {cart.length > 0 && (
+              <span className="bg-palma-primary text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center">
+                {cart.reduce((a, b) => a + b.quantity, 0)}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
+
       {/* Cancellation Modal */}
       {orderToCancel && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/70 backdrop-blur-md p-6 animate-in fade-in duration-300">

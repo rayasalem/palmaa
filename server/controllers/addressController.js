@@ -17,9 +17,10 @@ async function getCities(req, res) {
 async function getVillages(req, res) {
   try {
     const search = req.query.search;
-    const cityId = req.query.cityId;
+    const cityId = req.query.cityId != null ? String(req.query.cityId).trim() : undefined;
     const villages = await addressService.getVillages(search, cityId);
-    return res.status(200).json({ success: true, data: villages });
+    const list = Array.isArray(villages) ? villages : [];
+    return res.status(200).json({ success: true, data: list });
   } catch (err) {
     console.error('[addressController] getVillages:', err);
     return res.status(500).json({ success: false, error: err.message || 'Failed to load villages' });

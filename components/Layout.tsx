@@ -51,11 +51,13 @@ const Layout: React.FC<LayoutProps> = ({ lang, toggleLang, user, onLogout, child
     { id: 'products', label: t.common.products, icon: 'Package' },
     { id: 'orders', label: t.common.orders, icon: 'ShoppingBag' },
     { id: 'earnings', label: t.common.earnings, icon: 'Banknote' },
+    { id: 'shop', label: lang === 'en' ? 'Shop' : 'التسوق', icon: 'ShoppingCart' },
     { id: 'profile', label: t.common.profile, icon: 'User' },
   ] : user.role === Role.BROKER ? [
     { id: 'promote', label: lang === 'en' ? 'Market' : 'السوق', icon: 'Globe' },
     { id: 'earnings', label: t.common.earnings, icon: 'Banknote' },
     { id: 'stats', label: t.common.stats, icon: 'BarChart' },
+    { id: 'shop', label: lang === 'en' ? 'Shop' : 'التسوق', icon: 'ShoppingCart' },
     { id: 'profile', label: t.common.profile, icon: 'User' },
   ] : user.role === Role.ADMIN ? [
     { id: 'users', label: t.common.users, icon: 'Users' },
@@ -90,9 +92,9 @@ const Layout: React.FC<LayoutProps> = ({ lang, toggleLang, user, onLogout, child
           </div>
           
           <div className="flex items-center gap-3 sm:gap-6">
-            {!isProfessional && (
+            {(user.role === Role.CUSTOMER || user.role === Role.MERCHANT || user.role === Role.BROKER) && (
               <button 
-                onClick={() => onTabChange('cart')}
+                onClick={() => onTabChange(user.role === Role.CUSTOMER ? 'cart' : 'shop')}
                 className="relative p-2.5 text-palma-muted hover:text-palma-primary hover:bg-palma-primary/5 rounded-xl transition-all group"
                 title={t.nav.cart}
               >
