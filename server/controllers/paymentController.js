@@ -17,18 +17,19 @@ async function createPayment(req, res) {
       return res.status(400).json({ success: false, error: 'amount must be a positive number' });
     }
     logger.info('payment create', sanitizeForLog({ orderId, amount: numAmount }));
-    const { paymentUrl, error } = await paymentService.createPayment(orderId, numAmount, returnUrl);
-    if (error) {
-      logger.error('payment create error', { message: error.message });
-      return res.status(500).json({ success: false, error: error.message || 'Failed to create payment' });
+    const result = await paymentService.createPayment(orderId, numAmount, returnUrl);
+    if (result.error) {
+      logger.error('payment create error', { message: result.error.message });
+      return res.status(500).json({ success: false, error: result.error.message || 'Failed to create payment' });
     }
-    return res.status(200).json({
+    const payload = {
       success: true,
-      paymentUrl,
+      paymentUrl: result.paymentUrl ?? null,
       orderId,
       amount: numAmount,
-      message: 'Replace with real bank credentials later.',
-    });
+    };
+    if (result.sandboxSimulation) payload.sandboxSimulation = true;
+    return res.status(200).json(payload);
   } catch (err) {
     logger.error('payment create unexpected', { message: err.message });
     return res.status(500).json({ success: false, error: err.message || 'Internal server error' });

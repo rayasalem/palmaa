@@ -8,14 +8,26 @@
 // Configuration
 // -----------------------------------------------------------------------------
 
-/** Production backend URL (Render). Used whenever build is production (Vercel). */
+/** Production backend URL (Render). */
 const PRODUCTION_API = 'https://palmaa.onrender.com';
 
-/** Base URL. In production build (import.meta.env.PROD) always PRODUCTION_API so Vercel never hits localhost. */
-const API_BASE: string =
-  (import.meta as { env?: { PROD?: boolean; VITE_API_URL?: string } }).env?.PROD
-    ? PRODUCTION_API
-    : ((import.meta as { env?: { VITE_API_URL?: string } }).env?.VITE_API_URL || PRODUCTION_API);
+function isHttpUrl(s: string): boolean {
+  return typeof s === 'string' && (s.startsWith('http://') || s.startsWith('https://'));
+}
+
+/** Resolve API base at runtime. When site is on palma.ps or production host, always use PRODUCTION_API (fixes EBADNAME if build had wrong env). */
+function resolveApiBase(): string {
+  if (typeof window !== 'undefined' && window.location?.hostname) {
+    const h = window.location.hostname.toLowerCase();
+    if (h === 'palma.ps' || h.endsWith('.palma.ps')) return PRODUCTION_API;
+    if (h !== 'localhost' && h !== '127.0.0.1') return PRODUCTION_API;
+  }
+  const env = (import.meta as { env?: { PROD?: boolean; VITE_API_URL?: string } }).env;
+  const candidate = env?.PROD ? PRODUCTION_API : ((env?.VITE_API_URL || '').trim() || PRODUCTION_API);
+  return isHttpUrl(candidate) ? candidate : PRODUCTION_API;
+}
+
+const API_BASE: string = resolveApiBase();
 
 // -----------------------------------------------------------------------------
 // Helpers (single-responsibility)

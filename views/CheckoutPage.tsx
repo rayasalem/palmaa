@@ -231,9 +231,18 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
 
       const returnUrl = window.location.origin + (window.location.pathname || '/');
       const payRes = await createPayment(orderId, totalAmount, returnUrl);
-      if (!payRes.success || !payRes.paymentUrl) {
+      if (!payRes.success) {
         setError((payRes as any).error || (lang === 'ar' ? 'فشل إنشاء الدفع' : 'Failed to create payment'));
         setLoading(false);
+        return;
+      }
+      if ((payRes as any).sandboxSimulation || !payRes.paymentUrl) {
+        setError('');
+        setLoading(false);
+        alert(lang === 'ar'
+          ? 'تم إنشاء الطلب بنجاح. في وضع التجربة لا يتم التحويل لبوابة الدفع. يمكنك متابعة الطلب من صفحة الطلبات.'
+          : 'Order created successfully. In sandbox mode no payment redirect. You can track the order from your orders.');
+        onBack();
         return;
       }
       window.location.href = payRes.paymentUrl;

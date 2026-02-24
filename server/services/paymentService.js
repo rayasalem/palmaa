@@ -37,8 +37,10 @@ async function updateOrderStatus(orderId, status) {
   return { data, error: null };
 }
 
+const PLACEHOLDER_BANK_HOST = 'sandbox-bank-url.com';
+
 function buildSandboxPaymentUrl(orderId, amount, returnUrl) {
-  const baseUrl = process.env.SANDBOX_PAYMENT_URL || 'https://sandbox-bank-url.com/pay';
+  const baseUrl = process.env.SANDBOX_PAYMENT_URL || `https://${PLACEHOLDER_BANK_HOST}/pay`;
   const url = new URL(baseUrl);
   url.searchParams.set('orderId', orderId);
   url.searchParams.set('amount', String(amount));
@@ -50,8 +52,14 @@ async function createPayment(orderId, amount, returnUrl) {
   const updateResult = await updateOrderStatus(orderId, 'payment_processing');
   if (updateResult.error) return { paymentUrl: null, error: updateResult.error };
   await supabase.from(ORDERS_TABLE).update({ payment_method: 'online', updated_at: new Date().toISOString() }).eq('id', orderId);
+  const baseUrl = (process.env.SANDBOX_PAYMENT_URL || '').trim();
+  const isPlaceholder = !baseUrl || baseUrl.includes(PLACEHOLDER_BANK_HOST);
+  if (isPlaceholder) {
+    console.log('[paymentService] No real payment URL configured; returning sandboxSimulation for order:', orderId);
+    return { paymentUrl: null, sandboxSimulation: true, orderId, amount, error: null };
+  }
   const paymentUrl = buildSandboxPaymentUrl(orderId, amount, returnUrl);
-  console.log('[paymentService] Sandbox URL created for order:', orderId);
+  console.log('[paymentService] Payment URL created for order:', orderId);
   return { paymentUrl, error: null };
 }
 
