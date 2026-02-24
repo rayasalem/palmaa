@@ -66,19 +66,27 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
                  <div className="text-center group cursor-default">
                     <div className="text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">500+</div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-palma-muted">{t.roles.merchant}</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-palma-muted">
+                      {lang === 'ar' ? 'تاجر جديد شهرياً' : 'New merchants / month'}
+                    </div>
                  </div>
                  <div className="text-center group cursor-default">
-                    <div className="text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">10k+</div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-palma-muted">Products</div>
+                    <div className="text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">1,000,000</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-palma-muted">
+                      {lang === 'ar' ? 'منتج في الكتالوج' : 'Products in catalog'}
+                    </div>
                  </div>
                  <div className="text-center group cursor-default">
-                    <div className="text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">50k+</div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-palma-muted">{t.roles.customer}</div>
+                    <div className="text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">50,000</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-palma-muted">
+                      {lang === 'ar' ? 'زبون نشط شهرياً' : 'Active customers / month'}
+                    </div>
                  </div>
                  <div className="text-center group cursor-default">
-                    <div className="text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">1M+</div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-palma-muted">Visits</div>
+                    <div className="text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">1,000,000</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-palma-muted">
+                      {lang === 'ar' ? 'زائر موثّق سنوياً' : 'Verified visits / year'}
+                    </div>
                  </div>
               </div>
            </div>
@@ -200,7 +208,9 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
           <div className={`space-y-6 ${lang === 'en' ? 'text-left' : 'text-right'}`}>
             <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-palma-navy">{t.nav.contact}</h5>
             <p className="text-sm font-bold text-palma-primary hover:underline cursor-pointer">office@palma.ps</p>
-            <p className="text-sm font-bold text-palma-muted">Ramallah, Palestine</p>
+            <p className="text-sm font-bold text-palma-muted">
+              {lang === 'ar' ? 'فلسطين' : 'Palestine'}
+            </p>
           </div>
         </div>
         <div className="max-w-7xl mx-auto px-6 pt-16 mt-16 border-t border-slate-50 flex flex-col md:flex-row justify-between items-center gap-6">

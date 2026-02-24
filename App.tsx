@@ -108,6 +108,12 @@ const AppContent: React.FC = () => {
       setCurrentView(top === 'orders' ? 'orders_customer' : top);
       if (top !== 'product_details') setSelectedProductId(null);
       if (top !== 'public_profile') setSelectedProfileId(null);
+    } else {
+      // hash فارغ أو غير معروف (مثلاً زر الرجوع) → الرئيسية
+      setPublicState('LANDING');
+      setCurrentView('home');
+      setSelectedProductId(null);
+      setSelectedProfileId(null);
     }
     setTimeout(() => { isApplyingHashRef.current = false; }, 0);
   }, []);

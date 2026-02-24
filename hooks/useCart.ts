@@ -62,13 +62,19 @@ export function useCart(userId: string | null): UseCartReturn {
     }
     setLoading(true);
     setError(null);
-    const res = await cartApi.getCart();
-    setLoading(false);
-    if (res.success && res.cart?.items) {
-      setCart(res.cart.items.map(toCartItem));
-    } else {
+    try {
+      const res = await cartApi.getCart();
+      if (res.success && res.cart?.items) {
+        setCart(res.cart.items.map(toCartItem));
+      } else {
+        setCart([]);
+        if (res.error) setError(res.error);
+      }
+    } catch (_e) {
       setCart([]);
-      if (res.error) setError(res.error);
+      setError('Failed to load cart');
+    } finally {
+      setLoading(false);
     }
   }, [userId]);
 

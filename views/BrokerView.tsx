@@ -24,6 +24,7 @@ export const BrokerView: React.FC<Props> = ({ lang, user, onRefresh, activeTab, 
   const [marketingModal, setMarketingModal] = useState<{ productId: string, shareId?: string } | null>(null);
   const [marketingForm, setMarketingForm] = useState({ title: '', description: '', discountText: '' });
   const [sharedMeta, setSharedMeta] = useState<SharedProduct[]>([]);
+  const [savingShare, setSavingShare] = useState(false);
 
   const products = marketStore.getProducts();
 
@@ -79,6 +80,7 @@ export const BrokerView: React.FC<Props> = ({ lang, user, onRefresh, activeTab, 
 
   const saveMarketingShare = async () => {
     if (!marketingModal) return;
+    setSavingShare(true);
     try {
       const res = await upsertSharedProduct(marketingModal.productId, {
         marketing_title: marketingForm.title,
@@ -104,13 +106,23 @@ export const BrokerView: React.FC<Props> = ({ lang, user, onRefresh, activeTab, 
           if (idx >= 0) return prev.map((sp, i) => i === idx ? newShare : sp);
           return [newShare, ...prev];
         });
-        marketStore.upsertSharedProduct(user.id, marketingModal.productId, { marketing_title: marketingForm.title, marketing_description: marketingForm.description, custom_discount_text: marketingForm.discountText });
+        marketStore.upsertSharedProduct(
+          user.id,
+          marketingModal.productId,
+          {
+            marketing_title: marketingForm.title,
+            marketing_description: marketingForm.description,
+            custom_discount_text: marketingForm.discountText
+          }
+        );
       }
       showToast(t.common.success, 'success');
       setMarketingModal(null);
       onRefresh();
     } catch (e: any) {
       showToast(e?.message || (lang === 'en' ? 'Failed to save' : 'فشل الحفظ'), 'error');
+    } finally {
+      setSavingShare(false);
     }
   };
 
@@ -189,10 +201,21 @@ export const BrokerView: React.FC<Props> = ({ lang, user, onRefresh, activeTab, 
             </div>
 
             <div className="flex flex-col gap-3">
-              <button onClick={saveMarketingShare} className="w-full py-5 bg-palma-green text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-palma-green/20 active:scale-95 transition-all">
-                {t.common.save} & {lang === 'en' ? 'Add to Portfolio' : 'إضافة للمحفظة'}
+              <button
+                onClick={saveMarketingShare}
+                disabled={savingShare}
+                className="w-full py-5 bg-palma-green text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-palma-green/20 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {savingShare
+                  ? (lang === 'en' ? 'Saving...' : 'جاري الحفظ...')
+                  : `${t.common.save} & ${lang === 'en' ? 'Add to Portfolio' : 'إضافة للمحفظة'}`
+                }
               </button>
-              <button onClick={() => setMarketingModal(null)} className="w-full py-4 bg-slate-50 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100">
+              <button
+                onClick={() => setMarketingModal(null)}
+                disabled={savingShare}
+                className="w-full py-4 bg-slate-50 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
                 {t.common.cancel}
               </button>
             </div>

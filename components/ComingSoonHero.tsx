@@ -121,9 +121,9 @@ const ComingSoonHero: React.FC<Props> = ({ lang, onJoinMerchant, onExploreProduc
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white tracking-tighter leading-[1.1] drop-shadow-2xl">
             {lang === 'ar' ? (
               <>
-                أكبر متجر إلكتروني متكامل في
+                سوق فلسطين الرقمي
                 <br />
-                <span className="block mt-2">فلسطين</span>
+                <span className="block mt-2">نحو الأسواق المحلية والعالمية</span>
               </>
             ) : (
               t.comingSoon.headline
