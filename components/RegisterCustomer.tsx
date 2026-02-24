@@ -146,7 +146,7 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
           name={name} 
           className="w-full bg-transparent p-4 pl-0 rtl:pr-0 rtl:pl-4 text-sm font-bold text-slate-900 outline-none placeholder:text-slate-300 placeholder:font-normal"
           placeholder={placeholder}
-          value={formData[name as keyof typeof formData]} 
+          defaultValue={formData[name as keyof typeof formData] as string}
           onChange={handleChange}
           onFocus={() => setFocusedField(name)}
           onBlur={() => setFocusedField(null)}

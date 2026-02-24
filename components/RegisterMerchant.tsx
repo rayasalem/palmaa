@@ -175,11 +175,23 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({ onRegister, onBackT
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.businessName} *</label>
-                  <input required name="business_name" className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none" value={formData.business_name} onChange={handleChange} />
+                  <input
+                    required
+                    name="business_name"
+                    className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none"
+                    defaultValue={formData.business_name}
+                    onChange={handleChange}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.ownerName} *</label>
-                  <input required name="owner_name" className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none" value={formData.owner_name} onChange={handleChange} />
+                  <input
+                    required
+                    name="owner_name"
+                    className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none"
+                    defaultValue={formData.owner_name}
+                    onChange={handleChange}
+                  />
                 </div>
               </div>
 
@@ -208,13 +220,27 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({ onRegister, onBackT
 
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.email} *</label>
-                <input required type="email" name="email" className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none" value={formData.email} onChange={handleChange} />
+                <input
+                  required
+                  type="email"
+                  name="email"
+                  className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none"
+                  defaultValue={formData.email}
+                  onChange={handleChange}
+                />
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.phone} *</label>
-                  <input required name="phone" className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none" placeholder="05x-xxxxxxx" value={formData.phone} onChange={handleChange} />
+                  <input
+                    required
+                    name="phone"
+                    className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none"
+                    placeholder="05x-xxxxxxx"
+                    defaultValue={formData.phone}
+                    onChange={handleChange}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.city} *</label>
@@ -250,7 +276,14 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({ onRegister, onBackT
 
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.password} *</label>
-                <input required type="password" name="password" className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none" value={formData.password} onChange={handleChange} />
+                <input
+                  required
+                  type="password"
+                  name="password"
+                  className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none"
+                  defaultValue={formData.password}
+                  onChange={handleChange}
+                />
               </div>
 
               {/* الشروط والأحكام الخاصة بالمتاجر المشتركة في المنصة - ملخص عند تسجيل التاجر */}

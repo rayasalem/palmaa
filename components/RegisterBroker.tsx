@@ -131,12 +131,24 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
 
               <div className="space-y-1">
                 <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.name} *</label>
-                <input required name="name" className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none" value={formData.name} onChange={handleChange} />
+                <input
+                  required
+                  name="name"
+                  className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none"
+                  defaultValue={formData.name}
+                  onChange={handleChange}
+                />
               </div>
 
               <div className="space-y-1">
                 <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.phone} *</label>
-                <input required name="phone" className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none" value={formData.phone} onChange={handleChange} />
+                <input
+                  required
+                  name="phone"
+                  className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none"
+                  defaultValue={formData.phone}
+                  onChange={handleChange}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -173,17 +185,36 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
 
               <div className="space-y-1">
                 <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.companyName}</label>
-                <input name="company_name" className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none" value={formData.company_name} onChange={handleChange} />
+                <input
+                  name="company_name"
+                  className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none"
+                  defaultValue={formData.company_name}
+                  onChange={handleChange}
+                />
               </div>
 
               <div className="space-y-1">
                 <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.email} *</label>
-                <input required type="email" name="email" className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none" value={formData.email} onChange={handleChange} />
+                <input
+                  required
+                  type="email"
+                  name="email"
+                  className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none"
+                  defaultValue={formData.email}
+                  onChange={handleChange}
+                />
               </div>
 
               <div className="space-y-1">
                 <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.password} *</label>
-                <input required type="password" name="password" className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none" value={formData.password} onChange={handleChange} />
+                <input
+                  required
+                  type="password"
+                  name="password"
+                  className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none"
+                  defaultValue={formData.password}
+                  onChange={handleChange}
+                />
               </div>
 
               <div className="pt-4 flex flex-col items-center space-y-4">
