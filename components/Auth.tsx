@@ -204,7 +204,16 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                       setError(result.error || 'Request failed');
                     }
                   }} className="space-y-4">
-                    <input required type="email" placeholder="email@example.com" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-bold" />
+                    <input
+                      id="forgot-email"
+                      name="forgotEmail"
+                      required
+                      type="email"
+                      placeholder="email@example.com"
+                      value={forgotEmail}
+                      onChange={e => setForgotEmail(e.target.value)}
+                      className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-bold"
+                    />
                     <div className="flex gap-3">
                       <button type="submit" disabled={loading} className="flex-1 py-3 bg-palma-primary text-white rounded-xl font-bold text-xs uppercase">{loading ? t.common.loading : (lang === 'ar' ? 'إرسال' : 'Send')}</button>
                       <button type="button" onClick={() => setShowForgotPassword(false)} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase">{t.common.back}</button>
@@ -224,10 +233,12 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                     setForgotConfirmPassword('');
                   }} className="space-y-4">
                     <div>
-                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                      <label htmlFor="forgot-otp" className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
                         {lang === 'ar' ? 'رمز التحقق (6 أرقام)' : 'Verification Code (6 digits)'}
                       </label>
                       <input
+                        id="forgot-otp"
+                        name="forgotOtp"
                         required
                         type="text"
                         inputMode="numeric"
@@ -270,10 +281,12 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                     }
                   }} className="space-y-4">
                     <div>
-                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                      <label htmlFor="forgot-new-password" className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
                         {lang === 'ar' ? 'كلمة المرور الجديدة' : 'New Password'}
                       </label>
                       <input
+                        id="forgot-new-password"
+                        name="forgotNewPassword"
                         required
                         type="password"
                         placeholder={lang === 'ar' ? '••••••••' : '••••••••'}
@@ -284,10 +297,12 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                      <label htmlFor="forgot-confirm-password" className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
                         {lang === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password'}
                       </label>
                       <input
+                        id="forgot-confirm-password"
+                        name="forgotConfirmPassword"
                         required
                         type="password"
                         placeholder={lang === 'ar' ? '••••••••' : '••••••••'}
