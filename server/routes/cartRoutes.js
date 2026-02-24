@@ -4,12 +4,13 @@
  */
 
 import express from 'express';
-import { authenticate } from '../middlewares/authMiddleware.js';
+import { authenticate, requireRole } from '../middlewares/authMiddleware.js';
 import * as cartController from '../controllers/cartController.js';
 
 const router = express.Router();
 
 router.use(authenticate);
+router.use(requireRole('CUSTOMER', 'MERCHANT', 'BROKER', 'ADMIN'));
 
 router.get('/', cartController.getCart);
 router.post('/items', cartController.addItem);

@@ -14,6 +14,13 @@ const TECHNICAL_PATTERNS = [
   /constraint/i,
   /foreign\s*key/i,
   /null\s*violation/i,
+  /supabase/i,
+  /smtp/i,
+  /resend/i,
+  /ebadname/i,
+  /getaddrinfo/i,
+  /(ENOTFOUND|ECONNREFUSED|ETIMEDOUT)/i,
+  /network\s*error/i,
 ];
 
 export function safeErrorForUser(err, fallback = 'حدث خطأ، يرجى المحاولة لاحقاً') {

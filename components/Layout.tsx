@@ -92,9 +92,9 @@ const Layout: React.FC<LayoutProps> = ({ lang, toggleLang, user, onLogout, child
           </div>
           
           <div className="flex items-center gap-3 sm:gap-6">
-            {(user.role === Role.CUSTOMER || user.role === Role.MERCHANT || user.role === Role.BROKER) && (
+            {(user.role === Role.CUSTOMER || user.role === Role.MERCHANT || user.role === Role.BROKER || user.role === Role.ADMIN) && (
               <button 
-                onClick={() => onTabChange(user.role === Role.CUSTOMER ? 'cart' : 'shop')}
+                onClick={() => onTabChange(user.role === Role.CUSTOMER || user.role === Role.ADMIN ? 'cart' : 'shop')}
                 className="relative p-2.5 text-palma-muted hover:text-palma-primary hover:bg-palma-primary/5 rounded-xl transition-all group"
                 title={t.nav.cart}
               >

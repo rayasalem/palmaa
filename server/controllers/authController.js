@@ -186,10 +186,14 @@ async function forgotPassword(req, res) {
     if (!result.success) {
       return res.status(400).json({ success: false, error: result.error?.message || 'Request failed' });
     }
-    return res.status(200).json({
+    const payload = {
       success: true,
       message: 'If an account exists for this email, you will receive a password reset code.',
-    });
+    };
+    if (result.verificationCode) {
+      payload.verificationCode = result.verificationCode;
+    }
+    return res.status(200).json(payload);
   } catch (err) {
     logger.error('forgotPassword unexpected', { message: err.message });
     return res.status(500).json({ success: false, error: err.message || 'Internal server error' });

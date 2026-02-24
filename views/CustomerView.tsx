@@ -114,6 +114,13 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
     }
   }, [lang]);
 
+  // When checkout modal opens, sync selectedCityId from shippingData so city dropdown shows correct value
+  useEffect(() => {
+    if (showCheckoutForm && shippingData.cityId != null && shippingData.cityId !== undefined) {
+      setSelectedCityId(Number(shippingData.cityId));
+    }
+  }, [showCheckoutForm]);
+
   const [products, setProducts] = useState<Product[]>(() => marketStore.getProducts().filter(p => p.isActive !== false));
   const [apiOrders, setApiOrders] = useState<any[]>([]);
   const [selectedCartIds, setSelectedCartIds] = useState<Set<string>>(() => new Set(cart.map(c => c.id)));
@@ -182,39 +189,43 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
   }, [activeTab, apiOrders.length]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setShippingData({ ...shippingData, [e.target.name]: e.target.value });
-    if (formErrors[e.target.name]) {
-      setFormErrors({ ...formErrors, [e.target.name]: false });
+    const { name, value } = e.target;
+    setShippingData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+    if (formErrors[name]) {
+      setFormErrors(prev => ({ ...prev, [name]: false }));
     }
   };
 
   const handleCityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const cityId = parseInt(e.target.value);
+    const cityId = parseInt(e.target.value, 10);
     const city = cities.find(c => c.id === cityId);
     if (city) {
       setSelectedCityId(cityId);
-      setShippingData({
-        ...shippingData,
+      setShippingData(prev => ({
+        ...prev,
         cityId: city.id,
         regionId: city.regionId,
         cityName: lang === 'en' ? city.nameEn : city.nameAr,
-        villageId: undefined, 
+        villageId: undefined,
         villageName: ''
-      });
-      setFormErrors({ ...formErrors, cityId: false });
+      }));
+      setFormErrors(prev => ({ ...prev, cityId: false }));
     }
   };
 
   const handleVillageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const vId = parseInt(e.target.value);
-    const v = availableVillages.find(v => v.id === vId);
+    const vId = parseInt(e.target.value, 10);
+    const v = availableVillages.find(vv => vv.id === vId);
     if (v) {
-      setShippingData({
-        ...shippingData,
+      setShippingData(prev => ({
+        ...prev,
         villageId: v.id,
         villageName: lang === 'en' ? v.nameEn : v.nameAr
-      });
-      setFormErrors({ ...formErrors, villageId: false });
+      }));
+      setFormErrors(prev => ({ ...prev, villageId: false }));
     }
   };
 
@@ -258,16 +269,20 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
   const proceedToSummary = (e: React.FormEvent) => {
     e.preventDefault();
     const errors: Record<string, boolean> = {};
-    if (!shippingData.fullName) errors.fullName = true;
-    if (!shippingData.email) errors.email = true;
-    if (!shippingData.phone) errors.phone = true;
-    if (!shippingData.cityId) errors.cityId = true;
-    if (!shippingData.villageId) errors.villageId = true;
-    if (!shippingData.address) errors.address = true;
+    if (!shippingData.fullName?.trim()) errors.fullName = true;
+    if (!shippingData.email?.trim()) errors.email = true;
+    if (!shippingData.phone?.trim()) errors.phone = true;
+    if (shippingData.cityId == null || shippingData.cityId === undefined || shippingData.cityId === '') errors.cityId = true;
+    if (shippingData.villageId == null || shippingData.villageId === undefined || shippingData.villageId === '') errors.villageId = true;
+    if (!shippingData.address?.trim()) errors.address = true;
 
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
-      showToast(lang === 'ar' ? 'يرجى إكمال الحقول المطلوبة' : 'Please fill required fields', 'error');
+      const missing = Object.keys(errors);
+      const msg = missing.length === 1
+        ? (lang === 'ar' ? `الحقل الناقص: ${missing[0] === 'fullName' ? 'الاسم' : missing[0] === 'email' ? 'البريد' : missing[0] === 'phone' ? 'الهاتف' : missing[0] === 'cityId' ? 'المدينة' : missing[0] === 'villageId' ? 'القرية/المنطقة' : 'العنوان'}` : `Missing: ${missing[0]}`)
+        : (lang === 'ar' ? 'يرجى إكمال الحقول المطلوبة' : 'Please fill required fields');
+      showToast(msg, 'error');
       return;
     }
     setCheckoutStep('summary');
@@ -436,7 +451,10 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
   const selectAllCart = () => setSelectedCartIds(new Set(cart.map(c => c.id)));
 
   // Reusable Components for Form
-  const InputGroup = ({ label, name, icon: Icon, required = false, type = "text", placeholder, options }: any) => (
+  const InputGroup = ({ label, name, icon: Icon, required = false, type = "text", placeholder, options }: any) => {
+    const rawValue = shippingData[name as keyof typeof shippingData] as any;
+    const inputValue = rawValue ?? '';
+    return (
     <div className="space-y-1.5 w-full">
       <label className="text-[10px] font-black uppercase text-palma-muted tracking-widest flex items-center gap-1">
         {label} {required && <span className="text-red-500">*</span>}
@@ -450,7 +468,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
             name={name} 
             required={required}
             className={`w-full ${lang === 'en' ? 'pl-12 pr-4' : 'pr-12 pl-4'} py-3.5 bg-slate-50 border ${formErrors[name] ? 'border-red-300 ring-2 ring-red-100' : 'border-slate-200'} rounded-2xl text-sm font-bold text-palma-navy outline-none focus:bg-white focus:border-palma-primary focus:ring-4 focus:ring-palma-primary/10 transition-all appearance-none cursor-pointer`}
-            value={name === 'cityId' ? selectedCityId : shippingData[name as keyof typeof shippingData]}
+            value={name === 'cityId' ? selectedCityId ?? '' : inputValue}
             onChange={name === 'cityId' ? handleCityChange : name === 'villageId' ? handleVillageChange : handleInputChange}
             disabled={name === 'villageId' && !selectedCityId}
           >
@@ -463,7 +481,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
             required={required}
             placeholder={placeholder}
             className={`w-full ${lang === 'en' ? 'pl-12 pr-4' : 'pr-12 pl-4'} py-3.5 bg-slate-50 border ${formErrors[name] ? 'border-red-300 ring-2 ring-red-100' : 'border-slate-200'} rounded-2xl text-sm font-bold text-palma-navy outline-none focus:bg-white focus:border-palma-primary focus:ring-4 focus:ring-palma-primary/10 transition-all placeholder:text-slate-400`}
-            value={shippingData[name as keyof typeof shippingData]}
+            value={inputValue}
             onChange={handleInputChange}
           />
         )}
@@ -475,6 +493,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
       </div>
     </div>
   );
+  };
 
   const setShopOrCart = (tab: 'shop' | 'cart') => {
     setActiveTab(tab);
@@ -546,8 +565,8 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
 
       {/* Checkout Modal */}
       {showCheckoutForm && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto" onClick={() => setShowCheckoutForm(false)}>
-          <div className="bg-white rounded-[2.5rem] w-full max-w-4xl shadow-2xl relative flex flex-col md:flex-row overflow-hidden min-h-[600px] animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto" onClick={() => setShowCheckoutForm(false)}>
+          <div className="bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] w-full max-w-4xl shadow-2xl relative flex flex-col md:flex-row overflow-hidden min-h-[85vh] sm:min-h-[600px] max-h-[95vh] animate-in zoom-in-95 duration-300" onClick={e => e.stopPropagation()}>
              {/* ... (Checkout Form Content stays largely same, just ensuring classes match new styles) */}
              {/* Left Panel */}
              <div className="md:w-1/3 bg-slate-50 border-r border-slate-100 p-8 flex flex-col justify-between">
@@ -578,8 +597,8 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
                    </div>
                 </div>
              </div>
-             {/* Right Panel */}
-             <div className="md:w-2/3 p-8 md:p-12 bg-white relative overflow-y-auto max-h-[80vh] md:max-h-full">
+             {/* Right Panel - extra bottom padding so fixed mobile nav doesn't cover form */}
+             <div className="md:w-2/3 p-8 md:p-12 pb-28 sm:pb-12 bg-white relative overflow-y-auto max-h-[80vh] md:max-h-full">
                 <button onClick={() => setShowCheckoutForm(false)} className={`absolute top-6 ${lang === 'en' ? 'right-6' : 'left-6'} p-2 hover:bg-slate-50 rounded-xl transition-colors`}>
                    <X className="w-6 h-6 text-slate-400 hover:text-red-500" />
                 </button>
@@ -868,3 +887,4 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
     </div>
   );
 };
+

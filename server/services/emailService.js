@@ -1,7 +1,7 @@
 /**
  * Email service: send via Resend API (HTTPS, works on Render) or fallback to Nodemailer SMTP.
  * - Prefer Resend: set RESEND_API_KEY on Render (no SMTP/DNS issues).
- * - Optional RESEND_FROM: sender address (default onboarding@resend.dev for testing).
+ * - RESEND_FROM should be a verified sender like "Palma <noreply@palma.ps>".
  */
 
 import nodemailer from 'nodemailer';
@@ -12,7 +12,13 @@ const RESEND_API = 'https://api.resend.com/emails';
 async function sendViaResend(to, subject, text, html) {
   const apiKey = (process.env.RESEND_API_KEY || '').trim();
   if (!apiKey) return null;
-  const from = (process.env.RESEND_FROM || '').trim() || 'Palma <onboarding@resend.dev>';
+  const defaultFrom = 'Palma <noreply@palma.ps>';
+  const from = (process.env.RESEND_FROM || defaultFrom).trim();
+  const recipients = Array.isArray(to) ? to.filter(Boolean) : [to].filter(Boolean);
+  if (!recipients.length) {
+    console.error('[emailService] Resend send error: no recipients provided');
+    return { success: false, error: { message: 'No recipients provided' } };
+  }
   try {
     const res = await fetch(RESEND_API, {
       method: 'POST',
@@ -23,7 +29,7 @@ async function sendViaResend(to, subject, text, html) {
       },
       body: JSON.stringify({
         from,
-        to: [to],
+        to: recipients,
         subject,
         html: html || (text ? text.replace(/\n/g, '<br>') : ''),
         text: text || (html ? html.replace(/<[^>]*>/g, '') : ''),
@@ -61,8 +67,14 @@ function getTransporter() {
  * @returns {Promise<{ success: boolean, error?: object }>}
  */
 async function sendEmail(to, subject, text, html) {
+  const recipients = Array.isArray(to) ? to.filter(Boolean) : [to].filter(Boolean);
+  if (!recipients.length) {
+    console.error('[emailService] sendEmail error: no recipients provided');
+    return { success: false, error: { message: 'No recipients provided' } };
+  }
+
   if (process.env.RESEND_API_KEY) {
-    const res = await sendViaResend(to, subject, text, html);
+    const res = await sendViaResend(recipients, subject, text, html);
     if (res) return res;
   }
   const transporter = getTransporter();
@@ -71,14 +83,15 @@ async function sendEmail(to, subject, text, html) {
     return { success: false, error: { message: 'Email not configured' } };
   }
   try {
+    const defaultFrom = 'Palma <noreply@palma.ps>';
     await transporter.sendMail({
-      from: process.env.EMAIL_USER || 'noreply@example.com',
-      to,
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER || defaultFrom,
+      to: recipients,
       subject,
       text: text || (html ? html.replace(/<[^>]*>/g, '') : ''),
       html: html || undefined,
     });
-    console.log('[emailService] SMTP sent to', to, subject);
+    console.log('[emailService] SMTP sent to', recipients, subject);
     return { success: true };
   } catch (err) {
     console.error('[emailService] SMTP error:', err.message);

@@ -64,7 +64,9 @@ const AppContent: React.FC = () => {
     if (isApplyingHashRef.current) return;
     const value = path ? `#/${path}` : '#/';
     if (window.location.hash !== value) {
-      window.history.replaceState(null, '', window.location.pathname + window.location.search + value);
+      // استخدم hash فعلي حتى المتصفح يسجّل خطوة في الـ history
+      // وبالتالي زر الرجوع يرجّع للمسار السابق داخل الموقع، ليس للموقع السابق بالكامل.
+      window.location.hash = value;
     }
   }, []);
 
@@ -587,7 +589,28 @@ const AppContent: React.FC = () => {
             />
           )}
           
-          {user.role === 'ADMIN' && (
+          {user.role === 'ADMIN' && (currentView === 'shop' || currentView === 'cart') && (
+            <div className="block">
+              <CustomerView
+                user={user}
+                view={currentView}
+                cart={cart}
+                addToCart={addToCart}
+                removeFromCart={removeFromCart}
+                updateQuantity={updateQuantity}
+                clearCart={clearCart}
+                lang={lang}
+                onRefresh={refreshUser}
+                onViewProduct={(id) => { setSelectedProductId(id); setCurrentView('product_details'); }}
+                onViewProfile={(id) => { setSelectedProfileId(id); setCurrentView('public_profile'); }}
+                onTabChange={(tab) => { if (tab === 'shop' || tab === 'cart') setCurrentView(tab); updateHash(tab); }}
+                onProceedToApiCheckout={(items) => { setCheckoutCart(items); setShowApiCheckout(true); }}
+                shopOnlySection
+              />
+            </div>
+          )}
+
+          {user.role === 'ADMIN' && currentView !== 'shop' && currentView !== 'cart' && (
               <AdminView 
                 view={currentView} 
                 onViewProduct={(id) => { setSelectedProductId(id); setCurrentView('product_details'); }}

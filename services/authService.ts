@@ -93,8 +93,8 @@ export const authService = {
     currentUser = user;
   },
 
-  /** Request password reset OTP via email. */
-  async forgotPassword(email: string): Promise<ActionResponse<void>> {
+  /** Request password reset OTP via email. May return verificationCode when email is not configured. */
+  async forgotPassword(email: string): Promise<ActionResponse<{ verificationCode?: string }>> {
     try {
       const res = await fetch(`${getApiBase()}/api/auth/forgot-password`, {
         method: 'POST',
@@ -104,6 +104,10 @@ export const authService = {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) return { success: false, error: (data as any).error || 'Request failed' };
+      const code = (data as any).verificationCode;
+      if (code) {
+        return { success: true, data: { verificationCode: String(code) } };
+      }
       return { success: true };
     } catch (e: any) {
       return { success: false, error: e.message || 'Request failed' };

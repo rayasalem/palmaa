@@ -178,9 +178,26 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                     const result = await marketStore.forgotPassword(forgotEmail);
                     setLoading(false);
                     if (result.success) {
-                      showToast(lang === 'ar' ? 'تم إرسال رمز التحقق إلى بريدك' : 'Check your email for the reset code', 'success');
+                      const code = (result as any).data?.verificationCode as string | undefined;
+                      if (code) {
+                        // Email not configured / DNS issue: backend returned code directly
+                        setForgotOtp(code);
+                        showToast(
+                          lang === 'ar'
+                            ? 'تم إنشاء رمز التحقق وتم تعبئته هنا لأن البريد غير مهيأ.'
+                            : 'A reset code was generated and pre-filled because email is not configured.',
+                          'success'
+                        );
+                      } else {
+                        showToast(
+                          lang === 'ar'
+                            ? 'تم إرسال رمز التحقق إلى بريدك'
+                            : 'Check your email for the reset code',
+                          'success'
+                        );
+                        setForgotOtp('');
+                      }
                       setForgotStep('otp');
-                      setForgotOtp('');
                       setForgotNewPassword('');
                       setForgotConfirmPassword('');
                     } else {

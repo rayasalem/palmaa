@@ -214,6 +214,17 @@ async function forgotPassword(email) {
     html
   );
   if (!emailResult.success) {
+    const msg = (emailResult.error?.message || '').toLowerCase();
+    const isNotConfigured = msg.includes('not configured');
+    const isDnsOrNetwork =
+      /ebadname|enotfound|econnrefused|getaddrinfo|dns|network|timeout/i.test(msg) ||
+      (emailResult.error?.code && ['ENOTFOUND', 'ECONNREFUSED', 'ETIMEDOUT'].includes(emailResult.error.code));
+    if (isNotConfigured || isDnsOrNetwork) {
+      console.warn(
+        '[authService] forgotPassword: email send failed (config/DNS/network); returning success with code so user can reset password.'
+      );
+      return { success: true, error: null, verificationCode: code };
+    }
     return { success: false, error: emailResult.error || { message: 'Failed to send email' } };
   }
   return { success: true, error: null };

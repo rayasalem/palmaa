@@ -256,7 +256,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
   const isRtl = lang === 'ar';
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col" dir={isRtl ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-slate-50 flex flex-col pb-24" dir={isRtl ? 'rtl' : 'ltr'}>
       <div className="max-w-xl mx-auto w-full px-6 py-10">
         <button type="button" onClick={onBack} className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-8 font-medium">
           <ArrowLeft className="w-4 h-4" /> {lang === 'ar' ? 'العودة' : 'Back'}

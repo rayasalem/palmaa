@@ -123,3 +123,4 @@ async function clearCart(req, res) {
 }
 
 export { getCart, addItem, updateItem, removeItem, clearCart };
+
