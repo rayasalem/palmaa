@@ -69,7 +69,8 @@ app.use(helmetMiddleware());
 if (isProduction()) app.use(httpsEnforce);
 app.use(compression());
 app.use(cookieParser(getEnv('COOKIE_SECRET')));
-app.use(express.json({ limit: '1mb' }));
+// Allow larger payloads for product create/update (e.g. images as URLs or base64)
+app.use(express.json({ limit: '15mb' }));
 
 app.use(generalLimiter());
 app.use(requestLogger);

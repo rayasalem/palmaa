@@ -100,7 +100,7 @@ async function registerUser(req, res) {
     }
     const emailNorm = email.toLowerCase().trim();
     logger.info('registerUser', { email: emailNorm, role: roleNorm });
-    const { user, error } = await authService.registerUser({
+    const { user, error, emailSent, verificationCode } = await authService.registerUser({
       email: emailNorm,
       password,
       name: name ? String(name).trim() : undefined,
@@ -120,11 +120,16 @@ async function registerUser(req, res) {
         : (error.message || 'Registration failed');
       return res.status(500).json({ success: false, error: userMsg });
     }
-    return res.status(201).json({
+    const payload = {
       success: true,
-      message: 'Check your email for OTP to verify your account.',
+      message: emailSent !== false
+        ? 'Check your email for OTP to verify your account.'
+        : 'Account created. Email is not configured; use the code below to verify.',
       user: user ? { id: user.id, email: user.email, role: user.role, is_email_verified: user.is_email_verified } : null,
-    });
+      emailSent: emailSent !== false,
+    };
+    if (verificationCode) payload.verificationCode = verificationCode;
+    return res.status(201).json(payload);
   } catch (err) {
     logger.error('registerUser unexpected', { message: err.message });
     return res.status(500).json({ success: false, error: err.message || 'Internal server error' });

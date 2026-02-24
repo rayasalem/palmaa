@@ -46,6 +46,7 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
   // Email verification step: FORM → VERIFY
   const [step, setStep] = useState<'FORM' | 'VERIFY'>('FORM');
   const [verificationCode, setVerificationCode] = useState('');
+  const [emailNotSent, setEmailNotSent] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -106,7 +107,19 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
     if (result.success) {
       if (result.requiresVerification) {
         setStep('VERIFY');
-        showToast(lang === 'en' ? 'Registration successful. Check your email for the verification code.' : 'تم التسجيل بنجاح. تحقق من بريدك للحصول على رمز التأكيد.', 'info');
+        const codeFromServer = (result as any).verificationCode;
+        if (codeFromServer) {
+          setVerificationCode(String(codeFromServer));
+          setEmailNotSent(true);
+        } else {
+          setEmailNotSent(false);
+        }
+        showToast(
+          codeFromServer
+            ? (lang === 'en' ? 'Account created. Email is not configured; use the code below to verify.' : 'تم إنشاء الحساب. البريد غير مُعد؛ استخدم الرمز أدناه للتحقق.')
+            : (lang === 'en' ? 'Registration successful. Check your email for the verification code.' : 'تم التسجيل بنجاح. تحقق من بريدك للحصول على رمز التأكيد.'),
+          'info'
+        );
       } else if (result.data) {
         showToast(t.common.success, 'success');
         onRegister(result.data.user);
@@ -158,6 +171,11 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
             <div className="flex justify-center mb-6"><Logo size="medium" /></div>
             <h1 className="text-xl font-black text-slate-900">{lang === 'en' ? 'Verify your email' : 'تأكيد البريد الإلكتروني'}</h1>
             <p className="text-slate-500 text-sm mt-2">{lang === 'en' ? 'Enter the 6-digit code sent to' : 'أدخل الرمز المكون من 6 أرقام المرسل إلى'}: <strong>{formData.email}</strong></p>
+            {emailNotSent && (
+              <p className="mt-3 px-4 py-2 bg-amber-50 text-amber-800 text-sm rounded-xl border border-amber-200">
+                {lang === 'en' ? 'Email sending is not configured. Use the code shown below to verify.' : 'إرسال البريد غير مُعد. استخدم الرمز المعروض أدناه للتحقق.'}
+              </p>
+            )}
           </div>
           <form onSubmit={handleVerify} className="space-y-6">
             {error && <div className="p-4 bg-red-50 text-red-600 text-sm font-bold rounded-2xl text-center">{error}</div>}

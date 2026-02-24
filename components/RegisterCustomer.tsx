@@ -27,6 +27,7 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
   // State Machine: FORM -> VERIFY
   const [step, setStep] = useState<'FORM' | 'VERIFY'>('FORM');
   const [verificationCode, setVerificationCode] = useState('');
+  const [emailNotSent, setEmailNotSent] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -83,7 +84,19 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
     if (result.success) {
       if (result.requiresVerification) {
         setStep('VERIFY');
-        showToast(lang === 'en' ? 'Registration successful. Check email for code.' : 'تم التسجيل. تحقق من بريدك للحصول على الرمز.', 'info');
+        const codeFromServer = (result as any).verificationCode;
+        if (codeFromServer) {
+          setVerificationCode(String(codeFromServer));
+          setEmailNotSent(true);
+        } else {
+          setEmailNotSent(false);
+        }
+        showToast(
+          codeFromServer
+            ? (lang === 'en' ? 'Account created. Email is not configured; use the code below to verify.' : 'تم إنشاء الحساب. البريد غير مُعد؛ استخدم الرمز أدناه للتحقق.')
+            : (lang === 'en' ? 'Registration successful. Check email for code.' : 'تم التسجيل. تحقق من بريدك للحصول على الرمز.'),
+          'info'
+        );
       } else if (result.data) {
         showToast(t.common.success, 'success');
         onRegister(result.data.user);
@@ -263,8 +276,12 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
                   <Mail className="w-8 h-8" />
                </div>
                <h2 className="text-2xl font-black text-slate-900 mb-2">{lang === 'en' ? 'Verify Email' : 'تحقق من البريد الإلكتروني'}</h2>
-               <p className="text-slate-500 text-sm mb-6">{lang === 'en' ? `We sent a code to ${formData.email}` : `أرسلنا رمزاً إلى ${formData.email}`}</p>
-               
+               <p className="text-slate-500 text-sm mb-2">{lang === 'en' ? `We sent a code to ${formData.email}` : `أرسلنا رمزاً إلى ${formData.email}`}</p>
+               {emailNotSent && (
+                 <p className="mb-4 px-4 py-2 bg-amber-50 text-amber-800 text-sm rounded-xl border border-amber-200">
+                   {lang === 'en' ? 'Email sending is not configured. Use the code below to verify.' : 'إرسال البريد غير مُعد. استخدم الرمز أدناه للتحقق.'}
+                 </p>
+               )}
                <form onSubmit={handleVerify} className="space-y-6 max-w-xs mx-auto">
                   <input 
                     autoFocus

@@ -38,7 +38,7 @@ export const userService = {
         body.termsAccepted = true;
         if (extraData?.termsVersion) body.termsVersion = extraData.termsVersion;
       }
-      const data = await api<{ success: boolean; message?: string; user?: any }>('/api/auth/register', {
+      const data = await api<{ success: boolean; message?: string; user?: any; emailSent?: boolean; verificationCode?: string }>('/api/auth/register', {
         method: 'POST',
         body: JSON.stringify(body),
       });
@@ -54,7 +54,13 @@ export const userService = {
         city: extraData?.city || user.city,
       };
       if (data.user?.id) newUser.id = data.user.id;
-      return { success: true, requiresVerification: true, data: { user: newUser, token: '' } };
+      return {
+        success: true,
+        requiresVerification: true,
+        data: { user: newUser, token: '' },
+        emailSent: data.emailSent !== false,
+        verificationCode: data.verificationCode,
+      };
     } catch (e: any) {
       console.error('Registration Error:', e);
       return { success: false, error: e.message || 'Registration failed' };

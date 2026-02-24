@@ -176,10 +176,15 @@ async function registerUser(params) {
     html
   );
   if (!emailResult.success) {
+    const isNotConfigured = (emailResult.error?.message || '').toLowerCase().includes('not configured');
+    if (isNotConfigured) {
+      console.warn('[authService] registerUser: email not configured; returning success with code so user can verify.');
+      return { user, error: null, emailSent: false, verificationCode: code };
+    }
     console.error('[authService] registerUser sendEmail failed');
     return { user, error: emailResult.error || { message: 'Failed to send email' } };
   }
-  return { user, error: null };
+  return { user, error: null, emailSent: true };
 }
 
 /**
