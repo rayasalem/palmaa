@@ -57,3 +57,10 @@ Use the same backend base URL as checkout (e.g. `VITE_API_URL` or `http://localh
   - `Account deleted. Contact support within 30 days to restore.` – soft-deleted.
 
   Ensure the `users` table has a `password` column and that registration stores bcrypt hashes (the default backend does this). If you use a different DB schema, the login logic must read the same column used at registration.
+
+**How to debug 401 on Render:**  
+In Render → your backend service → **Logs**. After a failed login you should see one of:
+- `[authService] login: no user found for email` → البريد غير مسجّل أو خاطئ.
+- `[authService] login: user found but password empty in DB` → عمود كلمة المرور فارغ (تأكد أن التسجيل يخزن في عمود `password` وأن Supabase يستخدم **Service Role Key** في متغير `SUPABASE_SERVICE_KEY`).
+- `[authService] login: bcrypt compare failed` → كلمة المرور خاطئة.
+- `[authService] login: password in DB is not bcrypt format` → كلمة المرور في قاعدة البيانات ليست بصيغة bcrypt (يجب أن تبدأ بـ `$2a$` أو `$2b$`).

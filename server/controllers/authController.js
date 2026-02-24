@@ -55,6 +55,7 @@ async function login(req, res) {
     }
     const { user, error } = await authService.login(email.trim().toLowerCase(), password);
     if (error || !user) {
+      logger.warn('login failed', { email: email.trim().toLowerCase(), reason: error?.message || 'no user' });
       return res.status(401).json({ success: false, error: error?.message || 'Invalid credentials' });
     }
     const token = jwtService.sign({ sub: user.id, email: user.email, role: user.role });

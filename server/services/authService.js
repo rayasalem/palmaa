@@ -261,7 +261,12 @@ async function login(email, password) {
     if (!listErr && rows && rows.length > 0) userRow = rows[0];
   }
 
-  if (!userRow || !userRow.password) {
+  if (!userRow) {
+    console.log('[authService] login: no user found for email', emailNorm);
+    return { user: null, error: { message: 'Invalid credentials' } };
+  }
+  if (!userRow.password || String(userRow.password).trim() === '') {
+    console.log('[authService] login: user found but password empty in DB', { email: emailNorm, userId: userRow.id });
     return { user: null, error: { message: 'Invalid credentials' } };
   }
   if (userRow.deleted_at) {
@@ -271,14 +276,16 @@ async function login(email, password) {
     return { user: null, error: { message: 'Account suspended. Contact support.' } };
   }
 
-  // Handle legacy plain-text password (e.g. mock admin) - only for development
+  // Verify password: Node bcrypt ($2a$, $2b$) and Postgres pgcrypto crypt('x', gen_salt('bf')) are compatible
   const stored = userRow.password;
   let match = false;
-  if (stored.startsWith('$2') && stored.length > 50) {
+  if (stored.startsWith('$2') && stored.length >= 50) {
     match = await bcrypt.compare(password, stored);
+    if (!match) console.log('[authService] login: bcrypt compare failed', { email: emailNorm });
   } else if (process.env.NODE_ENV !== 'production' && stored === password) {
-    // Allow plain-text match only in development for backward compatibility
     match = true;
+  } else {
+    console.log('[authService] login: password in DB is not bcrypt format', { email: emailNorm, prefix: (stored || '').slice(0, 10) });
   }
 
   if (!match) {
