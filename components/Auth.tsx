@@ -76,7 +76,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
     // Simulate slight network delay for effect
     await new Promise(r => setTimeout(r, 600));
 
-    const result = await marketStore.login(email, password);
+    const result = await marketStore.login(email.trim(), password.trim());
 
     if (result.success && result.data) {
       showToast(t.common.success, 'success');

@@ -53,7 +53,8 @@ async function login(req, res) {
     if (!password || typeof password !== 'string') {
       return res.status(400).json({ success: false, error: 'Password is required' });
     }
-    const { user, error } = await authService.login(email.trim().toLowerCase(), password);
+    const passTrimmed = typeof password === 'string' ? password.trim() : '';
+    const { user, error } = await authService.login(email.trim().toLowerCase(), passTrimmed);
     if (error || !user) {
       logger.warn('login failed', { email: email.trim().toLowerCase(), reason: error?.message || 'no user' });
       return res.status(401).json({ success: false, error: error?.message || 'Invalid credentials' });
@@ -103,7 +104,7 @@ async function registerUser(req, res) {
     logger.info('registerUser', { email: emailNorm, role: roleNorm });
     const { user, error, emailSent, verificationCode } = await authService.registerUser({
       email: emailNorm,
-      password,
+      password: typeof password === 'string' ? password.trim() : password,
       name: name ? String(name).trim() : undefined,
       role: roleNorm,
       termsAccepted: roleNorm === 'MERCHANT' ? true : !!termsAccepted,
@@ -120,6 +121,12 @@ async function registerUser(req, res) {
         ? 'إعداد قاعدة البيانات ناقص. شغّل سكربت الإعداد (setup.sql) في Supabase SQL Editor ثم أعد المحاولة.'
         : (error.message || 'Registration failed');
       return res.status(500).json({ success: false, error: userMsg });
+    }
+    // نفس تسجيل الدخول: نضع كوكي الجلسة (JWT) عشان بعد التسجيل المستخدم يكون "داخل" وما يحتاج يعمل login مرة ثانية
+    if (user && user.id) {
+      const token = jwtService.sign({ sub: user.id, email: user.email, role: user.role });
+      res.cookie(jwtService.getCookieName(), token, jwtService.getCookieOptions());
+      logger.info('registerUser: session cookie set', { userId: user.id, role: user.role });
     }
     const payload = {
       success: true,

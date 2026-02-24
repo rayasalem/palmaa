@@ -121,7 +121,8 @@ async function updatePassword(email, newPassword) {
 async function registerUser(params) {
   const { email, password, name, role, termsAccepted, termsVersion } = params;
   const emailNorm = email.toLowerCase().trim();
-  const hashed = await hashPassword(password);
+  const passTrimmed = typeof password === 'string' ? password.trim() : password;
+  const hashed = await hashPassword(passTrimmed);
   const roleVal = role || 'CUSTOMER';
   console.log('[authService] Registering user', emailNorm, 'role', roleVal);
   const now = new Date().toISOString();
@@ -177,7 +178,7 @@ async function registerUser(params) {
       if (selErr) {
         console.warn('[authService] registerUser: could not read password after insert:', selErr.message);
       } else if (row && row.password && row.password.startsWith('$2')) {
-        const verifyMatch = await bcrypt.compare(password, row.password);
+        const verifyMatch = await bcrypt.compare(passTrimmed, row.password);
         if (!verifyMatch) {
           console.warn('[authService] registerUser: password in DB but bcrypt.compare failed. Login will fail for this user.');
         }
@@ -252,7 +253,8 @@ async function setEmailVerified(email) {
  */
 async function login(email, password) {
   const emailNorm = email.toLowerCase().trim();
-  if (!emailNorm || !password) {
+  const passTrimmed = typeof password === 'string' ? password.trim() : '';
+  if (!emailNorm || !passTrimmed) {
     return { user: null, error: { message: 'Email and password are required' } };
   }
 
@@ -294,13 +296,13 @@ async function login(email, password) {
   let match = false;
 
   if (stored && stored.startsWith('$2') && stored.length >= 50) {
-    match = await bcrypt.compare(password, stored);
+    match = await bcrypt.compare(passTrimmed, stored);
     if (!match) console.log('[authService] login: bcrypt compare failed', { email: emailNorm });
-  } else if (process.env.NODE_ENV !== 'production' && stored === password) {
+  } else if (process.env.NODE_ENV !== 'production' && stored === passTrimmed) {
     match = true;
   } else if (!stored || stored === '') {
     // كلمة المرور فارغة في DB (مثلاً التسجيل ما خزّنها): نخلّي أول محاولة دخول تخزّنها وتنجح
-    const hashed = await hashPassword(password);
+    const hashed = await hashPassword(passTrimmed);
     const { error: updateErr } = await supabase
       .from(USERS_TABLE)
       .update({ password: hashed, updated_at: new Date().toISOString() })
