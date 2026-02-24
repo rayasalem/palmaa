@@ -114,7 +114,8 @@ async function updatePassword(email, newPassword) {
 }
 
 /**
- * Register user: insert into users with is_email_verified=false, then generate OTP, save, send email.
+ * Register user: insert into users with email_verified=true.
+ * لا يوجد تحقق إيميل (OTP) مؤقتاً حتى تُحل مشكلة الإرسال.
  * @param {object} params - { email, password, name, role, termsAccepted, termsVersion }
  */
 async function registerUser(params) {
@@ -129,7 +130,7 @@ async function registerUser(params) {
     password: hashed,
     name: name || emailNorm,
     role: roleVal,
-    email_verified: false,
+    email_verified: true,
     created_at: now,
   };
   if (roleVal === 'MERCHANT' && termsAccepted) {
@@ -162,31 +163,8 @@ async function registerUser(params) {
     console.error('[authService] registerUser insert error:', insertError.message);
     return { user: null, error: insertError };
   }
-  const code = generateOtp();
-  const { error: otpError } = await saveOtp(emailNorm, code, 'email_verification');
-  if (otpError) {
-    console.error('[authService] registerUser saveOtp error:', otpError.message);
-    return { user, error: otpError };
-  }
-  const html = emailService.getEmailConfirmationTemplate(code);
-  const emailResult = await emailService.sendEmail(
-    emailNorm,
-    'Email Confirmation Code',
-    `Your verification code is: ${code}. It expires in ${OTP_EXPIRY_MINUTES} minutes.`,
-    html
-  );
-  if (!emailResult.success) {
-    const msg = (emailResult.error?.message || '').toLowerCase();
-    const isNotConfigured = msg.includes('not configured');
-    const isDnsOrNetwork = /ebadname|enotfound|econnrefused|getaddrinfo|dns|network|timeout/i.test(msg) || (emailResult.error?.code && ['ENOTFOUND', 'ECONNREFUSED', 'ETIMEDOUT'].includes(emailResult.error.code));
-    if (isNotConfigured || isDnsOrNetwork) {
-      console.warn('[authService] registerUser: email send failed (config/DNS/network); returning success with code so user can verify.');
-      return { user, error: null, emailSent: false, verificationCode: code };
-    }
-    console.error('[authService] registerUser sendEmail failed');
-    return { user, error: emailResult.error || { message: 'Failed to send email' } };
-  }
-  return { user, error: null, emailSent: true };
+  // لا نستخدم OTP أو إرسال بريد هنا حالياً
+  return { user, error: null, emailSent: false };
 }
 
 /**
@@ -214,18 +192,12 @@ async function forgotPassword(email) {
     html
   );
   if (!emailResult.success) {
-    const msg = (emailResult.error?.message || '').toLowerCase();
-    const isNotConfigured = msg.includes('not configured');
-    const isDnsOrNetwork =
-      /ebadname|enotfound|econnrefused|getaddrinfo|dns|network|timeout/i.test(msg) ||
-      (emailResult.error?.code && ['ENOTFOUND', 'ECONNREFUSED', 'ETIMEDOUT'].includes(emailResult.error.code));
-    if (isNotConfigured || isDnsOrNetwork) {
-      console.warn(
-        '[authService] forgotPassword: email send failed (config/DNS/network); returning success with code so user can reset password.'
-      );
-      return { success: true, error: null, verificationCode: code };
-    }
-    return { success: false, error: emailResult.error || { message: 'Failed to send email' } };
+    // نفس الفكرة: لا نمنع إعادة التعيين إذا فشل الإيميل؛ نرجع الكود للمستخدم.
+    console.warn(
+      '[authService] forgotPassword sendEmail failed; returning success with manual reset code.',
+      { message: emailResult.error?.message, code: emailResult.error?.code }
+    );
+    return { success: true, error: null, verificationCode: code };
   }
   return { success: true, error: null };
 }

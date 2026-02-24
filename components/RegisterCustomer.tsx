@@ -81,26 +81,9 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
 
     const result = await userService.register(newUser, formData.password);
 
-    if (result.success) {
-      if (result.requiresVerification) {
-        setStep('VERIFY');
-        const codeFromServer = (result as any).verificationCode;
-        if (codeFromServer) {
-          setVerificationCode(String(codeFromServer));
-          setEmailNotSent(true);
-        } else {
-          setEmailNotSent(false);
-        }
-        showToast(
-          codeFromServer
-            ? (lang === 'en' ? 'Account created. Email is not configured; use the code below to verify.' : 'تم إنشاء الحساب. البريد غير مُعد؛ استخدم الرمز أدناه للتحقق.')
-            : (lang === 'en' ? 'Registration successful. Check email for code.' : 'تم التسجيل. تحقق من بريدك للحصول على الرمز.'),
-          'info'
-        );
-      } else if (result.data) {
-        showToast(t.common.success, 'success');
-        onRegister(result.data.user);
-      }
+    if (result.success && result.data) {
+      showToast(t.common.success, 'success');
+      onRegister(result.data.user);
     } else {
       const msg = result.error || (lang === 'en' ? 'Registration failed' : 'فشل التسجيل');
       setError(msg);

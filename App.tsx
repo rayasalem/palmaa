@@ -445,23 +445,7 @@ const AppContent: React.FC = () => {
     );
   }
 
-  // 4. Email Verification Check – user/admin/broker/merchant must verify before accessing app
-  if (!user.emailVerified) {
-    return (
-      <VerifyEmail
-        user={user}
-        onLogout={handleLogout}
-        lang={lang}
-        onVerified={(verifiedUser) => {
-          authService.setCurrentUser(verifiedUser);
-          setUser(verifiedUser);
-          localStorage.setItem('palma_current_user', JSON.stringify(verifiedUser));
-          setDefaultView(verifiedUser);
-          showToast(lang === 'ar' ? 'تم التحقق بنجاح!' : 'Verified successfully!', 'success');
-        }}
-      />
-    );
-  }
+  // تم تعطيل خطوة التحقق من الإيميل مؤقتاً
 
   const roleUpper = (user.role || '').toUpperCase();
   if ((user.status === 'PENDING' || user.status === 'REJECTED') && roleUpper !== 'ADMIN' && roleUpper !== 'MERCHANT') {

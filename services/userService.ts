@@ -23,7 +23,8 @@ let merchantProfileCache: Record<string, MerchantProfile> = {};
 
 export const userService = {
   /**
-   * Register via backend API (POST /api/auth/register). Backend sends OTP email.
+   * Register via backend API (POST /api/auth/register).
+   * حالياً لا نستخدم تحقق إيميل (OTP)، التسجيل يُعد ناجحاً مباشرة.
    */
   async register(user: User, password?: string, extraData?: any): Promise<ActionResponse<{ user: User; token: string }>> {
     try {
@@ -46,8 +47,8 @@ export const userService = {
       const newUser: User = {
         ...user,
         id: (data.user?.id) || '',
-        emailVerified: false,
-        status: 'PENDING',
+        emailVerified: data.user?.is_email_verified ?? true,
+        status: data.user?.status || 'PENDING',
         createdAt: Date.now(),
         registration_date: new Date().toISOString(),
         companyName: extraData?.company_name || user.companyName,
@@ -56,7 +57,7 @@ export const userService = {
       if (data.user?.id) newUser.id = data.user.id;
       return {
         success: true,
-        requiresVerification: true,
+        requiresVerification: false,
         data: { user: newUser, token: '' },
         emailSent: data.emailSent !== false,
         verificationCode: data.verificationCode,
