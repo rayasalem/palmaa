@@ -478,7 +478,14 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                 
                 {/* Image Upload Area */}
                 <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{t.product.image} (Max 5) *</label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                      {t.product.image} (Max 5) *
+                    </label>
+                    <p className="text-[10px] text-slate-400 mb-2">
+                      {lang === 'ar'
+                        ? 'مسموح حتى ٥ صور، كل صورة أقل من ٢ ميجا وبصيغة JPG أو PNG أو WebP.'
+                        : 'You can upload up to 5 images, each under 2MB in JPG, PNG, or WebP format.'}
+                    </p>
                     <div 
                       onClick={() => document.getElementById('file-upload')?.click()}
                       className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:bg-slate-50 hover:border-palma-primary/50 transition cursor-pointer group"

@@ -34,8 +34,21 @@ export const marketStore = {
   // registerStudent Removed - role merged into Broker
   
   getUsers: () => db.users,
-  getAllApprovedMerchants: () => db.users.filter(u => u.role === 'MERCHANT' && u.status === 'APPROVED'),
-  getMerchantNameByUserId: (id: string) => userService.getMerchantName(id),
+  getAllApprovedMerchants: () =>
+    db.users.filter(u => u.role === 'MERCHANT' && u.status === 'APPROVED'),
+  getMerchantNameByUserId: (id: string) => {
+    const fromProducts = db.products.find(
+      p => p.merchant_id === id || p.merchantId === id,
+    )?.merchantName;
+    if (fromProducts && fromProducts !== 'Loading...') return fromProducts;
+
+    const user = db.users.find(u => u.id === id);
+    if (user && user.role === 'MERCHANT') {
+      return user.companyName || user.name || user.email || 'Merchant';
+    }
+
+    return userService.getMerchantName(id);
+  },
   getMerchantProfileByUserId: (id: string) => userService.getMerchantProfile(id),
   updateUserProfile: userService.updateProfile,
   updateMerchantProfile: userService.updateMerchantProfile,

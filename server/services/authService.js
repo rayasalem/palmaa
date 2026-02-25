@@ -194,7 +194,8 @@ async function registerUser(params) {
 }
 
 /**
- * Forgot password: ensure user exists, generate OTP, save, send email.
+ * Forgot password: ensure user exists, generate OTP, save, then send email in background.
+ * Response returns immediately after saving OTP so the request does not hang on slow SMTP.
  */
 async function forgotPassword(email) {
   const emailNorm = email.toLowerCase().trim();
@@ -210,21 +211,20 @@ async function forgotPassword(email) {
   const code = generateOtp();
   const { error: otpError } = await saveOtp(emailNorm, code, 'password_reset');
   if (otpError) return { success: false, error: otpError };
+
   const html = emailService.getPasswordResetTemplate(code);
-  const emailResult = await emailService.sendEmail(
-    emailNorm,
-    'Password Reset Code',
-    `Your password reset code is: ${code}. It expires in ${OTP_EXPIRY_MINUTES} minutes.`,
-    html
-  );
-  if (!emailResult.success) {
-    // نفس الفكرة: لا نمنع إعادة التعيين إذا فشل الإيميل؛ نرجع الكود للمستخدم.
-    console.warn(
-      '[authService] forgotPassword sendEmail failed; returning success with manual reset code.',
-      { message: emailResult.error?.message, code: emailResult.error?.code }
-    );
-    return { success: true, error: null, verificationCode: code };
-  }
+  const text = `Your password reset code is: ${code}. It expires in ${OTP_EXPIRY_MINUTES} minutes.`;
+  emailService
+    .sendEmail(emailNorm, 'Password Reset Code', text, html)
+    .then((emailResult) => {
+      if (emailResult.success) {
+        console.log('[authService] forgotPassword: email sent to', emailNorm);
+      } else {
+        console.warn('[authService] forgotPassword: sendEmail failed', emailResult.error?.message);
+      }
+    })
+    .catch((err) => console.warn('[authService] forgotPassword: sendEmail error', err.message));
+
   return { success: true, error: null };
 }
 

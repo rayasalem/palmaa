@@ -493,13 +493,15 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
             {options}
           </select>
         ) : (
-          <input 
-            type={type} 
-            name={name} 
+          <input
+            type={type}
+            name={name}
             required={required}
             placeholder={placeholder}
-            className={`w-full ${lang === 'en' ? 'pl-12 pr-4' : 'pr-12 pl-4'} py-3.5 bg-slate-50 border ${formErrors[name] ? 'border-red-300 ring-2 ring-red-100' : 'border-slate-200'} rounded-2xl text-sm font-bold text-palma-navy outline-none focus:bg-white focus:border-palma-primary focus:ring-4 focus:ring-palma-primary/10 transition-all placeholder:text-slate-400`}
-            defaultValue={inputValue}
+            className={`w-full ${lang === 'en' ? 'pl-12 pr-4' : 'pr-12 pl-4'} py-3.5 bg-slate-50 border ${
+              formErrors[name] ? 'border-red-300 ring-2 ring-red-100' : 'border-slate-200'
+            } rounded-2xl text-sm font-bold text-palma-navy outline-none focus:bg-white focus:border-palma-primary focus:ring-4 focus:ring-palma-primary/10 transition-all placeholder:text-slate-400`}
+            value={inputValue}
             onChange={handleInputChange}
           />
         )}

@@ -99,18 +99,13 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
       setError('Please select an account type');
       return;
     }
-    
+
     if (role === 'BROKER') {
       setView('REGISTER_BROKER');
     } else if (role === 'CUSTOMER') {
       setView('REGISTER_CUSTOMER');
     } else if (role === 'MERCHANT') {
-      // التاجر: نأخذه أولاً لصفحة الشروط والأحكام؛ بعد الموافقة يعود للتسجيل
-      if (onOpenTerms) {
-        onOpenTerms();
-      } else {
-        setView('REGISTER_MERCHANT');
-      }
+      setView('REGISTER_MERCHANT');
     } else {
       setView('ROLE_SELECT');
     }
@@ -241,17 +236,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                   </form>
                 )}
                 {forgotStep === 'otp' && (
-                  <form onSubmit={(e) => {
-                    e.preventDefault();
-                    setError('');
-                    if (String(forgotOtp).trim().length !== 6) {
-                      setError(lang === 'ar' ? 'أدخل رمز التحقق المكون من 6 أرقام' : 'Enter the 6-digit code');
-                      return;
-                    }
-                    setForgotStep('password');
-                    setForgotNewPassword('');
-                    setForgotConfirmPassword('');
-                  }} className="space-y-4">
+                  <div className="space-y-4">
                     <div>
                       <label htmlFor="forgot-otp" className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
                         {lang === 'ar' ? 'رمز التحقق (6 أرقام)' : 'Verification Code (6 digits)'}
@@ -259,23 +244,51 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                       <input
                         id="forgot-otp"
                         name="forgotOtp"
-                        required
                         type="text"
                         inputMode="numeric"
+                        autoComplete="one-time-code"
                         placeholder={lang === 'ar' ? '123456' : '123456'}
                         value={forgotOtp}
                         onChange={e => setForgotOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                         maxLength={6}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const code = String(forgotOtp).trim();
+                            if (code.length === 6) {
+                              setError('');
+                              setForgotStep('password');
+                              setForgotNewPassword('');
+                              setForgotConfirmPassword('');
+                            } else {
+                              setError(lang === 'ar' ? 'أدخل رمز التحقق المكون من 6 أرقام' : 'Enter the 6-digit code');
+                            }
+                          }
+                        }}
                         className="w-full px-4 py-4 rounded-2xl border-2 border-palma-primary/30 bg-palma-primary/5 text-center text-xl font-black tracking-[0.3em] focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/20 outline-none"
                       />
                     </div>
                     <div className="flex gap-3">
-                      <button type="submit" className="flex-1 py-3 bg-palma-primary text-white rounded-xl font-bold text-xs uppercase">
+                      <button
+                        type="button"
+                        className="flex-1 py-3 bg-palma-primary text-white rounded-xl font-bold text-xs uppercase"
+                        onClick={() => {
+                          setError('');
+                          const code = String(forgotOtp).trim();
+                          if (code.length !== 6) {
+                            setError(lang === 'ar' ? 'أدخل رمز التحقق المكون من 6 أرقام' : 'Enter the 6-digit code');
+                            return;
+                          }
+                          setForgotStep('password');
+                          setForgotNewPassword('');
+                          setForgotConfirmPassword('');
+                        }}
+                      >
                         {lang === 'ar' ? 'التالي' : 'Next'}
                       </button>
                       <button type="button" onClick={() => setForgotStep('email')} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase">{t.common.back}</button>
                     </div>
-                  </form>
+                  </div>
                 )}
                 {forgotStep === 'password' && (
                   <form onSubmit={async (e) => {
