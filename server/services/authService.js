@@ -282,8 +282,33 @@ async function login(email, password) {
   }
 
   if (!userRow) {
-    console.log('[authService] login: no user found for email', emailNorm);
-    return { user: null, error: { message: 'Invalid credentials' } };
+    // إذا الجدول فاضي أو المستخدم غير موجود: إنشاء أدمن تجريبي بالبيانات الثابتة فقط
+    if (emailNorm === 'admin@palma.demo' && passTrimmed === 'Admin@123456') {
+      const hashed = await hashPassword(passTrimmed);
+      const { data: inserted, error: insertErr } = await supabase
+        .from(USERS_TABLE)
+        .insert({
+          email: 'admin@palma.demo',
+          name: 'أدمن بالما',
+          role: 'ADMIN',
+          status: 'ACTIVE',
+          email_verified: true,
+          terms_accepted: true,
+          password: hashed,
+        })
+        .select('id, email, password, name, role, status, created_at, email_verified')
+        .single();
+      if (!insertErr && inserted) {
+        userRow = inserted;
+        console.log('[authService] login: demo admin created (user was missing in DB)', { userId: inserted.id });
+      } else {
+        console.log('[authService] login: failed to create demo admin', { error: insertErr?.message });
+      }
+    }
+    if (!userRow) {
+      console.log('[authService] login: no user found for email', emailNorm);
+      return { user: null, error: { message: 'Invalid credentials' } };
+    }
   }
   const hasPassword = userRow && 'password' in userRow && userRow.password != null;
   const passwordLen = userRow.password ? String(userRow.password).length : 0;
