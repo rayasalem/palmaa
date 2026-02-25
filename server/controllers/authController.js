@@ -19,7 +19,8 @@ async function getMe(req, res) {
     }
     const { data: user, error } = await authService.getUserById(userId);
     if (error || !user) {
-      return res.status(404).json({ success: false, error: error?.message || 'User not found' });
+      // 401 so frontend treats as "session invalid" and shows login (not 404)
+      return res.status(401).json({ success: false, error: error?.message || 'User not found' });
     }
     return res.status(200).json({
       success: true,
@@ -46,17 +47,20 @@ async function getMe(req, res) {
  */
 async function login(req, res) {
   try {
-    const { email, password } = req.body;
-    if (!email || typeof email !== 'string' || !email.trim()) {
+    let { email, password } = req.body;
+    // إزالة BOM أو مسافات خفية قد يرسلها المتصفح
+    if (typeof email === 'string') email = email.replace(/^\uFEFF/, '').trim().toLowerCase();
+    if (typeof password === 'string') password = password.trim();
+    if (!email) {
       return res.status(400).json({ success: false, error: 'Email is required' });
     }
-    if (!password || typeof password !== 'string') {
+    if (!password) {
       return res.status(400).json({ success: false, error: 'Password is required' });
     }
-    const passTrimmed = typeof password === 'string' ? password.trim() : '';
-    const { user, error } = await authService.login(email.trim().toLowerCase(), passTrimmed);
+    logger.info('login attempt', { email });
+    const { user, error } = await authService.login(email, password);
     if (error || !user) {
-      logger.warn('login failed', { email: email.trim().toLowerCase(), reason: error?.message || 'no user' });
+      logger.warn('login failed', { email, reason: error?.message || 'no user' });
       return res.status(401).json({ success: false, error: error?.message || 'Invalid credentials' });
     }
     const token = jwtService.sign({ sub: user.id, email: user.email, role: user.role });
