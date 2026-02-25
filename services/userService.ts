@@ -5,13 +5,13 @@
 
 import { User, Role, MerchantProfile, ActionResponse, UserStatus } from '../types';
 
-import { getApiBase } from '../api/client';
+import { getApiBase, getAuthHeaders, setAuthToken } from '../api/client';
 
 async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${getApiBase()}${path}`, {
     ...options,
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...(options.headers as object) },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders(), ...(options.headers as object) },
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((data as any).error || (data as any).message || `HTTP ${res.status}`);
@@ -162,10 +162,12 @@ export const userService = {
 
   async verifyEmail(email: string, otp: string): Promise<ActionResponse<{ user: User }>> {
     try {
-      const data = await api<{ success: boolean; user?: any }>('/api/auth/verify-email', {
+      const data = await api<{ success: boolean; user?: any; token?: string }>('/api/auth/verify-email', {
         method: 'POST',
         body: JSON.stringify({ email: email.trim(), otp: String(otp).trim() }),
       });
+      const token = (data as any).token;
+      if (token) setAuthToken(token);
       const user = (data as any).user;
       if (!user) return { success: false, error: 'No user returned' };
       const mappedUser: User = {

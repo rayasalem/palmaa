@@ -243,6 +243,10 @@ async function forgotPassword(email) {
   }
   const errMsg = emailResult?.error?.message || 'Email not configured';
   console.warn('[authService] forgotPassword: sendEmail failed', errMsg);
+  if (process.env.RETURN_OTP_WHEN_EMAIL_FAILS === 'true') {
+    console.warn('[authService] RETURN_OTP_WHEN_EMAIL_FAILS enabled: returning code in response.');
+    return { success: true, error: null, verificationCode: code };
+  }
   return {
     success: false,
     error: {

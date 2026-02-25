@@ -4,7 +4,7 @@ import { User, WithdrawalRequest } from '../types';
 import { marketStore } from '../store';
 import { userService } from '../services/userService';
 import { getAdminProducts, updateAdminProduct, deleteAdminProduct, getAdminOrders, getAdminSettings, updateAdminSettings, getAdminPlatformEarnings } from '../services/adminApi';
-import { translations } from '../translations';
+import { translations, getAuthErrorMessage, type Language } from '../translations';
 import { logEmail } from '../services/emailService';
 import { resolveLocationName } from '../services/flashlineService';
 import { Check, X, Shield, Users, Banknote, Package, Search, Database, Globe, Trash2, Eye, EyeOff } from 'lucide-react';
@@ -24,7 +24,7 @@ interface AdminViewProps {
 }
 
 export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProduct, onViewProfile }) => {
-  const lang = document.documentElement.dir === 'ltr' ? 'en' : 'ar';
+  const lang: Language = document.documentElement.dir === 'ltr' ? 'en' : 'ar';
   const t = translations[lang];
   const { showToast } = useToast();
 
@@ -189,10 +189,10 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
         
         showToast(`${user.name} has been ${status.toLowerCase()}`, status === 'APPROVED' ? 'success' : 'info');
       } else {
-        showToast(response.error || 'Update failed', 'error');
+        showToast(getAuthErrorMessage(response.error || '', lang) || response.error || (lang === 'ar' ? 'فشل التحديث' : 'Update failed'), 'error');
       }
-    } catch (e) {
-      showToast('An error occurred', 'error');
+    } catch (e: any) {
+      showToast(getAuthErrorMessage(e?.message || '', lang) || (lang === 'ar' ? 'حدث خطأ' : 'An error occurred'), 'error');
     } finally {
       setActionLoading(null);
     }
@@ -276,7 +276,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
     try {
       const res = await userService.softDeleteUser(userToDelete.id, deleteReason.trim());
       if (!res.success) {
-        showToast(res.error || (lang === 'ar' ? 'فشل حذف المستخدم' : 'Failed to delete user'), 'error');
+        showToast(getAuthErrorMessage(res.error || '', lang) || res.error || (lang === 'ar' ? 'فشل حذف المستخدم' : 'Failed to delete user'), 'error');
       } else {
         setAllUsers(prev =>
           prev.map(u =>

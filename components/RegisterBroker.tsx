@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { User, Role } from '../types';
 import { userService } from '../services/userService';
 import { authService } from '../services/authService';
-import { t } from '../translations';
+import { t, getAuthErrorMessage } from '../translations';
 import Logo from './Logo';
 import { getInternalCities, getInternalVillages } from '../services/flashlineService';
 import { useToast } from './ToastProvider';
@@ -105,7 +105,7 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
       showToast(t.common.success, 'success');
       onRegister(result.data.user);
     } else {
-      const msg = result.error || (lang === 'en' ? 'Registration failed' : 'فشل التسجيل');
+      const msg = getAuthErrorMessage(result.error || 'Registration failed', lang);
       setError(msg);
       showToast(msg, 'error');
     }

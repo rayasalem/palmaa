@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, CommissionStatus, Product, SharedProduct } from '../types';
 import { marketStore } from '../store';
-import { Language, translations } from '../translations';
+import { Language, translations, getAuthErrorMessage } from '../translations';
 import { useToast } from '../components/ToastProvider';
 import { upsertSharedProduct, listSharedProducts, removeSharedProduct, toggleSharedFeatured } from '../services/brokerApi';
 
@@ -120,7 +120,7 @@ export const BrokerView: React.FC<Props> = ({ lang, user, onRefresh, activeTab, 
       setMarketingModal(null);
       onRefresh();
     } catch (e: any) {
-      showToast(e?.message || (lang === 'en' ? 'Failed to save' : 'فشل الحفظ'), 'error');
+      showToast(getAuthErrorMessage(e?.message || '', lang) || (lang === 'en' ? 'Failed to save' : 'فشل الحفظ'), 'error');
     } finally {
       setSavingShare(false);
     }

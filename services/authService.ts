@@ -5,7 +5,7 @@
 
 import { User } from '../types';
 import type { ActionResponse } from '../types';
-import { getApiBase } from '../api/client';
+import { getApiBase, setAuthToken, getAuthHeaders } from '../api/client';
 
 function mapApiUserToUser(apiUser: any): User {
   return {
@@ -45,7 +45,9 @@ export const authService = {
       }
       const user = mapApiUserToUser(apiUser);
       currentUser = user;
-      return { success: true, data: { user, token: 'cookie' } };
+      const token = (data as any).token;
+      if (token) setAuthToken(token);
+      return { success: true, data: { user, token: token || 'cookie' } };
     } catch (e: any) {
       return { success: false, error: e.message || 'Login failed' };
     }
@@ -56,11 +58,15 @@ export const authService = {
    */
   async getMe(): Promise<ActionResponse<{ user: User }>> {
     try {
-      const res = await fetch(`${getApiBase()}/api/auth/me`, { credentials: 'include' });
+      const res = await fetch(`${getApiBase()}/api/auth/me`, {
+        credentials: 'include',
+        headers: { ...getAuthHeaders() },
+      });
       const data = await res.json().catch(() => ({}));
       const dataObj = data && typeof data === 'object' ? data as Record<string, unknown> : {};
       if (!res.ok) {
         currentUser = null;
+        if (res.status === 401) setAuthToken(null);
         const msg = (res.status === 404)
           ? 'Auth API not found. Set VITE_API_URL to your backend URL if frontend and backend are on different hosts.'
           : (dataObj.error as string) || 'Not authenticated';
@@ -77,11 +83,16 @@ export const authService = {
     }
   },
 
-  /** Logout: clear cookie on server and clear local current user. */
+  /** Logout: clear cookie on server, clear token and local current user. */
   async logout(): Promise<void> {
     try {
-      await fetch(`${getApiBase()}/api/auth/logout`, { method: 'POST', credentials: 'include' });
+      await fetch(`${getApiBase()}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { ...getAuthHeaders() },
+      });
     } finally {
+      setAuthToken(null);
       currentUser = null;
     }
   },

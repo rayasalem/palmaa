@@ -1,6 +1,6 @@
 
 
-export type Language = 'ar' | 'en';
+export type Language = 'ar' | 'en' | 'he';
 
 const ar = {
   common: {
@@ -239,6 +239,20 @@ const ar = {
     accountRejectedMsg: 'تم رفض طلبك بناءً على إرشادات الجودة الحالية لدينا.',
     reviewTime: 'تستغرق دورة المراجعة القياسية من 24 إلى 48 ساعة عمل. ستتلقى إشعاراً آلياً بمجرد الموافقة.',
     accountId: 'معرف الحساب',
+    forgotPassword: 'نسيت كلمة المرور',
+    enterCodeSent: 'أدخل رمز التحقق المرسل إلى بريدك',
+    newPasswordStep: 'كلمة المرور الجديدة',
+    send: 'إرسال',
+    verificationCode6: 'رمز التحقق (6 أرقام)',
+    enter6DigitCodeError: 'أدخل رمز التحقق المكون من 6 أرقام',
+    next: 'التالي',
+    passwordMin6: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
+    passwordsDontMatch: 'كلمتا المرور غير متطابقتين',
+    passwordChanged: 'تم تغيير كلمة المرور',
+    newPassword: 'كلمة المرور الجديدة',
+    confirmPassword: 'تأكيد كلمة المرور',
+    reset: 'تغيير',
+    checkEmailAndPassword: 'تأكد من البريد وكلمة المرور، أو استخدم «نسيت كلمة المرور»',
   },
   roles: {
     CUSTOMER: 'زبون',
@@ -264,7 +278,10 @@ const ar = {
     merchant: 'للتجار',
     contact: 'تواصل معنا',
     login: 'دخول',
-    joinMarketing: 'انضم للتسويق'
+    joinMarketing: 'انضم للتسويق',
+    shop: 'التسوق',
+    market: 'السوق',
+    notifications: 'الإشعارات',
   },
   product: {
     add: 'إضافة منتج',
@@ -535,7 +552,10 @@ const en = {
     merchant: 'For Merchants',
     broker: 'For Brokers',
     login: 'Login',
-    joinMarketing: 'Join Marketing'
+    joinMarketing: 'Join Marketing',
+    shop: 'Shop',
+    market: 'Market',
+    notifications: 'Notifications',
   },
   comingSoon: {
     earlyAccess: 'Palestine\'s Premier Marketplace',
@@ -570,6 +590,20 @@ const en = {
     accountRejectedMsg: 'Your professional request was rejected based on current guidelines.',
     reviewTime: 'Standard review cycle is 24-48 business hours. You will receive an automated notification once approved.',
     accountId: 'Account ID',
+    forgotPassword: 'Forgot Password',
+    enterCodeSent: 'Enter the 6-digit code sent to your email',
+    newPasswordStep: 'Enter new password',
+    send: 'Send',
+    verificationCode6: 'Verification Code (6 digits)',
+    enter6DigitCodeError: 'Enter the 6-digit code',
+    next: 'Next',
+    passwordMin6: 'Password must be at least 6 characters',
+    passwordsDontMatch: 'Passwords do not match',
+    passwordChanged: 'Password reset successfully',
+    newPassword: 'New Password',
+    confirmPassword: 'Confirm Password',
+    reset: 'Reset',
+    checkEmailAndPassword: 'Check email and password, or use Forgot password',
   },
   hero: {
     registerNow: 'Register Now',
@@ -584,8 +618,194 @@ const en = {
   }
 };
 
-export const translations = { ar, en };
+/** Hebrew (עברית) – RTL */
+const he = {
+  ...en,
+  common: {
+    ...en.common,
+    loading: 'טוען...',
+    save: 'שמור',
+    cancel: 'ביטול',
+    delete: 'מחק',
+    edit: 'ערוך',
+    view: 'צפה',
+    search: 'חיפוש...',
+    success: 'הפעולה הושלמה בהצלחה',
+    error: 'אירעה שגיאה',
+    logout: 'התנתק',
+    welcome: 'ברוך הבא',
+    back: 'חזרה',
+    dashboard: 'לוח בקרה',
+    products: 'מוצרים',
+    orders: 'הזמנות',
+    profile: 'פרופיל',
+    checkout: 'השלם רכישה',
+    addToCart: 'הוסף לסל',
+    total: 'סה"כ',
+    submit: 'שלח',
+    close: 'סגור',
+    pending: 'ממתין',
+    approved: 'אושר',
+    cancelShipment: 'ביטול משלוח',
+    shipmentCancelled: 'המשלוח בוטל',
+    cancelWarning: 'האם אתה בטוח שברצונך לבטל את המשלוח?',
+    confirmGen: 'אישור ויצירת משלוח',
+    status: 'סטטוס',
+  },
+  nav: {
+    ...en.nav,
+    home: 'בית',
+    cart: 'סל הקניות',
+    orders: 'ההזמנות שלי',
+    dashboard: 'לוח בקרה',
+    login: 'התחברות',
+    register: 'הרשמה',
+    shop: 'חנות',
+    market: 'שוק',
+    notifications: 'התראות',
+  },
+  merchant: {
+    ...en.merchant,
+    createShipment: 'צור משלוח',
+    shipmentCreated: 'המשלוח נוצר בהצלחה',
+    cancelShipment: 'בטל משלוח',
+    checkStatus: 'עדכן סטטוס',
+  },
+  auth: {
+    ...en.auth,
+    login: 'התחברות',
+    register: 'הרשמה',
+    email: 'אימייל',
+    password: 'סיסמה',
+    forgot: 'שכחת סיסמה?',
+    welcomeHeadline: 'ברוך הבא לפלמה',
+    digitalJourney: 'פלטפורמת המסחר והלוגיסטיקה המקיפה שלך',
+    back: 'חזרה',
+    haveAccount: 'כבר יש לך חשבון?',
+    noAccount: 'אין לך חשבון?',
+    forgotPassword: 'שכחת סיסמה',
+    enterCodeSent: 'הזן את קוד האימות שנשלח לאימייל שלך',
+    newPasswordStep: 'סיסמה חדשה',
+    send: 'שלח',
+    verificationCode6: 'קוד אימות (6 ספרות)',
+    enter6DigitCodeError: 'הזן קוד אימות בן 6 ספרות',
+    next: 'הבא',
+    passwordMin6: 'הסיסמה חייבת להכיל לפחות 6 תווים',
+    passwordsDontMatch: 'הסיסמאות אינן תואמות',
+    passwordChanged: 'הסיסמה שונתה בהצלחה',
+    newPassword: 'סיסמה חדשה',
+    confirmPassword: 'אימות סיסמה',
+    reset: 'איפוס',
+    checkEmailAndPassword: 'בדוק אימייל וסיסמה, או השתמש בשכחת סיסמה',
+  },
+  roles: {
+    ...en.roles,
+    customer: 'לקוח',
+    merchant: 'סוחר',
+    broker: 'סוכן',
+    admin: 'מנהל',
+  },
+  footer: {
+    about: 'פלמה היא פלטפורמת מסחר פלסטינית מובילה המחברת סוחרים, לקוחות ומשווקים בסביבה מאובטחת ומשולבת.',
+    links: 'קישורים',
+    privacy: 'מדיניות פרטיות',
+    terms: 'תנאי שימוש',
+  },
+  hero: {
+    registerNow: 'הירשם עכשיו',
+    join: 'הירשם כסוחר',
+    explore: 'גלה מוצרים',
+  },
+};
+
+export const translations = { ar, en, he };
 export const t = ar;
+
+/** Maps backend/auth error messages to display text in the current language */
+export function getAuthErrorMessage(error: string | undefined, lang: Language): string {
+  if (!error || !error.trim()) {
+    if (lang === 'ar') return 'حدث خطأ';
+    if (lang === 'he') return 'אירעה שגיאה';
+    return 'An error occurred';
+  }
+  const e = error.trim().toLowerCase();
+  if (e.includes('already exists') || e.includes('email already')) {
+    if (lang === 'ar') return 'البريد الإلكتروني مسجل مسبقاً';
+    if (lang === 'he') return 'כתובת האימייל כבר רשומה במערכת';
+    return error;
+  }
+  if (e.includes('select an account type') || e.includes('select account')) {
+    if (lang === 'ar') return 'يرجى اختيار نوع الحساب';
+    if (lang === 'he') return 'נא לבחור סוג חשבון';
+    return error;
+  }
+  if (e.includes('invalid credentials') || e.includes('invalid email') || e.includes('wrong password')) {
+    if (lang === 'ar') return 'بيانات الدخول غير صحيحة';
+    if (lang === 'he') return 'פרטי התחברות שגויים';
+    return error;
+  }
+  if (e.includes('no account found') || e.includes('account not found')) {
+    if (lang === 'ar') return 'لا يوجد حساب بهذا البريد الإلكتروني';
+    if (lang === 'he') return 'לא נמצא חשבון עם אימייל זה';
+    return error;
+  }
+  if (e.includes('reset failed') || e.includes('invalid or expired') || e.includes('invalid otp') || e.includes('expired code')) {
+    if (lang === 'ar') return 'فشل استعادة كلمة المرور. تحقق من الرمز أو جرّب مرة أخرى.';
+    if (lang === 'he') return 'איפוס הסיסמה נכשל. בדוק את הקוד או נסה שוב.';
+    return error;
+  }
+  if (e.includes('request failed')) {
+    if (lang === 'ar') return 'فشل الطلب';
+    if (lang === 'he') return 'הבקשה נכשלה';
+    return error;
+  }
+  if (e.includes('already verified')) {
+    if (lang === 'ar') return 'البريد الإلكتروني موثق مسبقاً';
+    if (lang === 'he') return 'האימייל מאומת כבר';
+    return error;
+  }
+  if (e.includes('verification failed')) {
+    if (lang === 'ar') return 'فشل التحقق';
+    if (lang === 'he') return 'אימות נכשל';
+    return error;
+  }
+  if (e.includes('registration failed')) {
+    if (lang === 'ar') return 'فشل التسجيل';
+    if (lang === 'he') return 'ההרשמה נכשלה';
+    return error;
+  }
+  if (e.includes('slow') || e.includes('timeout')) {
+    if (lang === 'ar') return 'خدمة البريد بطيئة. جرّب مرة أخرى بعد قليل.';
+    if (lang === 'he') return 'שירות הדוא"ל איטי. נסה שוב בעוד רגע.';
+    return error;
+  }
+  if (e.includes('could not send') || e.includes('email not configured')) {
+    if (lang === 'ar') return 'تعذر إرسال الإيميل. تحقق من إعدادات البريد أو جرّب لاحقاً.';
+    if (lang === 'he') return 'שליחת האימייל נכשלה. בדוק את הגדרות השרת או נסה שוב מאוחר יותר.';
+    return error;
+  }
+  if (e.includes('authentication required') || e.includes('not authenticated') || e.includes('401')) {
+    if (lang === 'ar') return 'انتهت الجلسة أو لم تتم مصادقتك. الرجاء تسجيل الدخول مرة أخرى.';
+    if (lang === 'he') return 'ההתחברות פגה או שלא אומתת. אנא התחבר שוב.';
+    return 'Session expired or not authenticated. Please log in again.';
+  }
+  if (e.includes('invalid or expired token')) {
+    if (lang === 'ar') return 'انتهت صلاحية الجلسة. الرجاء تسجيل الدخول مرة أخرى.';
+    if (lang === 'he') return 'תוקף ההתחברות פג. אנא התחבר שוב.';
+    return 'Session expired. Please log in again.';
+  }
+  if (e.includes('insufficient permissions') || e.includes('forbidden') || e.includes('403')) {
+    if (lang === 'ar') return 'ليس لديك صلاحية لهذا الإجراء.';
+    if (lang === 'he') return 'אין לך הרשאה לפעולה זו.';
+    return 'You do not have permission for this action.';
+  }
+  if (e.includes('account has been rejected') || e.includes('rejected')) {
+    if (lang === 'ar') return 'تم رفض حسابك. تواصل مع الإدارة للمزيد.';
+    if (lang === 'he') return 'חשבונך נדחה. פנה להנהלה לפרטים.';
+    return 'Your account has been rejected. Contact support for details.';
+  }
+  return error;
+}
 
 export const PALESTINE_CITIES = [
   { id: 1, name: 'Ramallah' },

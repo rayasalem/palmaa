@@ -51,13 +51,13 @@ const Layout: React.FC<LayoutProps> = ({ lang, toggleLang, user, onLogout, child
     { id: 'products', label: t.common.products, icon: 'Package' },
     { id: 'orders', label: t.common.orders, icon: 'ShoppingBag' },
     { id: 'earnings', label: t.common.earnings, icon: 'Banknote' },
-    { id: 'shop', label: lang === 'en' ? 'Shop' : 'التسوق', icon: 'ShoppingCart' },
+    { id: 'shop', label: t.nav.shop, icon: 'ShoppingCart' },
     { id: 'profile', label: t.common.profile, icon: 'User' },
   ] : user.role === Role.BROKER ? [
-    { id: 'promote', label: lang === 'en' ? 'Market' : 'السوق', icon: 'Globe' },
+    { id: 'promote', label: t.nav.market, icon: 'Globe' },
     { id: 'earnings', label: t.common.earnings, icon: 'Banknote' },
     { id: 'stats', label: t.common.stats, icon: 'BarChart' },
-    { id: 'shop', label: lang === 'en' ? 'Shop' : 'التسوق', icon: 'ShoppingCart' },
+    { id: 'shop', label: t.nav.shop, icon: 'ShoppingCart' },
     { id: 'profile', label: t.common.profile, icon: 'User' },
   ] : user.role === Role.ADMIN ? [
     { id: 'users', label: t.common.users, icon: 'Users' },
@@ -66,7 +66,7 @@ const Layout: React.FC<LayoutProps> = ({ lang, toggleLang, user, onLogout, child
     { id: 'withdrawals', label: t.common.withdrawals, icon: 'Wallet' },
   ] : [ 
     { id: 'home', label: t.nav.home, icon: 'Home' },
-    { id: 'notifications', label: lang === 'en' ? 'Notifications' : 'الإشعارات', icon: 'Bell' },
+    { id: 'notifications', label: t.nav.notifications, icon: 'Bell' },
     { id: 'orders_customer', label: t.nav.orders, icon: 'History' },
     { id: 'cart', label: t.nav.cart, icon: 'ShoppingCart' },
   ];
@@ -112,7 +112,7 @@ const Layout: React.FC<LayoutProps> = ({ lang, toggleLang, user, onLogout, child
               className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-palma-navy hover:bg-slate-50 hover:border-slate-300 transition-all"
             >
               <Globe className="w-4 h-4" />
-              {lang === 'en' ? 'العربية' : 'EN'}
+              {lang === 'ar' ? 'EN' : lang === 'en' ? 'עברית' : 'العربية'}
             </button>
             
             <div className="h-6 w-px bg-slate-200 hidden sm:block"></div>

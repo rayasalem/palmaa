@@ -3,14 +3,14 @@
  * Base URL: VITE_API_URL or https://palmaa.onrender.com
  */
 
-import { getApiBase } from '../api/client';
+import { getApiBase, getAuthHeaders } from '../api/client';
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = path.startsWith('http') ? path : `${getApiBase()}${path}`;
   const res = await fetch(url, {
     ...options,
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...(options.headers as object) },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders(), ...(options.headers as object) },
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {

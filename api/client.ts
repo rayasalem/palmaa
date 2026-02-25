@@ -16,29 +16,53 @@ function isHttpUrl(s: string): boolean {
 }
 
 /**
- * Resolve API base on every call (not cached) so wrong build env can never stick.
- * - If we're in browser on palma.ps or any non-localhost → PRODUCTION_API.
- * - Else only use env if it's a valid http(s) URL; never use email-like values.
- *
- * Important: If the frontend is deployed as a static site (e.g. Vercel) and the
- * backend is on a different URL (e.g. Render), set VITE_API_URL at build time to
- * the backend URL. Otherwise /api/auth/me and /api/auth/login will get 404
- * (static host has no API routes).
+ * Resolve API base on every call (not cached).
+ * When the site is loaded from palma.ps we always use PRODUCTION_API (Render URL)
+ * so the site works even if api.palma.ps certificate is not yet issued.
+ * Set VITE_API_URL only when your custom API domain has valid SSL.
  */
 function getApiBase(): string {
   const env = (import.meta as { env?: { PROD?: boolean; VITE_API_URL?: string } }).env;
   const candidate = (env?.VITE_API_URL || '').trim();
-  if (isHttpUrl(candidate)) return candidate;
   if (typeof window !== 'undefined' && window.location?.hostname) {
     const h = window.location.hostname.toLowerCase();
     if (h === 'palma.ps' || h.endsWith('.palma.ps')) return PRODUCTION_API;
     if (h && h !== 'localhost' && h !== '127.0.0.1') return PRODUCTION_API;
   }
+  if (isHttpUrl(candidate)) return candidate;
   return (env?.PROD ? PRODUCTION_API : '') || PRODUCTION_API;
 }
 
 /** @deprecated Use getApiBase() so URL is resolved at request time (avoids EBADNAME). */
 const API_BASE = getApiBase();
+
+/** Key for JWT in localStorage – يسمح بالجلسة على الجوال عندما لا تُرسل الكوكي (cross-origin). */
+const AUTH_TOKEN_KEY = 'palma_token';
+
+export function getAuthToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem(AUTH_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setAuthToken(token: string | null): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (token) localStorage.setItem(AUTH_TOKEN_KEY, token);
+    else localStorage.removeItem(AUTH_TOKEN_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Headers to attach to authenticated API requests (for mobile / cross-origin when cookie is not sent). */
+export function getAuthHeaders(): Record<string, string> {
+  const t = getAuthToken();
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
 
 // -----------------------------------------------------------------------------
 // Helpers (single-responsibility)
@@ -62,6 +86,7 @@ function mergeHeaders(options: RequestInit): RequestInit {
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      ...getAuthHeaders(),
       ...(options.headers as Record<string, string>),
     },
   };

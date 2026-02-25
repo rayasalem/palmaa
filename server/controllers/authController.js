@@ -69,6 +69,7 @@ async function login(req, res) {
     return res.status(200).json({
       success: true,
       user: { id: user.id, email: user.email, name: user.name, role: user.role, is_email_verified: user.is_email_verified, status: user.status },
+      token,
       message: 'Logged in',
     });
   } catch (err) {
@@ -180,11 +181,17 @@ async function verifyEmail(req, res) {
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to update verification status' });
     }
-    return res.status(200).json({
+    const payload = {
       success: true,
       message: 'Email verified successfully.',
       user: user ? { id: user.id, email: user.email, name: user.name, role: user.role, is_email_verified: user.is_email_verified, status: user.status, created_at: user.created_at, phone: user.phone } : null,
-    });
+    };
+    if (user) {
+      const token = jwtService.sign({ sub: user.id, email: user.email, role: user.role });
+      res.cookie(jwtService.getCookieName(), token, jwtService.getCookieOptions());
+      payload.token = token;
+    }
+    return res.status(200).json(payload);
   } catch (err) {
     logger.error('verifyEmail unexpected', { message: err.message });
     return res.status(500).json({ success: false, error: err.message || 'Internal server error' });

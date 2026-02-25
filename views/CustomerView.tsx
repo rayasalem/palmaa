@@ -2,7 +2,7 @@
 import { Product, User, PaymentMethod, OrderStatus, Order, OrderItem, CartItem, ShipmentType } from '../types';
 import { marketStore, paymentProcessor } from '../store';
 import { productService } from '../services/productService';
-import { Language, translations } from '../translations';
+import { Language, translations, getAuthErrorMessage } from '../translations';
 import { 
   createShipment, 
   prepareShipmentPayload,
@@ -158,9 +158,10 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
       const res = await fetchMyOrders();
       if (res.success && Array.isArray(res.orders)) setApiOrders(res.orders);
       else setApiOrders([]);
-    } catch (_e) {
+    } catch (e: any) {
       setApiOrders([]);
-      showToast(lang === 'ar' ? 'فشل تحميل الطلبات' : 'Failed to load orders', 'error');
+      const msg = getAuthErrorMessage(e?.message || '', lang) || (lang === 'ar' ? 'فشل تحميل الطلبات' : 'Failed to load orders');
+      showToast(msg, 'error');
     }
   }, [lang, showToast]);
 
@@ -410,10 +411,10 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
         if (onRefresh) onRefresh();
         showToast(lang === 'ar' ? 'تم إلغاء الطلب بنجاح' : 'Order cancelled successfully', 'success');
       } else {
-        showToast((res as any).error || t.common.error, 'error');
+        showToast(getAuthErrorMessage((res as any).error || '', lang) || (res as any).error || t.common.error, 'error');
       }
     } catch (err: any) {
-      showToast(err?.message || t.common.error, 'error');
+      showToast(getAuthErrorMessage(err?.message || '', lang) || err?.message || t.common.error, 'error');
     } finally {
       setProcessingCancelId(null);
     }
@@ -440,10 +441,10 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
         if (onRefresh) onRefresh();
         showToast(lang === 'ar' ? 'تم إلغاء الشحنة والطلب بنجاح' : 'Shipment and order cancelled successfully', 'success');
       } else {
-        showToast(response.error || 'API Error', 'error');
+        showToast(getAuthErrorMessage(response.error || '', lang) || response.error || t.common.error, 'error');
       }
     } catch (err: any) {
-      showToast(err.message || t.common.error, 'error');
+      showToast(getAuthErrorMessage(err?.message || '', lang) || err?.message || t.common.error, 'error');
     } finally {
       setProcessingCancelId(null);
     }

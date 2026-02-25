@@ -8,12 +8,13 @@ import { User } from '../types';
 import { userService } from '../services/userService';
 import Logo from './Logo';
 import { useToast } from './ToastProvider';
+import { getAuthErrorMessage } from '../translations';
 
 interface VerifyEmailProps {
   user: User;
   onVerified: (verifiedUser: User) => void;
   onLogout: () => void;
-  lang: 'ar' | 'en';
+  lang: 'ar' | 'en' | 'he';
 }
 
 const VerifyEmail: React.FC<VerifyEmailProps> = ({ user, onVerified, onLogout, lang }) => {
@@ -22,7 +23,7 @@ const VerifyEmail: React.FC<VerifyEmailProps> = ({ user, onVerified, onLogout, l
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const displayLang = lang === 'en' ? 'en' : 'ar';
+  const displayLang = lang;
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,11 +31,12 @@ const VerifyEmail: React.FC<VerifyEmailProps> = ({ user, onVerified, onLogout, l
     setError('');
     const result = await userService.verifyEmail(user.email || '', verificationCode);
     if (result.success && result.data) {
-      showToast(displayLang === 'en' ? 'Account verified!' : 'تم تأكيد الحساب!', 'success');
+      showToast(displayLang === 'en' ? 'Account verified!' : displayLang === 'he' ? 'החשבון אומת!' : 'تم تأكيد الحساب!', 'success');
       onVerified(result.data.user);
     } else {
-      setError(result.error || (displayLang === 'en' ? 'Verification failed' : 'فشل التحقق'));
-      showToast(result.error || 'Failed', 'error');
+      const errMsg = getAuthErrorMessage(result.error || 'Verification failed', displayLang);
+      setError(errMsg);
+      showToast(errMsg, 'error');
     }
     setLoading(false);
   };
@@ -44,10 +46,11 @@ const VerifyEmail: React.FC<VerifyEmailProps> = ({ user, onVerified, onLogout, l
     setError('');
     const result = await userService.resendVerificationCode(user.email || '');
     if (result.success) {
-      showToast(displayLang === 'en' ? 'Code sent!' : 'تم إرسال الرمز!', 'success');
+      showToast(displayLang === 'en' ? 'Code sent!' : displayLang === 'he' ? 'הקוד נשלח!' : 'تم إرسال الرمز!', 'success');
     } else {
-      showToast(result.error || 'Error', 'error');
-      setError(result.error || '');
+      const errMsg = getAuthErrorMessage(result.error || 'Error', displayLang);
+      showToast(errMsg, 'error');
+      setError(errMsg);
     }
     setLoading(false);
   };

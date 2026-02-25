@@ -161,14 +161,15 @@ export const getInternalVillages = (cityId: number): Village[] => {
   const city = palestineVillages.find(c => c.id === cityId);
   return city ? city.villages : [];
 };
-export const resolveLocationName = (id: number, type: 'city' | 'village', lang: 'ar' | 'en' = 'ar'): string => {
+export const resolveLocationName = (id: number, type: 'city' | 'village', lang: 'ar' | 'en' | 'he' = 'ar'): string => {
+  const useEn = lang !== 'ar';
   if (type === 'city') {
     const city = palestineVillages.find(c => c.id === id);
-    return city ? (lang === 'ar' ? city.nameAr : city.nameEn) : '';
+    return city ? (useEn ? city.nameEn : city.nameAr) : '';
   } else {
     for (const city of palestineVillages) {
       const village = city.villages.find(v => v.id === id);
-      if (village) return lang === 'ar' ? village.nameAr : village.nameEn;
+      if (village) return useEn ? village.nameEn : village.nameAr;
     }
     return '';
   }

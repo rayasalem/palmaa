@@ -200,7 +200,7 @@ const AppContent: React.FC = () => {
     initApp();
   }, []);
 
-  const toggleLang = () => setLang(prev => prev === 'ar' ? 'en' : 'ar');
+  const toggleLang = () => setLang(prev => (prev === 'ar' ? 'en' : prev === 'en' ? 'he' : 'ar'));
 
   // Merge guest cart into backend when user logs in (multi-user: no cart loss)
   const mergedGuestCartRef = useRef(false);

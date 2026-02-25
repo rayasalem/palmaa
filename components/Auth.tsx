@@ -7,7 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserRole, User } from '../types';
 import { marketStore } from '../store';
-import { t } from '../translations';
+import { translations, getAuthErrorMessage, type Language } from '../translations';
 import { ShoppingCart, TrendingUp, Store, ArrowRight, Mail, Lock, CheckCircle, RefreshCcw } from 'lucide-react';
 import RegisterBroker from './RegisterBroker';
 import RegisterCustomer from './RegisterCustomer';
@@ -28,7 +28,8 @@ export interface AuthProps {
 }
 
 export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOpenTerms }) => {
-  const lang = typeof document !== 'undefined' ? (document.documentElement.dir === 'ltr' ? 'en' : 'ar') : 'en';
+  const lang: Language = (typeof document !== 'undefined' && (document.documentElement.lang === 'ar' || document.documentElement.lang === 'en' || document.documentElement.lang === 'he')) ? document.documentElement.lang as Language : 'ar';
+  const t = translations[lang];
   const [view, setView] = useState(initialView);
   
   // Specific state for Unverified Flow
@@ -82,7 +83,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
       showToast(t.common.success, 'success');
       onLogin(result.data.user);
     } else {
-      const errMsg = result.error || (lang === 'ar' ? 'بيانات الدخول غير صحيحة' : 'Invalid credentials');
+      const errMsg = getAuthErrorMessage(result.error || 'Invalid credentials', lang);
       setError(errMsg);
       showToast(errMsg, 'error');
     }
@@ -96,7 +97,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
 
   const proceedToRegister = () => {
     if (!role) {
-      setError('Please select an account type');
+      setError(getAuthErrorMessage('Please select an account type', lang));
       return;
     }
 
@@ -166,9 +167,11 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                   <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></span>
                   <span>{error}</span>
                 </div>
-                <p className="text-[10px] text-slate-500 text-center">
-                  {lang === 'ar' ? 'تأكد من البريد وكلمة المرور، أو استخدم «نسيت كلمة المرور»' : 'Check email and password, or use Forgot password'}
-                </p>
+                {!showForgotPassword && (
+                  <p className="text-[10px] text-slate-500 text-center">
+                    {t.auth.checkEmailAndPassword}
+                  </p>
+                )}
               </div>
             )}
 
@@ -177,9 +180,9 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
               <div className="space-y-6 animate-fade-in">
                 {error && <p className="text-xs font-bold text-red-500">{error}</p>}
                 <h3 className="text-lg font-bold text-palma-navy">
-                  {forgotStep === 'email' && (lang === 'ar' ? 'نسيت كلمة المرور' : 'Forgot Password')}
-                  {forgotStep === 'otp' && (lang === 'ar' ? 'أدخل رمز التحقق المرسل إلى بريدك' : 'Enter the 6-digit code sent to your email')}
-                  {forgotStep === 'password' && (lang === 'ar' ? 'كلمة المرور الجديدة' : 'Enter new password')}
+                  {forgotStep === 'email' && t.auth.forgotPassword}
+                  {forgotStep === 'otp' && t.auth.enterCodeSent}
+                  {forgotStep === 'password' && t.auth.newPasswordStep}
                 </h3>
                 {forgotStep === 'email' && (
                   <form onSubmit={async (e) => {
@@ -213,11 +216,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                       setForgotConfirmPassword('');
                     } else {
                       const err = typeof result.error === 'string' ? result.error : (result.error as any)?.message || 'Request failed';
-                      if (lang === 'ar') {
-                        if (err.includes('slow') || err.includes('timeout')) setError('خدمة البريد بطيئة. جرّب مرة أخرى بعد قليل.');
-                        else if (err.includes('Could not send') || err.includes('Email not configured')) setError('تعذر إرسال الإيميل. تحقق من إعدادات البريد أو جرّب لاحقاً.');
-                        else setError(err);
-                      } else setError(err);
+                      setError(getAuthErrorMessage(err, lang));
                     }
                   }} className="space-y-4">
                     <label htmlFor="forgot-email" className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
@@ -235,7 +234,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                       className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-bold"
                     />
                     <div className="flex gap-3">
-                      <button type="submit" disabled={loading} className="flex-1 py-3 bg-palma-primary text-white rounded-xl font-bold text-xs uppercase">{loading ? t.common.loading : (lang === 'ar' ? 'إرسال' : 'Send')}</button>
+                      <button type="submit" disabled={loading} className="flex-1 py-3 bg-palma-primary text-white rounded-xl font-bold text-xs uppercase">{loading ? t.common.loading : t.auth.send}</button>
                       <button type="button" onClick={() => setShowForgotPassword(false)} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase">{t.common.back}</button>
                     </div>
                   </form>
@@ -244,7 +243,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                   <div className="space-y-4">
                     <div>
                       <label htmlFor="forgot-otp" className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
-                        {lang === 'ar' ? 'رمز التحقق (6 أرقام)' : 'Verification Code (6 digits)'}
+                        {t.auth.verificationCode6}
                       </label>
                       <input
                         id="forgot-otp"
@@ -266,7 +265,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                               setForgotNewPassword('');
                               setForgotConfirmPassword('');
                             } else {
-                              setError(lang === 'ar' ? 'أدخل رمز التحقق المكون من 6 أرقام' : 'Enter the 6-digit code');
+                              setError(t.auth.enter6DigitCodeError);
                             }
                           }
                         }}
@@ -281,7 +280,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                           setError('');
                           const code = String(forgotOtp).trim();
                           if (code.length !== 6) {
-                            setError(lang === 'ar' ? 'أدخل رمز التحقق المكون من 6 أرقام' : 'Enter the 6-digit code');
+                            setError(t.auth.enter6DigitCodeError);
                             return;
                           }
                           setForgotStep('password');
@@ -289,7 +288,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                           setForgotConfirmPassword('');
                         }}
                       >
-                        {lang === 'ar' ? 'التالي' : 'Next'}
+                        {t.auth.next}
                       </button>
                       <button type="button" onClick={() => setForgotStep('email')} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase">{t.common.back}</button>
                     </div>
@@ -300,27 +299,27 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                     e.preventDefault();
                     setError('');
                     if (forgotNewPassword.length < 6) {
-                      setError(lang === 'ar' ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' : 'Password must be at least 6 characters');
+                      setError(t.auth.passwordMin6);
                       return;
                     }
                     if (forgotNewPassword !== forgotConfirmPassword) {
-                      setError(lang === 'ar' ? 'كلمتا المرور غير متطابقتين' : 'Passwords do not match');
+                      setError(t.auth.passwordsDontMatch);
                       return;
                     }
                     setLoading(true);
                     const result = await marketStore.resetPassword(forgotEmail, forgotOtp, forgotNewPassword);
                     setLoading(false);
                     if (result.success) {
-                      showToast(lang === 'ar' ? 'تم تغيير كلمة المرور' : 'Password reset successfully', 'success');
+                      showToast(t.auth.passwordChanged, 'success');
                       setShowForgotPassword(false);
                       setPassword(forgotNewPassword);
                     } else {
-                      setError(result.error || 'Reset failed');
+                      setError(getAuthErrorMessage(result.error || 'Reset failed', lang));
                     }
                   }} className="space-y-4">
                     <div>
                       <label htmlFor="forgot-new-password" className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
-                        {lang === 'ar' ? 'كلمة المرور الجديدة' : 'New Password'}
+                        {t.auth.newPassword}
                       </label>
                       <input
                         id="forgot-new-password"
@@ -336,7 +335,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                     </div>
                     <div>
                       <label htmlFor="forgot-confirm-password" className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
-                        {lang === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password'}
+                        {t.auth.confirmPassword}
                       </label>
                       <input
                         id="forgot-confirm-password"
@@ -351,7 +350,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                       />
                     </div>
                     <div className="flex gap-3">
-                      <button type="submit" disabled={loading} className="flex-1 py-3 bg-palma-primary text-white rounded-xl font-bold text-xs uppercase">{loading ? t.common.loading : (lang === 'ar' ? 'تغيير' : 'Reset')}</button>
+                      <button type="submit" disabled={loading} className="flex-1 py-3 bg-palma-primary text-white rounded-xl font-bold text-xs uppercase">{loading ? t.common.loading : t.auth.reset}</button>
                       <button type="button" onClick={() => setForgotStep('otp')} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase">{t.common.back}</button>
                     </div>
                   </form>

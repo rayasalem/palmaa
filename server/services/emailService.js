@@ -1,7 +1,11 @@
 /**
- * Email service: send via Resend API (HTTPS, works on Render) or fallback to Nodemailer SMTP.
- * - Prefer Resend: set RESEND_API_KEY on Render (no SMTP/DNS issues).
- * - RESEND_FROM should be a verified sender like "Palma <noreply@palma.ps>".
+ * Email service: يعتمد على Resend أولاً (RESEND_API_KEY).
+ * - احصل على المفتاح: Resend Dashboard → API Keys → Create API Key
+ * - ضع المفتاح في متغير البيئة فقط (لا تضعه في الكود):
+ *   محلياً: في server/.env كـ RESEND_API_KEY=re_xxxx
+ *   على Render: Environment → RESEND_API_KEY
+ * - RESEND_FROM: عنوان مرسل من دومين موثّق (مثلاً Palma <noreply@palma.ps>)
+ * - إذا لم تضبط RESEND_API_KEY يُستخدم SMTP كاحتياطي.
  */
 
 import nodemailer from 'nodemailer';
@@ -48,9 +52,9 @@ async function sendViaResend(to, subject, text, html) {
   }
 }
 
-function getTransporter() {
+function createTransporter(portOverride) {
   const host = process.env.EMAIL_HOST?.trim();
-  const port = Number(process.env.EMAIL_PORT) || 587;
+  const port = portOverride ?? Number(process.env.EMAIL_PORT) || 587;
   const user = process.env.EMAIL_USER?.trim();
   const pass = (process.env.EMAIL_PASS || '').trim();
   if (!host || !user || !pass) return null;
@@ -64,7 +68,12 @@ function getTransporter() {
     connectionTimeout: 15000,
     greetingTimeout: 10000,
     ...(secure && !tlsReject ? { tls: { rejectUnauthorized: false } } : {}),
+    ...(port === 587 ? { requireTLS: true } : {}),
   });
+}
+
+function getTransporter() {
+  return createTransporter(undefined);
 }
 
 /**
@@ -81,28 +90,53 @@ async function sendEmail(to, subject, text, html) {
   if (process.env.RESEND_API_KEY) {
     const res = await sendViaResend(recipients, subject, text, html);
     if (res && res.success) return res;
-    console.warn('[emailService] Resend failed or not configured, trying SMTP:', res?.error?.message || 'no result');
+    console.warn('[emailService] Resend failed, trying SMTP:', res?.error?.message || 'no result');
+  } else {
+    console.warn('[emailService] RESEND_API_KEY not set. Add it in .env or Render Environment (Resend → API Keys) to send emails.');
   }
 
   const transporter = getTransporter();
   if (!transporter) {
-    console.error('[emailService] SMTP not configured: set EMAIL_HOST, EMAIL_USER, EMAIL_PASS (and optionally EMAIL_PORT, EMAIL_FROM) on Render.');
+    console.error('[emailService] Email not configured. Set RESEND_API_KEY (Resend → API Keys) in .env or Render Environment.');
     return { success: false, error: { message: 'Email not configured' } };
   }
+
+  const mailOptions = {
+    from: (process.env.EMAIL_FROM || process.env.EMAIL_USER || 'Palma <info@palma.ps>').trim(),
+    to: recipients,
+    subject,
+    text: text || (html ? html.replace(/<[^>]*>/g, '') : ''),
+    html: html || undefined,
+  };
+
+  const configuredPort = Number(process.env.EMAIL_PORT) || 587;
+  const trySend = async (trans) => {
+    await trans.sendMail(mailOptions);
+  };
+
   try {
-    const from = process.env.EMAIL_FROM || process.env.EMAIL_USER || 'Palma <info@palma.ps>';
-    console.log('[emailService] Sending via SMTP to', recipients.join(', '));
-    await transporter.sendMail({
-      from: from.trim(),
-      to: recipients,
-      subject,
-      text: text || (html ? html.replace(/<[^>]*>/g, '') : ''),
-      html: html || undefined,
-    });
+    console.log('[emailService] Sending via SMTP to', recipients.join(', '), 'port', configuredPort);
+    await trySend(transporter);
     console.log('[emailService] SMTP sent successfully to', recipients.join(', '));
     return { success: true };
   } catch (err) {
-    console.error('[emailService] SMTP error:', err.code || err.message, err.message);
+    const code = (err && err.code) ? String(err.code) : '';
+    const isConnectionError = /ECONNREFUSED|ETIMEDOUT|ECONNRESET|ENOTFOUND/.test(code) || /timeout|connection|refused/i.test(err.message || '');
+    if (isConnectionError && configuredPort === 465) {
+      const fallback = createTransporter(587);
+      if (fallback) {
+        try {
+          console.log('[emailService] Port 465 failed, trying port 587 (STARTTLS).');
+          await trySend(fallback);
+          console.log('[emailService] SMTP sent successfully via port 587 to', recipients.join(', '));
+          return { success: true };
+        } catch (err2) {
+          console.error('[emailService] SMTP port 587 also failed:', err2.code || err2.message, err2.message);
+          return { success: false, error: err2 };
+        }
+      }
+    }
+    console.error('[emailService] SMTP error:', code || err.message, err.message);
     return { success: false, error: err };
   }
 }

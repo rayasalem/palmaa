@@ -5,8 +5,9 @@ import { marketStore } from '../store';
 import { productService } from '../services/productService'; 
 import { storageService } from '../services/storageService'; // Updated import
 import { FlashLineService, cancelLogestechsShipment } from '../services/flashlineService';
+import { createShipmentApi, cancelShipmentApi, getShipmentStatusApi } from '../services/shipmentApi';
 import { getMerchantDashboard, type MerchantDashboardResponse } from '../services/merchantDashboardService';
-import { translations } from '../translations';
+import { translations, getAuthErrorMessage, type Language } from '../translations';
 import { Package, Truck, Plus, Trash2, Image as ImageIcon, Search, LayoutDashboard, DollarSign, Box, ExternalLink, XCircle, MoreHorizontal, Filter, AlertCircle, Edit, Eye, EyeOff, X, CreditCard, Receipt } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
 
@@ -18,7 +19,7 @@ interface MerchantViewProps {
 }
 
 export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewProduct, onViewProfile }) => {
-  const lang = document.documentElement.dir === 'ltr' ? 'en' : 'ar';
+  const lang: Language = (typeof document !== 'undefined' && (document.documentElement.lang === 'ar' || document.documentElement.lang === 'en' || document.documentElement.lang === 'he')) ? document.documentElement.lang as Language : 'ar';
   const t = translations[lang];
   const { showToast } = useToast();
 
@@ -200,11 +201,8 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
             lang === 'ar'
               ? 'صيغة الصورة غير مدعومة. الرجاء استخدام صورة بصيغة JPG أو PNG أو WebP.'
               : 'Invalid image format. Please use JPG, PNG, or WebP.';
-        } else if (msg.includes('Authentication required') || msg.includes('401')) {
-          msg =
-            lang === 'ar'
-              ? 'انتهت جلسة تسجيل الدخول أو لست مسجلاً كتاجر. الرجاء تسجيل الدخول مرة أخرى ثم إعادة المحاولة.'
-              : 'Session expired or you are not logged in as a merchant. Please log in again and try.';
+        } else {
+          msg = getAuthErrorMessage(msg, lang);
         }
       }
 
@@ -229,10 +227,8 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
         'info'
       );
     } else {
-      showToast(
-        (lang === 'en' ? 'Delete failed: ' : 'فشل الحذف: ') + (res.error || ''),
-        'error'
-      );
+      const errMsg = getAuthErrorMessage(res.error || '', lang) || (lang === 'en' ? 'Delete failed' : 'فشل الحذف');
+      showToast((lang === 'en' ? 'Delete failed: ' : 'فشل الحذف: ') + errMsg, 'error');
     }
   };
 
@@ -249,36 +245,104 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
       setProducts(prev => prev.map(p => p.id === product.id ? { ...p, isActive: newStatus } : p));
       showToast(newStatus ? (lang === 'en' ? 'Product Activated' : 'تم تفعيل المنتج') : (lang === 'en' ? 'Product Deactivated' : 'تم إلغاء تفعيل المنتج'), 'success');
     } else {
-      showToast(lang === 'en' ? 'Update failed' : 'فشل التحديث', 'error');
+      const errMsg = getAuthErrorMessage(res.error || '', lang) || (lang === 'en' ? 'Update failed' : 'فشل التحديث');
+      showToast(errMsg, 'error');
     }
   };
 
-  // ... (Shipment functions remain unchanged)
   const createShipment = async (order: Order) => {
     if (!window.confirm(t.common.confirmGen)) return;
     setLoading(true);
     try {
+      const addr = order.shippingAddress;
+      const addressLine1 = (addr?.addressDetails || order.shipping_address || '').trim();
+      const cityId = addr?.cityId ?? order.destination_city_id ?? 0;
+      const villageId = addr?.villageId ?? order.destination_village_id ?? 0;
+      const phone = (addr?.phone || order.shipping_phone || '').trim();
+      const recipient_name = (order.shipping_name || 'Customer').trim();
+
+      if (addressLine1 && cityId && villageId && phone) {
+        const apiRes = await createShipmentApi({
+          orderId: order.id,
+          addressLine1,
+          addressLine2: undefined,
+          cityId,
+          regionId: addr?.regionId ?? order.destination_region_id,
+          villageId,
+          recipient_name,
+          phone,
+          weight: 1,
+          cod: order.totalAmount ?? 0,
+          quantity: 1,
+          senderName: user.name,
+          senderPhone: user.phone,
+          receiverName: recipient_name,
+          receiverPhone: phone,
+          notes: `Order ${order.id}`,
+          description: 'Order shipment',
+        });
+        if (apiRes.success && apiRes.shipment) {
+          const sid = apiRes.shipment.id || (apiRes.shipment as any).barcode;
+          await marketStore.updateOrderShipment(order.id, {
+            success: true,
+            shipmentId: sid,
+            trackingNumber: sid || (apiRes.shipment as any).barcode,
+            barcode: (apiRes.shipment as any).barcode,
+          });
+          refreshData();
+          showToast(`${t.merchant.shipmentCreated}: ${sid || ''}`, 'success');
+          setLoading(false);
+          return;
+        }
+        if (!apiRes.success) {
+          showToast(getAuthErrorMessage(apiRes.error || '', lang) || apiRes.error || t.common.error, 'error');
+          setLoading(false);
+          return;
+        }
+      }
+
       const shipmentRes = await FlashLineService.automateShipmentCreation(order, user);
       if (shipmentRes.success) {
         await marketStore.updateOrderShipment(order.id, shipmentRes);
         refreshData();
         showToast(`${t.merchant.shipmentCreated}: ${shipmentRes.trackingNumber}`, 'success');
       } else {
-        showToast('Error: ' + shipmentRes.error, 'error');
+        showToast(getAuthErrorMessage(shipmentRes.error || '', lang) || (shipmentRes.error || t.common.error), 'error');
       }
     } catch (e: any) {
-      showToast('Error: ' + e.message, 'error');
+      const shipmentRes = await FlashLineService.automateShipmentCreation(order, user);
+      if (shipmentRes.success) {
+        await marketStore.updateOrderShipment(order.id, shipmentRes);
+        refreshData();
+        showToast(`${t.merchant.shipmentCreated}: ${shipmentRes.trackingNumber}`, 'success');
+      } else {
+        const errMsg = getAuthErrorMessage(e?.message || shipmentRes.error || '', lang) || e?.message || shipmentRes.error || t.common.error;
+        showToast(errMsg, 'error');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleCancelShipment = async (order: Order) => {
-    if (!order.shipmentId) return;
+    const sid = order.shipmentId || order.delivery_id;
+    if (!sid) return;
     if (!window.confirm(t.common.cancelWarning)) return;
     setLoading(true);
     try {
-      const res = await cancelLogestechsShipment(order.shipmentId, user.email, "mock-password");
+      const apiRes = await cancelShipmentApi(String(sid));
+      if (apiRes.success) {
+        order.status = 'CANCELLED';
+        order.delivery_status = 'CANCELLED';
+        marketStore.saveOrder(order);
+        refreshData();
+        showToast(t.common.shipmentCancelled, 'success');
+        setLoading(false);
+        return;
+      }
+    } catch (_) {}
+    try {
+      const res = await cancelLogestechsShipment(sid, user.email, 'mock-password');
       if (res.success) {
         order.status = 'CANCELLED';
         order.delivery_status = 'CANCELLED';
@@ -286,20 +350,34 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
         refreshData();
         showToast(t.common.shipmentCancelled, 'success');
       } else {
-        showToast('Failed: ' + res.error, 'error');
+        showToast(getAuthErrorMessage(res.error || '', lang) || res.error || t.common.error, 'error');
       }
     } catch (e: any) {
-      showToast('Error: ' + e.message, 'error');
+      showToast(getAuthErrorMessage(e?.message || '', lang) || e?.message || t.common.error, 'error');
     } finally {
       setLoading(false);
     }
   };
 
   const handleCheckStatus = async (order: Order) => {
-    if (!order.shipmentId) return;
+    const sid = order.shipmentId || order.delivery_id;
+    if (!sid) return;
     setLoading(true);
     try {
-      const status = await FlashLineService.getShipmentStatus(order.shipmentId);
+      const apiRes = await getShipmentStatusApi({ id: String(sid) });
+      if (apiRes.success && apiRes.status != null) {
+        const st = typeof apiRes.status === 'object' && apiRes.status !== null && 'status' in apiRes.status ? (apiRes.status as any).status : String(apiRes.status);
+        order.delivery_status = st;
+        const displayStatus = FlashLineService.mapFlashlineStatus(st);
+        marketStore.saveOrder(order);
+        refreshData();
+        showToast(`${t.common.status}: ${displayStatus}`, 'info');
+        setLoading(false);
+        return;
+      }
+    } catch (_) {}
+    try {
+      const status = await FlashLineService.getShipmentStatus(String(sid));
       if (status) {
         order.delivery_status = status;
         const displayStatus = FlashLineService.mapFlashlineStatus(status);
@@ -307,10 +385,10 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
         refreshData();
         showToast(`${t.common.status}: ${displayStatus}`, 'info');
       } else {
-        showToast('Could not fetch status', 'warning');
+        showToast(lang === 'ar' ? 'تعذر جلب الحالة' : lang === 'he' ? 'לא ניתן לקבל סטטוס' : 'Could not fetch status', 'warning');
       }
     } catch (e: any) {
-      showToast('Error: ' + e.message, 'error');
+      showToast(getAuthErrorMessage(e?.message || '', lang) || e?.message || t.common.error, 'error');
     } finally {
       setLoading(false);
     }
@@ -673,7 +751,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                                         <Truck className="w-3 h-3" /> {t.common.ship}
                                       </button>
                                   )}
-                                  {order.shipmentId && order.status !== 'CANCELLED' && (
+                                  {(order.shipmentId || order.delivery_id) && order.status !== 'CANCELLED' && (
                                     <>
                                       <button onClick={() => handleCheckStatus(order)} disabled={loading} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition border border-transparent hover:border-blue-100 bg-white shadow-sm" title={t.common.checkStatus}>
                                           <Search className="w-3.5 h-3.5" />

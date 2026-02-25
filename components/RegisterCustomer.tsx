@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import { userService } from '../services/userService';
 import { authService } from '../services/authService';
-import { translations } from '../translations';
+import { translations, getAuthErrorMessage } from '../translations';
 import Logo from './Logo';
 import { User as UserIcon, Mail, Phone, Lock, ArrowRight, ArrowLeft, CheckCircle, RefreshCcw } from 'lucide-react';
 import { useToast } from './ToastProvider';
@@ -84,7 +84,7 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
       showToast(t.common.success, 'success');
       onRegister(result.data.user);
     } else {
-      const msg = result.error || (lang === 'en' ? 'Registration failed' : 'فشل التسجيل');
+      const msg = getAuthErrorMessage(result.error || 'Registration failed', lang);
       setError(msg);
       showToast(msg, 'error');
     }
@@ -106,8 +106,9 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
         onRegister(result.data.user);
       }
     } else {
-      setError(result.error || (lang === 'en' ? 'Verification failed' : 'فشل التحقق'));
-      showToast(result.error || 'Failed', 'error');
+      const errMsg = getAuthErrorMessage(result.error || 'Verification failed', lang);
+      setError(errMsg);
+      showToast(errMsg, 'error');
     }
     setLoading(false);
   };
@@ -118,7 +119,7 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
     if (result.success) {
       showToast(lang === 'en' ? 'Code sent!' : 'تم إرسال الرمز!', 'success');
     } else {
-      showToast(result.error || 'Error', 'error');
+      showToast(getAuthErrorMessage(result.error || 'Error', lang), 'error');
     }
     setLoading(false);
   };
