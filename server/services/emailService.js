@@ -63,7 +63,7 @@ function getTransporter() {
 }
 
 /**
- * Send an email. Tries Resend first (if RESEND_API_KEY set), then SMTP.
+ * Send an email. Tries Resend first if RESEND_API_KEY set; on failure or when not set, uses SMTP (EMAIL_*).
  * @returns {Promise<{ success: boolean, error?: object }>}
  */
 async function sendEmail(to, subject, text, html) {
@@ -75,23 +75,26 @@ async function sendEmail(to, subject, text, html) {
 
   if (process.env.RESEND_API_KEY) {
     const res = await sendViaResend(recipients, subject, text, html);
-    if (res) return res;
+    if (res && res.success) return res;
+    console.warn('[emailService] Resend failed or not configured, trying SMTP:', res?.error?.message || 'no result');
   }
+
   const transporter = getTransporter();
   if (!transporter) {
-    console.error('[emailService] No Resend key and no SMTP; skipping send.');
+    console.error('[emailService] SMTP not configured: set EMAIL_HOST, EMAIL_USER, EMAIL_PASS (and optionally EMAIL_PORT, EMAIL_FROM) on Render.');
     return { success: false, error: { message: 'Email not configured' } };
   }
   try {
-    const defaultFrom = 'Palma <noreply@palma.ps>';
+    const from = process.env.EMAIL_FROM || process.env.EMAIL_USER || 'Palma <info@palma.ps>';
+    console.log('[emailService] Sending via SMTP to', recipients.join(', '));
     await transporter.sendMail({
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER || defaultFrom,
+      from: from.trim(),
       to: recipients,
       subject,
       text: text || (html ? html.replace(/<[^>]*>/g, '') : ''),
       html: html || undefined,
     });
-    console.log('[emailService] SMTP sent to', recipients, subject);
+    console.log('[emailService] SMTP sent successfully to', recipients.join(', '));
     return { success: true };
   } catch (err) {
     console.error('[emailService] SMTP error:', err.message);
