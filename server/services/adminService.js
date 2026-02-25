@@ -12,7 +12,7 @@ const TRANSACTIONS_TABLE = 'transactions';
 async function listUsers() {
   const { data, error } = await supabase
     .from(USERS_TABLE)
-    .select('id, email, name, role, status, phone, created_at, updated_at, terms_accepted, terms_accepted_at, email_verified, deleted_at, deleted_reason')
+    .select('id, email, name, role, status, phone, created_at, updated_at, terms_accepted, terms_accepted_at, email_verified')
     .order('created_at', { ascending: false });
   if (error) {
     console.error('[adminService] listUsers error:', error.message);
@@ -21,6 +21,8 @@ async function listUsers() {
   const list = (data || []).map((u) => ({
     ...u,
     is_email_verified: u.email_verified ?? false,
+    deleted_at: u.deleted_at ?? null,
+    deleted_reason: u.deleted_reason ?? null,
   }));
   return { data: list, error: null };
 }
