@@ -193,7 +193,7 @@ async function registerUser(params) {
   return { user, error: null, emailSent: false };
 }
 
-const EMAIL_SEND_TIMEOUT_MS = 15000;
+const EMAIL_SEND_TIMEOUT_MS = 25000;
 
 /**
  * Forgot password: ensure user exists, generate OTP, save, send email and wait for result (with timeout).

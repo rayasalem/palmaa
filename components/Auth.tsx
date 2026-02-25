@@ -212,7 +212,12 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                       setForgotNewPassword('');
                       setForgotConfirmPassword('');
                     } else {
-                      setError(result.error || 'Request failed');
+                      const err = typeof result.error === 'string' ? result.error : (result.error as any)?.message || 'Request failed';
+                      if (lang === 'ar') {
+                        if (err.includes('slow') || err.includes('timeout')) setError('خدمة البريد بطيئة. جرّب مرة أخرى بعد قليل.');
+                        else if (err.includes('Could not send') || err.includes('Email not configured')) setError('تعذر إرسال الإيميل. تحقق من إعدادات البريد أو جرّب لاحقاً.');
+                        else setError(err);
+                      } else setError(err);
                     }
                   }} className="space-y-4">
                     <label htmlFor="forgot-email" className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
