@@ -60,7 +60,7 @@ async function createProduct(merchantId, payload) {
   const price = Number(payload.price ?? payload.price_ils) || 0;
   const stock = Number(payload.stock) || 0;
   const isActive = payload.isActive !== undefined ? payload.isActive : true;
-  const images = payload.images?.length ? payload.images : (payload.image_url ? [payload.image_url] : []);
+  const images = (payload.images && payload.images.length) ? payload.images : (payload.image_url ? [payload.image_url] : []);
   const row = {
     merchant_id: merchantId,
     title: payload.name ?? payload.title,
@@ -149,7 +149,7 @@ async function decrementStock(productId, quantity) {
     .eq('id', productId)
     .single();
   if (fetchErr || !product) {
-    console.error('[productService] decrementStock fetch error:', fetchErr?.message);
+    console.error('[productService] decrementStock fetch error:', fetchErr && fetchErr.message);
     return { error: fetchErr || { message: 'Product not found' } };
   }
   const currentStock = Number(product.stock) ?? 0;

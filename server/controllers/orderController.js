@@ -29,8 +29,8 @@ async function createOrder(req, res) {
       return res.status(400).json({ success: false, error: 'weight must be a positive number' });
     }
 
-    const customer_id = req.auth?.sub || null;
-    const broker_id = req.body?.broker_id || req.body?.brokerId || null;
+    const customer_id = (req.auth && req.auth.sub) || null;
+    const broker_id = (req.body && req.body.broker_id) || (req.body && req.body.brokerId) || null;
 
     const { data, error } = await orderService.createOrder({
       recipient_name,
@@ -70,7 +70,7 @@ async function getOrder(req, res) {
 
 async function listMyOrders(req, res) {
   try {
-    const customerId = req.auth?.sub;
+    const customerId = req.auth && req.auth.sub;
     if (!customerId) return res.status(401).json({ success: false, error: 'Authentication required' });
     const { data, error } = await orderService.getOrdersByCustomerId(customerId);
     if (error) {
@@ -85,13 +85,14 @@ async function listMyOrders(req, res) {
 
 async function cancelOrder(req, res) {
   try {
-    const customerId = req.auth?.sub;
+    const customerId = req.auth && req.auth.sub;
     if (!customerId) return res.status(401).json({ success: false, error: 'Authentication required' });
     const { id } = req.params;
     if (!id) return res.status(400).json({ success: false, error: 'Order id is required' });
     const { data, error } = await orderService.cancelOrder(id, customerId);
     if (error) {
-      const status = error.message?.includes('Not authorized') ? 403 : error.message?.includes('Only pending') ? 400 : 404;
+      const em = error.message || '';
+      const status = em.includes('Not authorized') ? 403 : em.includes('Only pending') ? 400 : 404;
       return res.status(status).json({ success: false, error: error.message || 'Failed to cancel order' });
     }
     return res.status(200).json({ success: true, order: data });
@@ -111,8 +112,8 @@ async function updateOrderInvoice(req, res) {
     }
     const { data: order, error: fetchErr } = await orderService.getOrderById(orderId);
     if (fetchErr || !order) return res.status(404).json({ success: false, error: 'Order not found' });
-    const merchantId = req.auth?.sub;
-    const isAdmin = req.auth?.role === 'ADMIN';
+    const merchantId = req.auth && req.auth.sub;
+    const isAdmin = req.auth && req.auth.role === 'ADMIN';
     if (order.merchant_id !== merchantId && !isAdmin) {
       return res.status(403).json({ success: false, error: 'Not authorized to update this order invoice' });
     }

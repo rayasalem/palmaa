@@ -9,10 +9,11 @@ import { safeErrorForUser } from '../utils/userFacingError.js';
 
 async function followMerchant(req, res) {
   try {
-    const customerId = req.auth?.sub;
+    const customerId = req.auth && req.auth.sub;
     const { merchantId } = req.params;
     if (!customerId) return res.status(401).json({ success: false, error: 'Authentication required' });
-    if (req.auth?.role?.toUpperCase() !== 'CUSTOMER') {
+    const role = req.auth && req.auth.role && String(req.auth.role).toUpperCase();
+    if (role !== 'CUSTOMER') {
       return res.status(403).json({ success: false, error: 'Only customers can follow merchants' });
     }
     if (!merchantId) return res.status(400).json({ success: false, error: 'merchantId is required' });
@@ -36,7 +37,7 @@ async function followMerchant(req, res) {
 
 async function unfollowMerchant(req, res) {
   try {
-    const customerId = req.auth?.sub;
+    const customerId = req.auth && req.auth.sub;
     const { merchantId } = req.params;
     if (!customerId) return res.status(401).json({ success: false, error: 'Authentication required' });
     if (!merchantId) return res.status(400).json({ success: false, error: 'merchantId is required' });
@@ -64,7 +65,7 @@ async function getFollowersCount(req, res) {
 
 async function getIsFollowing(req, res) {
   try {
-    const userId = req.auth?.sub;
+    const userId = req.auth && req.auth.sub;
     const { id } = req.params;
     if (!userId) return res.status(200).json({ success: true, following: false });
     if (!id) return res.status(400).json({ success: false, error: 'Merchant id is required' });

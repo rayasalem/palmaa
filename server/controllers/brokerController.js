@@ -7,9 +7,9 @@ import logger from '../utils/logger.js';
 
 async function upsertSharedProduct(req, res) {
   try {
-    const brokerId = req.auth?.sub;
+    const brokerId = (req.auth && req.auth.sub);
     if (!brokerId) return res.status(401).json({ success: false, error: 'Authentication required' });
-    if (req.auth?.role?.toUpperCase() !== 'BROKER') {
+    if ((req.auth && req.auth.role && String(req.auth.role).toUpperCase()) !== 'BROKER') {
       return res.status(403).json({ success: false, error: 'Only brokers can share products' });
     }
     const { productId } = req.params;
@@ -32,7 +32,7 @@ async function upsertSharedProduct(req, res) {
 
 async function listSharedProducts(req, res) {
   try {
-    const brokerId = req.auth?.sub;
+    const brokerId = (req.auth && req.auth.sub);
     if (!brokerId) return res.status(401).json({ success: false, error: 'Authentication required' });
     const { data, error } = await sharedProductsService.listByBrokerId(brokerId);
     if (error) return res.status(500).json({ success: false, error: error.message });
@@ -45,7 +45,7 @@ async function listSharedProducts(req, res) {
 
 async function removeSharedProduct(req, res) {
   try {
-    const brokerId = req.auth?.sub;
+    const brokerId = (req.auth && req.auth.sub);
     if (!brokerId) return res.status(401).json({ success: false, error: 'Authentication required' });
     const { productId } = req.params;
     if (!productId) return res.status(400).json({ success: false, error: 'productId is required' });
@@ -60,7 +60,7 @@ async function removeSharedProduct(req, res) {
 
 async function toggleFeatured(req, res) {
   try {
-    const brokerId = req.auth?.sub;
+    const brokerId = (req.auth && req.auth.sub);
     if (!brokerId) return res.status(401).json({ success: false, error: 'Authentication required' });
     const { shareId } = req.params;
     if (!shareId) return res.status(400).json({ success: false, error: 'shareId is required' });

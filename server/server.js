@@ -8,8 +8,9 @@ import 'dotenv/config';
 
 // Log uncaught errors so Render/PM2 show the real cause of exit 1
 process.on('uncaughtException', (err) => {
-  console.error('[FATAL] uncaughtException:', err?.message || err);
-  if (err?.stack) console.error(err.stack);
+  const msg = (err && err.message) ? err.message : err;
+  console.error('[FATAL] uncaughtException:', msg);
+  if (err && err.stack) console.error(err.stack);
   process.exit(1);
 });
 process.on('unhandledRejection', (reason, promise) => {

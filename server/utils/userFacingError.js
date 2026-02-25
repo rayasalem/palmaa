@@ -24,7 +24,7 @@ const TECHNICAL_PATTERNS = [
 ];
 
 export function safeErrorForUser(err, fallback = 'حدث خطأ، يرجى المحاولة لاحقاً') {
-  const msg = (err?.message || err?.error || String(err || '')).trim();
+  const msg = ((err && err.message) || (err && err.error) || String(err || '')).trim();
   if (!msg) return fallback;
   const isTechnical = TECHNICAL_PATTERNS.some((re) => re.test(msg));
   return isTechnical ? fallback : msg;

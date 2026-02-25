@@ -24,7 +24,7 @@ async function upsert(brokerId, productId, data) {
     is_featured: data.is_featured ?? false,
   };
 
-  if (existing?.id) {
+  if ((existing && existing.id)) {
     const { data: updated, error } = await supabase
       .from(TABLE)
       .update(row)

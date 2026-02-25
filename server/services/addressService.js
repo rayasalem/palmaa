@@ -32,7 +32,7 @@ async function fetchFromApi(path, params = {}) {
     });
     return response.data;
   } catch (err) {
-    console.error('[addressService] API error:', err.response?.data || err.message);
+    console.error('[addressService] API error:', (err.response && err.response.data) || err.message);
     return null;
   }
 }

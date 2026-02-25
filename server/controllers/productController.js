@@ -51,7 +51,7 @@ async function listByMerchant(req, res) {
 
 async function create(req, res) {
   try {
-    const merchantId = req.auth?.sub;
+    const merchantId = req.auth && req.auth.sub;
     if (!merchantId) return res.status(401).json({ success: false, error: 'Authentication required' });
     const { allowed, reason } = await subscriptionService.canAddProducts(merchantId);
     if (!allowed) {
@@ -98,7 +98,7 @@ async function create(req, res) {
 
 async function update(req, res) {
   try {
-    const merchantId = req.auth?.sub;
+    const merchantId = req.auth && req.auth.sub;
     if (!merchantId) return res.status(401).json({ success: false, error: 'Authentication required' });
     const { id } = req.params;
     if (!id) return res.status(400).json({ success: false, error: 'Product id is required' });
@@ -118,7 +118,7 @@ async function update(req, res) {
       tags: body.tags,
     });
     if (error) {
-      return res.status(error.message?.includes('0 rows') ? 404 : 500).json({
+      return res.status((error.message && error.message.includes('0 rows')) ? 404 : 500).json({
         success: false,
         error: error.message || 'Failed to update product',
       });
@@ -132,7 +132,7 @@ async function update(req, res) {
 
 async function remove(req, res) {
   try {
-    const merchantId = req.auth?.sub;
+    const merchantId = req.auth && req.auth.sub;
     if (!merchantId) return res.status(401).json({ success: false, error: 'Authentication required' });
     const { id } = req.params;
     if (!id) return res.status(400).json({ success: false, error: 'Product id is required' });

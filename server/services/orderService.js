@@ -16,7 +16,7 @@ async function createOrder(params) {
     const firstProductId = items[0].product_id || items[0].productId;
     if (firstProductId) {
       const { data: product } = await productService.getProductById(firstProductId);
-      if (product?.merchant_id) merchant_id = product.merchant_id;
+      if (product && product.merchant_id) merchant_id = product.merchant_id;
     }
   }
   const orderRow = {

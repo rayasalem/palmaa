@@ -18,12 +18,12 @@ const TAX_PENALTY_RATE = 0.16;  // default 16% when payment is online and no inv
  */
 async function getOrderMerchantId(orderId) {
   const { data: order, error } = await orderService.getOrderById(orderId);
-  if (error || !order?.items?.length) return { merchantId: null, error };
+  if (error || !order || !order.items || !order.items.length) return { merchantId: null, error };
   const first = order.items[0];
   const productId = first.product_id || first.productId;
   if (!productId) return { merchantId: null, error: null };
   const { data: product } = await productService.getProductById(productId);
-  return { merchantId: product?.merchant_id ?? null, error: null };
+  return { merchantId: (product && product.merchant_id != null) ? product.merchant_id : null, error: null };
 }
 
 /**

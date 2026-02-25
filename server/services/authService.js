@@ -187,7 +187,7 @@ async function registerUser(params) {
       }
     }
   } catch (e) {
-    console.warn('[authService] registerUser: post-insert check failed', e?.message);
+    console.warn('[authService] registerUser: post-insert check failed', (e && e.message));
   }
   // لا نستخدم OTP أو إرسال بريد هنا حالياً
   return { user, error: null, emailSent: false };
@@ -241,7 +241,7 @@ async function forgotPassword(email) {
     console.log('[authService] forgotPassword: email sent to', emailNorm);
     return { success: true, error: null };
   }
-  const errMsg = emailResult?.error?.message || 'Email not configured';
+  const errMsg = (emailResult.error && emailResult.error.message) || 'Email not configured';
   console.warn('[authService] forgotPassword: sendEmail failed', errMsg);
   if (process.env.RETURN_OTP_WHEN_EMAIL_FAILS === 'true') {
     console.warn('[authService] RETURN_OTP_WHEN_EMAIL_FAILS enabled: returning code in response.');
@@ -329,7 +329,7 @@ async function login(email, password) {
         userRow = inserted;
         console.log('[authService] login: demo admin created (user was missing in DB)', { userId: inserted.id });
       } else {
-        console.log('[authService] login: failed to create demo admin', { error: insertErr?.message });
+        console.log('[authService] login: failed to create demo admin', { error: (insertErr && insertErr.message) });
       }
     }
     if (!userRow) {

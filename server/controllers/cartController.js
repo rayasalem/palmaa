@@ -12,7 +12,7 @@ import logger from '../utils/logger.js';
  */
 async function getCart(req, res) {
   try {
-    const userId = req.auth?.sub;
+    const userId = (req.auth && req.auth.sub);
     if (!userId) {
       return res.status(401).json({ success: false, error: 'Authentication required' });
     }
@@ -32,7 +32,7 @@ async function getCart(req, res) {
  */
 async function addItem(req, res) {
   try {
-    const userId = req.auth?.sub;
+    const userId = (req.auth && req.auth.sub);
     if (!userId) {
       return res.status(401).json({ success: false, error: 'Authentication required' });
     }
@@ -61,7 +61,7 @@ async function addItem(req, res) {
  */
 async function updateItem(req, res) {
   try {
-    const userId = req.auth?.sub;
+    const userId = (req.auth && req.auth.sub);
     if (!userId) {
       return res.status(401).json({ success: false, error: 'Authentication required' });
     }
@@ -86,7 +86,7 @@ async function updateItem(req, res) {
  */
 async function removeItem(req, res) {
   try {
-    const userId = req.auth?.sub;
+    const userId = (req.auth && req.auth.sub);
     if (!userId) {
       return res.status(401).json({ success: false, error: 'Authentication required' });
     }
@@ -107,7 +107,7 @@ async function removeItem(req, res) {
  */
 async function clearCart(req, res) {
   try {
-    const userId = req.auth?.sub;
+    const userId = (req.auth && req.auth.sub);
     if (!userId) {
       return res.status(401).json({ success: false, error: 'Authentication required' });
     }

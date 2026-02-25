@@ -42,7 +42,7 @@ async function sendViaResend(to, subject, text, html) {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       console.error('[emailService] Resend API error:', res.status, data);
-      return { success: false, error: { message: data?.message || `Resend ${res.status}` } };
+      return { success: false, error: { message: (data && data.message) || `Resend ${res.status}` } };
     }
     console.log('[emailService] Resend sent to', to, subject);
     return { success: true };
@@ -53,9 +53,9 @@ async function sendViaResend(to, subject, text, html) {
 }
 
 function createTransporter(portOverride) {
-  const host = process.env.EMAIL_HOST?.trim();
-  const port = portOverride ?? Number(process.env.EMAIL_PORT) || 587;
-  const user = process.env.EMAIL_USER?.trim();
+  const host = process.env.EMAIL_HOST ? String(process.env.EMAIL_HOST).trim() : '';
+  const port = portOverride != null ? portOverride : (Number(process.env.EMAIL_PORT) || 587);
+  const user = process.env.EMAIL_USER ? String(process.env.EMAIL_USER).trim() : '';
   const pass = (process.env.EMAIL_PASS || '').trim();
   if (!host || !user || !pass) return null;
   const secure = port === 465;
@@ -90,7 +90,7 @@ async function sendEmail(to, subject, text, html) {
   if (process.env.RESEND_API_KEY) {
     const res = await sendViaResend(recipients, subject, text, html);
     if (res && res.success) return res;
-    console.warn('[emailService] Resend failed, trying SMTP:', res?.error?.message || 'no result');
+    console.warn('[emailService] Resend failed, trying SMTP:', (res.error && res.error.message) || 'no result');
   } else {
     console.warn('[emailService] RESEND_API_KEY not set. Add it in .env or Render Environment (Resend → API Keys) to send emails.');
   }

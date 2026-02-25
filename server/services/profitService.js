@@ -24,7 +24,7 @@ const MERCHANT_RATE = 0.85;       // 85% للتاجر (100% - 15%)
 async function recordProfitsForOrder(orderId) {
   const { data: order, error: orderErr } = await orderService.getOrderById(orderId);
   if (orderErr || !order) {
-    console.error('[profitService] getOrderById error:', orderErr?.message || 'Order not found');
+    console.error('[profitService] getOrderById error:', (orderErr && orderErr.message) || 'Order not found');
     return { error: orderErr || new Error('Order not found') };
   }
 
@@ -55,7 +55,7 @@ async function recordProfitsForOrder(orderId) {
     if (!productId) continue;
 
     const { data: product } = await productService.getProductById(productId);
-    const merchantId = product?.merchant_id || null;
+    const merchantId = (product && product.merchant_id) || null;
     const price = Number(item.price) || 0;
     const quantity = Number(item.quantity) || 1;
     const itemTotal = price * quantity;

@@ -86,7 +86,7 @@ async function notifyAdminComment(productId) {
     .from('users')
     .select('id')
     .eq('role', 'ADMIN');
-  if (fetchError || !admins?.length) return { created: 0, error: fetchError };
+  if (fetchError || !(admins && admins.length)) return { created: 0, error: fetchError };
   for (const admin of admins) {
     await create(admin.id, 'comment', productId);
   }
@@ -99,7 +99,7 @@ async function notifyBrokersSharedProductComment(productId) {
     .from('shared_products')
     .select('broker_id')
     .eq('product_id', productId);
-  if (fetchError || !shares?.length) return { created: 0, error: fetchError };
+  if (fetchError || !(shares && shares.length)) return { created: 0, error: fetchError };
   const brokerIds = [...new Set(shares.map((s) => s.broker_id))];
   for (const brokerId of brokerIds) {
     await create(brokerId, 'comment', productId);

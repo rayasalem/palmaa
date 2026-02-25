@@ -66,7 +66,7 @@ async function getPublicProfile(req, res) {
  */
 async function getDashboard(req, res) {
   try {
-    const merchantId = req.auth?.sub;
+    const merchantId = req.auth && req.auth.sub;
     if (!merchantId) return res.status(401).json({ success: false, error: 'Authentication required' });
     const [sub, stats] = await Promise.all([
       subscriptionService.getSubscription(merchantId),

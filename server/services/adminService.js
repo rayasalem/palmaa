@@ -89,7 +89,7 @@ async function restoreUser(userId) {
     .eq('id', userId)
     .single();
   if (findError || !userRow) {
-    console.error('[adminService] restoreUser find error:', findError?.message);
+    console.error('[adminService] restoreUser find error:', (findError && findError.message));
     return { data: null, error: findError || { message: 'User not found' } };
   }
   if (!userRow.deleted_at) {

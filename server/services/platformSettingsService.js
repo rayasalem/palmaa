@@ -22,7 +22,7 @@ async function getSetting(key) {
     console.error('[platformSettingsService] getSetting error:', error.message);
     return { value: DEFAULTS[key] ?? null, error };
   }
-  const raw = data?.value;
+  const raw = (data && data.value);
   const num = raw != null ? Number(raw) : NaN;
   const value = !Number.isNaN(num) ? num : (DEFAULTS[key] ?? raw);
   return { value, error: null };

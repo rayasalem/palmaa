@@ -60,8 +60,9 @@ async function callCreateShipmentApi(body) {
     return { data: response.data, error: null };
   } catch (err) {
     const res = err.response;
-    const msg = res?.data?.message || (typeof res?.data === 'string' ? res.data : JSON.stringify(res?.data || err.message));
-    safeLog('CREATE SHIPMENT ERROR', { status: res?.status, data: res?.data, message: msg });
+    const resData = res && res.data;
+    const msg = (resData && resData.message) || (typeof resData === 'string' ? resData : JSON.stringify(resData || err.message));
+    safeLog('CREATE SHIPMENT ERROR', { status: res && res.status, data: resData, message: msg });
     console.error('[shipmentService] Create shipment API error:', msg);
     return { data: null, error: { message: typeof msg === 'string' ? msg : msg } };
   }
@@ -143,7 +144,7 @@ function buildShipmentPayload(order, shipmentInput) {
   const pkg = {
     cod: String(cod),
     notes: String(merged.notes || '').trim() || undefined,
-    invoiceNumber: `${String(merged.invoiceNumber || merged.id || order?.id || 'ORD').trim()}-${Date.now()}`,
+    invoiceNumber: `${String(merged.invoiceNumber || merged.id || (order && order.id) || 'ORD').trim()}-${Date.now()}`,
     senderName,
     businessSenderName: String(merged.businessSenderName || process.env.SENDER_BUSINESS_NAME || 'Palma Marketplace').trim(),
     senderPhone,
@@ -190,7 +191,7 @@ async function createShipment(orderId, shipmentInput) {
   }
 
   const order = orderResult.data;
-  if (order?.delivery_id) {
+  if (order && order.delivery_id) {
     return {
       order,
       shipment: { id: order.delivery_id, status: order.delivery_status },
@@ -234,8 +235,9 @@ async function getPackageStatus(params) {
     safeLog('GET STATUS RESPONSE', { status: response.status, data: response.data });
     return { data: response.data, error: null };
   } catch (err) {
-    safeLog('GET STATUS ERROR', { status: err.response?.status, data: err.response?.data, message: err.message });
-    const msg = err.response?.data?.message || err.message;
+    const errRes = err.response;
+    safeLog('GET STATUS ERROR', { status: errRes && errRes.status, data: errRes && errRes.data, message: err.message });
+    const msg = (errRes && errRes.data && errRes.data.message) || err.message;
     return { data: null, error: { message: msg } };
   }
 }
@@ -261,8 +263,9 @@ async function printAwb(shipmentIds) {
     safeLog('PRINT PDF RESPONSE', { status: response.status, dataKeys: response.data ? Object.keys(response.data) : [] });
     return { data: response.data, error: null };
   } catch (err) {
-    safeLog('PRINT PDF ERROR', { status: err.response?.status, message: err.message });
-    const msg = err.response?.data?.message || err.message;
+    const errRes = err.response;
+    safeLog('PRINT PDF ERROR', { status: errRes && errRes.status, message: err.message });
+    const msg = (errRes && errRes.data && errRes.data.message) || err.message;
     return { data: null, error: { message: msg } };
   }
 }
@@ -290,8 +293,9 @@ async function cancelShipment(shipmentId) {
     safeLog('CANCEL RESPONSE', { status: response.status, data: response.data });
     return { data: response.data, error: null };
   } catch (err) {
-    safeLog('CANCEL ERROR', { status: err.response?.status, message: err.message });
-    const msg = err.response?.data?.message || err.message;
+    const errRes = err.response;
+    safeLog('CANCEL ERROR', { status: errRes && errRes.status, message: err.message });
+    const msg = (errRes && errRes.data && errRes.data.message) || err.message;
     return { data: null, error: { message: msg } };
   }
 }

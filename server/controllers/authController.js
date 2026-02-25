@@ -13,14 +13,14 @@ import logger from '../utils/logger.js';
  */
 async function getMe(req, res) {
   try {
-    const userId = req.auth?.sub;
+    const userId = req.auth && req.auth.sub;
     if (!userId) {
       return res.status(401).json({ success: false, error: 'Authentication required' });
     }
     const { data: user, error } = await authService.getUserById(userId);
     if (error || !user) {
       // 401 so frontend treats as "session invalid" and shows login (not 404)
-      return res.status(401).json({ success: false, error: error?.message || 'User not found' });
+      return res.status(401).json({ success: false, error: (error && error.message) || 'User not found' });
     }
     return res.status(200).json({
       success: true,
@@ -60,8 +60,8 @@ async function login(req, res) {
     logger.info('login attempt', { email });
     const { user, error } = await authService.login(email, password);
     if (error || !user) {
-      logger.warn('login failed', { email, reason: error?.message || 'no user' });
-      return res.status(401).json({ success: false, error: error?.message || 'Invalid credentials' });
+      logger.warn('login failed', { email, reason: (error && error.message) || 'no user' });
+      return res.status(401).json({ success: false, error: (error && error.message) || 'Invalid credentials' });
     }
     const token = jwtService.sign({ sub: user.id, email: user.email, role: user.role });
     res.cookie(jwtService.getCookieName(), token, jwtService.getCookieOptions());
@@ -175,7 +175,7 @@ async function verifyEmail(req, res) {
     logger.info('verifyEmail', { email: email.trim().toLowerCase() });
     const verifyResult = await authService.verifyOtp(email, String(otp).trim(), 'email_verification', true);
     if (!verifyResult.success) {
-      return res.status(400).json({ success: false, error: verifyResult.error?.message || 'Invalid or expired OTP' });
+      return res.status(400).json({ success: false, error: (verifyResult.error && verifyResult.error.message) || 'Invalid or expired OTP' });
     }
     const { data: user, error } = await authService.setEmailVerified(email);
     if (error) {
@@ -212,7 +212,7 @@ async function forgotPassword(req, res) {
     logger.info('forgotPassword', { email: email.trim().toLowerCase() });
     const result = await authService.forgotPassword(email);
     if (!result.success) {
-      return res.status(400).json({ success: false, error: result.error?.message || 'Request failed' });
+      return res.status(400).json({ success: false, error: (result.error && result.error.message) || 'Request failed' });
     }
     const payload = {
       success: true,
@@ -248,7 +248,7 @@ async function resetPassword(req, res) {
     logger.info('resetPassword', { email: email.trim().toLowerCase() });
     const verifyResult = await authService.verifyOtp(email, String(otp).trim(), 'password_reset', true);
     if (!verifyResult.success) {
-      return res.status(400).json({ success: false, error: verifyResult.error?.message || 'Invalid or expired OTP' });
+      return res.status(400).json({ success: false, error: (verifyResult.error && verifyResult.error.message) || 'Invalid or expired OTP' });
     }
     const { data, error } = await authService.updatePassword(email, newPassword);
     if (error) {
@@ -276,7 +276,7 @@ async function resendVerification(req, res) {
     }
     const result = await authService.resendVerification(email);
     if (!result.success) {
-      return res.status(400).json({ success: false, error: result.error?.message || 'Request failed' });
+      return res.status(400).json({ success: false, error: (result.error && result.error.message) || 'Request failed' });
     }
     return res.status(200).json({ success: true, message: 'Verification code sent.' });
   } catch (err) {

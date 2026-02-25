@@ -8,7 +8,7 @@ export function requestLogger(req, res, next) {
   const start = Date.now();
   const method = req.method;
   const url = req.originalUrl || req.url;
-  const ip = req.ip || req.socket?.remoteAddress;
+  const ip = req.ip || (req.socket && req.socket.remoteAddress);
 
   res.on('finish', () => {
     const duration = Date.now() - start;
@@ -18,7 +18,7 @@ export function requestLogger(req, res, next) {
       url,
       status,
       durationMs: duration,
-      ip: ip?.substring(0, 45),
+      ip: ip ? String(ip).substring(0, 45) : undefined,
     });
   });
   next();

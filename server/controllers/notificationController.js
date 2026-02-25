@@ -7,7 +7,7 @@ import logger from '../utils/logger.js';
 
 async function list(req, res) {
   try {
-    const userId = req.auth?.sub;
+    const userId = (req.auth && req.auth.sub);
     if (!userId) return res.status(401).json({ success: false, error: 'Authentication required' });
     const unreadOnly = req.query.unread === 'true';
     const { data, error } = await notificationService.listByUserId(userId, { unreadOnly });
@@ -21,7 +21,7 @@ async function list(req, res) {
 
 async function markRead(req, res) {
   try {
-    const userId = req.auth?.sub;
+    const userId = (req.auth && req.auth.sub);
     const { id } = req.params;
     if (!userId) return res.status(401).json({ success: false, error: 'Authentication required' });
     if (!id) return res.status(400).json({ success: false, error: 'Notification id is required' });

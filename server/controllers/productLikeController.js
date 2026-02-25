@@ -7,7 +7,7 @@ import logger from '../utils/logger.js';
 
 async function like(req, res) {
   try {
-    const userId = req.auth?.sub;
+    const userId = (req.auth && req.auth.sub);
     const { id: productId } = req.params;
     if (!userId) return res.status(401).json({ success: false, error: 'Authentication required' });
     if (!productId) return res.status(400).json({ success: false, error: 'Product id is required' });
@@ -28,7 +28,7 @@ async function like(req, res) {
 
 async function unlike(req, res) {
   try {
-    const userId = req.auth?.sub;
+    const userId = (req.auth && req.auth.sub);
     const { id: productId } = req.params;
     if (!userId) return res.status(401).json({ success: false, error: 'Authentication required' });
     if (!productId) return res.status(400).json({ success: false, error: 'Product id is required' });
@@ -57,7 +57,7 @@ async function getLikesCount(req, res) {
 
 async function getIsLiked(req, res) {
   try {
-    const userId = req.auth?.sub;
+    const userId = (req.auth && req.auth.sub);
     const { id: productId } = req.params;
     if (!userId) return res.status(200).json({ success: true, liked: false });
     if (!productId) return res.status(400).json({ success: false, error: 'Product id is required' });

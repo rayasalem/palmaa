@@ -65,7 +65,7 @@ async function createPayment(orderId, amount, returnUrl) {
 
 async function decrementStockForOrder(orderId) {
   const { data: order } = await orderService.getOrderById(orderId);
-  const items = order?.items || [];
+  const items = (order && order.items) || [];
   for (const it of items) {
     const productId = it.product_id || it.productId;
     const qty = Number(it.quantity) || 1;
@@ -94,14 +94,14 @@ async function handlePaymentCallback(orderId, status, idempotencyKey) {
       console.error('[paymentService] recordProfitsForOrder error:', profitErr.message);
     }
     const { data: order } = await orderService.getOrderById(orderId);
-    const totalAmount = order?.total_amount ?? 0;
-    const paymentMethod = (order?.payment_method || 'online').toLowerCase();
+    const totalAmount = (order && order.total_amount != null) ? order.total_amount : 0;
+    const paymentMethod = ((order && order.payment_method) || 'online').toLowerCase();
     const isCash = paymentMethod === 'cod' || paymentMethod === 'cash';
     const { error: txErr } = await transactionService.recordOrderSettlement(
       orderId,
       totalAmount,
       isCash ? 'cash' : 'online',
-      !!order?.invoice_uploaded
+      !!(order && order.invoice_uploaded)
     );
     if (txErr) console.error('[paymentService] recordOrderSettlement error:', txErr.message);
   }
