@@ -5,12 +5,16 @@
 import { verify, getCookieName } from '../services/jwtService.js';
 import logger from '../utils/logger.js';
 
+function getTokenFromRequest(req) {
+  const cookieVal = req.cookies && req.cookies[getCookieName()];
+  if (cookieVal) return cookieVal;
+  const auth = req.headers.authorization;
+  if (auth && auth.startsWith('Bearer ')) return auth.slice(7);
+  return null;
+}
+
 export function authenticate(req, res, next) {
-  const token =
-    req.cookies?.[getCookieName()] ||
-    (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')
-      ? req.headers.authorization.slice(7)
-      : null);
+  const token = getTokenFromRequest(req);
   if (!token) {
     return res.status(401).json({ success: false, error: 'Authentication required' });
   }
@@ -39,11 +43,7 @@ export function requireRole(...allowedRoles) {
 }
 
 export function optionalAuth(req, res, next) {
-  const token =
-    req.cookies?.[getCookieName()] ||
-    (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')
-      ? req.headers.authorization.slice(7)
-      : null);
+  const token = getTokenFromRequest(req);
   if (token) {
     const { payload } = verify(token);
     if (payload) req.auth = payload;
