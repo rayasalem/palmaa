@@ -49,16 +49,21 @@ async function sendViaResend(to, subject, text, html) {
 }
 
 function getTransporter() {
-  const host = process.env.EMAIL_HOST;
+  const host = process.env.EMAIL_HOST?.trim();
   const port = Number(process.env.EMAIL_PORT) || 587;
   const user = process.env.EMAIL_USER?.trim();
-  const pass = (process.env.EMAIL_PASS || '').replace(/\s+/g, '').trim();
+  const pass = (process.env.EMAIL_PASS || '').trim();
   if (!host || !user || !pass) return null;
+  const secure = port === 465;
+  const tlsReject = process.env.SMTP_STRICT_TLS === 'true';
   return nodemailer.createTransport({
     host,
     port,
-    secure: port === 465,
+    secure,
     auth: { user, pass },
+    connectionTimeout: 15000,
+    greetingTimeout: 10000,
+    ...(secure && !tlsReject ? { tls: { rejectUnauthorized: false } } : {}),
   });
 }
 
@@ -97,7 +102,7 @@ async function sendEmail(to, subject, text, html) {
     console.log('[emailService] SMTP sent successfully to', recipients.join(', '));
     return { success: true };
   } catch (err) {
-    console.error('[emailService] SMTP error:', err.message);
+    console.error('[emailService] SMTP error:', err.code || err.message, err.message);
     return { success: false, error: err };
   }
 }
