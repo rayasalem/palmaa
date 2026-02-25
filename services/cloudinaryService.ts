@@ -20,10 +20,8 @@ export const uploadImage = async (file: File): Promise<string> => {
     reader.readAsDataURL(file);
     reader.onload = () => {
       // In real scenario: return cloudinary response URL
-      // In mock: return base64 string
-      setTimeout(() => {
-        resolve(reader.result as string);
-      }, 1000);
+      // In mock: return base64 string (بدون أي تأخير إضافي)
+      resolve(reader.result as string);
     };
     reader.onerror = error => reject(error);
   });

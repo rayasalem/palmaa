@@ -116,19 +116,41 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
       // Upload new files if any using Storage Service
       if (uploadQueue.length > 0) {
         for (const file of uploadQueue) {
-          // Generate a unique path for the file: merchantId/timestamp_cleanfilename
-          const path = `${user.id}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-          const url = await storageService.uploadFile(file, 'products', path);
-          uploadedUrls.push(url);
+          try {
+            // Generate a unique path for the file: merchantId/timestamp_cleanfilename
+            const path = `${user.id}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+            const url = await storageService.uploadFile(file, 'products', path);
+            uploadedUrls.push(url);
+          } catch (err: any) {
+            let msg = err?.message || '';
+            if (typeof msg === 'string') {
+              if (msg.includes('File too large')) {
+                msg =
+                  lang === 'ar'
+                    ? 'حجم الصورة كبير جداً (الحد الأقصى 2MB). سيتم حفظ المنتج بدون هذه الصورة، الرجاء اختيار صورة أخرى أصغر لاحقاً.'
+                    : 'Image too large (max 2MB). The product will be saved without this image; please choose a smaller one later.';
+              } else if (msg.includes('Invalid format')) {
+                msg =
+                  lang === 'ar'
+                    ? 'صيغة الصورة غير مدعومة. سيتم حفظ المنتج بدون هذه الصورة، الرجاء استخدام JPG أو PNG أو WebP.'
+                    : 'Invalid image format. The product will be saved without this image; please use JPG, PNG, or WebP.';
+              }
+            }
+            showToast(msg || (lang === 'ar' ? 'تعذر رفع الصورة، سيتم حفظ المنتج بدونها.' : 'Failed to upload image; product will be saved without it.'), 'error');
+          }
         }
       }
       
-      // Enforce at least one image
+      // إذا لم تُقبل أي صورة، نستخدم صورة افتراضية ولا نمنع حفظ المنتج
       if (uploadedUrls.length === 0) {
-        showToast(lang === 'en' ? 'At least one product image is required' : 'يرجى رفع صورة واحدة للمنتج على الأقل', 'error');
-        setLoading(false);
-        setIsUploading(false);
-        return;
+        const placeholder = 'https://placehold.co/600x600?text=No+Image';
+        uploadedUrls.push(placeholder);
+        showToast(
+          lang === 'ar'
+            ? 'لم يتم قبول أي صورة، سيتم حفظ المنتج بدون صورة حقيقية. يمكنك تعديل الصورة لاحقاً من لوحة المنتجات.'
+            : 'No image was accepted. The product will be saved with a placeholder image; you can update it later.',
+          'info'
+        );
       }
 
       const tags = tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
