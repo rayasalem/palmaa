@@ -57,6 +57,7 @@ const AppContent: React.FC = () => {
   const [showApiCheckout, setShowApiCheckout] = useState(false);
   const [checkoutCart, setCheckoutCart] = useState<CartItem[]>([]);
   const [showMerchantTermsPage, setShowMerchantTermsPage] = useState(false);
+  const [pendingAuthAfterTerms, setPendingAuthAfterTerms] = useState<'REGISTER_MERCHANT' | null>(null);
   const isApplyingHashRef = useRef(false);
 
   /** Update browser URL hash so the path changes when navigating (e.g. palma.ps/#/catalog, #/admin) */
@@ -316,9 +317,21 @@ const AppContent: React.FC = () => {
   };
 
   const openAuth = (view: typeof authView) => {
+    // تسجيل التاجر يمر أولاً على صفحة الشروط والأحكام
+    if (view === 'REGISTER_MERCHANT') {
+      setPendingAuthAfterTerms('REGISTER_MERCHANT');
+      setShowMerchantTermsPage(true);
+      updateHash('terms');
+      return;
+    }
     setAuthView(view);
     setPublicState('AUTH');
-    const path = view === 'REGISTER_MERCHANT' ? 'register-merchant' : view === 'REGISTER_BROKER' ? 'register-broker' : view === 'REGISTER_CUSTOMER' ? 'register' : 'login';
+    const path =
+      view === 'REGISTER_BROKER'
+        ? 'register-broker'
+        : view === 'REGISTER_CUSTOMER'
+        ? 'register'
+        : 'login';
     updateHash(path);
   };
 
@@ -417,7 +430,22 @@ const AppContent: React.FC = () => {
       return (
         <MerchantTermsView
           lang={lang}
-          onBack={() => { setShowMerchantTermsPage(false); updateHash(''); }}
+          onBack={() => {
+            setShowMerchantTermsPage(false);
+            setPendingAuthAfterTerms(null);
+            updateHash('');
+          }}
+          onAccept={
+            pendingAuthAfterTerms === 'REGISTER_MERCHANT'
+              ? () => {
+                  setShowMerchantTermsPage(false);
+                  setPendingAuthAfterTerms(null);
+                  setAuthView('REGISTER_MERCHANT');
+                  setPublicState('AUTH');
+                  updateHash('register-merchant');
+                }
+              : undefined
+          }
         />
       );
     }
@@ -432,7 +460,11 @@ const AppContent: React.FC = () => {
           onJoinBroker={() => openAuth('REGISTER_BROKER')}
           onExploreProducts={() => { setPublicState('CATALOG'); updateHash('catalog'); }}
           onViewProduct={handleViewProduct}
-          onOpenTerms={() => setShowMerchantTermsPage(true)}
+          onOpenTerms={() => {
+            setPendingAuthAfterTerms(null);
+            setShowMerchantTermsPage(true);
+            updateHash('terms');
+          }}
         />
       );
     }
@@ -451,7 +483,11 @@ const AppContent: React.FC = () => {
       <Auth
         onLogin={handleLogin}
         initialView={authView}
-        onOpenTerms={() => setShowMerchantTermsPage(true)}
+        onOpenTerms={() => {
+          setPendingAuthAfterTerms('REGISTER_MERCHANT');
+          setShowMerchantTermsPage(true);
+          updateHash('terms');
+        }}
       />
     );
   }

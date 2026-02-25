@@ -10,9 +10,11 @@ import type { Language } from '../translations';
 interface MerchantTermsViewProps {
   lang: Language;
   onBack: () => void;
+  /** اختياري: في حال استُخدمت كخطوة قبل التسجيل، ننقل المستخدم للتسجيل بعد الموافقة */
+  onAccept?: () => void;
 }
 
-export const MerchantTermsView: React.FC<MerchantTermsViewProps> = ({ lang, onBack }) => {
+export const MerchantTermsView: React.FC<MerchantTermsViewProps> = ({ lang, onBack, onAccept }) => {
   const terms = lang === 'ar' ? merchantTermsAr : merchantTermsEn;
   const isRtl = lang === 'ar';
 
@@ -47,13 +49,34 @@ export const MerchantTermsView: React.FC<MerchantTermsViewProps> = ({ lang, onBa
           ))}
         </div>
 
-        <button
-          type="button"
-          onClick={onBack}
-          className="mt-10 w-full py-4 bg-slate-900 text-white rounded-xl font-bold"
-        >
-          {lang === 'ar' ? 'رجوع' : 'Back'}
-        </button>
+        {onAccept ? (
+          <div className="mt-10 flex flex-col sm:flex-row gap-3">
+            <button
+              type="button"
+              onClick={onAccept}
+              className="flex-1 py-4 bg-palma-primary text-white rounded-xl font-black text-sm"
+            >
+              {lang === 'ar'
+                ? 'أوافق على الشروط والأحكام وأتابع التسجيل كتاجر'
+                : 'I agree and continue to merchant registration'}
+            </button>
+            <button
+              type="button"
+              onClick={onBack}
+              className="flex-1 py-4 bg-slate-200 text-slate-800 rounded-xl font-bold text-sm"
+            >
+              {lang === 'ar' ? 'رجوع' : 'Back'}
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={onBack}
+            className="mt-10 w-full py-4 bg-slate-900 text-white rounded-xl font-bold"
+          >
+            {lang === 'ar' ? 'رجوع' : 'Back'}
+          </button>
+        )}
       </div>
     </div>
   );

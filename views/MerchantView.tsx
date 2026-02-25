@@ -165,7 +165,23 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
       await refreshData();
     } catch (error: any) {
       console.error(error);
-      showToast(error.message || t.common.error, 'error');
+      let msg = error?.message || t.common.error;
+
+      if (typeof msg === 'string') {
+        if (msg.includes('File too large')) {
+          msg =
+            lang === 'ar'
+              ? 'حجم الصورة كبير جداً (الحد الأقصى 2MB). الرجاء اختيار صورة أخرى أصغر.'
+              : 'Image too large (max 2MB). Please choose a smaller image.';
+        } else if (msg.includes('Invalid format')) {
+          msg =
+            lang === 'ar'
+              ? 'صيغة الصورة غير مدعومة. الرجاء استخدام صورة بصيغة JPG أو PNG أو WebP.'
+              : 'Invalid image format. Please use JPG, PNG, or WebP.';
+        }
+      }
+
+      showToast(msg, 'error');
     } finally {
       setLoading(false);
       setIsUploading(false);
@@ -173,14 +189,18 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
   };
 
   const handleDeleteProduct = async (id: string) => {
-    if (window.confirm(lang === 'en' ? 'Delete this product permanently?' : 'هل أنت متأكد من حذف المنتج؟')) {
-      const res = await productService.delete(id);
-      if (res.success) {
-        setProducts(prev => prev.filter(p => p.id !== id));
-        showToast('Product deleted', 'info');
-      } else {
-        showToast('Delete failed: ' + res.error, 'error');
-      }
+    const res = await productService.delete(id);
+    if (res.success) {
+      setProducts(prev => prev.filter(p => p.id !== id));
+      showToast(
+        lang === 'en' ? 'Product deleted successfully' : 'تم حذف المنتج بنجاح',
+        'info'
+      );
+    } else {
+      showToast(
+        (lang === 'en' ? 'Delete failed: ' : 'فشل الحذف: ') + (res.error || ''),
+        'error'
+      );
     }
   };
 

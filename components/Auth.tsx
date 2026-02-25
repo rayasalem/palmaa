@@ -100,10 +100,20 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
       return;
     }
     
-    if (role === 'BROKER') setView('REGISTER_BROKER');
-    else if (role === 'CUSTOMER') setView('REGISTER_CUSTOMER');
-    else if (role === 'MERCHANT') setView('REGISTER_MERCHANT');
-    else setView('ROLE_SELECT');
+    if (role === 'BROKER') {
+      setView('REGISTER_BROKER');
+    } else if (role === 'CUSTOMER') {
+      setView('REGISTER_CUSTOMER');
+    } else if (role === 'MERCHANT') {
+      // التاجر: نأخذه أولاً لصفحة الشروط والأحكام؛ بعد الموافقة يعود للتسجيل
+      if (onOpenTerms) {
+        onOpenTerms();
+      } else {
+        setView('REGISTER_MERCHANT');
+      }
+    } else {
+      setView('ROLE_SELECT');
+    }
   };
 
   const roleOptions = [
