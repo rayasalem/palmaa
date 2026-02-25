@@ -4,6 +4,7 @@
   "description": "E-commerce backend with Express, Supabase, payment sandbox, LogesTechs shipment",
   "main": "server.js",
   "type": "module",
+  "engines": { "node": ">=18.0.0" },
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",

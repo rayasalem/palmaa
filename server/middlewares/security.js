@@ -35,7 +35,7 @@ export function authLimiter() {
     message: { success: false, error: 'Too many auth attempts. Try again in 15 minutes.' },
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req) => req.ip || req.socket?.remoteAddress || 'unknown',
+    keyGenerator: (req) => req.ip || (req.socket && req.socket.remoteAddress) || 'unknown',
   });
 }
 
