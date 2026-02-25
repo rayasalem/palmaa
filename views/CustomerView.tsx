@@ -398,6 +398,10 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
   };
 
   const handleCancelOrderApi = async (orderId: string) => {
+    const msg = lang === 'ar'
+      ? 'هل أنت متأكد من إلغاء هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.'
+      : 'Are you sure you want to cancel this order? This action cannot be undone.';
+    if (!window.confirm(msg)) return;
     setProcessingCancelId(orderId);
     try {
       const res = await cancelOrderApi(orderId);
@@ -450,7 +454,11 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
     showToast(t.common.success, 'success');
   };
 
-  const handleRemoveFromCart = (productId: string) => {
+  const handleRemoveFromCart = (productId: string, productName?: string) => {
+    const msg = lang === 'ar'
+      ? `هل تريد إزالة "${productName || 'هذا المنتج'}" من السلة؟`
+      : `Remove "${productName || 'this item'}" from cart?`;
+    if (!window.confirm(msg)) return;
     removeFromCart(productId);
     showToast(lang === 'ar' ? 'تمت إزالة المنتج من السلة' : 'Item removed from cart', 'info');
   };
@@ -829,7 +837,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
                               <span className="text-sm font-black text-palma-green">₪{(item.price || item.price_ils || 0) * item.quantity}</span>
                            </div>
                         </div>
-                        <button onClick={() => removeFromCart(item.id)} className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                        <button onClick={() => handleRemoveFromCart(item.id, item.name || item.title)} className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
                            <Trash2 className="w-5 h-5" />
                         </button>
                      </div>

@@ -193,9 +193,11 @@ async function registerUser(params) {
   return { user, error: null, emailSent: false };
 }
 
+const EMAIL_SEND_TIMEOUT_MS = 15000;
+
 /**
- * Forgot password: ensure user exists, generate OTP, save, then send email in background.
- * Response returns immediately after saving OTP so the request does not hang on slow SMTP.
+ * Forgot password: ensure user exists, generate OTP, save, send email and wait for result (with timeout).
+ * Returns success: false if email could not be sent so the user gets clear feedback.
  */
 async function forgotPassword(email) {
   const emailNorm = email.toLowerCase().trim();
@@ -214,18 +216,39 @@ async function forgotPassword(email) {
 
   const html = emailService.getPasswordResetTemplate(code);
   const text = `Your password reset code is: ${code}. It expires in ${OTP_EXPIRY_MINUTES} minutes.`;
-  emailService
-    .sendEmail(emailNorm, 'Password Reset Code', text, html)
-    .then((emailResult) => {
-      if (emailResult.success) {
-        console.log('[authService] forgotPassword: email sent to', emailNorm);
-      } else {
-        console.warn('[authService] forgotPassword: sendEmail failed', emailResult.error?.message);
-      }
-    })
-    .catch((err) => console.warn('[authService] forgotPassword: sendEmail error', err.message));
 
-  return { success: true, error: null };
+  let emailResult;
+  try {
+    emailResult = await Promise.race([
+      emailService.sendEmail(emailNorm, 'Password Reset Code', text, html),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Email send timeout')), EMAIL_SEND_TIMEOUT_MS)
+      ),
+    ]);
+  } catch (err) {
+    console.warn('[authService] forgotPassword: sendEmail error', err.message);
+    return {
+      success: false,
+      error: {
+        message: err.message === 'Email send timeout'
+          ? 'Email service is slow. Please try again in a moment.'
+          : 'Could not send the verification email. Please try again or contact support.',
+      },
+    };
+  }
+
+  if (emailResult && emailResult.success) {
+    console.log('[authService] forgotPassword: email sent to', emailNorm);
+    return { success: true, error: null };
+  }
+  const errMsg = emailResult?.error?.message || 'Email not configured';
+  console.warn('[authService] forgotPassword: sendEmail failed', errMsg);
+  return {
+    success: false,
+    error: {
+      message: 'Could not send the verification email. Please check server email configuration or try again later.',
+    },
+  };
 }
 
 /**

@@ -215,7 +215,12 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
     }
   };
 
-  const handleDeleteProduct = async (id: string) => {
+  const handleDeleteProduct = async (id: string, name?: string) => {
+    const productName = name || id;
+    const msg = lang === 'en'
+      ? `Are you sure you want to delete "${productName}"? This action cannot be undone.`
+      : `هل أنت متأكد من حذف "${productName}"؟ لا يمكن التراجع عن هذا الإجراء.`;
+    if (!window.confirm(msg)) return;
     const res = await productService.delete(id);
     if (res.success) {
       setProducts(prev => prev.filter(p => p.id !== id));
@@ -233,13 +238,18 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
 
   const handleToggleStatus = async (product: Product) => {
     const newStatus = !product.isActive;
+    if (!newStatus) {
+      const msg = lang === 'en'
+        ? `Deactivate "${product.name || product.title || product.id}"? The product will be hidden from the store.`
+        : `إلغاء تفعيل "${product.name || product.title || product.id}"؟ سيُخفى المنتج من المتجر.`;
+      if (!window.confirm(msg)) return;
+    }
     const res = await productService.update(product.id, { isActive: newStatus });
     if (res.success) {
-      // Optimistic update
       setProducts(prev => prev.map(p => p.id === product.id ? { ...p, isActive: newStatus } : p));
-      showToast(newStatus ? 'Product Activated' : 'Product Deactivated', 'success');
+      showToast(newStatus ? (lang === 'en' ? 'Product Activated' : 'تم تفعيل المنتج') : (lang === 'en' ? 'Product Deactivated' : 'تم إلغاء تفعيل المنتج'), 'success');
     } else {
-      showToast('Update failed', 'error');
+      showToast(lang === 'en' ? 'Update failed' : 'فشل التحديث', 'error');
     }
   };
 
@@ -585,7 +595,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                               <button onClick={() => handleEditClick(product)} className="p-2 text-slate-300 hover:text-blue-500 hover:bg-white rounded-lg transition shadow-sm border border-transparent hover:border-slate-100" title="Edit">
                                 <Edit className="w-4 h-4" />
                               </button>
-                              <button onClick={() => handleDeleteProduct(product.id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-white rounded-lg transition shadow-sm border border-transparent hover:border-slate-100" title="Delete">
+                              <button onClick={() => handleDeleteProduct(product.id, product.name || product.title)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-white rounded-lg transition shadow-sm border border-transparent hover:border-slate-100" title="Delete">
                                 <Trash2 className="w-4 h-4" />
                               </button>
                             </div>
