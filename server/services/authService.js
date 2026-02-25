@@ -356,8 +356,8 @@ async function login(email, password) {
         }
       }
     }
-  } else if (process.env.NODE_ENV !== 'production' && stored === passTrimmed) {
-    match = true;
+  } else if (process.env.NODE_ENV === 'development' && stored === passTrimmed) {
+    match = true; // تطوير فقط: كلمة سر نصية في DB
   } else if (!stored || stored === '') {
     const hashed = await hashPassword(passTrimmed);
     const { error: updateErr } = await supabase
