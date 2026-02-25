@@ -9,6 +9,7 @@ import Logo from './Logo';
 import { getInternalCities, getInternalVillages } from '../services/flashlineService';
 import { useToast } from './ToastProvider';
 import { Mail, CheckCircle, RefreshCcw, FileText } from 'lucide-react';
+import { MERCHANT_TERMS_TITLE_AR, MERCHANT_TERMS_FULL_TEXT_AR, MERCHANT_TERMS_FULL_TEXT_EN } from '../content/merchantTerms';
 
 interface RegisterMerchantProps {
   onRegister: (user: User) => void;
@@ -375,28 +376,19 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
             </button>
           </form>
         ) : (
-          <div className={`${lang === 'en' ? 'text-left' : 'text-right'} space-y-6`}>
+          <div className={`${lang === 'en' ? 'text-left' : 'text-right'} space-y-4 flex flex-col h-full`}>
             {error && (
-              <div className="p-4 bg-red-50 text-red-600 text-[10px] font-black rounded-2xl text-center uppercase">
+              <div className="p-4 bg-red-50 text-red-600 text-[10px] font-black rounded-2xl text-center uppercase shrink-0">
                 {error}
               </div>
             )}
-            <h2 className="text-xl font-black text-slate-900 mb-2">
-              {lang === 'en'
-                ? 'Merchant Terms & Conditions'
-                : 'شروط وأحكام انضمام التجار إلى بالما'}
+            <h2 className="text-xl font-black text-slate-900 shrink-0">
+              {lang === 'en' ? 'Terms and Conditions for Marketplace Merchants' : MERCHANT_TERMS_TITLE_AR}
             </h2>
-            <p className="text-sm text-slate-500 leading-relaxed">
-              {lang === 'en'
-                ? 'By completing your registration, you confirm that your business information is correct, that you are authorized to sell these products, and that you agree to Palma Marketplace policies regarding product quality, delivery, returns, and customer protection.'
-                : 'من خلال إكمال عملية التسجيل، فإنك تؤكد أن بيانات متجرك صحيحة، وأنك مخوّل لبيع هذه المنتجات، وتوافق على سياسات منصة بالما بخصوص جودة المنتجات، التسليم، الإرجاع، وحماية الزبائن.'}
-            </p>
-            <p className="text-sm text-slate-500 leading-relaxed">
-              {lang === 'en'
-                ? 'Palma may contact you to verify your information or request additional documents before activating or suspending your store in case of repeated complaints or policy violations.'
-                : 'قد تقوم منصة بالما بالتواصل معك للتحقق من البيانات أو طلب مستندات إضافية قبل تفعيل المتجر أو في حال وجود مخالفات أو شكاوى متكررة قد تؤدي إلى تعليق المتجر.'}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+            <div className="flex-1 min-h-0 max-h-[50vh] overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/80 p-5 text-sm leading-relaxed text-slate-700 whitespace-pre-line">
+              {lang === 'en' ? MERCHANT_TERMS_FULL_TEXT_EN : MERCHANT_TERMS_FULL_TEXT_AR}
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4 pt-2 shrink-0">
               <button
                 type="button"
                 onClick={() => setStep('FORM')}
@@ -413,14 +405,14 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
                 {loading
                   ? t.common.loading
                   : lang === 'en'
-                    ? 'I agree and register'
-                    : 'أوافق وأكمل التسجيل'}
+                    ? 'I agree to the terms and conditions and proceed to register as a merchant'
+                    : 'أوافق على الشروط والأحكام وأتابع التسجيل كتاجر'}
               </button>
             </div>
             <button
               type="button"
               onClick={onBackToLogin}
-              className="w-full text-[10px] font-black uppercase text-slate-400 hover:text-palma-primary"
+              className="w-full text-[10px] font-black uppercase text-slate-400 hover:text-palma-primary shrink-0"
             >
               {t.common.back}
             </button>
