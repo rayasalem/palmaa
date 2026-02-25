@@ -200,6 +200,11 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
             lang === 'ar'
               ? 'صيغة الصورة غير مدعومة. الرجاء استخدام صورة بصيغة JPG أو PNG أو WebP.'
               : 'Invalid image format. Please use JPG, PNG, or WebP.';
+        } else if (msg.includes('Authentication required') || msg.includes('401')) {
+          msg =
+            lang === 'ar'
+              ? 'انتهت جلسة تسجيل الدخول أو لست مسجلاً كتاجر. الرجاء تسجيل الدخول مرة أخرى ثم إعادة المحاولة.'
+              : 'Session expired or you are not logged in as a merchant. Please log in again and try.';
         }
       }
 
