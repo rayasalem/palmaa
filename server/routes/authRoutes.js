@@ -8,6 +8,8 @@ import { authLimiter } from '../middlewares/security.js';
 import { authenticate } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
+// للتأكد أن الطلبات تصل الباكند (لو ظهر 404 معناه السيرفر مش Node)
+router.get('/ping', (req, res) => res.json({ ok: true, api: 'auth', message: 'Backend is Node.js' }));
 router.use(authLimiter());
 router.post('/login', authController.login);
 router.post('/logout', authController.logout);

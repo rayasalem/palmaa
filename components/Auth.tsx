@@ -82,8 +82,9 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
       showToast(t.common.success, 'success');
       onLogin(result.data.user);
     } else {
-      setError(result.error || 'Invalid credentials');
-      showToast(result.error || 'Login Failed', 'error');
+      const errMsg = result.error || (lang === 'ar' ? 'بيانات الدخول غير صحيحة' : 'Invalid credentials');
+      setError(errMsg);
+      showToast(errMsg, 'error');
     }
     setLoading(false);
   };
@@ -155,9 +156,14 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
             </div>
 
             {error && (
-              <div className="mb-8 p-4 bg-red-50 text-red-600 text-xs font-bold rounded-2xl flex items-center justify-center gap-3 border border-red-100 animate-slide-up">
-                <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                {error}
+              <div className="mb-8 p-4 bg-red-50 text-red-600 text-xs font-bold rounded-2xl border border-red-100 animate-slide-up space-y-2">
+                <div className="flex items-center justify-center gap-3">
+                  <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></span>
+                  <span>{error}</span>
+                </div>
+                <p className="text-[10px] text-slate-500 text-center">
+                  {lang === 'ar' ? 'تأكد من البريد وكلمة المرور، أو استخدم «نسيت كلمة المرور»' : 'Check email and password, or use Forgot password'}
+                </p>
               </div>
             )}
 

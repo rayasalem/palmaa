@@ -285,6 +285,9 @@ async function login(email, password) {
     console.log('[authService] login: no user found for email', emailNorm);
     return { user: null, error: { message: 'Invalid credentials' } };
   }
+  const hasPassword = userRow && 'password' in userRow && userRow.password != null;
+  const passwordLen = userRow.password ? String(userRow.password).length : 0;
+  console.log('[authService] login: user found', { email: emailNorm, userId: userRow.id, hasPassword, passwordLen });
   if (userRow.deleted_at) {
     return { user: null, error: { message: 'Account deleted. Contact support within 30 days to restore.' } };
   }
@@ -301,7 +304,6 @@ async function login(email, password) {
   } else if (process.env.NODE_ENV !== 'production' && stored === passTrimmed) {
     match = true;
   } else if (!stored || stored === '') {
-    // كلمة المرور فارغة في DB (مثلاً التسجيل ما خزّنها): نخلّي أول محاولة دخول تخزّنها وتنجح
     const hashed = await hashPassword(passTrimmed);
     const { error: updateErr } = await supabase
       .from(USERS_TABLE)
@@ -314,7 +316,18 @@ async function login(email, password) {
       console.log('[authService] login: user found but password empty in DB', { email: emailNorm, userId: userRow.id });
     }
   } else {
-    console.log('[authService] login: password in DB is not bcrypt format', { email: emailNorm, prefix: (stored || '').slice(0, 10) });
+    // قيمة في DB ليست bcrypt: نحدّثها ونسمح بالدخول مرة واحدة (إصلاح بيانات قديمة)
+    const hashed = await hashPassword(passTrimmed);
+    const { error: updateErr } = await supabase
+      .from(USERS_TABLE)
+      .update({ password: hashed, updated_at: new Date().toISOString() })
+      .eq('id', userRow.id);
+    if (!updateErr) {
+      match = true;
+      console.log('[authService] login: password in DB not bcrypt, updated', { email: emailNorm });
+    } else {
+      console.log('[authService] login: password in DB is not bcrypt format', { email: emailNorm, prefix: (stored || '').slice(0, 10) });
+    }
   }
 
   if (!match) {

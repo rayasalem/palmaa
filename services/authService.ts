@@ -32,7 +32,7 @@ export const authService = {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), password }),
+        body: JSON.stringify({ email: email.trim(), password: password.trim() }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
