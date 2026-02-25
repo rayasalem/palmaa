@@ -36,13 +36,13 @@ function getApiBase(): string {
 /** @deprecated Use getApiBase() so URL is resolved at request time (avoids EBADNAME). */
 const API_BASE = getApiBase();
 
-/** Key for JWT in localStorage – يسمح بالجلسة على الجوال عندما لا تُرسل الكوكي (cross-origin). */
+/** Key for JWT – يُحفظ في localStorage و sessionStorage لثبات الجلسة على الجوال (cross-origin). */
 const AUTH_TOKEN_KEY = 'palma_token';
 
 export function getAuthToken(): string | null {
   if (typeof window === 'undefined') return null;
   try {
-    return localStorage.getItem(AUTH_TOKEN_KEY);
+    return localStorage.getItem(AUTH_TOKEN_KEY) || sessionStorage.getItem(AUTH_TOKEN_KEY);
   } catch {
     return null;
   }
@@ -51,8 +51,13 @@ export function getAuthToken(): string | null {
 export function setAuthToken(token: string | null): void {
   if (typeof window === 'undefined') return;
   try {
-    if (token) localStorage.setItem(AUTH_TOKEN_KEY, token);
-    else localStorage.removeItem(AUTH_TOKEN_KEY);
+    if (token) {
+      localStorage.setItem(AUTH_TOKEN_KEY, token);
+      sessionStorage.setItem(AUTH_TOKEN_KEY, token);
+    } else {
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      sessionStorage.removeItem(AUTH_TOKEN_KEY);
+    }
   } catch {
     /* ignore */
   }
@@ -121,6 +126,9 @@ function getErrorMessage(data: unknown, status: number): string {
  * @returns Parsed JSON as T
  * @throws Error with message from response body or status
  */
+/** Event name for session expired (401). App listens and clears user state. */
+export const SESSION_EXPIRED_EVENT = 'palma_session_expired';
+
 export async function api<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
   const url = buildUrl(path);
   const mergedOptions = mergeHeaders(options);
@@ -128,6 +136,10 @@ export async function api<T = unknown>(path: string, options: RequestInit = {}):
   const data = await parseJson(res);
 
   if (!res.ok) {
+    if (res.status === 401) {
+      setAuthToken(null);
+      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT));
+    }
     const message = getErrorMessage(data, res.status);
     throw new Error(message);
   }

@@ -70,7 +70,7 @@ export const authService = {
         const msg = (res.status === 404)
           ? 'Auth API not found. Set VITE_API_URL to your backend URL if frontend and backend are on different hosts.'
           : (dataObj.error as string) || 'Not authenticated';
-        return { success: false, error: msg };
+        return { success: false, error: msg, statusCode: res.status };
       }
       const apiUser = dataObj.user;
       if (!apiUser || typeof apiUser !== 'object') return { success: false, error: 'Invalid response' };

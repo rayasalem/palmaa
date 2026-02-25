@@ -44,6 +44,8 @@ export const userService = {
         body: JSON.stringify(body),
       });
       if (!data.success) return { success: false, error: (data as any).error || 'Registration failed' };
+      const regToken = (data as any).token;
+      if (regToken) setAuthToken(regToken);
       const newUser: User = {
         ...user,
         id: (data.user?.id) || '',
@@ -58,7 +60,7 @@ export const userService = {
       return {
         success: true,
         requiresVerification: false,
-        data: { user: newUser, token: '' },
+        data: { user: newUser, token: regToken || '' },
         emailSent: data.emailSent !== false,
         verificationCode: data.verificationCode,
       };

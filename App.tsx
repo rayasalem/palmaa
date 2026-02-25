@@ -23,10 +23,11 @@ import { marketStore } from './store';
 import { authService } from './services/authService';
 import { userService } from './services/userService';
 import { productService } from './services/productService';
-import { Language } from './translations';
+import { Language, getAuthErrorMessage } from './translations';
 import { ToastProvider, useToast } from './components/ToastProvider';
 import { useCart } from './hooks/useCart';
 import * as cartApi from './services/cartApi';
+import { SESSION_EXPIRED_EVENT } from './api/client';
 
 const loadUser = (): User | null => {
   const stored = localStorage.getItem('palma_current_user');
@@ -173,12 +174,14 @@ const AppContent: React.FC = () => {
         meResult = { success: false as const, error: 'Request failed' };
       }
       const u = meResult && meResult.success && meResult.data?.user ? meResult.data.user : null;
+      const is401 = meResult && !meResult.success && (meResult as { statusCode?: number }).statusCode === 401;
       if (u) {
         authService.setCurrentUser(u);
         setUser(u);
         setDefaultView(u);
         localStorage.setItem('palma_current_user', JSON.stringify(u));
       } else {
+        if (is401) localStorage.removeItem('palma_current_user');
         const savedUser = loadUser();
         if (savedUser) {
           authService.setCurrentUser(savedUser);
@@ -198,6 +201,17 @@ const AppContent: React.FC = () => {
     };
 
     initApp();
+  }, []);
+
+  // أي طلب يرجع 401 يمسح التوكن ويطلق هذا الحدث — نمسح المستخدم محلياً لتفادي "مسجل دخول" بدون جلسة
+  useEffect(() => {
+    const onSessionExpired = () => {
+      authService.setCurrentUser(null);
+      setUser(null);
+      localStorage.removeItem('palma_current_user');
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
   }, []);
 
   const toggleLang = () => setLang(prev => (prev === 'ar' ? 'en' : prev === 'en' ? 'he' : 'ar'));
@@ -262,7 +276,7 @@ const AppContent: React.FC = () => {
       }
       const ok = await apiCart.addItem(productId, quantity);
       if (ok) showToast(lang === 'ar' ? 'تمت الإضافة للسلة' : 'Added to cart', 'success');
-      else if (apiCart.error) showToast(apiCart.error, 'error');
+      else if (apiCart.error) showToast(getAuthErrorMessage(apiCart.error, lang) || apiCart.error, 'error');
     } else {
       setLocalCart(prev => {
         const existing = prev.find(p => p.id === product.id);

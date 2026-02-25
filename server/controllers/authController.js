@@ -127,9 +127,10 @@ async function registerUser(req, res) {
         : (error.message || 'Registration failed');
       return res.status(500).json({ success: false, error: userMsg });
     }
-    // نفس تسجيل الدخول: نضع كوكي الجلسة (JWT) عشان بعد التسجيل المستخدم يكون "داخل" وما يحتاج يعمل login مرة ثانية
+    // نفس تسجيل الدخول: نضع كوكي الجلسة (JWT) + نُرجع التوكن في الجواب للجوال (cross-origin)
+    let token = null;
     if (user && user.id) {
-      const token = jwtService.sign({ sub: user.id, email: user.email, role: user.role });
+      token = jwtService.sign({ sub: user.id, email: user.email, role: user.role });
       res.cookie(jwtService.getCookieName(), token, jwtService.getCookieOptions());
       logger.info('registerUser: session cookie set', { userId: user.id, role: user.role });
     }
@@ -151,6 +152,7 @@ async function registerUser(req, res) {
       emailSent: emailSent !== false,
     };
     if (verificationCode) payload.verificationCode = verificationCode;
+    if (token) payload.token = token;
     return res.status(201).json(payload);
   } catch (err) {
     logger.error('registerUser unexpected', { message: err.message });
