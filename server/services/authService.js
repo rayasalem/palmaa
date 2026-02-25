@@ -298,9 +298,30 @@ async function login(email, password) {
   const stored = userRow.password && String(userRow.password).trim();
   let match = false;
 
+  // كلمات سر مستخدمي التجربة من setup.sql (لو هاش Postgres ما تطابق Node نصلحها مرة واحدة)
+  const DEMO_PASSWORDS = {
+    'admin@palma.demo': 'Admin@123456',
+    'merchant@palma.demo': 'Merchant@123456',
+    'broker@palma.demo': 'Broker@123456',
+    'customer@palma.demo': 'Customer@123456',
+  };
+
   if (stored && stored.startsWith('$2') && stored.length >= 50) {
     match = await bcrypt.compare(passTrimmed, stored);
-    if (!match) console.log('[authService] login: bcrypt compare failed', { email: emailNorm });
+    if (!match) {
+      console.log('[authService] login: bcrypt compare failed', { email: emailNorm });
+      if (DEMO_PASSWORDS[emailNorm] === passTrimmed) {
+        const hashed = await hashPassword(passTrimmed);
+        const { error: updateErr } = await supabase
+          .from(USERS_TABLE)
+          .update({ password: hashed, updated_at: new Date().toISOString() })
+          .eq('id', userRow.id);
+        if (!updateErr) {
+          match = true;
+          console.log('[authService] login: demo user password fixed (Postgres→Node bcrypt)', { email: emailNorm });
+        }
+      }
+    }
   } else if (process.env.NODE_ENV !== 'production' && stored === passTrimmed) {
     match = true;
   } else if (!stored || stored === '') {

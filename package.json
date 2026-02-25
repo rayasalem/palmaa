@@ -11,6 +11,7 @@
     "start": "serve dist -s",
     "build:server": "cd server && npm install && npm run build",
     "start:server": "cd server && node server.js",
+    "build:for-render": "npm run build && node scripts/copy-dist-to-server.cjs",
     "postinstall": "node -e \"try{if(process.platform!=='win32')require('fs').chmodSync('node_modules/.bin/vite',0o755);}catch(e){}\""
   },
   "dependencies": {
