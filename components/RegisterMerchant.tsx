@@ -165,7 +165,13 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
     });
 
     if (result.success && result.data) {
-      showToast(t.common.success, 'success');
+      const successMessage =
+        lang === 'ar'
+          ? 'تم إنشاء حساب التاجر بنجاح. تم إرسال رمز تحقق إلى بريدك الإلكتروني – يرجى تأكيد بريدك قبل تسجيل الدخول.'
+          : lang === 'he'
+            ? 'חשבון הסוחר נוצר בהצלחה. נשלח קוד אימות לאימייל שלך – אנא אמת לפני ההתחברות.'
+            : 'Merchant account created successfully. A verification code was sent to your email – please verify before logging in.';
+      showToast(successMessage, 'success');
       onRegister(result.data.user);
     } else {
       const msg = getAuthErrorMessage(result.error || 'Registration failed', lang);
@@ -427,6 +433,25 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
                 {error}
               </div>
             )}
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3 text-[11px] text-amber-800 shrink-0">
+              <Mail className="w-4 h-4 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-black mb-1">
+                  {lang === 'ar'
+                    ? 'تأكيد البريد الإلكتروني مطلوب'
+                    : lang === 'he'
+                      ? 'נדרש אימות כתובת אימייל'
+                      : 'Email verification required'}
+                </p>
+                <p className="leading-relaxed">
+                  {lang === 'ar'
+                    ? 'بعد إكمال التسجيل سيصلك رمز تحقق مكوّن من 6 أرقام إلى بريدك الإلكتروني. لن تتمكن من الدخول للوحة التحكم حتى تؤكد بريدك.'
+                    : lang === 'he'
+                      ? 'לאחר סיום ההרשמה יישלח אליך קוד אימות בן 6 ספרות לאימייל. לא תוכל להיכנס ללוח הבקרה עד שתאמת את האימייל.'
+                      : 'After completing registration, a 6-digit verification code will be sent to your email. You will not be able to access the dashboard until you verify your email.'}
+                </p>
+              </div>
+            </div>
             <h2 className="text-xl font-black text-slate-900 shrink-0">
               {lang === 'en' ? 'Terms and Conditions for Marketplace Merchants' : MERCHANT_TERMS_TITLE_AR}
             </h2>
