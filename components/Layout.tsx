@@ -87,7 +87,7 @@ const Layout: React.FC<LayoutProps> = ({ lang, setLang, user, onLogout, children
               </button>
             </div>
             <div className="cursor-pointer flex items-center hover:opacity-90 transition-opacity" onClick={() => onTabChange('home')}>
-               <Logo size="medium" />
+               <Logo size="medium" className="scale-110 sm:scale-125 origin-center" />
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
