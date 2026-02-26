@@ -101,7 +101,7 @@ const ComingSoonHero: React.FC<Props> = ({ lang, onJoinMerchant, onExploreProduc
       </div>
 
       {/* Animated Gradient Orbs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-palma-green/30 rounded-full blur-[100px] animate-pulse z-10" />
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-palma-primary/20 rounded-full blur-[100px] animate-pulse z-10" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[100px] z-10" />
 
       {/* Main Content */}

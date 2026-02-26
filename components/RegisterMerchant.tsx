@@ -22,14 +22,9 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
   onBackToLogin,
   onOpenTerms,
 }) => {
-  const [lang, setLang] = useState<'ar' | 'en'>('ar');
+  const lang: 'ar' | 'en' | 'he' = (typeof document !== 'undefined' && (document.documentElement.lang === 'ar' || document.documentElement.lang === 'en' || document.documentElement.lang === 'he')) ? document.documentElement.lang : 'ar';
   const { showToast } = useToast();
   const [step, setStep] = useState<'FORM' | 'TERMS'>('FORM');
-
-  useEffect(() => {
-    setLang(document.documentElement.lang === 'en' ? 'en' : 'ar');
-  }, []);
-
   const t = translations[lang];
 
   // UI State
@@ -95,11 +90,11 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
 
       setFormData(prev => ({ ...prev, logo_url: url }));
       showToast(
-        lang === 'en' ? 'Logo uploaded successfully' : 'تم رفع الشعار بنجاح',
+        lang === 'ar' ? 'تم رفع الشعار بنجاح' : lang === 'he' ? 'הלוגו הועלה בהצלחה' : 'Logo uploaded successfully',
         'success',
       );
     } catch (err) {
-      const msg = lang === 'en' ? 'Failed to upload image' : 'فشل رفع الصورة';
+      const msg = lang === 'ar' ? 'فشل رفع الصورة' : lang === 'he' ? 'העלאת התמונה נכשלה' : 'Failed to upload image';
       setError(msg);
       showToast(msg, 'error');
     }
@@ -312,7 +307,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
                   value={selectedCityId || ''}
                 >
                   <option value="">
-                    {lang === 'en' ? 'Select City...' : 'اختر المدينة...'}
+                    {lang === 'ar' ? 'اختر المدينة...' : lang === 'he' ? 'בחר עיר...' : 'Select City...'}
                   </option>
                   {cities.map(c => (
                     <option key={c.id} value={c.id}>
@@ -335,7 +330,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
                 value={selectedVillageId || ''}
               >
                 <option value="">
-                  {lang === 'en' ? 'Select Area...' : 'اختر المنطقة...'}
+                  {lang === 'ar' ? 'اختر المنطقة...' : lang === 'he' ? 'בחר אזור...' : 'Select Area...'}
                 </option>
                 {availableVillages.map(v => (
                   <option key={v.id} value={v.id}>
@@ -362,7 +357,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
             <button
               type="submit"
               disabled={isUploading || loading}
-              className="w-full py-5 bg-palma-primary text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-palma-primary/20 mt-4 disabled:opacity-50 hover:brightness-110 transition-all active:scale-95"
+              className="w-full py-5 bg-palma-primary text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-soft mt-4 disabled:opacity-50 hover:brightness-110 transition-all active:scale-95"
             >
               {loading ? t.common.loading : t.nav.register}
             </button>
@@ -394,13 +389,13 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
                 onClick={() => setStep('FORM')}
                 className="flex-1 py-4 rounded-2xl border border-slate-200 text-[11px] font-black uppercase text-slate-500 hover:bg-slate-50"
               >
-                {lang === 'en' ? 'Back to edit details' : 'العودة لتعديل البيانات'}
+                {lang === 'ar' ? 'العودة لتعديل البيانات' : lang === 'he' ? 'חזרה לעריכת פרטים' : 'Back to edit details'}
               </button>
               <button
                 type="button"
                 disabled={isUploading || loading}
                 onClick={submitRegistration}
-                className="flex-1 py-4 bg-palma-primary text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-palma-primary/20 hover:brightness-110 disabled:opacity-50 active:scale-95"
+                className="flex-1 py-4 bg-palma-primary text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-soft hover:brightness-110 disabled:opacity-50 active:scale-95"
               >
                 {loading
                   ? t.common.loading

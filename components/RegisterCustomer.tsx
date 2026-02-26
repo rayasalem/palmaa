@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import { userService } from '../services/userService';
 import { authService } from '../services/authService';
-import { translations, getAuthErrorMessage } from '../translations';
+import { translations, getAuthErrorMessage, type Language } from '../translations';
 import Logo from './Logo';
 import { User as UserIcon, Mail, Phone, Lock, ArrowRight, ArrowLeft, CheckCircle, RefreshCcw } from 'lucide-react';
 import { useToast } from './ToastProvider';
@@ -14,15 +14,10 @@ interface RegisterCustomerProps {
 }
 
 const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackToLogin }) => {
-  const [lang, setLang] = useState<'ar' | 'en'>('ar');
-  const { showToast } = useToast();
-  
-  useEffect(() => {
-    setLang(document.documentElement.lang === 'en' ? 'en' : 'ar');
-  }, []);
-
+  const lang: Language = (typeof document !== 'undefined' && (document.documentElement.lang === 'ar' || document.documentElement.lang === 'en' || document.documentElement.lang === 'he')) ? document.documentElement.lang as Language : 'ar';
   const t = translations[lang];
-  const isRtl = lang === 'ar';
+  const { showToast } = useToast();
+  const isRtl = lang !== 'en';
 
   // State Machine: FORM -> VERIFY
   const [step, setStep] = useState<'FORM' | 'VERIFY'>('FORM');
@@ -52,7 +47,7 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
     
     // Validation
     if (!formData.name || !formData.email || !formData.password || !formData.phone) {
-      const msg = lang === 'en' ? 'All fields are required' : 'جميع الحقول مطلوبة';
+      const msg = lang === 'ar' ? 'جميع الحقول مطلوبة' : lang === 'he' ? 'כל השדות חובה' : 'All fields are required';
       setError(msg);
       showToast(msg, 'warning');
       setLoading(false);
@@ -60,7 +55,7 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
     }
 
     if (formData.password !== formData.confirmPassword) {
-      const msg = lang === 'en' ? 'Passwords do not match' : 'كلمات المرور غير متطابقة';
+      const msg = lang === 'ar' ? 'كلمات المرور غير متطابقة' : lang === 'he' ? 'הסיסמאות אינן תואמות' : 'Passwords do not match';
       setError(msg);
       showToast(msg, 'error');
       setLoading(false);
@@ -98,7 +93,7 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
 
     const result = await userService.verifyEmail(formData.email, verificationCode);
     if (result.success && result.data) {
-      showToast(lang === 'en' ? 'Account Verified!' : 'تم تأكيد الحساب!', 'success');
+      showToast(lang === 'ar' ? 'تم تأكيد الحساب!' : lang === 'he' ? 'החשבון אומת!' : 'Account Verified!', 'success');
       const loginResult = await authService.login(formData.email, formData.password);
       if (loginResult.success && loginResult.data) {
         onRegister(loginResult.data.user);
@@ -255,7 +250,7 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
                   <button 
                     type="submit" 
                     disabled={loading} 
-                    className="w-full py-5 bg-palma-primary text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-palma-primary/30 hover:bg-emerald-800 hover:scale-[1.01] transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 group"
+                    className="w-full py-5 bg-palma-primary text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-soft hover:bg-emerald-800 hover:scale-[1.01] transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 group"
                   >
                     {loading ? (
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -280,7 +275,7 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
           ) : (
             /* VERIFICATION STEP */
             <div className="text-center animate-in fade-in zoom-in duration-500">
-               <div className="w-20 h-20 bg-palma-green/10 text-palma-green rounded-full flex items-center justify-center mx-auto mb-6">
+               <div className="w-20 h-20 bg-palma-primaryLight text-palma-primary rounded-full flex items-center justify-center mx-auto mb-6">
                   <Mail className="w-8 h-8" />
                </div>
                <h2 className="text-2xl font-black text-slate-900 mb-2">{lang === 'en' ? 'Verify Email' : 'تحقق من البريد الإلكتروني'}</h2>
@@ -296,7 +291,7 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
                     required
                     type="text" 
                     maxLength={6}
-                    className="w-full p-5 text-center text-2xl font-black tracking-[0.5em] rounded-2xl border-2 border-slate-200 focus:border-palma-green outline-none transition-all placeholder:text-slate-200"
+                    className="w-full p-5 text-center text-2xl font-black tracking-[0.5em] rounded-2xl border-2 border-slate-200 focus:border-palma-primary outline-none transition-all placeholder:text-slate-200"
                     value={verificationCode}
                     onChange={e => setVerificationCode(e.target.value.replace(/[^0-9]/g, ''))}
                     placeholder="000000"

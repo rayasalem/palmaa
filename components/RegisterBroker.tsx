@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { User, Role } from '../types';
 import { userService } from '../services/userService';
 import { authService } from '../services/authService';
-import { t, getAuthErrorMessage } from '../translations';
+import { translations, getAuthErrorMessage, type Language } from '../translations';
 import Logo from './Logo';
 import { getInternalCities, getInternalVillages } from '../services/flashlineService';
 import { useToast } from './ToastProvider';
@@ -15,12 +15,9 @@ interface RegisterBrokerProps {
 }
 
 const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLogin }) => {
-  const [lang, setLang] = useState<'ar' | 'en'>('ar');
+  const lang: Language = (typeof document !== 'undefined' && (document.documentElement.lang === 'ar' || document.documentElement.lang === 'en' || document.documentElement.lang === 'he')) ? document.documentElement.lang as Language : 'ar';
+  const t = translations[lang];
   const { showToast } = useToast();
-
-  useEffect(() => {
-    setLang(document.documentElement.lang === 'en' ? 'en' : 'ar');
-  }, []);
 
   // Step state
   const [formData, setFormData] = useState({
@@ -55,7 +52,7 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
     if (city) {
       setSelectedCityId(cityId);
       setSelectedRegionId(city.regionId);
-      setCityName(lang === 'en' ? city.nameEn : city.nameAr);
+      setCityName(lang === 'en' ? city.nameEn : lang === 'he' ? city.nameEn : city.nameAr);
       setSelectedVillageId(undefined); // Reset village
     } else {
       setSelectedCityId(undefined);
@@ -75,7 +72,7 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
     
     // Strict validation
     if (!formData.name || !formData.email || !formData.password || !formData.phone || !selectedCityId || !selectedVillageId) {
-      const msg = lang === 'en' ? 'All mandatory fields (*) are required' : 'جميع الحقول الأساسية (*) مطلوبة';
+      const msg = lang === 'ar' ? 'جميع الحقول الأساسية (*) مطلوبة' : lang === 'he' ? 'כל השדות המסומנים (*) חובה' : 'All mandatory fields (*) are required';
       setError(msg);
       showToast(msg, 'warning');
       setLoading(false);
@@ -160,14 +157,14 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
                     onChange={handleCityChange}
                     value={selectedCityId || ''}
                   >
-                    <option value="">{lang === 'en' ? 'Select...' : 'اختر...'}</option>
+                    <option value="">{lang === 'ar' ? 'اختر...' : lang === 'he' ? 'בחר...' : 'Select...'}</option>
                     {cities.map(c => (
                       <option key={c.id} value={c.id}>{lang === 'en' ? c.nameEn : c.nameAr}</option>
                     ))}
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase text-slate-500">{lang === 'en' ? 'Area' : 'المنطقة'} *</label>
+                  <label className="text-[10px] font-black uppercase text-slate-500">{lang === 'ar' ? 'المنطقة' : lang === 'he' ? 'אזור' : 'Area'} *</label>
                   <select 
                     required 
                     disabled={!selectedCityId}
@@ -175,7 +172,7 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
                     onChange={handleVillageChange}
                     value={selectedVillageId || ''}
                   >
-                    <option value="">{lang === 'en' ? 'Select...' : 'اختر...'}</option>
+                    <option value="">{lang === 'ar' ? 'اختر...' : lang === 'he' ? 'בחר...' : 'Select...'}</option>
                     {availableVillages.map(v => (
                       <option key={v.id} value={v.id}>{lang === 'en' ? v.nameEn : v.nameAr}</option>
                     ))}
@@ -218,7 +215,7 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
               </div>
 
               <div className="pt-4 flex flex-col items-center space-y-4">
-                <button type="submit" disabled={loading} className="w-full py-5 bg-palma-primary text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-palma-primary/20 hover:brightness-110 transition-all active:scale-95 disabled:opacity-50">
+                <button type="submit" disabled={loading} className="w-full py-5 bg-palma-primary text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-soft hover:brightness-110 transition-all active:scale-95 disabled:opacity-50">
                   {loading ? t.common.loading : t.nav.register}
                 </button>
                 <button type="button" onClick={onBackToLogin} className="text-[10px] font-black uppercase text-slate-400 hover:text-palma-primary">

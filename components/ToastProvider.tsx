@@ -44,11 +44,11 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`pointer-events-auto flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border backdrop-blur-md animate-in slide-in-from-right-full duration-300 min-w-[300px] max-w-md
-              ${toast.type === 'success' ? 'bg-palma-green/95 text-white border-palma-green shadow-palma-green/20' : ''}
-              ${toast.type === 'error' ? 'bg-rose-600/95 text-white border-rose-600 shadow-rose-600/20' : ''}
-              ${toast.type === 'warning' ? 'bg-amber-500/95 text-white border-amber-500 shadow-amber-500/20' : ''}
-              ${toast.type === 'info' ? 'bg-blue-600/95 text-white border-blue-600 shadow-blue-600/20' : ''}
+            className={`pointer-events-auto flex items-center gap-3 px-5 py-4 rounded-xl shadow-card-hover border backdrop-blur-md animate-in slide-in-from-right-full duration-300 min-w-[280px] max-w-md
+              ${toast.type === 'success' ? 'bg-emerald-600 text-white border-emerald-500/50' : ''}
+              ${toast.type === 'error' ? 'bg-red-600 text-white border-red-500/50' : ''}
+              ${toast.type === 'warning' ? 'bg-amber-500 text-white border-amber-400/50' : ''}
+              ${toast.type === 'info' ? 'bg-slate-700 text-white border-slate-600/50' : ''}
             `}
           >
             <span className="shrink-0">

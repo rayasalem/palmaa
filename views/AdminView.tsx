@@ -355,7 +355,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
          <div className="flex items-center gap-4">
-            <div className="p-4 bg-palma-navy rounded-3xl text-white shadow-lg shadow-palma-navy/20"><Shield className="w-8 h-8" /></div>
+            <div className="p-4 bg-palma-navy rounded-3xl text-white shadow-lg shadow-soft"><Shield className="w-8 h-8" /></div>
             <div>
               <h2 className="text-4xl font-black text-palma-navy tracking-tight">{t.common.adminConsole}</h2>
               <p className="text-sm font-medium text-palma-muted">{t.common.platformOversight}</p>
@@ -815,7 +815,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
                                  <td className="px-8 py-5 text-lg font-black text-palma-primary">{w.amount} ₪</td>
                                  <td className="px-8 py-5 text-xs text-slate-500 font-bold">{new Date(w.date).toLocaleDateString()}</td>
                                  <td className="px-8 py-5 flex gap-3">
-                                    <button onClick={() => handleWithdrawal(w.id, 'APPROVED')} className="bg-palma-primary text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition shadow-lg shadow-palma-primary/20">{t.common.approve}</button>
+                                    <button onClick={() => handleWithdrawal(w.id, 'APPROVED')} className="bg-palma-primary text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition shadow-lg shadow-soft">{t.common.approve}</button>
                                     <button onClick={() => handleWithdrawal(w.id, 'REJECTED')} className="bg-rose-50 text-rose-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-100 transition">{t.common.reject}</button>
                                  </td>
                               </tr>

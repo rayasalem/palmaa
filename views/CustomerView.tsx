@@ -612,7 +612,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
                       </div>
                       <div className={`w-0.5 h-8 bg-slate-200 ml-5`}></div>
                       <div className={`flex items-center gap-4 ${checkoutStep === 'summary' ? 'opacity-100' : 'opacity-50 grayscale'}`}>
-                         <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-sm transition-colors ${checkoutStep === 'summary' ? 'bg-palma-green text-white shadow-lg' : 'bg-slate-200 text-slate-500'}`}>2</div>
+                         <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-sm transition-colors ${checkoutStep === 'summary' ? 'bg-palma-primary text-white shadow-soft' : 'bg-slate-200 text-slate-500'}`}>2</div>
                          <div>
                             <p className="text-xs font-black text-slate-900 uppercase">{lang === 'ar' ? 'الدفع والتأكيد' : 'Payment & Confirm'}</p>
                          </div>
@@ -658,7 +658,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
                          </div>
                       </div>
                       <div className="pt-4 flex justify-end">
-                         <button type="submit" className="bg-palma-navy text-white px-10 py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-palma-navy/20 hover:bg-palma-primary transition-all active:scale-[0.98] flex items-center gap-3 group">
+                         <button type="submit" className="btn-primary px-10 py-4 text-xs uppercase tracking-widest active:scale-[0.98] flex items-center gap-3 group">
                             {lang === 'ar' ? 'متابعة للدفع' : 'Proceed to Payment'}
                             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />
                          </button>
@@ -681,7 +681,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
                           </div>
                       </div>
                       <div className="flex flex-col gap-4 mt-auto">
-                        <button onClick={finalizeCheckout} disabled={isProcessing} className="w-full py-5 bg-palma-green text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-palma-green/20 hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-70">
+                        <button onClick={finalizeCheckout} disabled={isProcessing} className="btn-primary w-full py-5 text-[11px] uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-70">
                             {isProcessing ? t.common.processing : (lang === 'ar' ? 'تأكيد الطلب' : 'Confirm Order')}
                         </button>
                         <button onClick={() => setCheckoutStep('form')} disabled={isProcessing} className="w-full py-4 text-slate-400 font-black uppercase text-[10px] tracking-widest hover:text-slate-800 transition-colors flex items-center justify-center gap-2">
@@ -785,7 +785,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
                     </div>
                     <button
                       onClick={() => handleAddToCart(p)}
-                      className="w-full py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-palma-green transition-all shadow-md active:scale-95 flex items-center justify-center gap-2"
+                      className="btn-primary w-full py-3 text-[10px] uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-2"
                     >
                       <ShoppingBag className="w-3.5 h-3.5" /> {t.product.addToCart}
                     </button>
@@ -835,7 +835,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
                                 <span className="text-xs font-bold text-slate-900 w-6 text-center">{item.quantity}</span>
                                 <button onClick={() => updateQuantity(item.id, 1)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 transition"><Plus className="w-3.5 h-3.5" /></button>
                               </div>
-                              <span className="text-sm font-black text-palma-green">₪{(item.price || item.price_ils || 0) * item.quantity}</span>
+                              <span className="text-sm font-black text-emerald-600">₪{(item.price || item.price_ils || 0) * item.quantity}</span>
                            </div>
                         </div>
                         <button onClick={() => handleRemoveFromCart(item.id, item.name || item.title)} className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
@@ -852,7 +852,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
                       {cart.length > 1 && <p className="text-[10px] text-slate-500">{selectedCartItems.length} {lang === 'ar' ? 'منتج محدد' : 'items selected'}</p>}
                    </div>
                    <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                      <button onClick={() => { setCheckoutStep('form'); setShowCheckoutForm(true); }} disabled={selectedCartItems.length === 0} className="w-full md:w-auto bg-palma-navy text-white px-10 py-5 rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-palma-navy/20 hover:bg-palma-primary hover:scale-105 transition-all active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
+                      <button onClick={() => { setCheckoutStep('form'); setShowCheckoutForm(true); }} disabled={selectedCartItems.length === 0} className="btn-primary w-full md:w-auto px-10 py-5 text-[11px] uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed">
                          {lang === 'ar' ? 'متابعة للدفع' : 'Proceed to Checkout'} <ArrowRight className="w-4 h-4 rtl:rotate-180" />
                       </button>
                       {onProceedToApiCheckout && (

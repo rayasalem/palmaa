@@ -4,9 +4,54 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --palma-primary: #E10600;
+  --palma-primary-hover: #C20500;
+  --palma-primary-light: #FFF5F5;
+  --palma-navy: #1E293B;
+  --palma-border: #E2E8F0;
+  --palma-shadow-soft: 0 2px 15px -3px rgba(0,0,0,0.04), 0 4px 6px -2px rgba(0,0,0,0.02);
+  --palma-radius: 0.75rem;
+  --palma-radius-lg: 1rem;
+  --palma-radius-xl: 1.25rem;
+}
+
 @layer base {
   body {
     @apply font-sans bg-slate-50 text-slate-700 overflow-x-hidden antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-palma-navy font-bold;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center font-semibold rounded-xl px-5 py-2.5 bg-palma-primary text-white shadow-soft border border-transparent transition-all duration-200 hover:bg-palma-primaryHover hover:shadow-card-hover focus:outline-none focus:ring-2 focus:ring-palma-primary focus:ring-offset-2 active:scale-[0.98];
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center font-semibold rounded-xl px-5 py-2.5 bg-white text-palma-navy border border-palma-border shadow-soft transition-all duration-200 hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-palma-primary focus:ring-offset-2 active:scale-[0.98];
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center font-semibold rounded-xl px-5 py-2.5 text-palma-navy transition-all duration-200 hover:bg-palma-primaryLight focus:outline-none focus:ring-2 focus:ring-palma-primary/20 active:scale-[0.98];
+  }
+  .card {
+    @apply bg-white rounded-2xl border border-palma-border shadow-card transition-shadow duration-200 hover:shadow-card-hover;
+  }
+  .input-base {
+    @apply w-full rounded-xl border border-palma-border bg-white px-4 py-3 text-sm font-medium text-palma-navy placeholder:text-slate-400 transition-all duration-200 focus:border-palma-primary focus:shadow-input focus:outline-none;
+  }
+  .badge {
+    @apply inline-flex items-center rounded-lg px-2.5 py-0.5 text-xs font-semibold;
+  }
+  .badge-success {
+    @apply badge bg-emerald-50 text-emerald-700 border border-emerald-100;
+  }
+  .badge-warning {
+    @apply badge bg-amber-50 text-amber-700 border border-amber-100;
+  }
+  .badge-error {
+    @apply badge bg-red-50 text-red-700 border border-red-100;
   }
 }
 
@@ -22,13 +67,17 @@
 /* Animation Utilities */
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes zoomIn { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-.animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
-.animate-slide-up { animation: slideUp 0.6s ease-out forwards; }
+.animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+.animate-slide-up { animation: slideUp 0.5s ease-out forwards; }
+.animate-in.zoom-in-95 { animation: zoomIn 0.2s ease-out forwards; }
 
-/* Clean inputs */
+/* Focus states - brand primary */
+input:focus, select:focus, textarea:focus, button:focus-visible {
+  outline: none;
+}
 input:focus, select:focus, textarea:focus {
-    outline: none;
-    border-color: #1F5D42;
-    box-shadow: 0 0 0 3px rgba(31, 93, 66, 0.1);
+  border-color: var(--palma-primary);
+  box-shadow: 0 0 0 3px rgba(225, 6, 0, 0.08);
 }

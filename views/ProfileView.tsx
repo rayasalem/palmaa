@@ -277,7 +277,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
                <div className="space-y-8">
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase text-slate-400 px-1">{lang === 'en' ? 'Product Media' : 'صور المنتج'} *</label>
-                    <div onClick={() => !isProductUploading && productImgInputRef.current?.click()} className={`aspect-square rounded-3xl border-2 border-dashed border-slate-100 bg-slate-50 flex flex-col items-center justify-center cursor-pointer transition-all ${isProductUploading ? 'opacity-50' : 'hover:border-palma-green'}`}>
+                    <div onClick={() => !isProductUploading && productImgInputRef.current?.click()} className={`aspect-square rounded-3xl border-2 border-dashed border-slate-100 bg-slate-50 flex flex-col items-center justify-center cursor-pointer transition-all ${isProductUploading ? 'opacity-50' : 'hover:border-palma-primary'}`}>
                       {productForm.image_url ? <img src={productForm.image_url} className="w-full h-full object-cover" /> : 
                         <div className="text-center p-8">
                            <span className="text-4xl block mb-2">{isProductUploading ? '⌛' : '📸'}</span>
@@ -287,7 +287,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
                       <input type="file" ref={productImgInputRef} className="hidden" accept="image/jpeg,image/png,image/webp" onChange={handleProductImgChange} />
                     </div>
                   </div>
-                  <button type="submit" disabled={isProductUploading} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-2xl hover:bg-palma-green transition-all active:scale-95 disabled:opacity-50">
+                  <button type="submit" disabled={isProductUploading} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-2xl hover:bg-palma-primary transition-all active:scale-95 disabled:opacity-50">
                     Launch Product Live →
                   </button>
                </div>
@@ -327,7 +327,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
       )}
 
       <div className="bg-white rounded-3xl lg:rounded-[3rem] p-6 sm:p-10 border border-slate-100 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center gap-8 lg:gap-12">
-        <div className="absolute top-0 right-0 w-48 h-48 sm:w-64 sm:h-64 bg-palma-green/5 rounded-full -mr-24 -mt-24"></div>
+        <div className="absolute top-0 right-0 w-48 h-48 sm:w-64 sm:h-64 bg-palma-primary/5 rounded-full -mr-24 -mt-24"></div>
         <div className="relative group shrink-0">
           <div className="w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 rounded-3xl lg:rounded-[3rem] overflow-hidden border-4 border-white shadow-2xl bg-slate-50">
             <img src={userImg} className="w-full h-full object-cover" alt={user.name} />
@@ -343,7 +343,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
         <div className="flex-1 space-y-6 text-center md:text-left rtl:md:text-right relative z-10">
           <div>
             <div className="flex flex-wrap justify-center md:justify-start items-center gap-3 mb-2">
-               <span className="bg-palma-green/10 text-palma-green px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">{user.role} Dashboard</span>
+               <span className="bg-palma-primary/10 text-palma-primary px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">{user.role} Dashboard</span>
                {user.isApproved && <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[9px] font-black uppercase">✓ Approved</span>}
             </div>
             <h1 className="text-[22px] sm:text-[30px] lg:text-[40px] font-black text-slate-900 tracking-tight leading-tight">
@@ -353,7 +353,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.common.balance}</p>
-               <p className="text-lg font-black text-palma-green">₪{user.balance?.toFixed(0) || '0'}</p>
+               <p className="text-lg font-black text-palma-primary">₪{user.balance?.toFixed(0) || '0'}</p>
              </div>
              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">{user.role === Role.MERCHANT ? 'Inventory' : 'Endorsed'}</p>
@@ -371,9 +371,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
         </div>
 
         <div className="shrink-0 flex flex-col gap-3 w-full md:w-auto">
-           {user.role === Role.MERCHANT && <button onClick={() => setIsAddingProduct(true)} className="bg-palma-green text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase shadow-xl hover:brightness-110 transition-all flex items-center justify-center gap-3"><span>➕</span> {t.common.addProduct}</button>}
+           {user.role === Role.MERCHANT && <button onClick={() => setIsAddingProduct(true)} className="bg-palma-primary text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase shadow-xl hover:brightness-110 transition-all flex items-center justify-center gap-3"><span>➕</span> {t.common.addProduct}</button>}
            {!isEditing ? <button onClick={() => setIsEditing(true)} className="bg-slate-900 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase hover:brightness-110 transition-all shadow-xl">Edit Profile</button> :
-             <><button onClick={handleSave} className="bg-palma-green text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase hover:brightness-110 shadow-xl">Save Changes</button>
+             <><button onClick={handleSave} className="bg-palma-primary text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase hover:brightness-110 shadow-xl">Save Changes</button>
                <button onClick={() => setIsEditing(false)} className="bg-slate-100 text-slate-400 px-8 py-4 rounded-2xl text-[10px] font-black uppercase">Cancel</button></>
            }
         </div>
@@ -387,20 +387,20 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
               <div className="space-y-4">
                  <div className="space-y-1">
                    <label className="text-[10px] font-black uppercase text-slate-400 px-1">{t.auth.phone}</label>
-                   <input name="phone" disabled={!isEditing} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-palma-green outline-none" value={formData.phone} onChange={handleInputChange} />
+                   <input name="phone" disabled={!isEditing} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-palma-primary outline-none" value={formData.phone} onChange={handleInputChange} />
                  </div>
                  <div className="space-y-1">
                    <label className="text-[10px] font-black uppercase text-slate-400 px-1">{lang === 'en' ? 'Bio' : 'النبذة التعريفية'}</label>
-                   <textarea name="bio" disabled={!isEditing} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium h-24 focus:ring-2 focus:ring-palma-green outline-none resize-none" value={formData.bio} onChange={handleInputChange} />
+                   <textarea name="bio" disabled={!isEditing} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium h-24 focus:ring-2 focus:ring-palma-primary outline-none resize-none" value={formData.bio} onChange={handleInputChange} />
                  </div>
 
                  {user.role === Role.MERCHANT && (
                    <>
                      <div className="pt-4 border-t border-slate-50 space-y-4">
-                        <p className="text-[10px] font-black uppercase text-palma-green tracking-widest">Business Information</p>
+                        <p className="text-[10px] font-black uppercase text-palma-primary tracking-widest">Business Information</p>
                         <div className="space-y-1">
                           <label className="text-[10px] font-black uppercase text-slate-400 px-1">{t.auth.businessName}</label>
-                          <input name="business_name" disabled={!isEditing} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-palma-green outline-none" value={formData.business_name} onChange={handleInputChange} />
+                          <input name="business_name" disabled={!isEditing} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-2 focus:ring-palma-primary outline-none" value={formData.business_name} onChange={handleInputChange} />
                         </div>
                         <div className="space-y-3">
                            <label className="text-[10px] font-black uppercase text-slate-400 px-1">{lang === 'ar' ? 'مقر المتجر الرئيسي' : 'Store Origin HQ'} *</label>
@@ -426,7 +426,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
                               <option key={v.id} value={v.id}>{lang === 'ar' ? v.nameAr : v.nameEn}</option>
                             ))}
                            </select>
-                           <input name="business_address" placeholder="Store full street address" disabled={!isEditing} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-palma-green outline-none" value={formData.business_address} onChange={handleInputChange} />
+                           <input name="business_address" placeholder="Store full street address" disabled={!isEditing} className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-palma-primary outline-none" value={formData.business_address} onChange={handleInputChange} />
                         </div>
                      </div>
                    </>

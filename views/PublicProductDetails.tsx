@@ -309,7 +309,7 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({ lang, user,
 
            <div className="lg:col-span-5 flex flex-col h-full">
               <div className="bg-white p-8 sm:p-10 rounded-3xl lg:rounded-[2.5rem] shadow-soft border border-slate-100 flex-1 relative overflow-hidden">
-                 <div className="absolute top-0 right-0 w-64 h-64 bg-palma-green/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
+                 <div className="absolute top-0 right-0 w-64 h-64 bg-palma-primaryLight/50 rounded-full blur-3xl -mr-32 -mt-32"></div>
 
                  <div className="relative z-10 space-y-8">
                     
@@ -328,7 +328,7 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({ lang, user,
                        </div>
                        <h1 className="text-3xl sm:text-4xl font-black text-palma-navy leading-[1.1] mb-4 tracking-tight">{product.name || product.title || '-'}</h1>
                        <div className="flex items-baseline gap-4">
-                          <span className="text-4xl sm:text-5xl font-black text-palma-green tracking-tight">₪{product.price || product.price_ils}</span>
+                          <span className="text-4xl sm:text-5xl font-black text-palma-primary tracking-tight">₪{product.price || product.price_ils}</span>
                           {product.discount && (
                              <span className="text-lg font-bold text-slate-300 line-through decoration-2">₪{((product.price || product.price_ils || 0) * 1.2).toFixed(0)}</span>
                           )}
@@ -376,7 +376,7 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({ lang, user,
                        </div>
                        
                        <div className="flex flex-col sm:flex-row gap-4">
-                          <button onClick={handleAddToCart} className="flex-1 py-5 bg-palma-navy text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-palma-navy/20 hover:bg-palma-primary transition-all active:scale-[0.98] flex items-center justify-center gap-3">
+                          <button onClick={handleAddToCart} className="btn-primary flex-1 py-5 text-[11px] uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-3">
                              <ShoppingBag className="w-4 h-4" /> {t.product.addToCart}
                           </button>
                        </div>

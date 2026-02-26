@@ -110,7 +110,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
             </button>
             <div onClick={onBack} className="cursor-pointer"><Logo size="small" /></div>
           </div>
-          <button onClick={onLoginClick} className="bg-palma-navy text-white px-6 py-2.5 rounded-xl text-xs font-bold hover:bg-palma-primary transition shadow-md shadow-palma-navy/10 uppercase tracking-wider">
+          <button onClick={onLoginClick} className="btn-primary px-6 py-2.5 text-xs uppercase tracking-wider">
              {t.auth.login}
           </button>
         </div>
@@ -297,7 +297,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                 <span className="text-6xl block mb-6 grayscale opacity-50">🏜️</span>
                 <h3 className="text-2xl font-black text-palma-navy mb-3">{t.common.noProducts}</h3>
                 <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mb-8">{t.common.tryAdjusting}</p>
-                <button onClick={resetFilters} className="px-10 py-4 bg-palma-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-palma-primary/20 hover:scale-105 transition-all">{t.common.clearFilters}</button>
+                <button onClick={resetFilters} className="btn-primary px-10 py-4 text-[10px] uppercase tracking-widest">{t.common.clearFilters}</button>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 pb-20">
@@ -390,7 +390,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
               <button onClick={resetFilters} className="flex-1 py-5 bg-slate-100 text-slate-500 rounded-2xl font-black uppercase text-[11px] tracking-widest">
                 {t.common.resetFilters}
               </button>
-              <button onClick={() => setIsMobileFilterOpen(false)} className="flex-[2] py-5 bg-palma-primary text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-palma-primary/20">
+              <button onClick={() => setIsMobileFilterOpen(false)} className="btn-primary flex-[2] py-5 text-[11px] uppercase tracking-widest">
                 Show Results
               </button>
             </div>

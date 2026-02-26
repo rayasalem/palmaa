@@ -113,9 +113,9 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
   };
 
   const roleOptions = [
-    { id: 'CUSTOMER', label: t.roles.CUSTOMER, icon: <ShoppingCart className="w-5 h-5"/>, desc: 'Shop & Discover' },
-    { id: 'MERCHANT', label: t.roles.MERCHANT, icon: <Store className="w-5 h-5"/>, desc: 'Sell & Grow' },
-    { id: 'BROKER', label: t.roles.BROKER, icon: <TrendingUp className="w-5 h-5"/>, desc: 'Promote & Earn' },
+    { id: 'CUSTOMER', label: t.roles.CUSTOMER, icon: <ShoppingCart className="w-5 h-5"/>, desc: t.auth.roleDescCustomer },
+    { id: 'MERCHANT', label: t.roles.MERCHANT, icon: <Store className="w-5 h-5"/>, desc: t.auth.roleDescMerchant },
+    { id: 'BROKER', label: t.roles.BROKER, icon: <TrendingUp className="w-5 h-5"/>, desc: t.auth.roleDescBroker },
   ];
 
   if (view === 'REGISTER_BROKER') return <RegisterBroker onRegister={onLogin} onBackToLogin={() => setView('LOGIN')} />;
@@ -123,29 +123,22 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
   if (view === 'REGISTER_MERCHANT') return <RegisterMerchant onRegister={onLogin} onBackToLogin={() => setView('LOGIN')} onOpenTerms={onOpenTerms} />;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 sm:p-6 font-sans" dir="rtl">
-      
-      <div className="w-full max-w-lg transition-all duration-700 ease-in-out animate-fade-in">
-        
-        {/* Branding Header */}
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 sm:p-6 font-sans" dir={lang === 'en' ? 'ltr' : 'rtl'}>
+      <div className="w-full max-w-lg transition-all duration-500 ease-out animate-fade-in">
         <div className="text-center space-y-8 mb-10">
            <div className="flex justify-center transform scale-125"><Logo /></div>
         </div>
-
-        {/* Form Container */}
-        <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
-          
-          {/* Tabs */}
-          <div className="grid grid-cols-2 p-1.5 bg-slate-50 border-b border-slate-100 m-4 rounded-2xl">
+        <div className="bg-white rounded-2xl shadow-card border border-palma-border overflow-hidden">
+          <div className="grid grid-cols-2 p-1.5 bg-slate-50/80 border-b border-palma-border m-4 rounded-xl">
             <button 
               onClick={() => { setView('LOGIN'); setError(''); }}
-              className={`py-3.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${view === 'LOGIN' ? 'bg-white text-palma-navy shadow-sm' : 'text-slate-400 hover:text-palma-navy'}`}
+              className={`py-3.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all duration-200 ${view === 'LOGIN' ? 'bg-white text-palma-navy shadow-soft border border-palma-border' : 'text-slate-400 hover:text-palma-navy'}`}
             >
               {t.auth.login}
             </button>
             <button 
               onClick={() => { setView('ROLE_SELECT'); setError(''); }}
-              className={`py-3.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${view !== 'LOGIN' ? 'bg-white text-palma-navy shadow-sm' : 'text-slate-400 hover:text-palma-navy'}`}
+              className={`py-3.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all duration-200 ${view !== 'LOGIN' ? 'bg-white text-palma-navy shadow-soft border border-palma-border' : 'text-slate-400 hover:text-palma-navy'}`}
             >
               {t.auth.register}
             </button>
@@ -162,7 +155,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
             </div>
 
             {error && (
-              <div className="mb-8 p-4 bg-red-50 text-red-600 text-xs font-bold rounded-2xl border border-red-100 animate-slide-up space-y-2">
+              <div className="mb-8 p-4 bg-red-50 text-red-700 text-xs font-semibold rounded-xl border border-red-100 animate-slide-up space-y-2">
                 <div className="flex items-center justify-center gap-3">
                   <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></span>
                   <span>{error}</span>
@@ -231,11 +224,11 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                       placeholder="email@example.com"
                       value={forgotEmail}
                       onChange={e => setForgotEmail(e.target.value)}
-                      className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-bold"
+                      className="input-base rounded-xl"
                     />
                     <div className="flex gap-3">
-                      <button type="submit" disabled={loading} className="flex-1 py-3 bg-palma-primary text-white rounded-xl font-bold text-xs uppercase">{loading ? t.common.loading : t.auth.send}</button>
-                      <button type="button" onClick={() => setShowForgotPassword(false)} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase">{t.common.back}</button>
+                      <button type="submit" disabled={loading} className="btn-primary flex-1 py-3 text-sm">{loading ? t.common.loading : t.auth.send}</button>
+                      <button type="button" onClick={() => setShowForgotPassword(false)} className="btn-secondary flex-1 py-3 text-sm">{t.common.back}</button>
                     </div>
                   </form>
                 )}
@@ -269,13 +262,13 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                             }
                           }
                         }}
-                        className="w-full px-4 py-4 rounded-2xl border-2 border-palma-primary/30 bg-palma-primary/5 text-center text-xl font-black tracking-[0.3em] focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/20 outline-none"
+                        className="w-full px-4 py-4 rounded-xl border-2 border-palma-primary/30 bg-palma-primaryLight text-center text-xl font-bold tracking-[0.3em] focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/20 outline-none text-palma-navy"
                       />
                     </div>
                     <div className="flex gap-3">
                       <button
                         type="button"
-                        className="flex-1 py-3 bg-palma-primary text-white rounded-xl font-bold text-xs uppercase"
+                        className="btn-primary flex-1 py-3 text-sm"
                         onClick={() => {
                           setError('');
                           const code = String(forgotOtp).trim();
@@ -290,7 +283,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                       >
                         {t.auth.next}
                       </button>
-                      <button type="button" onClick={() => setForgotStep('email')} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase">{t.common.back}</button>
+                      <button type="button" onClick={() => setForgotStep('email')} className="btn-secondary flex-1 py-3 text-sm">{t.common.back}</button>
                     </div>
                   </div>
                 )}
@@ -330,7 +323,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                         value={forgotNewPassword}
                         onChange={e => setForgotNewPassword(e.target.value)}
                         minLength={6}
-                        className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-bold"
+                        className="input-base rounded-xl"
                       />
                     </div>
                     <div>
@@ -346,12 +339,12 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                         value={forgotConfirmPassword}
                         onChange={e => setForgotConfirmPassword(e.target.value)}
                         minLength={6}
-                        className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-bold"
+                        className="input-base rounded-xl"
                       />
                     </div>
                     <div className="flex gap-3">
-                      <button type="submit" disabled={loading} className="flex-1 py-3 bg-palma-primary text-white rounded-xl font-bold text-xs uppercase">{loading ? t.common.loading : t.auth.reset}</button>
-                      <button type="button" onClick={() => setForgotStep('otp')} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase">{t.common.back}</button>
+                      <button type="submit" disabled={loading} className="btn-primary flex-1 py-3 text-sm">{loading ? t.common.loading : t.auth.reset}</button>
+                      <button type="button" onClick={() => setForgotStep('otp')} className="btn-secondary flex-1 py-3 text-sm">{t.common.back}</button>
                     </div>
                   </form>
                 )}
@@ -371,7 +364,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                       required 
                       type="email" 
                       autoComplete="email"
-                      className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-bold text-palma-navy focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 outline-none transition-all placeholder:text-slate-300" 
+                      className="w-full pl-12 pr-4 py-4 rounded-xl border border-palma-border bg-white text-sm font-medium text-palma-navy focus:border-palma-primary focus:shadow-input outline-none transition-all placeholder:text-slate-400" 
                       placeholder="name@email.com" 
                       value={email} 
                       onChange={e => setEmail(e.target.value)} 
@@ -392,7 +385,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                       required 
                       type="password" 
                       autoComplete="current-password"
-                      className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-bold text-palma-navy focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 outline-none transition-all placeholder:text-slate-300" 
+                      className="w-full pl-12 pr-4 py-4 rounded-xl border border-palma-border bg-white text-sm font-medium text-palma-navy focus:border-palma-primary focus:shadow-input outline-none transition-all placeholder:text-slate-400" 
                       placeholder="••••••••" 
                       value={password} 
                       onChange={e => setPassword(e.target.value)} 
@@ -400,7 +393,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                   </div>
                 </div>
 
-                <button type="submit" disabled={loading} className="w-full py-5 bg-palma-navy text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-palma-navy/20 hover:bg-palma-primary transition-all duration-300 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 mt-4">
+                <button type="submit" disabled={loading} className="btn-primary w-full py-5 text-sm tracking-wide shadow-soft hover:shadow-card-hover active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 mt-4">
                   {loading ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -424,9 +417,9 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                      <button
                         key={r.id}
                         onClick={() => handleRoleSelection(r.id as any)}
-                        className={`p-5 rounded-2xl border transition-all flex flex-col items-center text-center gap-3 relative group ${role === r.id ? 'border-palma-primary bg-palma-primary/5 ring-1 ring-palma-primary' : 'border-slate-100 bg-slate-50 hover:border-palma-primary/30 hover:shadow-lg hover:bg-white'}`}
+                        className={`p-5 rounded-xl border transition-all duration-200 flex flex-col items-center text-center gap-3 relative group ${role === r.id ? 'border-palma-primary bg-palma-primaryLight ring-1 ring-palma-primary shadow-soft' : 'border-palma-border bg-slate-50 hover:border-palma-primary/30 hover:shadow-card hover:bg-white'}`}
                      >
-                        <div className={`p-3 rounded-xl transition-colors ${role === r.id ? 'bg-palma-primary text-white shadow-lg shadow-palma-primary/30' : 'bg-white text-slate-400 group-hover:text-palma-primary shadow-sm'}`}>
+                        <div className={`p-3 rounded-xl transition-colors duration-200 ${role === r.id ? 'bg-palma-primary text-white shadow-soft' : 'bg-white text-slate-400 group-hover:text-palma-primary shadow-soft border border-palma-border'}`}>
                           {r.icon}
                         </div>
                         <div>
@@ -440,7 +433,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                 <button 
                   onClick={proceedToRegister}
                   disabled={!role}
-                  className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all flex items-center justify-center gap-3 ${role ? 'bg-palma-navy text-white hover:bg-palma-primary shadow-palma-navy/20 active:scale-[0.98]' : 'bg-slate-100 text-slate-300 cursor-not-allowed shadow-none'}`}
+                  className={`w-full py-5 rounded-xl font-semibold text-sm tracking-wide shadow-soft transition-all duration-200 flex items-center justify-center gap-3 ${role ? 'btn-primary active:scale-[0.98]' : 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'}`}
                 >
                   {t.auth.continue}
                   <ArrowRight className="w-4 h-4" />

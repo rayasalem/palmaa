@@ -37,14 +37,14 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
     <div className="bg-palma-soft font-sans text-palma-text overflow-x-hidden min-h-screen flex flex-col" dir={lang === 'en' ? 'ltr' : 'rtl'}>
       
       {/* Navbar - Fixed positioning to ensure it stays at the top */}
-      <nav className="fixed top-0 left-0 right-0 w-full bg-white/90 backdrop-blur-xl z-[100] border-b border-slate-100 shadow-sm h-20 transition-all duration-300">
+      <nav className="fixed top-0 left-0 right-0 w-full bg-white/95 backdrop-blur-xl z-[100] border-b border-palma-border shadow-soft h-20 transition-all duration-300">
          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
             <Logo size="medium" />
             <div className="flex items-center gap-4 sm:gap-6">
-               <button onClick={toggleLang} className="text-[10px] font-black uppercase text-palma-muted hover:text-palma-primary transition tracking-widest">{lang === 'en' ? 'العربية' : 'English'}</button>
-               <div className="w-px h-5 bg-slate-200"></div>
-               <button onClick={onLoginClick} className="text-sm font-bold text-palma-navy hover:text-palma-primary transition">{t.nav.login}</button>
-               <button onClick={onJoinMerchant} className="bg-palma-navy text-white px-5 py-2.5 rounded-2xl text-[10px] sm:text-xs font-black shadow-lg shadow-palma-navy/20 hover:bg-palma-primary transition-all hidden sm:block tracking-wide">{t.hero.join}</button>
+               <button onClick={toggleLang} className="text-[10px] font-semibold uppercase text-palma-muted hover:text-palma-primary transition tracking-widest">{lang === 'en' ? 'العربية' : 'English'}</button>
+               <div className="w-px h-5 bg-palma-border" />
+               <button onClick={onLoginClick} className="text-sm font-semibold text-palma-navy hover:text-palma-primary transition">{t.nav.login}</button>
+               <button onClick={onJoinMerchant} className="btn-primary px-5 py-2.5 text-[10px] sm:text-xs hidden sm:inline-flex tracking-wide">{t.hero.join}</button>
             </div>
          </div>
       </nav>
@@ -61,7 +61,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
         />
 
         {/* Stats */}
-        <section className="bg-white py-16 sm:py-24 border-y border-slate-100 relative z-10">
+        <section className="bg-white py-16 sm:py-24 border-y border-palma-border relative z-10">
            <div className="max-w-7xl mx-auto px-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
                  <div className="text-center group cursor-default">
@@ -93,11 +93,11 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
         </section>
 
         {/* New About Section */}
-        <section className="py-24 bg-white relative overflow-hidden border-b border-slate-100">
-          <div className="absolute top-0 left-0 w-full h-full bg-palma-soft/50 -skew-y-3 transform origin-top-left z-0 pointer-events-none"></div>
+        <section className="py-24 bg-white relative overflow-hidden border-b border-palma-border">
+          <div className="absolute top-0 left-0 w-full h-full bg-palma-primaryLight/30 -skew-y-3 transform origin-top-left z-0 pointer-events-none" />
           <div className="max-w-7xl mx-auto px-6 relative z-10">
             <div className="text-center mb-16 space-y-4">
-               <span className="text-palma-primary font-black uppercase tracking-widest text-[10px] bg-palma-primary/5 px-4 py-2 rounded-full border border-palma-primary/10">
+               <span className="text-palma-primary font-bold uppercase tracking-widest text-[10px] bg-palma-primaryLight px-4 py-2 rounded-full border border-palma-primary/10">
                  {t.landing.aboutSubtitle}
                </span>
                <h2 className="text-4xl md:text-5xl font-black text-palma-navy tracking-tight">
@@ -107,8 +107,8 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                {/* Feature 1 - Merchant */}
-               <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl hover:shadow-2xl transition-all duration-300 group hover:-translate-y-2">
-                  <div className="w-16 h-16 bg-palma-soft rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-sm">
+               <div className="card p-8 rounded-2xl hover:-translate-y-1 transition-all duration-200 group">
+                  <div className="w-16 h-16 bg-palma-primaryLight rounded-xl flex items-center justify-center mb-6 group-hover:scale-105 transition-transform shadow-soft">
                      <Store className="w-8 h-8 text-palma-navy" />
                   </div>
                   <h3 className="text-xl font-black text-palma-navy mb-3">{t.landing.features.merchantTitle}</h3>
@@ -116,18 +116,18 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                </div>
 
                {/* Feature 2 - Broker (Highlighted) */}
-               <div className="bg-palma-navy p-8 rounded-[2.5rem] shadow-2xl hover:shadow-palma-navy/40 transition-all duration-300 group text-white relative overflow-hidden hover:-translate-y-2">
+               <div className="bg-palma-navy p-8 rounded-2xl shadow-card-hover hover:shadow-card-hover transition-all duration-200 group text-white relative overflow-hidden hover:-translate-y-1">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150 duration-700"></div>
-                  <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md relative z-10 group-hover:scale-110 transition-transform ring-1 ring-white/10">
-                     <TrendingUp className="w-8 h-8 text-palma-green" />
+                  <div className="w-16 h-16 bg-white/10 rounded-xl flex items-center justify-center mb-6 backdrop-blur-md relative z-10 group-hover:scale-105 transition-transform ring-1 ring-white/10">
+                     <TrendingUp className="w-8 h-8 text-white" />
                   </div>
                   <h3 className="text-xl font-black mb-3 relative z-10">{t.landing.features.brokerTitle}</h3>
                   <p className="text-sm text-slate-300 font-medium leading-relaxed relative z-10">{t.landing.features.brokerDesc}</p>
                </div>
 
                {/* Feature 3 - Customer */}
-               <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl hover:shadow-2xl transition-all duration-300 group hover:-translate-y-2">
-                  <div className="w-16 h-16 bg-palma-soft rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-sm">
+               <div className="card p-8 rounded-2xl hover:-translate-y-1 transition-all duration-200 group">
+                  <div className="w-16 h-16 bg-palma-primaryLight rounded-xl flex items-center justify-center mb-6 group-hover:scale-105 transition-transform shadow-soft">
                      <ShoppingBag className="w-8 h-8 text-palma-navy" />
                   </div>
                   <h3 className="text-xl font-black text-palma-navy mb-3">{t.landing.features.customerTitle}</h3>
@@ -154,7 +154,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                 const secondImage = p.images?.[1];
 
                 return (
-                  <div key={p.id} className="bg-white rounded-[2rem] p-4 border border-slate-100 shadow-soft hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group">
+                  <div key={p.id} className="card rounded-2xl p-4 hover:-translate-y-1 transition-all duration-200 group">
                     <div className="aspect-square rounded-[1.5rem] overflow-hidden bg-slate-50 mb-5 relative">
                       <img 
                         src={mainImage} 
@@ -174,9 +174,9 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                       </div>
                     </div>
                     <div className="px-2 pb-2">
-                      <p className="text-[9px] font-black text-palma-primary uppercase tracking-widest mb-2 bg-palma-primary/5 px-2 py-1 rounded w-fit">{p.category}</p>
-                      <h4 className="font-black text-palma-navy mb-6 text-lg tracking-tight truncate">{p.name}</h4>
-                      <button onClick={() => onViewProduct && onViewProduct(p.id)} className="w-full py-3.5 bg-palma-navy text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-palma-primary transition-all shadow-xl shadow-palma-navy/10 active:scale-95">
+                      <p className="text-[9px] font-bold text-palma-primary uppercase tracking-widest mb-2 bg-palma-primaryLight px-2 py-1 rounded-lg w-fit">{p.category}</p>
+                      <h4 className="font-bold text-palma-navy mb-6 text-lg tracking-tight truncate">{p.name}</h4>
+                      <button onClick={() => onViewProduct && onViewProduct(p.id)} className="btn-primary w-full py-3.5 text-[10px] uppercase tracking-widest active:scale-[0.98]">
                         {t.common.details}
                       </button>
                     </div>
@@ -189,7 +189,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-100 py-20">
+      <footer className="bg-white border-t border-palma-border py-20">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-16">
           <div className={`space-y-6 ${lang === 'en' ? 'text-left' : 'text-right'}`}>
             <Logo size="medium" />
@@ -213,7 +213,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
             </p>
           </div>
         </div>
-        <div className="max-w-7xl mx-auto px-6 pt-16 mt-16 border-t border-slate-50 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="max-w-7xl mx-auto px-6 pt-16 mt-16 border-t border-palma-border flex flex-col md:flex-row justify-between items-center gap-6">
             <p className="text-[10px] font-bold text-palma-muted uppercase tracking-widest">© {new Date().getFullYear()} Palma Marketplace. All rights reserved.</p>
             <div className="flex gap-8 text-[9px] font-black uppercase text-palma-muted/60">
                 <span className="hover:text-palma-navy cursor-pointer transition-colors">{t.footer.privacy}</span>

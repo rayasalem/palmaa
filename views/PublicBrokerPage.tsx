@@ -43,7 +43,7 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({ lang, brokerId, onB
           <div onClick={onBack} className="cursor-pointer"><Logo size="small" /></div>
           <div className="flex items-center gap-4">
              <button onClick={toggleLang} className="text-[10px] font-black uppercase text-slate-400 hover:text-slate-900">{lang === 'en' ? 'العربية' : 'English'}</button>
-             <button onClick={onLoginClick} className="bg-palma-navy text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-palma-primary transition-all shadow-lg shadow-palma-navy/20">{t.auth.login}</button>
+             <button onClick={onLoginClick} className="btn-primary px-6 py-2.5 text-[10px] uppercase tracking-widest">{t.auth.login}</button>
           </div>
         </div>
       </nav>
@@ -60,7 +60,7 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({ lang, brokerId, onB
                  </div>
                  
                  <div className="relative z-10">
-                    <span className="bg-palma-green/10 text-palma-green px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest inline-block mb-2">Certified Partner</span>
+                    <span className="bg-palma-primary/10 text-palma-primary px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest inline-block mb-2">Certified Partner</span>
                     <h1 className="text-2xl font-black text-slate-900 leading-tight">{broker.name}</h1>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Verified Broker</p>
                  </div>
@@ -119,10 +119,10 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({ lang, brokerId, onB
                        <div 
                          key={s.id} 
                          onClick={() => onProductClick(p.id)}
-                         className={`bg-white rounded-[3rem] p-6 md:p-10 border ${s.is_featured ? 'border-palma-green shadow-xl' : 'border-slate-100 shadow-soft'} hover:shadow-2xl transition-all duration-500 group cursor-pointer flex flex-col md:flex-row gap-10 relative overflow-hidden`}
+                         className={`bg-white rounded-[3rem] p-6 md:p-10 border ${s.is_featured ? 'border-palma-primary shadow-xl' : 'border-slate-100 shadow-soft'} hover:shadow-2xl transition-all duration-500 group cursor-pointer flex flex-col md:flex-row gap-10 relative overflow-hidden`}
                        >
                           {s.is_featured && (
-                            <div className="absolute top-0 right-12 bg-palma-green text-white px-4 py-2 rounded-b-xl text-[8px] font-black uppercase tracking-widest shadow-lg z-20">
+                            <div className="absolute top-0 right-12 bg-palma-primary text-white px-4 py-2 rounded-b-xl text-[8px] font-black uppercase tracking-widest shadow-lg z-20">
                                Broker's Choice
                             </div>
                           )}
@@ -131,7 +131,7 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({ lang, brokerId, onB
                              <img src={displayImage} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={p.name} />
                              <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur py-3 px-4 rounded-2xl flex justify-between items-center shadow-lg">
                                 <span className="text-[10px] font-black uppercase text-slate-400">Price</span>
-                                <span className="text-base font-black text-palma-green">₪{p.price || p.price_ils}</span>
+                                <span className="text-base font-black text-palma-primary">₪{p.price || p.price_ils}</span>
                              </div>
                           </div>
 
@@ -143,7 +143,7 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({ lang, brokerId, onB
                                       <span className="w-1 h-1 rounded-full bg-slate-300"></span>
                                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{mName}</span>
                                    </div>
-                                   <h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight group-hover:text-palma-green transition-colors leading-tight">{p.name}</h3>
+                                   <h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight group-hover:text-palma-primary transition-colors leading-tight">{p.name}</h3>
                                 </div>
 
                                 <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100 relative">
@@ -158,7 +158,7 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({ lang, brokerId, onB
                              </div>
 
                              <div className="flex items-center gap-4 mt-6 md:mt-0">
-                                <button onClick={() => onProductClick(p.id)} className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-palma-green transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2 group-hover:gap-3">
+                                <button onClick={() => onProductClick(p.id)} className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-palma-primary transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2 group-hover:gap-3">
                                    {t.common.details} <span className="transition-all">→</span>
                                 </button>
                                 <div className="px-6 py-4 bg-slate-50 rounded-2xl border border-slate-100 text-center min-w-[100px]">

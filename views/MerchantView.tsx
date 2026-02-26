@@ -39,6 +39,8 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
   const [tagsInput, setTagsInput] = useState('');
   const [uploadQueue, setUploadQueue] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (user.role === 'MERCHANT') {
@@ -129,15 +131,19 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                 msg =
                   lang === 'ar'
                     ? 'حجم الصورة كبير جداً (الحد الأقصى 2MB). سيتم حفظ المنتج بدون هذه الصورة، الرجاء اختيار صورة أخرى أصغر لاحقاً.'
+                    : lang === 'he'
+                    ? 'התמונה גדולה מדי (מקסימום 2MB). המוצר יישמר בלי התמונה; נא לבחור תמונה קטנה יותר.'
                     : 'Image too large (max 2MB). The product will be saved without this image; please choose a smaller one later.';
               } else if (msg.includes('Invalid format')) {
                 msg =
                   lang === 'ar'
                     ? 'صيغة الصورة غير مدعومة. سيتم حفظ المنتج بدون هذه الصورة، الرجاء استخدام JPG أو PNG أو WebP.'
+                    : lang === 'he'
+                    ? 'פורמט תמונה לא נתמך. נא להשתמש ב-JPG, PNG או WebP.'
                     : 'Invalid image format. The product will be saved without this image; please use JPG, PNG, or WebP.';
               }
             }
-            showToast(msg || (lang === 'ar' ? 'تعذر رفع الصورة، سيتم حفظ المنتج بدونها.' : 'Failed to upload image; product will be saved without it.'), 'error');
+            showToast(msg || (lang === 'ar' ? 'تعذر رفع الصورة، سيتم حفظ المنتج بدونها.' : lang === 'he' ? 'ההעלאה נכשלה; המוצר יישמר בלי תמונה.' : 'Failed to upload image; product will be saved without it.'), 'error');
           }
         }
       }
@@ -149,6 +155,8 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
         showToast(
           lang === 'ar'
             ? 'لم يتم قبول أي صورة، سيتم حفظ المنتج بدون صورة حقيقية. يمكنك تعديل الصورة لاحقاً من لوحة المنتجات.'
+            : lang === 'he'
+            ? 'לא התקבלה תמונה. המוצר יישמר עם תמונת placeholder; ניתן לעדכן מאוחר יותר.'
             : 'No image was accepted. The product will be saved with a placeholder image; you can update it later.',
           'info'
         );
@@ -170,7 +178,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
         // Update
         const res = await productService.update(editingId, payload);
         if (res.success) {
-          showToast(lang === 'en' ? 'Product updated' : 'تم تحديث المنتج', 'success');
+          showToast(lang === 'ar' ? 'تم تحديث المنتج' : lang === 'he' ? 'המוצר עודכן' : 'Product updated', 'success');
         } else {
           throw new Error(res.error);
         }
@@ -195,11 +203,15 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
           msg =
             lang === 'ar'
               ? 'حجم الصورة كبير جداً (الحد الأقصى 2MB). الرجاء اختيار صورة أخرى أصغر.'
+              : lang === 'he'
+              ? 'התמונה גדולה מדי (מקסימום 2MB). נא לבחור תמונה קטנה יותר.'
               : 'Image too large (max 2MB). Please choose a smaller image.';
         } else if (msg.includes('Invalid format')) {
           msg =
             lang === 'ar'
               ? 'صيغة الصورة غير مدعومة. الرجاء استخدام صورة بصيغة JPG أو PNG أو WebP.'
+              : lang === 'he'
+              ? 'פורמט לא נתמך. נא להשתמש ב-JPG, PNG או WebP.'
               : 'Invalid image format. Please use JPG, PNG, or WebP.';
         } else {
           msg = getAuthErrorMessage(msg, lang);
@@ -213,39 +225,45 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
     }
   };
 
-  const handleDeleteProduct = async (id: string, name?: string) => {
-    const productName = name || id;
-    const msg = lang === 'en'
-      ? `Are you sure you want to delete "${productName}"? This action cannot be undone.`
-      : `هل أنت متأكد من حذف "${productName}"؟ لا يمكن التراجع عن هذا الإجراء.`;
-    if (!window.confirm(msg)) return;
-    const res = await productService.delete(id);
-    if (res.success) {
-      setProducts(prev => prev.filter(p => p.id !== id));
-      showToast(
-        lang === 'en' ? 'Product deleted successfully' : 'تم حذف المنتج بنجاح',
-        'info'
-      );
-    } else {
-      const errMsg = getAuthErrorMessage(res.error || '', lang) || (lang === 'en' ? 'Delete failed' : 'فشل الحذف');
-      showToast((lang === 'en' ? 'Delete failed: ' : 'فشل الحذف: ') + errMsg, 'error');
+  const handleDeleteProduct = (id: string, name?: string) => {
+    const displayName = name || (lang === 'ar' ? 'هذا المنتج' : lang === 'he' ? 'המוצר' : 'this product');
+    setProductToDelete({ id, name: displayName });
+  };
+
+  const doDeleteProduct = async () => {
+    if (!productToDelete) return;
+    setDeleting(true);
+    try {
+      const res = await productService.delete(productToDelete.id);
+      if (res.success) {
+        setProducts(prev => prev.filter(p => p.id !== productToDelete.id));
+        showToast(lang === 'ar' ? 'تم حذف المنتج بنجاح' : lang === 'he' ? 'המוצר נמחק בהצלחה' : 'Product deleted successfully', 'success');
+        setProductToDelete(null);
+      } else {
+        const errMsg = getAuthErrorMessage(res.error || '', lang) || (lang === 'ar' ? 'فشل الحذف' : lang === 'he' ? 'המחיקה נכשלה' : 'Delete failed');
+        showToast(errMsg, 'error');
+      }
+    } finally {
+      setDeleting(false);
     }
   };
 
   const handleToggleStatus = async (product: Product) => {
     const newStatus = !product.isActive;
     if (!newStatus) {
-      const msg = lang === 'en'
-        ? `Deactivate "${product.name || product.title || product.id}"? The product will be hidden from the store.`
-        : `إلغاء تفعيل "${product.name || product.title || product.id}"؟ سيُخفى المنتج من المتجر.`;
-      if (!window.confirm(msg)) return;
+    const msg = lang === 'ar'
+        ? `إلغاء تفعيل "${product.name || product.title || product.id}"؟ سيُخفى المنتج من المتجر.`
+        : lang === 'he'
+        ? `לבטל "${product.name || product.title || product.id}"? המוצר יוסתר מהחנות.`
+        : `Deactivate "${product.name || product.title || product.id}"? The product will be hidden from the store.`;
+    if (!window.confirm(msg)) return;
     }
     const res = await productService.update(product.id, { isActive: newStatus });
     if (res.success) {
       setProducts(prev => prev.map(p => p.id === product.id ? { ...p, isActive: newStatus } : p));
-      showToast(newStatus ? (lang === 'en' ? 'Product Activated' : 'تم تفعيل المنتج') : (lang === 'en' ? 'Product Deactivated' : 'تم إلغاء تفعيل المنتج'), 'success');
+      showToast(newStatus ? (lang === 'ar' ? 'تم تفعيل المنتج' : lang === 'he' ? 'המוצר הופעל' : 'Product Activated') : (lang === 'ar' ? 'تم إلغاء تفعيل المنتج' : lang === 'he' ? 'המוצר בוטל' : 'Product Deactivated'), 'success');
     } else {
-      const errMsg = getAuthErrorMessage(res.error || '', lang) || (lang === 'en' ? 'Update failed' : 'فشل التحديث');
+      const errMsg = getAuthErrorMessage(res.error || '', lang) || (lang === 'ar' ? 'فشل التحديث' : lang === 'he' ? 'העדכון נכשל' : 'Update failed');
       showToast(errMsg, 'error');
     }
   };
@@ -417,6 +435,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
   );
 
   return (
+    <>
     <div className="space-y-10 animate-fade-in pb-20">
       
       {/* Header */}
@@ -450,27 +469,27 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
               <AlertCircle className="w-6 h-6 text-amber-600 shrink-0" />
               <div>
-                <p className="font-bold text-amber-800">{lang === 'ar' ? 'انتهت فترة الاشتراك' : 'Subscription expired'}</p>
-                <p className="text-sm text-amber-700">{lang === 'ar' ? 'يجب تجديد الاشتراك لإضافة منتجات جديدة.' : 'Please renew your subscription to add new products.'}</p>
+                <p className="font-bold text-amber-800">{lang === 'ar' ? 'انتهت فترة الاشتراك' : lang === 'he' ? 'תקופת המנוי הסתיימה' : 'Subscription expired'}</p>
+                <p className="text-sm text-amber-700">{lang === 'ar' ? 'يجب تجديد الاشتراك لإضافة منتجات جديدة.' : lang === 'he' ? 'יש לחדש את המנוי כדי להוסיף מוצרים חדשים.' : 'Please renew your subscription to add new products.'}</p>
               </div>
             </div>
           )}
           {dashboardData && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard title={lang === 'ar' ? 'إجمالي المبيعات' : 'Total sales'} value={`₪${(dashboardData.stats.total_sales || 0).toLocaleString()}`} icon={DollarSign} color="bg-palma-primary" />
-              <StatCard title={lang === 'ar' ? 'العمولة المخصومة' : 'Commission'} value={`₪${(dashboardData.stats.total_commission || 0).toLocaleString()}`} icon={Receipt} color="bg-blue-600" />
-              <StatCard title={lang === 'ar' ? 'خصم ضريبي' : 'Tax penalty'} value={`₪${(dashboardData.stats.total_tax_penalty || 0).toLocaleString()}`} icon={Receipt} color="bg-amber-600" />
-              <StatCard title={lang === 'ar' ? 'صافي الأرباح' : 'Net profit'} value={`₪${(dashboardData.stats.net_profit || 0).toLocaleString()}`} icon={CreditCard} color="bg-emerald-600" />
+              <StatCard title={lang === 'ar' ? 'إجمالي المبيعات' : lang === 'he' ? 'סה"כ מכירות' : 'Total sales'} value={`₪${(dashboardData.stats.total_sales || 0).toLocaleString()}`} icon={DollarSign} color="bg-palma-primary" />
+              <StatCard title={t.common.commission} value={`₪${(dashboardData.stats.total_commission || 0).toLocaleString()}`} icon={Receipt} color="bg-blue-600" />
+              <StatCard title={lang === 'ar' ? 'خصم ضريبي' : lang === 'he' ? 'קנס מס' : 'Tax penalty'} value={`₪${(dashboardData.stats.total_tax_penalty || 0).toLocaleString()}`} icon={Receipt} color="bg-amber-600" />
+              <StatCard title={lang === 'ar' ? 'صافي الأرباح' : lang === 'he' ? 'רווח נקי' : 'Net profit'} value={`₪${(dashboardData.stats.net_profit || 0).toLocaleString()}`} icon={CreditCard} color="bg-emerald-600" />
             </div>
           )}
           {dashboardData?.subscription && (
             <div className="bg-white p-6 rounded-3xl shadow-card border border-slate-100">
-              <h3 className="text-sm font-black text-palma-navy uppercase tracking-wider mb-3">{lang === 'ar' ? 'حالة الاشتراك' : 'Subscription status'}</h3>
+              <h3 className="text-sm font-black text-palma-navy uppercase tracking-wider mb-3">{lang === 'ar' ? 'حالة الاشتراك' : lang === 'he' ? 'סטטוס מנוי' : 'Subscription status'}</h3>
               <div className="flex flex-wrap gap-4 text-sm">
-                <span><strong>{lang === 'ar' ? 'النوع:' : 'Type:'}</strong> {dashboardData.subscription.subscription_type === 'paid' ? (lang === 'ar' ? 'مدفوع' : 'Paid') : (lang === 'ar' ? 'مجاني' : 'Free')}</span>
-                <span><strong>{lang === 'ar' ? 'الحالة:' : 'Status:'}</strong> {dashboardData.subscription.is_active ? (lang === 'ar' ? 'نشط' : 'Active') : (lang === 'ar' ? 'منتهي' : 'Expired')}</span>
+                <span><strong>{lang === 'ar' ? 'النوع:' : lang === 'he' ? 'סוג:' : 'Type:'}</strong> {dashboardData.subscription.subscription_type === 'paid' ? (lang === 'ar' ? 'مدفوع' : lang === 'he' ? 'בתשלום' : 'Paid') : (lang === 'ar' ? 'مجاني' : lang === 'he' ? 'חינם' : 'Free')}</span>
+                <span><strong>{t.common.status}:</strong> {dashboardData.subscription.is_active ? t.common.active : (lang === 'ar' ? 'منتهي' : lang === 'he' ? 'פג תוקף' : 'Expired')}</span>
                 {dashboardData.subscription.subscription_end_date && (
-                  <span><strong>{lang === 'ar' ? 'ينتهي:' : 'Ends:'}</strong> {new Date(dashboardData.subscription.subscription_end_date).toLocaleDateString()}</span>
+                  <span><strong>{lang === 'ar' ? 'ينتهي:' : lang === 'he' ? 'מסתיים:' : 'Ends:'}</strong> {new Date(dashboardData.subscription.subscription_end_date).toLocaleDateString()}</span>
                 )}
               </div>
             </div>
@@ -505,17 +524,17 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
           <div className="xl:col-span-1">
             {dashboardData && !dashboardData.subscription.is_active && !isEditing && (
               <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 text-sm">
-                {lang === 'ar' ? 'لا يمكن إضافة منتجات جديدة حتى تجديد الاشتراك.' : 'You cannot add new products until you renew your subscription.'}
+                {lang === 'ar' ? 'لا يمكن إضافة منتجات جديدة حتى تجديد الاشتراك.' : lang === 'he' ? 'לא ניתן להוסיף מוצרים עד לחידוש המנוי.' : 'You cannot add new products until you renew your subscription.'}
               </div>
             )}
             <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-card border border-slate-100 sticky top-28 transition-all">
               <div className="flex items-center justify-between gap-4 mb-6">
                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-palma-navy rounded-xl text-white shadow-lg shadow-palma-navy/20">
+                    <div className="p-2.5 bg-palma-navy rounded-xl text-white shadow-lg shadow-soft">
                       {isEditing ? <Edit className="w-5 h-5"/> : <Plus className="w-5 h-5" />}
                     </div>
                     <div>
-                        <h3 className="text-lg font-black text-palma-navy leading-none">{isEditing ? (lang==='en'?'Edit Product':'تعديل منتج') : t.common.addProduct}</h3>
+                        <h3 className="text-lg font-black text-palma-navy leading-none">{isEditing ? (lang === 'ar' ? 'تعديل منتج' : lang === 'he' ? 'עריכת מוצר' : 'Edit Product') : t.common.addProduct}</h3>
                         <p className="text-[10px] text-palma-muted font-bold mt-1 uppercase tracking-wider">{t.common.createListing}</p>
                     </div>
                  </div>
@@ -572,6 +591,8 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                     <p className="text-[10px] text-slate-400 mb-2">
                       {lang === 'ar'
                         ? 'مسموح حتى ٥ صور، كل صورة أقل من ٢ ميجا وبصيغة JPG أو PNG أو WebP.'
+                        : lang === 'he'
+                        ? 'ניתן להעלות עד 5 תמונות, כל תמונה עד 2MB בפורמט JPG, PNG או WebP.'
                         : 'You can upload up to 5 images, each under 2MB in JPG, PNG, or WebP format.'}
                     </p>
                     <div 
@@ -599,7 +620,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                     )}
                 </div>
 
-                <button type="submit" disabled={loading || (!isEditing && !!dashboardData && !dashboardData.subscription.is_active)} className="w-full bg-palma-navy text-white py-4 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-palma-navy/20 hover:bg-palma-primary transition-all active:scale-[0.98] flex items-center justify-center gap-2.5 disabled:opacity-50">
+                <button type="submit" disabled={loading || (!isEditing && !!dashboardData && !dashboardData.subscription.is_active)} className="btn-primary w-full py-4 text-xs uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-2.5 disabled:opacity-50">
                    {isUploading ? (
                      <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/> {t.common.uploading}</>
                    ) : (
@@ -661,19 +682,19 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                                </span>
                             </div>
 
-                            <div className="flex justify-end items-center gap-2 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex justify-end items-center gap-1 sm:gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                               {onViewProduct && (
-                                <button onClick={() => onViewProduct(product.id)} className="p-2 text-slate-300 hover:text-palma-primary hover:bg-white rounded-lg transition shadow-sm border border-transparent hover:border-slate-100" title={lang === 'en' ? 'View details' : 'عرض التفاصيل'}>
-                                  <ExternalLink className="w-4 h-4" />
+                                <button type="button" onClick={(e) => { e.stopPropagation(); onViewProduct(product.id); }} className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 p-2.5 sm:p-2 flex items-center justify-center text-slate-300 hover:text-palma-primary hover:bg-white rounded-xl transition shadow-sm border border-transparent hover:border-slate-100 touch-manipulation" title={lang === 'ar' ? 'عرض التفاصيل' : lang === 'he' ? 'צפה בפרטים' : 'View details'}>
+                                  <ExternalLink className="w-4 h-4 sm:w-4 sm:h-4" />
                                 </button>
                               )}
-                              <button onClick={() => handleToggleStatus(product)} className="p-2 text-slate-300 hover:text-palma-navy hover:bg-white rounded-lg transition shadow-sm border border-transparent hover:border-slate-100" title={product.isActive ? 'Deactivate' : 'Activate'}>
+                              <button type="button" onClick={(e) => { e.stopPropagation(); handleToggleStatus(product); }} className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 p-2.5 sm:p-2 flex items-center justify-center text-slate-300 hover:text-palma-navy hover:bg-white rounded-xl transition shadow-sm border border-transparent hover:border-slate-100 touch-manipulation" title={product.isActive ? (lang === 'ar' ? 'إلغاء التفعيل' : lang === 'he' ? 'בטל הפעלה' : 'Deactivate') : (lang === 'ar' ? 'تفعيل' : lang === 'he' ? 'הפעל' : 'Activate')}>
                                 {product.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                               </button>
-                              <button onClick={() => handleEditClick(product)} className="p-2 text-slate-300 hover:text-blue-500 hover:bg-white rounded-lg transition shadow-sm border border-transparent hover:border-slate-100" title="Edit">
+                              <button type="button" onClick={(e) => { e.stopPropagation(); handleEditClick(product); }} className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 p-2.5 sm:p-2 flex items-center justify-center text-slate-300 hover:text-blue-500 hover:bg-white rounded-xl transition shadow-sm border border-transparent hover:border-slate-100 touch-manipulation" title={t.common.edit}>
                                 <Edit className="w-4 h-4" />
                               </button>
-                              <button onClick={() => handleDeleteProduct(product.id, product.name || product.title)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-white rounded-lg transition shadow-sm border border-transparent hover:border-slate-100" title="Delete">
+                              <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteProduct(product.id, product.name || product.title); }} className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 p-2.5 sm:p-2 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-white rounded-xl transition shadow-sm border border-transparent hover:border-slate-100 touch-manipulation" title={t.common.delete}>
                                 <Trash2 className="w-4 h-4" />
                               </button>
                             </div>
@@ -772,5 +793,39 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
          </div>
       )}
     </div>
+
+      {/* Modal تأكيد حذف المنتج */}
+      {productToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={() => !deleting && setProductToDelete(null)}>
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full p-6 sm:p-8 animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()} dir={lang === 'en' ? 'ltr' : 'rtl'}>
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center shrink-0">
+                <Trash2 className="w-7 h-7 text-red-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-palma-navy">
+                  {lang === 'ar' ? 'حذف المنتج' : lang === 'he' ? 'מחיקת מוצר' : 'Delete product'}
+                </h3>
+                <p className="text-sm text-slate-500 mt-0.5">
+                  {lang === 'ar' ? 'لا يمكن التراجع عن هذا الإجراء.' : lang === 'he' ? 'לא ניתן לבטל פעולה זו.' : 'This action cannot be undone.'}
+                </p>
+              </div>
+            </div>
+            <p className="text-slate-700 font-medium mb-6 rounded-xl bg-slate-50 p-4 border border-slate-100">
+              <span className="text-slate-500 font-bold text-xs uppercase tracking-wider block mb-1">{lang === 'ar' ? 'المنتج' : lang === 'he' ? 'המוצר' : 'Product'}</span>
+              «{productToDelete.name}»
+            </p>
+            <div className="flex gap-3 sm:gap-4">
+              <button type="button" onClick={() => !deleting && setProductToDelete(null)} disabled={deleting} className="flex-1 min-h-[48px] py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition border border-slate-200 disabled:opacity-50">
+                {t.common.cancel}
+              </button>
+              <button type="button" onClick={doDeleteProduct} disabled={deleting} className="flex-1 min-h-[48px] py-3 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 transition shadow-lg shadow-red-500/25 disabled:opacity-50 flex items-center justify-center gap-2">
+                {deleting ? (lang === 'ar' ? 'جاري الحذف...' : lang === 'he' ? 'מוחק...' : 'Deleting...') : (lang === 'ar' ? 'حذف' : lang === 'he' ? 'מחק' : 'Delete')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };

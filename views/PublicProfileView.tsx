@@ -165,7 +165,7 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({ lang, currentUser
             <div onClick={onBack} className="cursor-pointer"><Logo size="small" /></div>
             <div className="flex items-center gap-4">
                <button onClick={toggleLang} className="text-[10px] font-black uppercase text-slate-400 hover:text-slate-900">{lang === 'en' ? 'العربية' : 'English'}</button>
-               <button onClick={onLoginClick} className="bg-palma-navy text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-palma-primary transition-all shadow-lg shadow-palma-navy/20">{t.auth.login}</button>
+               <button onClick={onLoginClick} className="btn-primary px-6 py-2.5 text-[10px] uppercase tracking-widest">{t.auth.login}</button>
             </div>
           </div>
         </nav>
@@ -277,7 +277,7 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({ lang, currentUser
                                 <p className="text-xs text-slate-500 mt-2 line-clamp-2">{s.marketing_description}</p>
                              </div>
                              <div className="hidden sm:block">
-                                <button className="bg-slate-900 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-palma-green transition-all">{t.common.viewDetails}</button>
+                                <button className="bg-slate-900 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-palma-primary transition-all">{t.common.viewDetails}</button>
                              </div>
                           </div>
                        );
