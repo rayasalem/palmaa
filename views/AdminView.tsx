@@ -404,10 +404,13 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
                   <div className="text-slate-500 font-mono mt-1">{userToDelete.email}</div>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
+                  <label htmlFor="admin-delete-reason" className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">
                     {lang === 'ar' ? 'سبب الحذف (يظهر في السجل الداخلي)' : 'Deletion reason (internal log)'}
                   </label>
                   <textarea
+                    id="admin-delete-reason"
+                    name="deleteReason"
+                    aria-label={lang === 'ar' ? 'سبب الحذف' : 'Deletion reason'}
                     className="w-full border border-slate-200 rounded-2xl p-3 text-sm font-medium bg-slate-50 focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 outline-none resize-none"
                     rows={3}
                     value={deleteReason}

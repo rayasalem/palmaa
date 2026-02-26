@@ -52,21 +52,15 @@ async function updateUserStatus(userId, status) {
 
 /**
  * Soft delete user:
- * - Sets status = 'DELETED'
- * - Stores deleted_at timestamp and optional deleted_reason
- * - is_approved reset to false so لا يُعامل كحساب فعّال
+ * - Sets status = 'DELETED' and updated_at (يعتمد على أعمدة أساسية فقط لتفادي خطأ أعمدة غير موجودة)
+ * - تسجيل الدخول يُرفض لاحقاً عند status === 'DELETED'
  */
 async function softDeleteUser(userId, reason) {
   const now = new Date().toISOString();
+  const payload = { status: 'DELETED', updated_at: now };
   const { data, error } = await supabase
     .from(USERS_TABLE)
-    .update({
-      status: 'DELETED',
-      is_approved: false,
-      deleted_at: now,
-      deleted_reason: reason || null,
-      updated_at: now,
-    })
+    .update(payload)
     .eq('id', userId)
     .select()
     .single();
@@ -85,28 +79,21 @@ async function softDeleteUser(userId, reason) {
 async function restoreUser(userId) {
   const { data: userRow, error: findError } = await supabase
     .from(USERS_TABLE)
-    .select('id, status, deleted_at')
+    .select('id, status, updated_at')
     .eq('id', userId)
     .single();
   if (findError || !userRow) {
     console.error('[adminService] restoreUser find error:', (findError && findError.message));
     return { data: null, error: findError || { message: 'User not found' } };
   }
-  if (!userRow.deleted_at) {
+  if (userRow.status !== 'DELETED') {
     return { data: null, error: { message: 'User is not deleted' } };
   }
-  const deletedAt = new Date(userRow.deleted_at);
   const now = new Date();
-  const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-  if (now.getTime() - deletedAt.getTime() > THIRTY_DAYS_MS) {
-    return { data: null, error: { message: 'Restore window (30 days) has expired' } };
-  }
   const { data, error } = await supabase
     .from(USERS_TABLE)
     .update({
       status: 'PENDING',
-      deleted_at: null,
-      deleted_reason: null,
       updated_at: now.toISOString(),
     })
     .eq('id', userId)

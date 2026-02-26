@@ -21,9 +21,9 @@ const Logo: React.FC<LogoProps> = ({
 }) => {
   const [imgFailed, setImgFailed] = useState(false);
   const dimensions = {
-    small: { w: 88, h: 32, text: 'text-lg' },
-    medium: { w: 120, h: 44, text: 'text-2xl' },
-    large: { w: 180, h: 64, text: 'text-4xl' },
+    small: { w: 88, h: 32, barH: 'h-8', text: 'text-lg' },
+    medium: { w: 120, h: 44, barH: 'h-10 sm:h-12', text: 'text-2xl' },
+    large: { w: 180, h: 64, barH: 'h-12 sm:h-14', text: 'text-4xl' },
   }[size];
 
   const useRealImage = showIcon && !imgFailed;
@@ -33,15 +33,14 @@ const Logo: React.FC<LogoProps> = ({
       {showIcon && (
         <>
           {useRealImage ? (
-            <img
-              src="/logo.png"
-              alt="Palma"
-              width={dimensions.w}
-              height={dimensions.h}
-              className="shrink-0 drop-shadow-sm object-contain"
-              style={{ objectFit: 'contain' }}
-              onError={() => setImgFailed(true)}
-            />
+            <span className={`flex items-center shrink-0 ${dimensions.barH}`}>
+              <img
+                src="/logo.png"
+                alt="Palma"
+                className="h-full w-auto max-w-[200px] object-contain object-center drop-shadow-sm"
+                onError={() => setImgFailed(true)}
+              />
+            </span>
           ) : (
             <svg
               width={dimensions.w}

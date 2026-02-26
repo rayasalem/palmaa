@@ -340,7 +340,7 @@ async function login(email, password) {
   const hasPassword = userRow && 'password' in userRow && userRow.password != null;
   const passwordLen = userRow.password ? String(userRow.password).length : 0;
   console.log('[authService] login: user found', { email: emailNorm, userId: userRow.id, hasPassword, passwordLen });
-  if (userRow.deleted_at != null) {
+  if (userRow.deleted_at != null || userRow.status === 'DELETED') {
     return { user: null, error: { message: 'Account deleted. Contact support within 30 days to restore.' } };
   }
   if (userRow.status === 'SUSPENDED') {
@@ -468,7 +468,7 @@ async function getUserById(userId) {
     return { data: null, error };
   }
   if (!data) return { data: null, error: null };
-  if (data.deleted_at != null) {
+  if (data.deleted_at != null || data.status === 'DELETED') {
     return { data: null, error: { message: 'User deleted' } };
   }
   data.is_email_verified = data.email_verified ?? data.is_email_verified ?? false;
