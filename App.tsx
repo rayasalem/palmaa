@@ -93,8 +93,9 @@ const AppContent: React.FC = () => {
       setPublicState('AUTH');
       setAuthView('LOGIN');
     } else if (top === 'register-merchant') {
-      setPublicState('AUTH');
-      setAuthView('REGISTER_MERCHANT');
+      // تسجيل التاجر يمر دائماً أولاً على صفحة الشروط والأحكام قبل إظهار نموذج التسجيل
+      setPendingAuthAfterTerms('REGISTER_MERCHANT');
+      setShowMerchantTermsPage(true);
     } else if (top === 'register-broker') {
       setPublicState('AUTH');
       setAuthView('REGISTER_BROKER');

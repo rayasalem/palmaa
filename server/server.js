@@ -92,7 +92,8 @@ try {
   paymentRouter.use(arabicBankPaymentRoutes);
   logger.info('Arabic Bank payment routes mounted');
 } catch (e) {
-  logger.warn('Arabic Bank payment module not loaded. Run: npm run build:payment');
+  // هذه الوحدة اختيارية؛ في الإنتاج لا نريد أن تظهر كتحذير متكرر في اللوجز
+  logger.info('Arabic Bank payment module not loaded (optional). To enable, run: npm run build:payment');
 }
 app.use('/api/payment', paymentRouter);
 

@@ -7,9 +7,12 @@ import jwt from 'jsonwebtoken';
 import { getEnv } from '../config/env.js';
 
 const rawSecret = getEnv('JWT_SECRET') || getEnv('JWT_SECRET_KEY');
-if (!rawSecret && getEnv('NODE_ENV') === 'production') {
-  // Startup warning only – لا نوقف السيرفر في الإنتاج حتى لا يتعطل الموقع بالكامل
-  // الأمن ما زال يتطلب ضبط JWT_SECRET فعلياً في بيئة الإنتاج.
+if (
+  !rawSecret &&
+  getEnv('NODE_ENV') === 'production' &&
+  getEnv('PALMA_SHOW_ENV_WARNINGS') === 'true'
+) {
+  // تحذير اختياري في الإنتاج يمكن تعطيله عبر PALMA_SHOW_ENV_WARNINGS
   // eslint-disable-next-line no-console
   console.warn('WARNING: JWT_SECRET not set – using development fallback secret. Set JWT_SECRET in server/.env or hosting environment.');
 }

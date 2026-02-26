@@ -78,13 +78,18 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
     if (result.success && result.data) {
       const msg =
         lang === 'ar'
-          ? 'تم إنشاء حساب الزبون بنجاح. تم إرسال رمز تحقق إلى بريدك الإلكتروني – يرجى تأكيد بريدك ثم تسجيل الدخول.'
+          ? 'تم إنشاء حساب الزبون بنجاح. تم إرسال رمز تحقق إلى بريدك الإلكتروني – يرجى إدخال الكود لتفعيل الحساب.'
           : lang === 'he'
-          ? 'חשבון הלקוח נוצר בהצלחה. נשלח קוד אימות לאימייל שלך – אנא אמת ואז התחבר.'
-          : 'Customer account created successfully. A verification code was sent to your email – please verify and then log in.';
+          ? 'חשבון הלקוח נוצר בהצלחה. נשלח קוד אימות לאימייל שלך – הזן את הקוד כדי להפעיל את החשבון.'
+          : 'Customer account created successfully. A verification code was sent to your email – please enter the code to activate your account.';
       showToast(msg, 'success');
-      if (typeof window !== 'undefined') {
-        window.location.hash = '#/login';
+      setStep('VERIFY');
+      setVerificationCode('');
+      setEmailNotSent((result as any).emailSent === false);
+      const codeFromApi = (result as any).verificationCode as string | undefined;
+      if (codeFromApi && (result as any).emailSent === false) {
+        // في بيئات التطوير فقط قد نملأ الكود تلقائياً حين لا يكون البريد مهيأ
+        setVerificationCode(codeFromApi);
       }
     } else {
       const msg = getAuthErrorMessage(result.error || 'Registration failed', lang);

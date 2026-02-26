@@ -31,12 +31,14 @@ function validateEnv() {
   }
 
   const isProd = getEnv('NODE_ENV') === 'production';
-  if (isProd) {
+  const shouldLogEnvWarnings = getEnv('PALMA_SHOW_ENV_WARNINGS', 'false') === 'true';
+  if (isProd && shouldLogEnvWarnings) {
     const recommended = optionalButRecommended.filter((key) => !getEnv(key));
     if (recommended.length > 0) {
+      // eslint-disable-next-line no-console
       console.warn('[config] Production: consider setting:', recommended.join(', '));
     }
-    // تحذيرات أمان غير كاسرة عند بدء التشغيل
+    // تحذيرات أمان اختيارية عند بدء التشغيل (يمكن تعطيلها في الإنتاج عبر PALMA_SHOW_ENV_WARNINGS)
     const jwtSecret = getEnv('JWT_SECRET') || getEnv('JWT_SECRET_KEY');
     if (!jwtSecret) {
       // eslint-disable-next-line no-console
@@ -44,8 +46,6 @@ function validateEnv() {
     }
     const supabaseServiceKey = getEnv('SUPABASE_SERVICE_KEY');
     if (supabaseServiceKey) {
-      // لا نستطيع معرفة إن كان المفتاح من داخل الريبو أم من البيئة، فنطبع تحذيراً عاماً.
-      // الهدف تذكير الفريق بمراجعة أمن تخزين SUPABASE_SERVICE_KEY.
       // eslint-disable-next-line no-console
       console.warn('WARNING: Check SUPABASE_SERVICE_KEY security – ensure it is stored only in server environment variables, not in source control.');
     }

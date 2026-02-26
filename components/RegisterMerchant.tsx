@@ -24,7 +24,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
 }) => {
   const lang: 'ar' | 'en' | 'he' = (typeof document !== 'undefined' && (document.documentElement.lang === 'ar' || document.documentElement.lang === 'en' || document.documentElement.lang === 'he')) ? document.documentElement.lang : 'ar';
   const { showToast } = useToast();
-  const [step] = useState<'FORM' | 'TERMS'>('FORM'); // step kept for compatibility but we now use a single form step
+  const [step, setStep] = useState<'FORM' | 'VERIFY'>('FORM');
   const t = translations[lang];
 
   // UI State
@@ -34,6 +34,8 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
   // UI-only subscription plan selection (does not change backend logic yet)
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'paid'>('free');
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [emailNotSent, setEmailNotSent] = useState(false);
   const [formData, setFormData] = useState({
     business_name: '',
     owner_name: '',
@@ -56,7 +58,36 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
 
   const [error, setError] = useState('');
 
-  // لم نعد نستخدم خطوة التحقق بالبريد حالياً
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const result = await userService.verifyEmail(formData.email, verificationCode);
+      if (result.success && result.data) {
+        showToast(
+          lang === 'ar'
+            ? 'تم تأكيد الحساب بنجاح. جاري تسجيل الدخول...'
+            : lang === 'he'
+            ? 'החשבון אומת בהצלחה. מתחבר...'
+            : 'Account verified successfully. Logging you in...',
+          'success',
+        );
+        const loginResult = await authService.login(formData.email, formData.password);
+        if (loginResult.success && loginResult.data) {
+          onRegister(loginResult.data.user);
+        } else {
+          onRegister(result.data.user);
+        }
+      } else {
+        const errMsg = getAuthErrorMessage(result.error || 'Verification failed', lang);
+        setError(errMsg);
+        showToast(errMsg, 'error');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -179,13 +210,17 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
     if (result.success && result.data) {
       const successMessage =
         lang === 'ar'
-          ? 'تم إنشاء حساب التاجر بنجاح. تم إرسال رمز تحقق إلى بريدك الإلكتروني – يرجى تأكيد بريدك ثم تسجيل الدخول.'
+          ? 'تم إنشاء حساب التاجر بنجاح. تم إرسال رمز تحقق إلى بريدك الإلكتروني – يرجى إدخال الكود لتفعيل الحساب.'
           : lang === 'he'
-            ? 'חשבון הסוחר נוצר בהצלחה. נשלח קוד אימות לאימייל שלך – אנא אמת ואז התחבר.'
-            : 'Merchant account created successfully. A verification code was sent to your email – please verify and then log in.';
+            ? 'חשבון הסוחר נוצר בהצלחה. נשלח קוד אימות לאימייל שלך – הזן את הקוד כדי להפעיל את החשבון.'
+            : 'Merchant account created successfully. A verification code was sent to your email – please enter the code to activate your account.';
       showToast(successMessage, 'success');
-      if (typeof window !== 'undefined') {
-        window.location.hash = '#/login';
+      setStep('VERIFY');
+      setVerificationCode('');
+      setEmailNotSent((result as any).emailSent === false);
+      const codeFromApi = (result as any).verificationCode as string | undefined;
+      if (codeFromApi && (result as any).emailSent === false) {
+        setVerificationCode(codeFromApi);
       }
     } else {
       const msg = getAuthErrorMessage(result.error || 'Registration failed', lang);
@@ -194,8 +229,6 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
     }
     setLoading(false);
   };
-
-  // لم نعد نعرض خطوة VERIFY؛ نرجع دائماً نموذج التسجيل فقط
 
   return (
     <div
@@ -213,10 +246,11 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
           </p>
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className={`space-y-6 ${lang === 'en' ? 'text-left' : 'text-right'}`}
-        >
+        {step === 'FORM' ? (
+          <form
+            onSubmit={handleSubmit}
+            className={`space-y-6 ${lang === 'en' ? 'text-left' : 'text-right'}`}
+          >
             {error && (
               <div className="p-4 bg-red-50 text-red-600 text-[10px] font-black rounded-2xl text-center uppercase">
                 {error}
@@ -471,6 +505,105 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
               {t.common.back}
             </button>
           </form>
+        ) : (
+          <div className={`space-y-6 ${lang === 'en' ? 'text-left' : 'text-right'}`}>
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-palma-primaryLight flex items-center justify-center text-palma-primary">
+                <Mail className="w-7 h-7" />
+              </div>
+              <h2 className="text-xl font-black text-slate-900 mb-1">
+                {lang === 'ar' ? 'تأكيد البريد الإلكتروني' : lang === 'he' ? 'אימות כתובת אימייל' : 'Verify your email'}
+              </h2>
+              <p className="text-sm text-slate-600">
+                {lang === 'ar'
+                  ? `أدخل رمز التحقق المكوّن من 6 أرقام الذي أُرسل إلى ${formData.email}`
+                  : lang === 'he'
+                  ? `הזן את קוד האימות בן 6 ספרות שנשלח אל ${formData.email}`
+                  : `Enter the 6-digit verification code sent to ${formData.email}`}
+              </p>
+              {emailNotSent && (
+                <p className="mt-3 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 inline-block">
+                  {lang === 'ar'
+                    ? 'إرسال البريد غير مهيأ في هذه البيئة. يمكنك استخدام الكود الظاهر هنا مباشرة.'
+                    : lang === 'he'
+                    ? 'שליחת האימייל אינה מוגדרת בסביבה זו. ניתן להשתמש בקוד שמופיע כאן ישירות.'
+                    : 'Email sending is not configured in this environment. You can use the code shown here directly.'}
+                </p>
+              )}
+            </div>
+
+            {error && (
+              <div className="p-3 bg-red-50 text-red-600 text-[11px] font-bold rounded-2xl text-center">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleVerify} className="space-y-4 max-w-xs mx-auto">
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={verificationCode}
+                onChange={e => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                className="w-full p-4 text-center text-2xl font-black tracking-[0.5em] rounded-2xl border-2 border-slate-200 focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 outline-none"
+                placeholder="000000"
+              />
+              <button
+                type="submit"
+                disabled={loading || verificationCode.length !== 6}
+                className="w-full py-4 bg-palma-primary text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl disabled:opacity-50 hover:bg-emerald-800 transition-all flex items-center justify-center gap-2"
+              >
+                {loading ? t.common.loading : lang === 'ar' ? 'تأكيد وبدء الاستخدام' : lang === 'he' ? 'אימות והתחלה' : 'Verify & Start'}
+                {!loading && <CheckCircle className="w-4 h-4" />}
+              </button>
+            </form>
+
+            <div className="flex flex-col sm:flex-row gap-3 max-w-xs mx-auto">
+              <button
+                type="button"
+                disabled={loading}
+                onClick={async () => {
+                  setError('');
+                  setLoading(true);
+                  try {
+                    const res = await userService.resendVerificationCode(formData.email);
+                    if (res.success) {
+                      showToast(
+                        lang === 'ar'
+                          ? 'تم إرسال رمز جديد إلى بريدك.'
+                          : lang === 'he'
+                          ? 'נשלח קוד חדש לאימייל שלך.'
+                          : 'A new code was sent to your email.',
+                        'success',
+                      );
+                    } else {
+                      const errMsg = getAuthErrorMessage(res.error || 'Error', lang);
+                      setError(errMsg);
+                      showToast(errMsg, 'error');
+                    }
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                className="flex-1 py-3 text-[11px] font-bold rounded-2xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+              >
+                {lang === 'ar' ? 'إعادة إرسال الرمز' : lang === 'he' ? 'שליחת קוד שוב' : 'Resend code'}
+              </button>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => {
+                  setStep('FORM');
+                  setVerificationCode('');
+                  setError('');
+                }}
+                className="flex-1 py-3 text-[11px] font-bold rounded-2xl text-slate-400 hover:text-palma-primary"
+              >
+                {lang === 'ar' ? 'العودة لتعديل البيانات' : lang === 'he' ? 'חזרה לעריכת פרטים' : 'Back to edit details'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
