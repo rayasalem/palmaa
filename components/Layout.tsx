@@ -3,11 +3,13 @@ import React from 'react';
 import { User, Role } from '../types';
 import Logo from './Logo';
 import { Language, translations } from '../translations';
-import { ShoppingCart, Menu, X, Globe, LogOut, LayoutDashboard, Package, ShoppingBag, Banknote, User as UserIcon, TrendingUp, BarChart, Users, Wallet, Home, History, Bell } from 'lucide-react';
+import { ShoppingCart, Menu, X, Globe, LogOut, LayoutDashboard, Package, ShoppingBag, Banknote, User as UserIcon, TrendingUp, BarChart, Users, Wallet, Home, History, Bell, ChevronDown } from 'lucide-react';
+
+const LANG_LABELS: Record<Language, string> = { ar: 'العربية', en: 'English', he: 'עברית' };
 
 interface LayoutProps {
   lang: Language;
-  toggleLang: () => void;
+  setLang: (l: Language) => void;
   user: User;
   onLogout: () => void;
   children: React.ReactNode;
@@ -16,9 +18,10 @@ interface LayoutProps {
   cartCount?: number;
 }
 
-const Layout: React.FC<LayoutProps> = ({ lang, toggleLang, user, onLogout, children, activeTab, onTabChange, cartCount = 0 }) => {
+const Layout: React.FC<LayoutProps> = ({ lang, setLang, user, onLogout, children, activeTab, onTabChange, cartCount = 0 }) => {
   const t = translations[lang];
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const [langMenuOpen, setLangMenuOpen] = React.useState(false);
   const isProfessional = [Role.MERCHANT, Role.BROKER, Role.ADMIN].includes(user.role as Role);
 
   const getRoleLabel = (role: Role | string) => {
@@ -102,13 +105,35 @@ const Layout: React.FC<LayoutProps> = ({ lang, toggleLang, user, onLogout, child
                 )}
               </button>
             )}
-            <button 
-              onClick={toggleLang}
-              className="hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-xl border border-palma-border text-xs font-semibold text-palma-navy hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-palma-primary/20"
-            >
-              <Globe className="w-4 h-4" />
-              {lang === 'ar' ? 'EN' : lang === 'en' ? 'עברית' : 'العربية'}
-            </button>
+            <div className="hidden sm:block relative">
+              <button 
+                onClick={() => setLangMenuOpen(prev => !prev)}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-palma-border text-xs font-semibold text-palma-navy hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-palma-primary/20"
+                aria-expanded={langMenuOpen}
+                aria-haspopup="true"
+              >
+                <Globe className="w-4 h-4 shrink-0" />
+                <span>{LANG_LABELS[lang]}</span>
+                <ChevronDown className={`w-4 h-4 shrink-0 transition-transform ${langMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {langMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" aria-hidden onClick={() => setLangMenuOpen(false)} />
+                  <div className="absolute top-full mt-1 end-0 min-w-[140px] py-1 rounded-xl border border-palma-border bg-white shadow-lg z-50">
+                    {(['ar', 'en', 'he'] as const).map((l) => (
+                      <button
+                        key={l}
+                        type="button"
+                        onClick={() => { setLang(l); setLangMenuOpen(false); }}
+                        className={`w-full text-left rtl:text-right px-4 py-2.5 text-sm font-medium transition-colors ${l === lang ? 'bg-palma-primaryLight text-palma-primary' : 'text-palma-navy hover:bg-slate-50'}`}
+                      >
+                        {LANG_LABELS[l]}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
             <div className="h-6 w-px bg-palma-border hidden sm:block" />
             <div className="flex items-center gap-2 sm:gap-3 pl-2">
               <button 

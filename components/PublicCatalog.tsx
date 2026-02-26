@@ -4,7 +4,7 @@ import { marketStore } from '../store';
 import { productService } from '../services/productService'; // Import Service
 import { Product } from '../types';
 import Logo from '../components/Logo';
-import { translations } from '../translations';
+import { Language, translations } from '../translations';
 import { ArrowRight, ShoppingCart, Search, Filter } from 'lucide-react';
 
 interface PublicCatalogProps {
@@ -14,7 +14,7 @@ interface PublicCatalogProps {
 }
 
 const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, onLoginClick }) => {
-  const lang = document.documentElement.dir === 'ltr' ? 'en' : 'ar';
+  const lang: Language = (typeof document !== 'undefined' && (document.documentElement.lang === 'en' || document.documentElement.lang === 'he')) ? document.documentElement.lang : 'ar';
   const t = translations[lang];
 
   // Filter States

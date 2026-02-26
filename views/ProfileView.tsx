@@ -296,8 +296,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
         </div>
       )}
 
-      {/* Email Verification Section */}
-      {!user.emailVerified && user.role !== Role.ADMIN && (
+      {/* Email Verification Section – لجميع الأدوار بما فيها الأدمن */}
+      {!user.emailVerified && (
         <div className="bg-amber-50 border border-amber-100 rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
            <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center text-2xl">⚠️</div>
@@ -316,7 +316,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
         </div>
       )}
 
-      {user.emailVerified && user.role !== Role.ADMIN && (
+      {user.emailVerified && (
         <div className="bg-emerald-50 border border-emerald-100 rounded-3xl p-6 flex items-center gap-4 shadow-sm">
            <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center text-xl">✅</div>
            <div>

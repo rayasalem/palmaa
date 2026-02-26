@@ -5,11 +5,13 @@ import { Product } from '../types';
 import Logo from './Logo';
 import { Language, translations } from '../translations';
 import ComingSoonHero from './ComingSoonHero';
-import { ShoppingBag, TrendingUp, Store } from 'lucide-react';
+import { ShoppingBag, TrendingUp, Store, Globe, ChevronDown } from 'lucide-react';
+
+const LANG_LABELS: Record<Language, string> = { ar: 'العربية', en: 'English', he: 'עברית' };
 
 interface PublicWebsiteProps {
   lang: Language;
-  toggleLang: () => void;
+  setLang: (l: Language) => void;
   onLoginClick: () => void;
   onJoinMerchant: () => void;
   onJoinBroker: () => void;
@@ -19,10 +21,11 @@ interface PublicWebsiteProps {
 }
 
 const PublicWebsite: React.FC<PublicWebsiteProps> = ({ 
-  lang, toggleLang, onLoginClick, onJoinMerchant, onJoinBroker, onExploreProducts, onViewProduct, onOpenTerms 
+  lang, setLang, onLoginClick, onJoinMerchant, onJoinBroker, onExploreProducts, onViewProduct, onOpenTerms 
 }) => {
   const t = translations[lang];
   const [products, setProducts] = useState<Product[]>([]);
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
 
   useEffect(() => {
     const fetchFeatured = async () => {
@@ -41,7 +44,25 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
             <Logo size="medium" />
             <div className="flex items-center gap-4 sm:gap-6">
-               <button onClick={toggleLang} className="text-[10px] font-semibold uppercase text-palma-muted hover:text-palma-primary transition tracking-widest">{lang === 'en' ? 'العربية' : 'English'}</button>
+               <div className="relative">
+                 <button onClick={() => setLangMenuOpen(prev => !prev)} className="flex items-center gap-1.5 text-[10px] font-semibold uppercase text-palma-muted hover:text-palma-primary transition tracking-widest">
+                   <Globe className="w-3.5 h-3.5" />
+                   <span>{LANG_LABELS[lang]}</span>
+                   <ChevronDown className={`w-3.5 h-3.5 transition-transform ${langMenuOpen ? 'rotate-180' : ''}`} />
+                 </button>
+                 {langMenuOpen && (
+                   <>
+                     <div className="fixed inset-0 z-[99]" aria-hidden onClick={() => setLangMenuOpen(false)} />
+                     <div className="absolute top-full mt-1 end-0 min-w-[120px] py-1 rounded-lg border border-palma-border bg-white shadow-lg z-[100]">
+                       {(['ar', 'en', 'he'] as const).map((l) => (
+                         <button key={l} type="button" onClick={() => { setLang(l); setLangMenuOpen(false); }} className={`block w-full text-left rtl:text-right px-3 py-2 text-xs font-medium ${l === lang ? 'bg-palma-primaryLight text-palma-primary' : 'text-palma-navy hover:bg-slate-50'}`}>
+                           {LANG_LABELS[l]}
+                         </button>
+                       ))}
+                     </div>
+                   </>
+                 )}
+               </div>
                <div className="w-px h-5 bg-palma-border" />
                <button onClick={onLoginClick} className="text-sm font-semibold text-palma-navy hover:text-palma-primary transition">{t.nav.login}</button>
                <button onClick={onJoinMerchant} className="btn-primary px-5 py-2.5 text-[10px] sm:text-xs hidden sm:inline-flex tracking-wide">{t.hero.join}</button>

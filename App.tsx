@@ -45,7 +45,15 @@ const AppContent: React.FC = () => {
   /** Unified cart: backend when user is set, else local */
   const cart = user ? apiCart.cart : localCart;
   const [authView, setAuthView] = useState<'LOGIN' | 'ROLE_SELECT' | 'REGISTER_MERCHANT' | 'REGISTER_BROKER' | 'REGISTER_CUSTOMER'>('LOGIN');
-  const [lang, setLang] = useState<Language>('ar');
+  const [lang, setLangState] = useState<Language>(() => {
+    if (typeof window === 'undefined') return 'ar';
+    const saved = localStorage.getItem('palma_lang') as Language | null;
+    return saved === 'ar' || saved === 'en' || saved === 'he' ? saved : 'ar';
+  });
+  const setLang = useCallback((next: Language) => {
+    setLangState(next);
+    if (typeof window !== 'undefined') localStorage.setItem('palma_lang', next);
+  }, []);
   const { showToast } = useToast();
   
   // Public State: 'LANDING' | 'CATALOG' | 'AUTH' | 'BROKER_PAGE' | 'PRODUCT_DETAILS' | 'PUBLIC_PROFILE'
@@ -214,7 +222,6 @@ const AppContent: React.FC = () => {
     return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
   }, []);
 
-  const toggleLang = () => setLang(prev => (prev === 'ar' ? 'en' : prev === 'en' ? 'he' : 'ar'));
 
   // Merge guest cart into backend when user logs in (multi-user: no cart loss)
   const mergedGuestCartRef = useRef(false);
@@ -422,7 +429,7 @@ const AppContent: React.FC = () => {
           onBack={() => { setPublicState('LANDING'); updateHash(''); }}
           onProductClick={handleViewProduct}
           onLoginClick={() => openAuth('LOGIN')}
-          toggleLang={toggleLang}
+          setLang={setLang}
         />
       );
     }
@@ -435,7 +442,7 @@ const AppContent: React.FC = () => {
           onBack={() => { setPublicState('LANDING'); updateHash(''); }}
           onProductClick={handleViewProduct}
           onLoginClick={() => openAuth('LOGIN')}
-          toggleLang={toggleLang}
+          setLang={setLang}
         />
       );
     }
@@ -468,7 +475,7 @@ const AppContent: React.FC = () => {
       return (
         <PublicWebsite 
           lang={lang}
-          toggleLang={toggleLang}
+          setLang={setLang}
           onLoginClick={() => openAuth('LOGIN')}
           onJoinMerchant={() => openAuth('REGISTER_MERCHANT')}
           onJoinBroker={() => openAuth('REGISTER_BROKER')}
@@ -506,9 +513,23 @@ const AppContent: React.FC = () => {
     );
   }
 
-  // تم تعطيل خطوة التحقق من الإيميل مؤقتاً
-
+  // أدمن: لا يدخل إلا بعد تأكيد الإيميل؛ إن سجّل دخول وهو غير مؤكد نعرض له شاشة التأكيد
   const roleUpper = (user.role || '').toUpperCase();
+  if (roleUpper === 'ADMIN' && !user.emailVerified) {
+    return (
+      <VerifyEmail
+        user={user}
+        onVerified={(verifiedUser) => {
+          authService.setCurrentUser(verifiedUser);
+          setUser(verifiedUser);
+          localStorage.setItem('palma_current_user', JSON.stringify(verifiedUser));
+        }}
+        onLogout={handleLogout}
+        lang={lang}
+      />
+    );
+  }
+
   // فقط الحسابات المرفوضة تبقى محجوبة؛ التسجيل الجديد يدخل مباشرة لصفحته
   if (user.status === 'REJECTED' && roleUpper !== 'ADMIN') {
     return <PendingReview user={user} onLogout={handleLogout} lang={lang} />;
@@ -518,7 +539,7 @@ const AppContent: React.FC = () => {
     <Layout 
       user={user} 
       lang={lang}
-      toggleLang={toggleLang}
+      setLang={setLang}
       onLogout={handleLogout} 
       activeTab={currentView} 
       onTabChange={(tab) => {
@@ -562,7 +583,7 @@ const AppContent: React.FC = () => {
                 setCurrentView('product_details');
             }}
             onLoginClick={() => {}}
-            toggleLang={toggleLang}
+            setLang={setLang}
           />
       ) : currentView === 'notifications' ? (
           <NotificationsView

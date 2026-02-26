@@ -43,11 +43,12 @@ export const marketStore = {
     if (fromProducts && fromProducts !== 'Loading...') return fromProducts;
 
     const user = db.users.find(u => u.id === id);
-    if (user && user.role === 'MERCHANT') {
-      return user.companyName || user.name || user.email || 'Merchant';
+    if (user && (user.role === 'MERCHANT' || user.role === 'ADMIN')) {
+      return (user as any).companyName || (user as any).company_name || user.name || user.email || 'Merchant';
     }
 
-    return userService.getMerchantName(id);
+    const fromService = userService.getMerchantName(id);
+    return fromService !== 'Unknown' ? fromService : (user?.name || user?.email || 'Merchant');
   },
   getMerchantProfileByUserId: (id: string) => userService.getMerchantProfile(id),
   updateUserProfile: userService.updateProfile,

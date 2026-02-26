@@ -1,11 +1,48 @@
 /**
  * Product service: CRUD against Supabase products table.
  * All writes are merchant-scoped (merchant_id = req.auth.sub).
+ * List/get responses include merchant_name from users + merchant_profiles.
  */
 
 import { supabase } from '../config/supabaseClient.js';
 
 const PRODUCTS_TABLE = 'products';
+
+/**
+ * Fetch display names for merchant user ids (business_name || company_name || name).
+ */
+async function getMerchantNamesMap(merchantIds) {
+  if (!merchantIds || merchantIds.length === 0) return {};
+  const ids = [...new Set(merchantIds.filter(Boolean))];
+  const map = {};
+  const { data: users, error: uErr } = await supabase
+    .from('users')
+    .select('id, name, company_name')
+    .in('id', ids);
+  if (!uErr && users) {
+    for (const u of users) {
+      map[u.id] = u.company_name || u.name || 'Merchant';
+    }
+  }
+  const { data: profiles, error: pErr } = await supabase
+    .from('merchant_profiles')
+    .select('user_id, business_name')
+    .in('user_id', ids);
+  if (!pErr && profiles) {
+    for (const p of profiles) {
+      if (p.business_name) map[p.user_id] = p.business_name;
+    }
+  }
+  return map;
+}
+
+function attachMerchantNames(products, namesMap) {
+  if (!products || !namesMap) return products;
+  return products.map((p) => ({
+    ...p,
+    merchant_name: p.merchant_id ? (namesMap[p.merchant_id] || null) : null,
+  }));
+}
 
 async function getActiveProducts() {
   const { data: products, error } = await supabase
@@ -27,7 +64,9 @@ async function getActiveProducts() {
     .eq('status', 'SUSPENDED');
   const suspendedSet = new Set((suspended || []).map((u) => u.id));
   const filtered = list.filter((p) => !suspendedSet.has(p.merchant_id));
-  return { data: filtered, error: null };
+  const namesMap = await getMerchantNamesMap(filtered.map((p) => p.merchant_id));
+  const enriched = attachMerchantNames(filtered, namesMap);
+  return { data: enriched, error: null };
 }
 
 async function getProductById(id) {
@@ -40,7 +79,10 @@ async function getProductById(id) {
     console.error('[productService] getProductById error:', error.message);
     return { data: null, error };
   }
-  return { data, error: null };
+  if (!data) return { data: null, error: null };
+  const namesMap = await getMerchantNamesMap(data.merchant_id ? [data.merchant_id] : []);
+  const [enriched] = attachMerchantNames([data], namesMap);
+  return { data: enriched, error: null };
 }
 
 async function getProductsByMerchantId(merchantId) {
@@ -53,7 +95,11 @@ async function getProductsByMerchantId(merchantId) {
     console.error('[productService] getProductsByMerchantId error:', error.message);
     return { data: [], error };
   }
-  return { data: data || [], error: null };
+  const list = data || [];
+  if (list.length === 0) return { data: list, error: null };
+  const namesMap = await getMerchantNamesMap([merchantId]);
+  const enriched = attachMerchantNames(list, namesMap);
+  return { data: enriched, error: null };
 }
 
 async function createProduct(merchantId, payload) {

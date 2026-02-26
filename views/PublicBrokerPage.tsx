@@ -1,9 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { marketStore } from '../store';
 import { SharedProduct, User, Role } from '../types';
 import Logo from '../components/Logo';
 import { Language, translations } from '../translations';
+import { Globe, ChevronDown } from 'lucide-react';
+
+const LANG_LABELS: Record<Language, string> = { ar: 'العربية', en: 'English', he: 'עברית' };
 
 interface PublicBrokerPageProps {
   lang: Language;
@@ -11,11 +14,12 @@ interface PublicBrokerPageProps {
   onBack: () => void;
   onProductClick: (id: string) => void;
   onLoginClick: () => void;
-  toggleLang: () => void;
+  setLang: (l: Language) => void;
 }
 
-const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({ lang, brokerId, onBack, onProductClick, onLoginClick, toggleLang }) => {
+const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({ lang, brokerId, onBack, onProductClick, onLoginClick, setLang }) => {
   const t = translations[lang];
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
   
   const broker = marketStore.getUserById(brokerId);
   const shared = marketStore.getSharedProducts(brokerId);
@@ -42,7 +46,25 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({ lang, brokerId, onB
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div onClick={onBack} className="cursor-pointer"><Logo size="small" /></div>
           <div className="flex items-center gap-4">
-             <button onClick={toggleLang} className="text-[10px] font-black uppercase text-slate-400 hover:text-slate-900">{lang === 'en' ? 'العربية' : 'English'}</button>
+             <div className="relative">
+               <button onClick={() => setLangMenuOpen(prev => !prev)} className="flex items-center gap-1.5 text-[10px] font-black uppercase text-slate-400 hover:text-slate-900">
+                 <Globe className="w-3.5 h-3.5" />
+                 <span>{LANG_LABELS[lang]}</span>
+                 <ChevronDown className={`w-3.5 h-3.5 transition-transform ${langMenuOpen ? 'rotate-180' : ''}`} />
+               </button>
+               {langMenuOpen && (
+                 <>
+                   <div className="fixed inset-0 z-40" aria-hidden onClick={() => setLangMenuOpen(false)} />
+                   <div className="absolute top-full mt-1 end-0 min-w-[120px] py-1 rounded-lg border border-slate-200 bg-white shadow-lg z-50">
+                     {(['ar', 'en', 'he'] as const).map((l) => (
+                       <button key={l} type="button" onClick={() => { setLang(l); setLangMenuOpen(false); }} className={`block w-full text-left rtl:text-right px-3 py-2 text-xs font-medium ${l === lang ? 'bg-palma-primaryLight text-palma-primary' : 'text-slate-700 hover:bg-slate-50'}`}>
+                         {LANG_LABELS[l]}
+                       </button>
+                     ))}
+                   </div>
+                 </>
+               )}
+             </div>
              <button onClick={onLoginClick} className="btn-primary px-6 py-2.5 text-[10px] uppercase tracking-widest">{t.auth.login}</button>
           </div>
         </div>
