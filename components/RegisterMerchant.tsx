@@ -24,7 +24,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
 }) => {
   const lang: 'ar' | 'en' | 'he' = (typeof document !== 'undefined' && (document.documentElement.lang === 'ar' || document.documentElement.lang === 'en' || document.documentElement.lang === 'he')) ? document.documentElement.lang : 'ar';
   const { showToast } = useToast();
-  const [step, setStep] = useState<'FORM' | 'TERMS'>('FORM');
+  const [step] = useState<'FORM' | 'TERMS'>('FORM'); // step kept for compatibility but we now use a single form step
   const t = translations[lang];
 
   // UI State
@@ -33,6 +33,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
   const [loading, setLoading] = useState(false);
   // UI-only subscription plan selection (does not change backend logic yet)
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'paid'>('free');
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [formData, setFormData] = useState({
     business_name: '',
     owner_name: '',
@@ -122,6 +123,17 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
       showToast(msg, 'warning');
       return false;
     }
+    if (!termsAccepted) {
+      const msg =
+        lang === 'en'
+          ? 'You must agree to the merchant terms and conditions before registering.'
+          : lang === 'he'
+          ? 'חובה לאשר את תנאי השימוש של החנויות לפני השלמת ההרשמה.'
+          : 'يجب الموافقة على الشروط والأحكام الخاصة بالمتاجر قبل إكمال التسجيل.';
+      setError(msg);
+      showToast(msg, 'warning');
+      return false;
+    }
     return true;
   };
 
@@ -129,7 +141,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
     e.preventDefault();
     setError('');
     if (!validateForm()) return;
-    setStep('TERMS');
+    submitRegistration();
   };
 
   const submitRegistration = async () => {
@@ -167,12 +179,14 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
     if (result.success && result.data) {
       const successMessage =
         lang === 'ar'
-          ? 'تم إنشاء حساب التاجر بنجاح. تم إرسال رمز تحقق إلى بريدك الإلكتروني – يرجى تأكيد بريدك قبل تسجيل الدخول.'
+          ? 'تم إنشاء حساب التاجر بنجاح. تم إرسال رمز تحقق إلى بريدك الإلكتروني – يرجى تأكيد بريدك ثم تسجيل الدخول.'
           : lang === 'he'
-            ? 'חשבון הסוחר נוצר בהצלחה. נשלח קוד אימות לאימייל שלך – אנא אמת לפני ההתחברות.'
-            : 'Merchant account created successfully. A verification code was sent to your email – please verify before logging in.';
+            ? 'חשבון הסוחר נוצר בהצלחה. נשלח קוד אימות לאימייל שלך – אנא אמת ואז התחבר.'
+            : 'Merchant account created successfully. A verification code was sent to your email – please verify and then log in.';
       showToast(successMessage, 'success');
-      onRegister(result.data.user);
+      if (typeof window !== 'undefined') {
+        window.location.hash = '#/login';
+      }
     } else {
       const msg = getAuthErrorMessage(result.error || 'Registration failed', lang);
       setError(msg);
@@ -199,11 +213,10 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
           </p>
         </div>
 
-        {step === 'FORM' ? (
-          <form
-            onSubmit={handleSubmit}
-            className={`space-y-6 ${lang === 'en' ? 'text-left' : 'text-right'}`}
-          >
+        <form
+          onSubmit={handleSubmit}
+          className={`space-y-6 ${lang === 'en' ? 'text-left' : 'text-right'}`}
+        >
             {error && (
               <div className="p-4 bg-red-50 text-red-600 text-[10px] font-black rounded-2xl text-center uppercase">
                 {error}
@@ -410,6 +423,38 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
               />
             </div>
 
+            <div className="space-y-3">
+              <div className="flex items-start gap-2 text-xs">
+                <input
+                  id="merchant-terms"
+                  type="checkbox"
+                  className="mt-1 h-4 w-4 rounded border-slate-300 text-palma-primary focus:ring-palma-primary"
+                  checked={termsAccepted}
+                  onChange={e => setTermsAccepted(e.target.checked)}
+                />
+                <label htmlFor="merchant-terms" className="text-[11px] text-slate-600 leading-relaxed cursor-pointer">
+                  {lang === 'ar'
+                    ? <>
+                        أوافق على{' '}
+                        <button
+                          type="button"
+                          className="text-palma-primary underline font-semibold"
+                          onClick={() => {
+                            if (typeof window !== 'undefined') {
+                              window.location.hash = '#/terms';
+                            }
+                          }}
+                        >
+                          الشروط والأحكام الخاصة بالمتاجر المشتركة في المنصة
+                        </button>
+                      </>
+                    : lang === 'he'
+                    ? 'אני מאשר/ת את תנאי השימוש של החנויות בפלטפורמה.'
+                    : 'I agree to the merchant terms and conditions of the marketplace platform.'}
+                </label>
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={isUploading || loading}
@@ -426,68 +471,6 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
               {t.common.back}
             </button>
           </form>
-        ) : (
-          <div className={`${lang === 'en' ? 'text-left' : 'text-right'} space-y-4 flex flex-col h-full`}>
-            {error && (
-              <div className="p-4 bg-red-50 text-red-600 text-[10px] font-black rounded-2xl text-center uppercase shrink-0">
-                {error}
-              </div>
-            )}
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3 text-[11px] text-amber-800 shrink-0">
-              <Mail className="w-4 h-4 mt-0.5 shrink-0" />
-              <div>
-                <p className="font-black mb-1">
-                  {lang === 'ar'
-                    ? 'تأكيد البريد الإلكتروني مطلوب'
-                    : lang === 'he'
-                      ? 'נדרש אימות כתובת אימייל'
-                      : 'Email verification required'}
-                </p>
-                <p className="leading-relaxed">
-                  {lang === 'ar'
-                    ? 'بعد إكمال التسجيل سيصلك رمز تحقق مكوّن من 6 أرقام إلى بريدك الإلكتروني. لن تتمكن من الدخول للوحة التحكم حتى تؤكد بريدك.'
-                    : lang === 'he'
-                      ? 'לאחר סיום ההרשמה יישלח אליך קוד אימות בן 6 ספרות לאימייל. לא תוכל להיכנס ללוח הבקרה עד שתאמת את האימייל.'
-                      : 'After completing registration, a 6-digit verification code will be sent to your email. You will not be able to access the dashboard until you verify your email.'}
-                </p>
-              </div>
-            </div>
-            <h2 className="text-xl font-black text-slate-900 shrink-0">
-              {lang === 'en' ? 'Terms and Conditions for Marketplace Merchants' : MERCHANT_TERMS_TITLE_AR}
-            </h2>
-            <div className="flex-1 min-h-0 max-h-[50vh] overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/80 p-5 text-sm leading-relaxed text-slate-700 whitespace-pre-line">
-              {lang === 'en' ? MERCHANT_TERMS_FULL_TEXT_EN : MERCHANT_TERMS_FULL_TEXT_AR}
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4 pt-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => setStep('FORM')}
-                className="flex-1 py-4 rounded-2xl border border-slate-200 text-[11px] font-black uppercase text-slate-500 hover:bg-slate-50"
-              >
-                {lang === 'ar' ? 'العودة لتعديل البيانات' : lang === 'he' ? 'חזרה לעריכת פרטים' : 'Back to edit details'}
-              </button>
-              <button
-                type="button"
-                disabled={isUploading || loading}
-                onClick={submitRegistration}
-                className="flex-1 py-4 bg-palma-primary text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-soft hover:brightness-110 disabled:opacity-50 active:scale-95"
-              >
-                {loading
-                  ? t.common.loading
-                  : lang === 'en'
-                    ? 'I agree to the terms and conditions and proceed to register as a merchant'
-                    : 'أوافق على الشروط والأحكام وأتابع التسجيل كتاجر'}
-              </button>
-            </div>
-            <button
-              type="button"
-              onClick={onBackToLogin}
-              className="w-full text-[10px] font-black uppercase text-slate-400 hover:text-palma-primary shrink-0"
-            >
-              {t.common.back}
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

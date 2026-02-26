@@ -76,8 +76,16 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
     const result = await userService.register(newUser, formData.password);
 
     if (result.success && result.data) {
-      showToast(t.common.success, 'success');
-      onRegister(result.data.user);
+      const msg =
+        lang === 'ar'
+          ? 'تم إنشاء حساب الزبون بنجاح. تم إرسال رمز تحقق إلى بريدك الإلكتروني – يرجى تأكيد بريدك ثم تسجيل الدخول.'
+          : lang === 'he'
+          ? 'חשבון הלקוח נוצר בהצלחה. נשלח קוד אימות לאימייל שלך – אנא אמת ואז התחבר.'
+          : 'Customer account created successfully. A verification code was sent to your email – please verify and then log in.';
+      showToast(msg, 'success');
+      if (typeof window !== 'undefined') {
+        window.location.hash = '#/login';
+      }
     } else {
       const msg = getAuthErrorMessage(result.error || 'Registration failed', lang);
       setError(msg);
