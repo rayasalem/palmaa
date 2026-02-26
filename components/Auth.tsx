@@ -14,6 +14,7 @@ import RegisterCustomer from './RegisterCustomer';
 import RegisterMerchant from './RegisterMerchant';
 import Logo from './Logo';
 import { useToast } from './ToastProvider';
+import { userService } from '../services/userService';
 
 /** Allowed initial views; REGISTER_STUDENT is legacy and treated as LOGIN */
 export type AuthView = 'LOGIN' | 'ROLE_SELECT' | 'REGISTER_MERCHANT' | 'REGISTER_BROKER' | 'REGISTER_CUSTOMER';
@@ -79,7 +80,24 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
 
     const result = await marketStore.login(email.trim(), password.trim());
 
-    if (result.success && result.data) {
+    if ((result as any).requiresEmailVerification) {
+      // البريد غير موثق: نفعّل وضع التحقق عبر OTP ونمنع الدخول الكامل
+      setVerificationMode(true);
+      setUnverifiedEmail(email.trim());
+      setVerificationCode('');
+      setError('');
+      showToast(
+        lang === 'ar'
+          ? 'يرجى تأكيد بريدك الإلكتروني قبل المتابعة.'
+          : lang === 'he'
+          ? 'אנא אמת את כתובת האימייל לפני המשך השימוש.'
+          : 'Please verify your email before continuing.',
+        'error'
+      );
+      if (typeof window !== 'undefined') {
+        window.location.hash = '#/verify-email';
+      }
+    } else if (result.success && result.data) {
       showToast(t.common.success, 'success');
       onLogin(result.data.user);
     } else {
@@ -351,8 +369,151 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
               </div>
             )}
 
+            {/* EMAIL VERIFICATION VIEW (بعد محاولة تسجيل دخول لبريد غير موثق) */}
+            {verificationMode && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="text-center space-y-2">
+                  <h3 className="text-lg font-bold text-palma-navy">
+                    {lang === 'ar' ? 'تأكيد البريد الإلكتروني' : lang === 'he' ? 'אימות כתובת אימייל' : 'Verify your email'}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {lang === 'ar'
+                      ? 'أدخل رمز التحقق المكون من 6 أرقام الذي أُرسل إلى بريدك:'
+                      : lang === 'he'
+                      ? 'הזן את קוד האימות בן 6 ספרות שנשלח לכתובת:'
+                      : 'Enter the 6-digit code sent to:'}{' '}
+                    <span className="font-bold">{unverifiedEmail}</span>
+                  </p>
+                </div>
+                <form
+                  onSubmit={async (ev) => {
+                    ev.preventDefault();
+                    setError('');
+                    if (!unverifiedEmail || verificationCode.trim().length !== 6) {
+                      setError(getAuthErrorMessage('Valid 6-digit OTP is required', lang));
+                      return;
+                    }
+                    setLoading(true);
+                    const result = await userService.verifyEmail(unverifiedEmail, verificationCode.trim());
+                    setLoading(false);
+                    if (result.success && result.data) {
+                      showToast(
+                        lang === 'ar'
+                          ? 'تم تأكيد البريد الإلكتروني بنجاح. جارٍ تسجيل الدخول...'
+                          : lang === 'he'
+                          ? 'האימייל אומת בהצלחה. מתחבר...'
+                          : 'Email verified successfully. Logging you in...',
+                        'success'
+                      );
+                      setVerificationMode(false);
+                      setVerificationCode('');
+                      // محاولة تسجيل الدخول من جديد الآن بعد التحقق
+                      setLoading(true);
+                      const loginAgain = await marketStore.login(unverifiedEmail.trim(), password.trim());
+                      setLoading(false);
+                      if (loginAgain.success && loginAgain.data) {
+                        onLogin(loginAgain.data.user);
+                      } else if ((loginAgain as any).requiresEmailVerification) {
+                        // حالة نادرة لو لم يتم تحديث الحقل بعد – نعيد المستخدم لنفس الشاشة
+                        setVerificationMode(true);
+                      } else {
+                        const errMsg = getAuthErrorMessage(loginAgain.error || 'Invalid credentials', lang);
+                        setError(errMsg);
+                        showToast(errMsg, 'error');
+                      }
+                    } else {
+                      const errMsg = getAuthErrorMessage(result.error || 'Verification failed', lang);
+                      setError(errMsg);
+                      showToast(errMsg, 'error');
+                    }
+                  }}
+                  className="space-y-5"
+                >
+                  <div>
+                    <label
+                      htmlFor="login-verification-code"
+                      className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2"
+                    >
+                      {t.auth.verificationCode6}
+                    </label>
+                    <input
+                      id="login-verification-code"
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={verificationCode}
+                      onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      className="w-full px-4 py-4 rounded-xl border-2 border-palma-primary/30 bg-palma-primaryLight text-center text-xl font-bold tracking-[0.3em] focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/20 outline-none text-palma-navy"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={loading || verificationCode.trim().length !== 6}
+                    className="btn-primary w-full py-4 text-sm tracking-wide disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {loading ? t.common.loading : (lang === 'ar' ? 'تأكيد الآن' : lang === 'he' ? 'אמת עכשיו' : 'Verify')}
+                    <CheckCircle className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={loading || resendCooldown > 0}
+                    className="w-full py-3 text-[11px] font-bold text-palma-primary hover:underline disabled:opacity-50"
+                    onClick={async () => {
+                      if (!unverifiedEmail) return;
+                      setError('');
+                      setLoading(true);
+                      const res = await userService.resendVerificationCode(unverifiedEmail);
+                      setLoading(false);
+                      if (res.success) {
+                        showToast(
+                          lang === 'ar'
+                            ? 'تم إرسال رمز جديد إلى بريدك.'
+                            : lang === 'he'
+                            ? 'נשלח קוד חדש לאימייל שלך.'
+                            : 'A new verification code was sent to your email.',
+                          'success'
+                        );
+                        setResendCooldown(60);
+                      } else {
+                        const errMsg = getAuthErrorMessage(res.error || 'Error', lang);
+                        setError(errMsg);
+                        showToast(errMsg, 'error');
+                      }
+                    }}
+                  >
+                    {resendCooldown > 0
+                      ? lang === 'ar'
+                        ? `يمكن إعادة الإرسال بعد ${resendCooldown} ث`
+                        : lang === 'he'
+                        ? `ניתן לשלוח שוב בעוד ${resendCooldown} שניות`
+                        : `You can resend in ${resendCooldown}s`
+                      : lang === 'ar'
+                      ? 'إعادة إرسال الرمز'
+                      : lang === 'he'
+                      ? 'שלח קוד שוב'
+                      : 'Resend code'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={loading}
+                    className="w-full py-2 text-[11px] font-bold text-slate-400 hover:text-slate-600"
+                    onClick={() => {
+                      setVerificationMode(false);
+                      setVerificationCode('');
+                      setError('');
+                      if (typeof window !== 'undefined') {
+                        window.location.hash = '#/login';
+                      }
+                    }}
+                  >
+                    {lang === 'ar' ? 'العودة لتسجيل الدخول' : lang === 'he' ? 'חזרה להתחברות' : 'Back to login'}
+                  </button>
+                </form>
+              </div>
+            )}
+
             {/* LOGIN VIEW */}
-            {view === 'LOGIN' && !showForgotPassword && (
+            {view === 'LOGIN' && !showForgotPassword && !verificationMode && (
               <form onSubmit={handleLogin} className="space-y-6 animate-fade-in">
                 <div className="space-y-2">
                   <label htmlFor="login-email" className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">{t.auth.email}</label>

@@ -278,7 +278,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase text-slate-400 px-1">{lang === 'en' ? 'Product Media' : 'صور المنتج'} *</label>
                     <div onClick={() => !isProductUploading && productImgInputRef.current?.click()} className={`aspect-square rounded-3xl border-2 border-dashed border-slate-100 bg-slate-50 flex flex-col items-center justify-center cursor-pointer transition-all ${isProductUploading ? 'opacity-50' : 'hover:border-palma-primary'}`}>
-                      {productForm.image_url ? <img src={productForm.image_url} className="w-full h-full object-cover" /> : 
+                      {productForm.image_url ? <img src={productForm.image_url} loading="lazy" className="w-full h-full object-cover" /> :
                         <div className="text-center p-8">
                            <span className="text-4xl block mb-2">{isProductUploading ? '⌛' : '📸'}</span>
                            <p className="text-[9px] font-black uppercase text-slate-300 tracking-widest">{isProductUploading ? 'Cloud Sync...' : 'Product Image'}</p>
@@ -330,7 +330,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
         <div className="absolute top-0 right-0 w-48 h-48 sm:w-64 sm:h-64 bg-palma-primary/5 rounded-full -mr-24 -mt-24"></div>
         <div className="relative group shrink-0">
           <div className="w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 rounded-3xl lg:rounded-[3rem] overflow-hidden border-4 border-white shadow-2xl bg-slate-50">
-            <img src={userImg} className="w-full h-full object-cover" alt={user.name} />
+            <img src={userImg} loading="lazy" className="w-full h-full object-cover" alt={user.name} />
           </div>
           {isEditing && (
             <button onClick={() => !isUploading && fileInputRef.current?.click()} className={`absolute inset-0 bg-black/40 text-white flex items-center justify-center rounded-3xl lg:rounded-[3rem] opacity-0 group-hover:opacity-100 transition-opacity ${isUploading ? 'cursor-wait' : 'cursor-pointer'}`}>
@@ -446,7 +446,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
                       {(prods as Product[]).map(p => (
                         <div key={p.id} onClick={() => onViewProduct(p.id)} className="bg-white rounded-[2rem] p-4 border border-slate-100 hover:shadow-xl transition-all group cursor-pointer flex flex-col h-full">
                           <div className="aspect-square rounded-[1.5rem] bg-slate-50 overflow-hidden mb-4 relative">
-                             <img src={p.images?.[0] || p.imageUrl || p.image_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={p.name} />
+                             <img src={p.images?.[0] || p.imageUrl || p.image_url} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={p.name} />
                              <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-2.5 py-1 rounded-lg text-[10px] font-black shadow-sm">₪{p.price || p.price_ils}</div>
                           </div>
                           <div className="px-2 pb-2">

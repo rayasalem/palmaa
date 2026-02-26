@@ -313,7 +313,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                       className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-card hover:shadow-hover transition-all duration-500 group cursor-pointer flex flex-col h-full hover:-translate-y-2"
                     >
                       <div className="aspect-square overflow-hidden bg-slate-50 relative m-4 rounded-2xl">
-                        <img src={displayImage} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={p.name} />
+                        <img src={displayImage} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={p.name} />
                         
                         <div className={`absolute top-4 left-4 bg-white/95 backdrop-blur px-3 py-1.5 rounded-xl text-sm font-black shadow-lg text-palma-navy`}>
                           ₪{p.price || p.price_ils}

@@ -76,6 +76,15 @@ export async function login(req: Request, res: Response): Promise<void> {
       res.status(401).json({ success: false, error: (error as { message?: string })?.message || 'Invalid credentials' });
       return;
     }
+    if (!user.is_email_verified) {
+      // كلمة المرور صحيحة لكن البريد غير موثق بعد – لا نصدر توكن، ونطلب التحقق أولاً
+      res.status(401).json({
+        success: false,
+        requiresEmailVerification: true,
+        message: 'Please verify your email before continuing.',
+      });
+      return;
+    }
     const token = jwtService.sign({ sub: user.id, email: user.email, role: user.role });
     res.cookie(jwtService.getCookieName(), token, jwtService.getCookieOptions());
     logger.info('login success', { userId: user.id, role: user.role });
@@ -128,6 +137,12 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
       return;
     }
     const roleNorm = role ? String(role).trim().toUpperCase() : 'CUSTOMER';
+    const allowedRoles = ['CUSTOMER', 'MERCHANT', 'BROKER'];
+    if (!allowedRoles.includes(roleNorm)) {
+      // منع تسجيل ADMIN أو أي دور غير مسموح ذاتياً
+      res.status(400).json({ success: false, error: 'Invalid role' });
+      return;
+    }
     if (roleNorm === 'MERCHANT' && !termsAccepted) {
       res.status(400).json({ success: false, error: 'Merchants must accept the Terms and Conditions' });
       return;

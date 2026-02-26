@@ -211,7 +211,7 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({ lang, currentUser
            <div className="px-8 pb-8 relative">
               <div className="flex flex-col md:flex-row gap-6 items-start -mt-16">
                  <div className="w-32 h-32 rounded-[2rem] border-4 border-white shadow-lg overflow-hidden bg-slate-100 shrink-0">
-                    <img src={profileImg} className="w-full h-full object-cover" alt={profileUser.name} />
+                    <img src={profileImg} loading="lazy" className="w-full h-full object-cover" alt={profileUser.name} />
                  </div>
                  
                  <div className="flex-1 pt-2 md:pt-20">
@@ -261,7 +261,7 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({ lang, currentUser
                     {products.map(p => (
                        <div key={p.id} onClick={() => onProductClick(p.id)} className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all cursor-pointer group hover:-translate-y-1">
                           <div className="aspect-square rounded-[1.5rem] bg-slate-50 overflow-hidden mb-4 relative">
-                             <img src={p.images?.[0] || p.imageUrl || p.image_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={p.name} />
+                             <img src={p.images?.[0] || p.imageUrl || p.image_url} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={p.name} />
                              <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-2.5 py-1 rounded-lg text-[10px] font-black shadow-sm">₪{p.price || p.price_ils}</div>
                           </div>
                           <div className="px-2 pb-2">
@@ -290,7 +290,7 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({ lang, currentUser
                        return (
                           <div key={s.id} onClick={() => onProductClick(p.id)} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-lg transition-all cursor-pointer flex gap-6 items-center">
                              <div className="w-24 h-24 rounded-2xl bg-slate-50 overflow-hidden shrink-0">
-                                <img src={p.images?.[0] || p.imageUrl || p.image_url} className="w-full h-full object-cover" />
+                                <img src={p.images?.[0] || p.imageUrl || p.image_url} loading="lazy" className="w-full h-full object-cover" />
                              </div>
                              <div className="flex-1">
                                 <h4 className="font-bold text-slate-900 text-lg mb-1">{p.name}</h4>

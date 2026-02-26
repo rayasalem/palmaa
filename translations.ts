@@ -178,18 +178,23 @@ const ar = {
     approved: 'معتمد'
   },
   categories: {
-    electronics: 'إلكترونيات وأجهزة ذكية',
-    fashion: 'أزياء وملابس',
-    home: 'مستلزمات المنزل',
-    beauty: 'الصحة والجمال',
+    electronics: 'الكترونيات',
+    fashion: 'ملابس',
+    home: 'ادوات منزلية',
+    beauty: 'تجميل وكوزمتكس',
     toys: 'ألعاب وهدايا',
-    sports: 'رياضة ولياقة',
+    sports: 'ادوات رياضية',
     books: 'كتب وقرطاسية',
-    food: 'مواد غذائية',
-    automotive: 'سيارات ومعدات',
+    food: 'منتجات غذائية',
+    automotive: 'كماليات سيارات',
     real_estate: 'عقارات',
     services: 'خدمات',
-    pets: 'حيوانات أليفة',
+    pets: 'مستلزمات حيوانات أليفة',
+    handmade: 'المشغولات اليدوية',
+    baby: 'مستلزمات أطفال',
+    bags_accessories: 'شنط وإكسسوارات',
+    shoes: 'أحذية',
+    furnishings_textiles: 'مفروشات وأقمشة',
     other: 'أخرى'
   },
   auth: {
@@ -369,8 +374,8 @@ const ar = {
     exclusiveInventory: 'مخزون حصري عند الإطلاق',
   },
   landing: {
-    aboutTitle: 'لماذا تختار بالما؟',
-    aboutSubtitle: 'منظومة متكاملة تربط السوق الفلسطيني كما لم يحدث من قبل.',
+    aboutTitle: 'من هي بالما؟',
+    aboutSubtitle: 'منصة تربط بين الشركات والعملاء في مكان واحد.',
     features: {
         merchantTitle: 'تمكين التجار',
         merchantDesc: 'أدوات متطورة، خدمات لوجستية من FlashLine، وقاعدة زبائن واسعة لتنمية أعمالك.',
@@ -381,9 +386,9 @@ const ar = {
     }
   },
   hero: {
-    registerNow: 'سجل الآن',
+    registerNow: 'ابدأ الآن',
     join: 'سجل كتاجر الآن',
-    explore: 'استكشف المنتجات'
+    explore: 'تصفح الخدمات'
   }
 };
 
@@ -524,18 +529,23 @@ const en = {
     approved: 'Approved'
   },
   categories: {
-    electronics: 'Electronics & Smart Devices',
-    fashion: 'Fashion & Apparel',
-    home: 'Home & Living',
-    beauty: 'Beauty & Health',
+    electronics: 'Electronics',
+    fashion: 'Clothing',
+    home: 'Home Tools & Supplies',
+    beauty: 'Beauty & Cosmetics',
     toys: 'Toys & Gifts',
-    sports: 'Sports & Fitness',
+    sports: 'Sports Equipment',
     books: 'Books & Stationery',
     food: 'Food & Groceries',
-    automotive: 'Automotive',
+    automotive: 'Car Accessories',
     real_estate: 'Real Estate',
     services: 'Services',
-    pets: 'Pets',
+    pets: 'Pet Supplies',
+    handmade: 'Handmade & Crafts',
+    baby: 'Baby Essentials',
+    bags_accessories: 'Bags & Accessories',
+    shoes: 'Shoes',
+    furnishings_textiles: 'Furnishings & Textiles',
     other: 'Other'
   },
   roles: {
@@ -802,18 +812,23 @@ const he = {
     approved: 'אושר',
   },
   categories: {
-    electronics: 'אלקטרוניקה ומכשירים',
-    fashion: 'אופנה ובגדים',
-    home: 'בית ומשק',
-    beauty: 'בריאות ויופי',
+    electronics: 'אלקטרוניקה',
+    fashion: 'בגדים',
+    home: 'ציוד לבית',
+    beauty: 'טיפוח וקוסמטיקה',
     toys: 'צעצועים ומתנות',
-    sports: 'ספורט וכושר',
-    books: 'ספרים ומחברות',
-    food: 'מזון',
-    automotive: 'רכב',
+    sports: 'ציוד ספורט',
+    books: 'ספרים וציוד משרדי',
+    food: 'מזון ומצרכים',
+    automotive: 'אביזרי רכב',
     real_estate: 'נדל"ן',
     services: 'שירותים',
-    pets: 'חיות מחמד',
+    pets: 'ציוד לחיות מחמד',
+    handmade: 'עבודות יד',
+    baby: 'מוצרי תינוקות',
+    bags_accessories: 'תיקים ואקססוריז',
+    shoes: 'נעליים',
+    furnishings_textiles: 'טקסטיל ומצעים',
     other: 'אחר',
   },
   nav: {

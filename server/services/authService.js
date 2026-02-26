@@ -131,7 +131,8 @@ async function registerUser(params) {
     password: hashed,
     name: name || emailNorm,
     role: roleVal,
-    email_verified: true,
+    // يبدأ أي مستخدم جديد بدون توثيق بريد، حتى يكمل خطوة OTP
+    email_verified: false,
     created_at: now,
   };
 
@@ -171,6 +172,15 @@ async function registerUser(params) {
     console.error('[authService] registerUser insert error:', insertError.message);
     return { user: null, error: insertError };
   }
+  // بعد إنشاء المستخدم بنجاح، نرسل كود التحقق بالبريد (لا نفشل التسجيل لو فشلت الرسالة)
+  try {
+    const sendResult = await resendVerification(emailNorm);
+    if (!sendResult.success) {
+      console.warn('[authService] registerUser: resendVerification failed after register', (sendResult.error && sendResult.error.message));
+    }
+  } catch (e) {
+    console.warn('[authService] registerUser: resendVerification threw error', (e && e.message));
+  }
   // التحقق أن كلمة المرور خزّنت ويمكن التحقق منها (لتشخيص فشل تسجيل الدخول لاحقاً)
   try {
     if (user && user.id) {
@@ -189,8 +199,7 @@ async function registerUser(params) {
   } catch (e) {
     console.warn('[authService] registerUser: post-insert check failed', (e && e.message));
   }
-  // لا نستخدم OTP أو إرسال بريد هنا حالياً
-  return { user, error: null, emailSent: false };
+  return { user, error: null, emailSent: true };
 }
 
 const EMAIL_SEND_TIMEOUT_MS = 25000;
@@ -243,8 +252,8 @@ async function forgotPassword(email) {
   }
   const errMsg = (emailResult.error && emailResult.error.message) || 'Email not configured';
   console.warn('[authService] forgotPassword: sendEmail failed', errMsg);
-  if (process.env.RETURN_OTP_WHEN_EMAIL_FAILS === 'true') {
-    console.warn('[authService] RETURN_OTP_WHEN_EMAIL_FAILS enabled: returning code in response.');
+  if (process.env.NODE_ENV !== 'production' && process.env.RETURN_OTP_WHEN_EMAIL_FAILS === 'true') {
+    console.warn('[authService] RETURN_OTP_WHEN_EMAIL_FAILS enabled (non-production): returning code in response.');
     return { success: true, error: null, verificationCode: code };
   }
   return {

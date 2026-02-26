@@ -492,6 +492,49 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                   <span><strong>{lang === 'ar' ? 'ينتهي:' : lang === 'he' ? 'מסתיים:' : 'Ends:'}</strong> {new Date(dashboardData.subscription.subscription_end_date).toLocaleDateString()}</span>
                 )}
               </div>
+              {/* Subscription packages UI – display only, does not change backend subscription logic */}
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className={`rounded-2xl border p-4 space-y-2 ${dashboardData.subscription.subscription_type === 'free' ? 'border-palma-primary bg-palma-primaryLight/40' : 'border-slate-200 bg-slate-50'}`}>
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-black text-palma-navy text-xs uppercase tracking-widest">
+                      {lang === 'ar' ? 'الخطة المجانية' : lang === 'he' ? 'תכנית חינמית' : 'Free plan'}
+                    </h4>
+                    {dashboardData.subscription.subscription_type === 'free' && (
+                      <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                        {lang === 'ar' ? 'الخطة الحالية' : lang === 'he' ? 'תכנית פעילה' : 'Current plan'}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-600">
+                    {lang === 'ar'
+                      ? 'شهر أول مجاني للتجربة، مع أدوات أساسية لإدارة منتجاتك وطلباتك.'
+                      : lang === 'he'
+                      ? 'חודש ראשון חינם עם כלים בסיסיים לניהול מוצרים והזמנות.'
+                      : 'First month free with basic tools to manage products and orders.'}
+                  </p>
+                </div>
+                <div className={`rounded-2xl border p-4 space-y-2 ${dashboardData.subscription.subscription_type === 'paid' ? 'border-palma-primary bg-white' : 'border-dashed border-slate-300 bg-slate-50'}`}>
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-black text-palma-navy text-xs uppercase tracking-widest">
+                      {lang === 'ar' ? 'الخطة المدفوعة (قريباً)' : lang === 'he' ? 'מנוי בתשלום (בקרוב)' : 'Paid plan (coming soon)'}
+                    </h4>
+                  </div>
+                  <p className="text-[11px] text-slate-600">
+                    {lang === 'ar'
+                      ? 'مزايا إضافية مثل ظهور أعلى في نتائج البحث وتقارير متقدمة – سيتم تفعيلها لاحقاً.'
+                      : lang === 'he'
+                      ? 'יתרונות נוספים כמו חשיפה גבוהה יותר ודוחות מתקדמים – יופעל בהמשך.'
+                      : 'Extra benefits such as higher visibility and advanced reports – to be enabled later.'}
+                  </p>
+                  <button
+                    type="button"
+                    disabled
+                    className="mt-2 inline-flex items-center justify-center px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-200 text-slate-500 cursor-not-allowed"
+                  >
+                    {lang === 'ar' ? 'قريباً' : lang === 'he' ? 'בקרוב' : 'Coming soon'}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -612,7 +655,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                         <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
                             {productForm.images.map((url, idx) => (
                                 <div key={idx} className="w-16 h-16 rounded-lg overflow-hidden border border-slate-200 relative group shrink-0">
-                                    <img src={url} className="w-full h-full object-cover" />
+                                    <img src={url} loading="lazy" className="w-full h-full object-cover" />
                                     <button type="button" onClick={() => handleRemoveImage(idx)} className="absolute top-0 right-0 bg-red-500 text-white p-0.5 rounded-bl-lg opacity-0 group-hover:opacity-100 transition"><X className="w-3 h-3" /></button>
                                 </div>
                             ))}
@@ -662,7 +705,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                             className={`h-16 w-16 sm:h-20 sm:w-20 rounded-xl overflow-hidden border border-slate-100 shrink-0 relative shadow-sm cursor-pointer ${!product.isActive ? 'grayscale' : ''}`}
                             onClick={() => onViewProduct && onViewProduct(product.id)}
                           >
-                            <img src={product.images?.[0] || product.imageUrl || product.image_url || 'https://placehold.co/200x200?text=No+Image'} className="h-full w-full object-cover" />
+                            <img src={product.images?.[0] || product.imageUrl || product.image_url || 'https://placehold.co/200x200?text=No+Image'} loading="lazy" className="h-full w-full object-cover" />
                             {!product.isActive && <div className="absolute inset-0 bg-black/10 flex items-center justify-center"><EyeOff className="text-white w-6 h-6 drop-shadow-md"/></div>}
                           </div>
                           

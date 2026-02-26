@@ -752,6 +752,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
                     onClick={() => onViewProduct && onViewProduct(p.id)}
                   >
                     <img
+                      loading="lazy"
                       src={displayImage}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                       alt={p.name}
@@ -824,7 +825,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
                           <input type="checkbox" checked={selectedCartIds.has(item.id)} onChange={() => toggleCartSelection(item.id)} className="w-5 h-5 rounded border-slate-300 text-palma-primary focus:ring-palma-primary shrink-0" />
                         ) : null}
                         <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-slate-50 shrink-0 border border-slate-100">
-                          <img src={item.images?.[0] || item.imageUrl || item.image_url || 'https://placehold.co/200x200?text=No+Image'} className="w-full h-full object-cover" />
+                          <img src={item.images?.[0] || item.imageUrl || item.image_url || 'https://placehold.co/200x200?text=No+Image'} loading="lazy" className="w-full h-full object-cover" />
                         </div>
                         <div className="flex-1 min-w-0">
                            <h4 className="font-bold text-slate-900 text-sm sm:text-base mb-1 truncate">{item.name}</h4>
@@ -913,7 +914,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
                           return (
                             <div key={item.id || `oi-${idx}`} className="flex items-center gap-4">
                                <div className="w-14 h-14 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden shrink-0">
-                                  <img src={prod?.images?.[0] || prod?.imageUrl || 'https://placehold.co/100x100?text=No+Image'} className="w-full h-full object-cover" />
+                                  <img src={prod?.images?.[0] || prod?.imageUrl || 'https://placehold.co/100x100?text=No+Image'} loading="lazy" className="w-full h-full object-cover" />
                                </div>
                                <div className="min-w-0">
                                   <p className="text-xs font-bold text-slate-900 truncate mb-0.5">{prod?.name}</p>

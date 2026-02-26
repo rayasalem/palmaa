@@ -31,6 +31,8 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [loading, setLoading] = useState(false);
+  // UI-only subscription plan selection (does not change backend logic yet)
+  const [selectedPlan, setSelectedPlan] = useState<'free' | 'paid'>('free');
   const [formData, setFormData] = useState({
     business_name: '',
     owner_name: '',
@@ -226,6 +228,54 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
                   defaultValue={formData.owner_name}
                   onChange={handleChange}
                 />
+              </div>
+            </div>
+
+            {/* Subscription plan selection – UI only, backend always uses existing free-trial logic */}
+            <div className="space-y-3">
+              <p className="text-[10px] font-black uppercase text-slate-500">
+                {lang === 'ar'
+                  ? 'خطة الاشتراك (واجهة فقط – الشهر الأول مجاني)'
+                  : 'Subscription plan (UI only – first month free)'}
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlan('free')}
+                  className={`w-full text-left rounded-2xl border px-4 py-3 text-xs font-medium transition-all ${
+                    selectedPlan === 'free'
+                      ? 'border-palma-primary bg-palma-primaryLight text-palma-navy shadow-sm'
+                      : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-palma-primary/70'
+                  }`}
+                >
+                  <span className="block font-black text-[11px] uppercase tracking-widest mb-1">
+                    {lang === 'ar' ? 'الخطة المجانية' : 'Free plan'}
+                  </span>
+                  <span className="block text-[11px]">
+                    {lang === 'ar'
+                      ? 'شهر أول مجاني للتجربة، ثم رسوم تُحدد لاحقاً.'
+                      : 'First month free for trial, then pricing announced later.'}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlan('paid')}
+                  className={`w-full text-left rounded-2xl border px-4 py-3 text-xs font-medium transition-all ${
+                    selectedPlan === 'paid'
+                      ? 'border-palma-primary bg-white text-palma-navy shadow-sm'
+                      : 'border-slate-200 bg-slate-50 text-slate-500'
+                  }`}
+                  disabled
+                >
+                  <span className="block font-black text-[11px] uppercase tracking-widest mb-1">
+                    {lang === 'ar' ? 'الخطة المدفوعة (قريباً)' : 'Paid plan (coming soon)'}
+                  </span>
+                  <span className="block text-[11px]">
+                    {lang === 'ar'
+                      ? 'مزايا إضافية وظهور أعلى في نتائج البحث – قريباً.'
+                      : 'Extra benefits and higher visibility in search – coming soon.'}
+                  </span>
+                </button>
               </div>
             </div>
 

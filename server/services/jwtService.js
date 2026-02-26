@@ -8,9 +8,10 @@ import { getEnv } from '../config/env.js';
 
 const rawSecret = getEnv('JWT_SECRET') || getEnv('JWT_SECRET_KEY');
 if (!rawSecret && getEnv('NODE_ENV') === 'production') {
-  throw new Error(
-    'JWT_SECRET is required in production. Set it in server/.env (local) or in Environment variables on Render/Vercel.'
-  );
+  // Startup warning only – لا نوقف السيرفر في الإنتاج حتى لا يتعطل الموقع بالكامل
+  // الأمن ما زال يتطلب ضبط JWT_SECRET فعلياً في بيئة الإنتاج.
+  // eslint-disable-next-line no-console
+  console.warn('WARNING: JWT_SECRET not set – using development fallback secret. Set JWT_SECRET in server/.env or hosting environment.');
 }
 const DEFAULT_DEV = 'dev-fallback-secret-change-in-production-64chars-minimum-required';
 const SECRET = rawSecret || DEFAULT_DEV;

@@ -661,7 +661,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
                               onClick={() => onViewProduct && onViewProduct(p.id)}
                             >
                               <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 shrink-0">
-                                <img src={p.image_url || p.images?.[0] || 'https://placehold.co/100'} alt="" className="w-full h-full object-cover" />
+                                <img src={p.image_url || p.images?.[0] || 'https://placehold.co/100'} loading="lazy" alt="" className="w-full h-full object-cover" />
                               </div>
                               <span className="text-sm font-black text-slate-900 line-clamp-1">{p.title || p.name}</span>
                             </div>

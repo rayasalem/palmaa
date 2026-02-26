@@ -31,6 +31,7 @@ import {
   generalLimiter,
   paymentLimiter,
 } from './middlewares/security.js';
+import cacheMiddleware from './middlewares/cacheMiddleware.js';
 import httpsEnforce from './middlewares/httpsEnforce.js';
 import requestLogger from './middlewares/requestLogger.js';
 import errorHandler from './middlewares/errorHandler.js';
@@ -79,7 +80,7 @@ app.use(sanitizeErrorResponse);
 
 // API routes BEFORE static so /api/* never returns 404 when this server is hit
 app.use('/api/orders', orderRoutes);
-app.use('/api/products', productRoutes);
+app.use('/api/products', cacheMiddleware(600), productRoutes);
 
 const paymentRouter = express.Router();
 paymentRouter.use(paymentLimiter());

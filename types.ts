@@ -312,17 +312,24 @@ export interface ActionResponse<T> {
 }
 
 export const PRODUCT_CATEGORIES = [
-  'electronics',
-  'fashion',
-  'home',
-  'beauty',
-  'toys',
-  'sports',
-  'books',
-  'food',
-  'automotive',
+  // أساسي: نفس ما يظهر للمستخدم عند رفع المنتج أو التصفية
+  'beauty',               // تجميل وكوزمتكس
+  'fashion',              // ملابس
+  'sports',               // أدوات رياضية
+  'home',                 // أدوات منزلية
+  'food',                 // منتجات غذائية
+  'electronics',          // إلكترونيات
+  'handmade',             // المشغولات اليدوية
+  'baby',                 // مستلزمات أطفال
+  'bags_accessories',     // شنط وإكسسوارات
+  'shoes',                // أحذية
+  'furnishings_textiles', // مفروشات وأقمشة
+  'pets',                 // مستلزمات حيوانات أليفة
+  'books',                // كتب وقرطاسية
+  'automotive',           // كماليات سيارات
+  'toys',                 // ألعاب وهدايا
+  // إضافية/قديمة (تبقى للدعم الخلفي والفلاتر)
   'real_estate',
   'services',
-  'pets',
   'other'
 ];

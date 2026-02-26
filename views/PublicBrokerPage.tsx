@@ -78,7 +78,7 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({ lang, brokerId, onB
               <div className="bg-white rounded-[3rem] p-8 border border-slate-100 shadow-xl text-center space-y-6 relative overflow-hidden">
                  <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-palma-soft to-transparent"></div>
                  <div className="w-32 h-32 rounded-[2rem] border-4 border-white shadow-lg overflow-hidden mx-auto relative z-10 bg-slate-100">
-                    <img src={profileImg} className="w-full h-full object-cover" alt={broker.name} />
+                    <img src={profileImg} loading="lazy" className="w-full h-full object-cover" alt={broker.name} />
                  </div>
                  
                  <div className="relative z-10">
@@ -150,7 +150,7 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({ lang, brokerId, onB
                           )}
 
                           <div className="w-full md:w-72 aspect-square rounded-[2.5rem] overflow-hidden bg-slate-50 shrink-0 relative group-hover:shadow-lg transition-all">
-                             <img src={displayImage} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={p.name} />
+                             <img src={displayImage} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={p.name} />
                              <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur py-3 px-4 rounded-2xl flex justify-between items-center shadow-lg">
                                 <span className="text-[10px] font-black uppercase text-slate-400">Price</span>
                                 <span className="text-base font-black text-palma-primary">₪{p.price || p.price_ils}</span>

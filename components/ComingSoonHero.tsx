@@ -88,8 +88,9 @@ const ComingSoonHero: React.FC<Props> = ({ lang, onJoinMerchant, onExploreProduc
               index === currentImageIndex ? 'opacity-100' : 'opacity-0'
             }`}
           >
-            <img 
-              src={img} 
+            <img
+              src={img}
+              loading={index === currentImageIndex ? 'eager' : 'lazy'}
               className="w-full h-full object-cover"
               alt={`Palma Background ${index + 1}`}
             />
@@ -120,11 +121,13 @@ const ComingSoonHero: React.FC<Props> = ({ lang, onJoinMerchant, onExploreProduc
         <div className="space-y-6 max-w-4xl">
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white tracking-tighter leading-[1.1] drop-shadow-2xl">
             {lang === 'ar'
-              ? 'سوق فلسطين الرقمي'
+              ? 'منصتك التجارية الذكية في فلسطين'
               : t.comingSoon.headline}
           </h1>
           <p className="text-base sm:text-lg text-slate-200 max-w-2xl mx-auto font-medium leading-relaxed">
-            {t.comingSoon.subheadline}
+            {lang === 'ar'
+              ? 'بنربط بين الشركات والعملاء بطريقة أسهل، أسرع، وأذكى'
+              : t.comingSoon.subheadline}
           </p>
         </div>
 
@@ -152,23 +155,6 @@ const ComingSoonHero: React.FC<Props> = ({ lang, onJoinMerchant, onExploreProduc
             <ShoppingBag className="w-4 h-4" />
             <span>{t.hero.explore}</span>
           </button>
-        </div>
-
-        {/* Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl pt-10 border-t border-white/10 mt-8">
-           {[
-             { icon: Store, title: t.comingSoon.ctaMerchant, desc: t.comingSoon.growth },
-             { icon: ShoppingBag, title: t.comingSoon.ctaCustomer, desc: t.comingSoon.exclusiveInventory },
-             { icon: TrendingUp, title: 'FlashLine Logistics', desc: 'Integrated shipping & tracking across Palestine' }
-           ].map((item, idx) => (
-             <div key={idx} className="bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-white/5 text-left rtl:text-right hover:bg-white/10 transition-all group hover:-translate-y-1">
-                <div className="mb-4 w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-inner ring-1 ring-white/10">
-                  <item.icon className="w-6 h-6" />
-                </div>
-                <h4 className="text-white text-sm font-black uppercase tracking-widest mb-2">{item.title}</h4>
-                <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider leading-relaxed">{item.desc}</p>
-             </div>
-           ))}
         </div>
 
       </div>

@@ -140,7 +140,7 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({ lang, user,
 
   const handleToggleLike = async () => {
     if (!user) return onLoginClick();
-    if (user.role !== Role.CUSTOMER) return showToast(lang === 'en' ? 'Only Customers can like products.' : 'فقط الزبائن يمكنهم الإعجاب بالمنتجات.', 'warning');
+    // نسمح لكل المستخدمين المسجلين بالإعجاب، لكن نحافظ على منطق المصادقة كما هو
     setLikeLoading(true);
     try {
       if (isLiked) {
@@ -162,7 +162,6 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({ lang, user,
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return onLoginClick();
-    if (user.role !== Role.CUSTOMER) return showToast(lang === 'en' ? 'Only Customers can comment.' : 'فقط الزبائن يمكنهم التعليق.', 'warning');
     if (!socialCommentInput.trim()) return;
     setCommentLoading(true);
     try {
@@ -190,7 +189,6 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({ lang, user,
   const handleSubmitReview = (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return onLoginClick();
-    if (user.role !== Role.CUSTOMER) return showToast(lang === 'en' ? 'Only Customers can leave reviews.' : 'فقط الزبائن يمكنهم ترك تقييمات.', 'warning');
     if (!commentInput.trim()) return showToast(lang === 'en' ? 'Please provide a comment.' : 'يرجى كتابة تعليق.', 'warning');
 
     setIsSubmitting(true);
@@ -397,7 +395,7 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({ lang, user,
                     <MessageCircle className="w-5 h-5" /> {lang === 'en' ? 'Comments' : 'التعليقات'} ({comments.length})
                  </h3>
                  
-                 {user && isCustomer && (
+                  {user && (
                     <form onSubmit={handleAddComment} className="flex gap-3">
                        <input 
                          className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-palma-primary outline-none transition-all"
@@ -436,7 +434,7 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({ lang, user,
 
                  {/* Review Input */}
                  <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-                    {user && isCustomer ? (
+                    {user ? (
                        alreadyReviewed ? (
                           <p className="text-sm font-bold text-palma-primary text-center">✓ {lang === 'en' ? 'Thanks for your review!' : 'شكراً لتقييمك!'}</p>
                        ) : (
@@ -446,7 +444,7 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({ lang, user,
                                 <div className="flex gap-1">
                                    {[1,2,3,4,5].map(star => (
                                       <button type="button" key={star} onClick={() => setRatingInput(star)} onMouseEnter={() => setHoverRating(star)} onMouseLeave={() => setHoverRating(0)}>
-                                         <Star className={`w-5 h-5 ${star <= (hoverRating || ratingInput) ? 'fill-palma-gold text-palma-gold' : 'text-slate-200'}`} />
+                                         <Star className={`w-5 h-5 ${star <= (hoverRating || ratingInput) ? 'fill-palma-primary text-palma-primary' : 'text-slate-200'}`} />
                                       </button>
                                    ))}
                                 </div>
@@ -484,7 +482,7 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({ lang, user,
                                 <div className="flex justify-between items-start">
                                    <h5 className="font-bold text-palma-navy text-xs">{rev.customer_name}</h5>
                                    <div className="flex gap-0.5">
-                                      {[1,2,3,4,5].map(s => <Star key={s} className={`w-3 h-3 ${s <= rev.rating ? 'fill-palma-gold text-palma-gold' : 'text-slate-200'}`} />)}
+                                      {[1,2,3,4,5].map(s => <Star key={s} className={`w-3 h-3 ${s <= rev.rating ? 'fill-palma-primary text-palma-primary' : 'text-slate-200'}`} />)}
                                    </div>
                                 </div>
                                 <p className="mt-1 text-xs text-slate-600 font-medium">"{rev.comment}"</p>

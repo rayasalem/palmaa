@@ -36,7 +36,16 @@ export const authService = {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        return { success: false, error: (data as any).error || 'Invalid login credentials' };
+        const anyData = data as any;
+        if (anyData && anyData.requiresEmailVerification) {
+          // حالة خاصة: كلمة المرور صحيحة لكن البريد غير موثق – لا نسجّل الدخول ونبلغ الواجهة لتوجيه المستخدم للتحقق
+          return {
+            success: false,
+            error: anyData.message || 'Please verify your email before continuing.',
+            requiresEmailVerification: true,
+          } as any;
+        }
+        return { success: false, error: anyData?.error || 'Invalid login credentials' };
       }
       const apiUser = (data as any).user;
       if (!apiUser) return { success: false, error: 'Invalid response from server' };
