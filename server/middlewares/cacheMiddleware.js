@@ -13,6 +13,8 @@ const cache = new NodeCache();
 export function cacheMiddleware(ttlSeconds = 600) {
   return (req, res, next) => {
     if (req.method !== 'GET') return next();
+    // لا نخزن قائمة منتجات التاجر حتى يرى التاجر المنتجات المضافة فوراً (المخزون)
+    if (req.path && req.path.includes('/merchant/')) return next();
 
     const key = req.originalUrl || req.url || req.path;
     const cached = cache.get(key);

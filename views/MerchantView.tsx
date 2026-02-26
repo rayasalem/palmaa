@@ -570,7 +570,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                 {lang === 'ar' ? 'لا يمكن إضافة منتجات جديدة حتى تجديد الاشتراك.' : lang === 'he' ? 'לא ניתן להוסיף מוצרים עד לחידוש המנוי.' : 'You cannot add new products until you renew your subscription.'}
               </div>
             )}
-            <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-card border border-slate-100 sticky top-28 transition-all">
+            <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-card border border-slate-100 max-xl:static xl:sticky xl:top-28 transition-all">
               <div className="flex items-center justify-between gap-4 mb-6">
                  <div className="flex items-center gap-3">
                     <div className="p-2.5 bg-palma-navy rounded-xl text-white shadow-lg shadow-soft">
@@ -626,11 +626,11 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                    <textarea required className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium outline-none focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 transition shadow-sm resize-none" rows={3} value={productForm.description} onChange={e => setProductForm({...productForm, description: e.target.value})} />
                 </div>
                 
-                {/* Image Upload Area */}
+                {/* Image Upload Area – use <label> so tap opens file picker on mobile (no programmatic click()) */}
                 <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                    <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
                       {t.product.image} (Max 5) *
-                    </label>
+                    </span>
                     <p className="text-[10px] text-slate-400 mb-2">
                       {lang === 'ar'
                         ? 'مسموح حتى ٥ صور، كل صورة أقل من ٢ ميجا وبصيغة JPG أو PNG أو WebP.'
@@ -638,25 +638,36 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                         ? 'ניתן להעלות עד 5 תמונות, כל תמונה עד 2MB בפורמט JPG, PNG או WebP.'
                         : 'You can upload up to 5 images, each under 2MB in JPG, PNG, or WebP format.'}
                     </p>
-                    <div 
-                      onClick={() => document.getElementById('file-upload')?.click()}
-                      className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:bg-slate-50 hover:border-palma-primary/50 transition cursor-pointer group"
+                    <input
+                      id="merchant-product-file-upload"
+                      type="file"
+                      multiple
+                      className="sr-only"
+                      accept="image/jpeg,image/png,image/webp,image/*"
+                      onChange={e => {
+                        const files = e.target.files;
+                        if (files && files.length > 0) setUploadQueue(Array.from(files).slice(0, 5));
+                        e.target.value = '';
+                      }}
+                    />
+                    <label
+                      htmlFor="merchant-product-file-upload"
+                      className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-6 min-h-[120px] sm:min-h-0 text-center hover:bg-slate-50 hover:border-palma-primary/50 active:bg-palma-primaryLight/30 transition cursor-pointer group"
                     >
-                       <input id="file-upload" type="file" multiple className="hidden" accept="image/*" onChange={e => { if (e.target.files) setUploadQueue(Array.from(e.target.files)); }} />
                        <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center mx-auto mb-2 text-palma-muted group-hover:bg-white group-hover:text-palma-primary group-hover:shadow-md transition-all">
                          <ImageIcon className="w-5 h-5" />
                        </div>
                        <p className="text-[10px] font-bold text-slate-400 group-hover:text-palma-navy transition-colors">
                          {uploadQueue.length > 0 ? `${uploadQueue.length} ${t.common.filesSelected}` : t.common.uploadHint}
                        </p>
-                    </div>
+                    </label>
                     {/* Existing Images Preview */}
                     {productForm.images && productForm.images.length > 0 && (
                         <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
                             {productForm.images.map((url, idx) => (
                                 <div key={idx} className="w-16 h-16 rounded-lg overflow-hidden border border-slate-200 relative group shrink-0">
                                     <img src={url} loading="lazy" className="w-full h-full object-cover" />
-                                    <button type="button" onClick={() => handleRemoveImage(idx)} className="absolute top-0 right-0 bg-red-500 text-white p-0.5 rounded-bl-lg opacity-0 group-hover:opacity-100 transition"><X className="w-3 h-3" /></button>
+                                    <button type="button" onClick={(ev) => { ev.preventDefault(); handleRemoveImage(idx); }} className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-bl-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition touch-manipulation" aria-label={lang === 'ar' ? 'حذف الصورة' : 'Remove image'}><X className="w-3.5 h-3.5" /></button>
                                 </div>
                             ))}
                         </div>
