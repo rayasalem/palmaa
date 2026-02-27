@@ -157,8 +157,10 @@ export const automateShipmentCreation = async (order: Order, merchant: User): Pr
 };
 
 export const getInternalCities = (): City[] => palestineVillages;
-export const getInternalVillages = (cityId: number): Village[] => {
-  const city = palestineVillages.find(c => c.id === cityId);
+export const getInternalVillages = (cityId: number | string): Village[] => {
+  const id = typeof cityId === 'number' ? cityId : parseInt(String(cityId), 10);
+  if (Number.isNaN(id)) return [];
+  const city = palestineVillages.find(c => c.id === id);
   return city ? city.villages : [];
 };
 export const resolveLocationName = (id: number, type: 'city' | 'village', lang: 'ar' | 'en' | 'he' = 'ar'): string => {

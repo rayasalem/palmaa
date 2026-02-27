@@ -9,7 +9,6 @@ import Logo from './Logo';
 import { getInternalCities, getInternalVillages } from '../services/flashlineService';
 import { useToast } from './ToastProvider';
 import { Mail, CheckCircle, RefreshCcw, FileText } from 'lucide-react';
-import { MERCHANT_TERMS_TITLE_AR, MERCHANT_TERMS_FULL_TEXT_AR, MERCHANT_TERMS_FULL_TEXT_EN } from '../content/merchantTerms';
 
 interface RegisterMerchantProps {
   onRegister: (user: User) => void;
@@ -33,7 +32,6 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
   const [loading, setLoading] = useState(false);
   // UI-only subscription plan selection (does not change backend logic yet)
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'paid'>('free');
-  const [termsAccepted, setTermsAccepted] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const [emailNotSent, setEmailNotSent] = useState(false);
   const [formData, setFormData] = useState({
@@ -94,9 +92,10 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
   };
 
   const handleCityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const cityId = parseInt(e.target.value);
+    const raw = e.target.value;
+    const cityId = raw === '' ? NaN : parseInt(raw, 10);
     const city = cities.find(c => c.id === cityId);
-    if (city) {
+    if (city && !Number.isNaN(cityId)) {
       setSelectedCityId(cityId);
       setSelectedRegionId(city.regionId);
       setSelectedVillageId(undefined);
@@ -150,17 +149,6 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
         lang === 'en'
           ? 'All fields marked * are required including location'
           : 'جميع الحقول المطلوبة * يجب ملؤها بما في ذلك الموقع';
-      setError(msg);
-      showToast(msg, 'warning');
-      return false;
-    }
-    if (!termsAccepted) {
-      const msg =
-        lang === 'en'
-          ? 'You must agree to the merchant terms and conditions before registering.'
-          : lang === 'he'
-          ? 'חובה לאשר את תנאי השימוש של החנויות לפני השלמת ההרשמה.'
-          : 'يجب الموافقة على الشروط والأحكام الخاصة بالمتاجر قبل إكمال التسجيل.';
       setError(msg);
       showToast(msg, 'warning');
       return false;
@@ -407,13 +395,13 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
                   required
                   className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none appearance-none"
                   onChange={handleCityChange}
-                  value={selectedCityId || ''}
+                  value={selectedCityId !== undefined && selectedCityId !== null ? String(selectedCityId) : ''}
                 >
                   <option value="">
                     {lang === 'ar' ? 'اختر المدينة...' : lang === 'he' ? 'בחר עיר...' : 'Select City...'}
                   </option>
                   {cities.map(c => (
-                    <option key={c.id} value={c.id}>
+                    <option key={c.id} value={String(c.id)}>
                       {lang === 'en' ? c.nameEn : c.nameAr}
                     </option>
                   ))}
@@ -430,13 +418,13 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
                 disabled={!selectedCityId}
                 className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none disabled:opacity-50 appearance-none"
                 onChange={handleVillageChange}
-                value={selectedVillageId || ''}
+                value={selectedVillageId !== undefined && selectedVillageId !== null ? String(selectedVillageId) : ''}
               >
                 <option value="">
                   {lang === 'ar' ? 'اختر المنطقة...' : lang === 'he' ? 'בחר אזור...' : 'Select Area...'}
                 </option>
                 {availableVillages.map(v => (
-                  <option key={v.id} value={v.id}>
+                  <option key={v.id} value={String(v.id)}>
                     {lang === 'en' ? v.nameEn : v.nameAr}
                   </option>
                 ))}
@@ -455,38 +443,6 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
                 defaultValue={formData.password}
                 onChange={handleChange}
               />
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-start gap-2 text-xs">
-                <input
-                  id="merchant-terms"
-                  type="checkbox"
-                  className="mt-1 h-4 w-4 rounded border-slate-300 text-palma-primary focus:ring-palma-primary"
-                  checked={termsAccepted}
-                  onChange={e => setTermsAccepted(e.target.checked)}
-                />
-                <label htmlFor="merchant-terms" className="text-[11px] text-slate-600 leading-relaxed cursor-pointer">
-                  {lang === 'ar'
-                    ? <>
-                        أوافق على{' '}
-                        <button
-                          type="button"
-                          className="text-palma-primary underline font-semibold"
-                          onClick={() => {
-                            if (typeof window !== 'undefined') {
-                              window.location.hash = '#/terms';
-                            }
-                          }}
-                        >
-                          الشروط والأحكام الخاصة بالمتاجر المشتركة في المنصة
-                        </button>
-                      </>
-                    : lang === 'he'
-                    ? 'אני מאשר/ת את תנאי השימוש של החנויות בפלטפורמה.'
-                    : 'I agree to the merchant terms and conditions of the marketplace platform.'}
-                </label>
-              </div>
             </div>
 
             <button

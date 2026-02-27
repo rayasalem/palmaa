@@ -6,6 +6,7 @@ import { productService } from '../services/productService';
 import { storageService } from '../services/storageService'; // Updated import
 import { FlashLineService, cancelLogestechsShipment } from '../services/flashlineService';
 import { createShipmentApi, cancelShipmentApi, getShipmentStatusApi } from '../services/shipmentApi';
+import { fetchMerchantOrders } from '../services/checkoutApi';
 import { getMerchantDashboard, type MerchantDashboardResponse } from '../services/merchantDashboardService';
 import { translations, getAuthErrorMessage, type Language } from '../translations';
 import { Package, Truck, Plus, Trash2, Image as ImageIcon, Search, LayoutDashboard, DollarSign, Box, ExternalLink, XCircle, MoreHorizontal, Filter, AlertCircle, Edit, Eye, EyeOff, X, CreditCard, Receipt } from 'lucide-react';
@@ -60,8 +61,41 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
       const myProducts = await productService.getByMerchantId(user.id);
       setProducts(myProducts);
 
-      const allOrders = marketStore.getOrders();
-      setOrders(allOrders.filter(o => o.merchantId === user.id || o.merchant_id === user.id));
+      try {
+        const res = await fetchMerchantOrders();
+        if (res.success && Array.isArray(res.orders)) {
+          const mapped: Order[] = res.orders.map((row: any) => ({
+            id: row.id,
+            merchant_id: row.merchant_id,
+            merchantId: row.merchant_id,
+            customer_id: row.customer_id,
+            customerId: row.customer_id,
+            totalAmount: row.total_amount ?? row.amount,
+            total_price_ils: row.total_amount ?? row.amount,
+            status: row.status || 'PENDING',
+            delivery_id: row.delivery_id,
+            shipmentId: row.delivery_id,
+            delivery_status: row.delivery_status,
+            shipping_name: row.shipping_name,
+            shipping_phone: row.shipping_phone,
+            shipping_address: row.shipping_address,
+            shippingAddress: {
+              cityName: row.shipping_address || row.city || '—',
+              addressDetails: row.shipping_address || '',
+              phone: row.shipping_phone,
+            },
+            date: row.created_at,
+            items: row.order_items || [],
+          }));
+          setOrders(mapped);
+        } else {
+          const fallback = marketStore.getOrders().filter(o => o.merchantId === user.id || o.merchant_id === user.id);
+          setOrders(fallback);
+        }
+      } catch (_) {
+        const fallback = marketStore.getOrders().filter(o => o.merchantId === user.id || o.merchant_id === user.id);
+        setOrders(fallback);
+      }
 
       try {
         const dash = await getMerchantDashboard();
@@ -767,13 +801,26 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
          <div className="bg-white rounded-3xl shadow-card border border-slate-100 overflow-hidden">
             <div className="p-6 sm:p-8 border-b border-slate-100 flex justify-between items-center bg-white">
                <h3 className="font-black text-palma-navy text-lg sm:text-xl">{t.common.recentOrders}</h3>
-               <button className="text-[10px] font-bold text-slate-500 hover:text-palma-primary flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg transition-colors border border-transparent hover:border-palma-primary/10">
-                 <Filter className="w-3.5 h-3.5" /> {t.common.filterViews}
+               <button type="button" onClick={() => refreshData()} disabled={loading} className="text-[10px] font-bold text-palma-primary hover:bg-palma-primaryLight flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-palma-border transition-colors disabled:opacity-50">
+                 {loading ? (lang === 'ar' ? 'جاري التحميل...' : 'Loading...') : (lang === 'ar' ? 'تحديث الطلبات' : 'Refresh orders')}
                </button>
+            </div>
+            <div className="px-6 sm:px-8 pt-4 pb-2">
+              <div className="bg-palma-primaryLight/40 border border-palma-primary/20 rounded-2xl p-4 text-center">
+                <p className="text-sm font-bold text-palma-navy mb-1">
+                  {lang === 'ar' ? 'يمكنك مراقبة حالة الشحن وتحديثها لكل طلب من زر «مراقبة حالة الطلب» في عمود الإجراءات.' : lang === 'he' ? 'ניתן לעקוב אחר סטטוס המשלוח ולעדכן אותו מכפתור «מעקב סטטוס» בעמודת הפעולות.' : 'You can track and update shipment status for each order using the "Track order status" button in the actions column.'}
+                </p>
+                <p className="text-[11px] text-slate-600">
+                  {lang === 'ar' ? 'بعد إنشاء الشحنة يظهر الزر لمراقبة الحالة أو إلغاء الشحن.' : 'After creating a shipment, the button appears to check status or cancel.'}
+                </p>
+              </div>
             </div>
             <div className="overflow-x-auto">
               {orders.length === 0 ? (
-                  <div className="p-16 text-center text-slate-400 font-bold text-sm">No orders yet.</div>
+                  <div className="p-16 text-center">
+                    <p className="text-slate-400 font-bold text-sm mb-2">{lang === 'ar' ? 'لا توجد طلبات حتى الآن.' : 'No orders yet.'}</p>
+                    <p className="text-[11px] text-slate-400">{lang === 'ar' ? 'ستظهر هنا الطلبات المرتبطة بمتجرك فور وصولها.' : 'Orders for your store will appear here when they come in.'}</p>
+                  </div>
               ) : (
                   <table className="min-w-full text-left rtl:text-right whitespace-nowrap">
                     <thead className="bg-slate-50/80">
@@ -828,10 +875,11 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                                   )}
                                   {(order.shipmentId || order.delivery_id) && order.status !== 'CANCELLED' && (
                                     <>
-                                      <button onClick={() => handleCheckStatus(order)} disabled={loading} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition border border-transparent hover:border-blue-100 bg-white shadow-sm" title={t.common.checkStatus}>
+                                      <button onClick={() => handleCheckStatus(order)} disabled={loading} className="inline-flex items-center gap-1.5 px-3 py-2 text-[10px] font-bold text-palma-primary hover:bg-palma-primaryLight rounded-xl border border-palma-primary/30 bg-white shadow-sm transition" title={t.common.checkStatus}>
                                           <Search className="w-3.5 h-3.5" />
+                                          {lang === 'ar' ? 'مراقبة حالة الطلب' : 'Track status'}
                                       </button>
-                                      <button onClick={() => handleCancelShipment(order)} disabled={loading} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition border border-transparent hover:border-red-100 bg-white shadow-sm" title={t.common.cancelShipment}>
+                                      <button onClick={() => handleCancelShipment(order)} disabled={loading} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition border border-transparent hover:border-red-100 bg-white shadow-sm" title={t.common.cancelShipment}>
                                           <XCircle className="w-3.5 h-3.5" />
                                       </button>
                                     </>

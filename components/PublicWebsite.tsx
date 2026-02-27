@@ -514,11 +514,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
             <div className="space-y-1 text-sm font-bold text-palma-muted">
               <p className="text-palma-primary hover:underline cursor-pointer">office@palma.ps</p>
               <p>{lang === 'ar' ? 'هاتف: 0599-000000' : 'Phone: +970 599 000 000'}</p>
-              <p>
-                {lang === 'ar'
-                  ? 'ر، فلسطين'
-                  : 'Ramallah, Palestine'}
-              </p>
+              <p>{lang === 'ar' ? 'فلسطين 🇵🇸' : lang === 'he' ? 'פלסטין 🇵🇸' : 'Palestine 🇵🇸'}</p>
             </div>
             <div className="space-y-1 text-xs font-bold text-palma-muted">
               <p>{lang === 'ar' ? 'تابعنا على:' : 'Follow us:'}</p>
@@ -537,7 +533,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
           </div>
         </div>
         <div className="max-w-7xl mx-auto px-6 pt-16 mt-16 border-t border-palma-border flex flex-col md:flex-row justify-between items-center gap-6">
-            <p className="text-[10px] font-bold text-palma-muted uppercase tracking-widest">© {new Date().getFullYear()} Palma Marketplace. All rights reserved.</p>
+            <p className="text-[10px] font-bold text-palma-muted uppercase tracking-widest">{lang === 'ar' ? `© ${new Date().getFullYear()} فلسطين 🇵🇸` : lang === 'he' ? `© ${new Date().getFullYear()} פלסטין 🇵🇸` : `© ${new Date().getFullYear()} Palestine 🇵🇸`}</p>
             <div className="flex gap-8 text-[9px] font-black uppercase text-palma-muted/60">
                 <span className="hover:text-palma-navy cursor-pointer transition-colors">{t.footer.privacy}</span>
                 <span onClick={onOpenTerms} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && onOpenTerms?.()} className="hover:text-palma-navy cursor-pointer transition-colors">{t.footer.terms}</span>

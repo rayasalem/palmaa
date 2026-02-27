@@ -5,6 +5,7 @@ import { requireRole } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 router.get('/', authenticate, orderController.listMyOrders);
+router.get('/merchant', authenticate, requireRole('MERCHANT'), orderController.listMerchantOrders);
 router.post('/', optionalAuth, orderController.createOrder);
 router.patch('/:id/cancel', authenticate, orderController.cancelOrder);
 router.patch('/:id/invoice', authenticate, orderController.updateOrderInvoice);

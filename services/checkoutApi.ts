@@ -107,6 +107,11 @@ export async function fetchMyOrders(): Promise<{ success: boolean; orders: Order
   return request<{ success: boolean; orders: Order[] }>('/api/orders');
 }
 
+/** طلبات التاجر (مرتبطة بمتجره فقط). */
+export async function fetchMerchantOrders(): Promise<{ success: boolean; orders: any[] }> {
+  return request<{ success: boolean; orders: any[] }>('/api/orders/merchant');
+}
+
 export async function createPayment(
   orderId: string,
   amount: number,

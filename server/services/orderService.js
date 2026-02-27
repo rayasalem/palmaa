@@ -88,6 +88,19 @@ async function getOrdersByCustomerId(customerId) {
   return { data: data || [], error: null };
 }
 
+async function getOrdersByMerchantId(merchantId) {
+  const { data, error } = await supabase
+    .from(ORDERS_TABLE)
+    .select('*, order_items(*)')
+    .eq('merchant_id', merchantId)
+    .order('created_at', { ascending: false });
+  if (error) {
+    console.error('[orderService] getOrdersByMerchantId error:', error.message);
+    return { data: [], error };
+  }
+  return { data: data || [], error: null };
+}
+
 async function cancelOrder(orderId, customerId) {
   const { data: order, error: fetchErr } = await supabase
     .from(ORDERS_TABLE)
@@ -150,4 +163,4 @@ async function completeOrder(orderId) {
   return { data, error: null };
 }
 
-export { createOrder, getOrderById, getOrdersByCustomerId, cancelOrder, updateOrderInvoice, completeOrder, ORDERS_TABLE, ORDER_ITEMS_TABLE };
+export { createOrder, getOrderById, getOrdersByCustomerId, getOrdersByMerchantId, cancelOrder, updateOrderInvoice, completeOrder, ORDERS_TABLE, ORDER_ITEMS_TABLE };

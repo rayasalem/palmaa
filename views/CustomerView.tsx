@@ -76,6 +76,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingCancelId, setProcessingCancelId] = useState<string | null>(null);
+  const [checkingStatusId, setCheckingStatusId] = useState<string | null>(null);
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
   const [showCheckoutForm, setShowCheckoutForm] = useState(false);
   const [checkoutStep, setCheckoutStep] = useState<'form' | 'summary'>('form');
@@ -417,6 +418,34 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
       showToast(getAuthErrorMessage(err?.message || '', lang) || err?.message || t.common.error, 'error');
     } finally {
       setProcessingCancelId(null);
+    }
+  };
+
+  const handleCheckOrderStatus = async (order: Order) => {
+    const deliveryId = order.delivery_id || order.shipmentId;
+    if (!deliveryId) {
+      showToast(lang === 'ar' ? 'لا يوجد رقم شحنة لهذا الطلب بعد.' : 'No shipment ID for this order yet.', 'info');
+      return;
+    }
+    setCheckingStatusId(order.id);
+    try {
+      const status = await getShipmentStatus(deliveryId);
+      if (status) {
+        await marketStore.updateLocalOrderStatus(order.id, status);
+        const displayStatus = mapFlashlineStatus(status);
+        showToast(
+          lang === 'ar' ? `حالة الطلب: ${displayStatus}` : `Order status: ${displayStatus}`,
+          'success'
+        );
+        loadApiOrders();
+        if (onRefresh) onRefresh();
+      } else {
+        showToast(lang === 'ar' ? 'تعذر جلب حالة الشحن. حاول لاحقاً.' : 'Could not fetch shipment status. Try again later.', 'warning');
+      }
+    } catch (err: any) {
+      showToast(getAuthErrorMessage(err?.message || '', lang) || err?.message || t.common.error, 'error');
+    } finally {
+      setCheckingStatusId(null);
     }
   };
 
@@ -937,6 +966,25 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
                               <span className="text-slate-500 font-medium">{o.shipping_address || o.shippingAddress?.addressDetails || o.address || ''}</span>
                             </p>
                          </div>
+                         {(o.delivery_id || o.shipmentId) && !isCancelled && !isDelivered && (
+                           <div className="bg-white rounded-xl p-4 border border-palma-primary/20 space-y-3">
+                             <p className="text-xs font-bold text-palma-navy">
+                               {lang === 'ar' ? 'يمكنك مراقبة حالة الشحن وتحديثها مباشرة من هنا.' : 'You can track and update your shipment status here.'}
+                             </p>
+                             <button
+                               type="button"
+                               onClick={() => handleCheckOrderStatus(o)}
+                               disabled={checkingStatusId === o.id}
+                               className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-palma-primary text-white hover:bg-palma-navy transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                             >
+                               {checkingStatusId === o.id ? (
+                                 <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> {lang === 'ar' ? 'جاري التحقق...' : 'Checking...'}</>
+                               ) : (
+                                 <><Truck className="w-4 h-4" /> {lang === 'ar' ? 'مراقبة حالة الطلب' : 'Track order status'}</>
+                               )}
+                             </button>
+                           </div>
+                         )}
                          {isApiOrder && isPending && (
                            <div className="pt-4 border-t border-slate-200">
                              <button 

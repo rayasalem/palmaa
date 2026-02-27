@@ -83,6 +83,21 @@ async function listMyOrders(req, res) {
   }
 }
 
+async function listMerchantOrders(req, res) {
+  try {
+    const merchantId = req.auth && req.auth.sub;
+    if (!merchantId) return res.status(401).json({ success: false, error: 'Authentication required' });
+    const { data, error } = await orderService.getOrdersByMerchantId(merchantId);
+    if (error) {
+      return res.status(500).json({ success: false, error: error.message || 'Failed to fetch orders' });
+    }
+    return res.status(200).json({ success: true, orders: data });
+  } catch (err) {
+    console.error('[orderController] listMerchantOrders unexpected:', err);
+    return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
+  }
+}
+
 async function cancelOrder(req, res) {
   try {
     const customerId = req.auth && req.auth.sub;
@@ -139,4 +154,4 @@ async function completeOrder(req, res) {
   }
 }
 
-export { createOrder, getOrder, listMyOrders, cancelOrder, updateOrderInvoice, completeOrder };
+export { createOrder, getOrder, listMyOrders, listMerchantOrders, cancelOrder, updateOrderInvoice, completeOrder };
