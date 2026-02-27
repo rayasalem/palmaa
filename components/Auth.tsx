@@ -119,12 +119,15 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
       return;
     }
 
+    if (role === 'MERCHANT') {
+      // التاجر يمر أولاً على صفحة الشروط والأحكام ثم الفورم ثم تأكيد الإيميل ثم الداشبورد
+      onOpenTerms?.();
+      return;
+    }
     if (role === 'BROKER') {
       setView('REGISTER_BROKER');
     } else if (role === 'CUSTOMER') {
       setView('REGISTER_CUSTOMER');
-    } else if (role === 'MERCHANT') {
-      setView('REGISTER_MERCHANT');
     } else {
       setView('ROLE_SELECT');
     }
