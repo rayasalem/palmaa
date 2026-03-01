@@ -59,7 +59,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({ lang, onVi
   return (
     <div className="max-w-2xl mx-auto p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
+        <h1 className="font-heading text-2xl font-black text-palma-navy flex items-center gap-2">
           <Bell className="w-6 h-6" />
           {lang === 'en' ? 'Notifications' : 'الإشعارات'}
         </h1>

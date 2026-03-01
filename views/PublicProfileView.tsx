@@ -148,7 +148,7 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({ lang, currentUser
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="bg-white p-10 rounded-[2rem] shadow-xl text-center max-w-md w-full">
            <span className="text-4xl block mb-4">🔍</span>
-           <h3 className="text-xl font-black text-slate-900 mb-2">User Not Found</h3>
+           <h3 className="font-heading text-xl font-black text-palma-navy mb-2">User Not Found</h3>
            <button onClick={onBack} className="bg-slate-900 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all">Go Back</button>
         </div>
       </div>
@@ -218,7 +218,7 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({ lang, currentUser
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                        <div>
                           <div className="flex items-center gap-3 mb-1">
-                             <h1 className="text-3xl font-black text-slate-900 leading-tight">{profileUser.name}</h1>
+                             <h1 className="font-heading text-3xl font-black text-palma-navy leading-tight">{profileUser.name}</h1>
                              {profileUser.isApproved && <span className="text-blue-500 text-lg" title="Verified">✓</span>}
                           </div>
                           <div className="flex flex-wrap gap-4 text-xs font-bold text-slate-500">
@@ -251,7 +251,7 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({ lang, currentUser
         {/* Content Section */}
         {profileUser.role === Role.MERCHANT && (
            <div className="space-y-8">
-              <h2 className="text-2xl font-black text-slate-900 px-2">{t.common.products} ({products.length})</h2>
+              <h2 className="font-heading text-2xl font-black text-palma-navy px-2">{t.common.products} ({products.length})</h2>
               {products.length === 0 ? (
                  <div className="text-center py-20 bg-white rounded-[3rem] border border-slate-100">
                     <p className="text-slate-400 font-bold">{t.common.noProducts}</p>
@@ -277,7 +277,7 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({ lang, currentUser
 
         {profileUser.role === Role.BROKER && (
            <div className="space-y-8">
-              <h2 className="text-2xl font-black text-slate-900 px-2 flex items-center gap-2"><TrendingUp className="w-6 h-6" /> {lang === 'en' ? 'Endorsed Products' : 'المنتجات الموصى بها'}</h2>
+              <h2 className="font-heading text-2xl font-black text-palma-navy px-2 flex items-center gap-2"><TrendingUp className="w-6 h-6" /> {lang === 'en' ? 'Endorsed Products' : 'المنتجات الموصى بها'}</h2>
               {sharedProducts.length === 0 ? (
                  <div className="text-center py-20 bg-white rounded-[3rem] border border-slate-100">
                     <p className="text-slate-400 font-bold">No endorsements yet.</p>

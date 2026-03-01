@@ -224,12 +224,12 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
       dir={lang === 'en' ? 'ltr' : 'rtl'}
     >
       <div className="max-w-2xl w-full bg-white p-12 rounded-[2rem] shadow-2xl border border-slate-100 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="text-center mb-10">
+        <div className="heading-block mb-10">
           <div className="flex justify-center mb-6">
             <Logo size="medium" />
           </div>
-          <h1 className="text-2xl font-black text-slate-900">{t.auth.joinMerchant}</h1>
-          <p className="text-slate-400 font-bold text-[10px] uppercase mt-2">
+          <h1 className="heading-block-title font-heading text-palma-navy">{t.auth.joinMerchant}</h1>
+          <p className="heading-block-sub">
             {t.auth.merchantSubtitle}
           </p>
         </div>

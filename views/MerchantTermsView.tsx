@@ -30,7 +30,7 @@ export const MerchantTermsView: React.FC<MerchantTermsViewProps> = ({ lang, onBa
           {lang === 'ar' ? 'رجوع' : 'Back'}
         </button>
 
-        <h1 className="text-2xl font-black text-slate-900 mb-8">
+        <h1 className="font-heading text-2xl font-black text-palma-navy mb-8">
           {terms.title}
         </h1>
 

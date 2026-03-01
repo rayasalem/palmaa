@@ -157,15 +157,15 @@ export const BrokerView: React.FC<Props> = ({ lang, user, onRefresh, activeTab, 
   const pendingCommission = myCommissions.filter(c => c.status === 'PENDING').reduce((s, c) => s + c.amount, 0);
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-7xl mx-auto">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-7xl mx-auto font-heading">
       
       {/* Marketing Description Modal */}
       {marketingModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" onClick={() => setMarketingModal(null)}>
           <div className="bg-white rounded-[3rem] p-10 max-w-lg w-full space-y-8 animate-in zoom-in-95 shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="text-center">
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">{lang === 'en' ? 'Promote Product' : 'ترويج المنتج'}</h3>
-              <p className="text-[10px] font-black uppercase text-slate-400 mt-2 tracking-widest">{lang === 'en' ? 'Customize your marketing message' : 'خصص رسالتك التسويقية لجمهورك'}</p>
+            <div className="heading-block">
+              <h3 className="heading-block-title font-heading">{lang === 'en' ? 'Promote Product' : 'ترويج المنتج'}</h3>
+              <p className="heading-block-sub">{lang === 'en' ? 'Customize your marketing message' : 'خصص رسالتك التسويقية لجمهورك'}</p>
             </div>
             
             <div className="space-y-4">
@@ -233,12 +233,12 @@ export const BrokerView: React.FC<Props> = ({ lang, user, onRefresh, activeTab, 
            </div>
            <div className="absolute -right-4 -bottom-4 text-7xl opacity-10 group-hover:scale-125 transition-transform duration-700">🌍</div>
         </div>
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm group hover:shadow-md transition-all">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-palma-border shadow-card group hover:shadow-card-hover transition-all">
            <p className="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-widest">{lang === 'en' ? 'Pending Commission' : 'عمولات معلقة'}</p>
            <h3 className="text-3xl font-black text-slate-900">₪{pendingCommission.toFixed(0)}</h3>
            <p className="text-[10px] font-bold text-amber-500 mt-2">{lang === 'en' ? 'Processing orders' : 'طلبات قيد التنفيذ'}</p>
         </div>
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm group hover:shadow-md transition-all">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-palma-border shadow-card group hover:shadow-card-hover transition-all">
            <p className="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-widest">{t.common.clicks}</p>
            <h3 className="text-3xl font-black text-slate-900">{user.clicks || 0}</h3>
            <p className="text-[10px] font-bold text-palma-primary mt-2">{lang === 'en' ? 'Traffic generated' : 'زيارات تم جلبها'}</p>
@@ -246,7 +246,7 @@ export const BrokerView: React.FC<Props> = ({ lang, user, onRefresh, activeTab, 
       </div>
 
       {/* Tabs */}
-      <div className="bg-white p-4 rounded-[2rem] border border-slate-100 flex overflow-x-auto scrollbar-hide gap-2">
+      <div className="bg-white p-4 rounded-[2rem] border border-palma-border shadow-soft flex overflow-x-auto scrollbar-hide gap-2">
          {[
           { id: 'promote', label: lang === 'en' ? 'Market Promotion' : 'سوق الترويج', icon: '🏪' },
           { id: 'portfolio', label: lang === 'en' ? 'My Portfolio' : 'محفظتي', icon: '💼' },
@@ -269,7 +269,7 @@ export const BrokerView: React.FC<Props> = ({ lang, user, onRefresh, activeTab, 
       {activeTab === 'promote' && (
         <div className="space-y-6">
           <div className="flex justify-between items-center px-4">
-            <h2 className="text-xl font-black text-slate-900">{lang === 'en' ? 'Find Products to Promote' : 'اكتشف منتجات للترويج'}</h2>
+            <h2 className="font-heading text-xl font-black text-palma-navy">{lang === 'en' ? 'Find Products to Promote' : 'اكتشف منتجات للترويج'}</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {products.map(p => {
@@ -277,7 +277,7 @@ export const BrokerView: React.FC<Props> = ({ lang, user, onRefresh, activeTab, 
               const existingShare = sharedMeta.find(s => s.product_id === p.id);
               const displayImage = p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/400x400?text=No+Image';
               return (
-                <div key={p.id} className="bg-white rounded-[2.5rem] p-4 border border-slate-100 group shadow-sm hover:shadow-xl transition-all duration-300">
+                <div key={p.id} className="bg-white rounded-[2.5rem] p-4 border border-palma-border group shadow-card hover:shadow-card-hover transition-all duration-300 card-hover-lift">
                   <div 
                     className="aspect-square rounded-[2rem] overflow-hidden bg-slate-50 mb-4 relative cursor-pointer"
                     onClick={() => onViewProduct && onViewProduct(p.id)}
@@ -330,9 +330,9 @@ export const BrokerView: React.FC<Props> = ({ lang, user, onRefresh, activeTab, 
       {activeTab === 'portfolio' && (
         <div className="space-y-6 animate-in fade-in duration-500">
           <div className="flex justify-between items-center px-4">
-            <div>
-              <h2 className="text-xl font-black text-slate-900">{lang === 'en' ? 'My Promotional Page' : 'صفحتي الترويجية'}</h2>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{lang === 'en' ? 'Managing your unique product endorsements' : 'إدارة توصياتك ومنتجاتك'} </p>
+            <div className="heading-block heading-block-sm text-left">
+              <h2 className="heading-block-title font-heading text-palma-navy">{lang === 'en' ? 'My Promotional Page' : 'صفحتي الترويجية'}</h2>
+              <p className="heading-block-sub">{lang === 'en' ? 'Managing your unique product endorsements' : 'إدارة توصياتك ومنتجاتك'}</p>
             </div>
           </div>
           
@@ -433,7 +433,7 @@ export const BrokerView: React.FC<Props> = ({ lang, user, onRefresh, activeTab, 
       {activeTab === 'earnings' && (
         <div className="bg-white border border-slate-100 rounded-[2rem] overflow-hidden shadow-sm animate-in fade-in duration-500">
           <div className="p-8 border-b border-slate-100 flex justify-between items-center">
-             <h3 className="text-lg font-black text-slate-900">{t.common.earnings} History</h3>
+             <h3 className="font-heading text-lg font-black text-palma-navy">{t.common.earnings} History</h3>
              <span className="text-[10px] font-black uppercase bg-palma-primaryLight text-palma-primary px-3 py-1 rounded-lg">Total: ₪{totalEarned.toFixed(2)}</span>
           </div>
           <table className="min-w-full text-xs">

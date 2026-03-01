@@ -4,6 +4,7 @@ import { marketStore } from '../store';
 import { productService } from '../services/productService'; // Import Service
 import { Product } from '../types';
 import Logo from '../components/Logo';
+import { prefetchComponent, prefetchProductData } from '../prefetch';
 import { Language, translations } from '../translations';
 import { ArrowRight, ShoppingCart, Search, Filter } from 'lucide-react';
 
@@ -100,21 +101,33 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-palma-text" dir={lang === 'en' ? 'ltr' : 'rtl'}>
+    <div className="min-h-screen bg-[#f8f7fa] font-sans text-palma-text" dir={lang === 'en' ? 'ltr' : 'rtl'}>
       {/* Navbar */}
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 shadow-sm">
+      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-palma-border shadow-soft font-heading">
         <div className="max-w-[1600px] mx-auto px-6 h-16 sm:h-20 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <button onClick={onBack} className="p-3 hover:bg-slate-50 rounded-full transition-colors text-slate-400 group">
+            <button onClick={onBack} onMouseEnter={() => prefetchComponent('PublicWebsite')} onFocus={() => prefetchComponent('PublicWebsite')} className="p-3 hover:bg-palma-primaryLight/50 rounded-xl transition-all text-palma-muted hover:text-palma-primary group">
                <ArrowRight className="w-5 h-5 group-hover:-translate-x-1 transition-transform rtl:group-hover:translate-x-1" />
             </button>
-            <div onClick={onBack} className="cursor-pointer"><Logo size="small" /></div>
+            <div onClick={onBack} className="cursor-pointer hover:opacity-90 transition-opacity"><Logo size="small" /></div>
           </div>
-          <button onClick={onLoginClick} className="btn-primary px-6 py-2.5 text-xs uppercase tracking-wider">
+          <button onClick={onLoginClick} className="btn-primary px-6 py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-transform">
              {t.auth.login}
           </button>
         </div>
       </nav>
+
+      {/* Hero منصة التسوق */}
+      <section className="relative py-8 sm:py-12 px-4 border-b border-palma-border/50 bg-gradient-to-b from-white/80 to-transparent">
+        <div className="max-w-[1600px] mx-auto text-center">
+          <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-black text-palma-navy tracking-tight mb-2">
+            {lang === 'ar' ? 'منصة التسوق' : lang === 'he' ? 'פלטפורמת הקניות' : 'Marketplace'}
+          </h1>
+          <p className="text-sm sm:text-base text-palma-muted font-medium max-w-xl mx-auto">
+            {lang === 'ar' ? 'اكتشف منتجات من تجار موثوقين — تصفّح، قارن، واطلب بسهولة' : lang === 'he' ? 'גלה מוצרים ממרכולים מהימנים' : 'Discover products from trusted merchants — browse, compare, and order with ease'}
+          </p>
+        </div>
+      </section>
 
       <main className="pt-8 pb-20 px-4 sm:px-8 max-w-[1600px] mx-auto flex flex-col lg:flex-row gap-10">
         
@@ -310,7 +323,9 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                     <div 
                       key={p.id} 
                       onClick={() => onProductClick(p.id)}
-                      className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-card hover:shadow-hover transition-all duration-500 group cursor-pointer flex flex-col h-full hover:-translate-y-2"
+                      onMouseEnter={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}
+                      onFocus={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}
+                      className="bg-white rounded-3xl overflow-hidden border border-palma-border shadow-card hover:shadow-card-hover transition-all duration-500 group cursor-pointer flex flex-col h-full hover:-translate-y-2 card-hover-lift"
                     >
                       <div className="aspect-square overflow-hidden bg-slate-50 relative m-4 rounded-2xl">
                         <img src={displayImage} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={p.name} />

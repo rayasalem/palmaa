@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@100;200;300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+/* خط الموقع: Cairo — شكل قريب من الرقعة، جذاب للتسويق والتفاعل */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -18,10 +20,59 @@
 
 @layer base {
   body {
-    @apply font-sans bg-slate-50 text-slate-700 overflow-x-hidden antialiased;
+    font-family: 'Cairo', 'Inter', system-ui, sans-serif;
+    @apply bg-slate-50 text-slate-700 overflow-x-hidden antialiased;
   }
   h1, h2, h3, h4, h5, h6 {
+    font-family: 'Cairo', 'Inter', system-ui, sans-serif;
     @apply text-palma-navy font-bold;
+  }
+}
+
+/* عناوين كريتف — IBM Plex Sans Arabic، مظهر احترافي تقني */
+@layer components {
+  .heading-block {
+    @apply text-center;
+  }
+  .heading-block-title {
+    font-family: 'Cairo', Inter, system-ui, sans-serif;
+    @apply text-2xl font-bold text-palma-navy tracking-tight mb-2;
+    letter-spacing: -0.02em;
+  }
+  .heading-block-sub {
+    font-family: 'Cairo', Inter, system-ui, sans-serif;
+    @apply text-sm font-medium text-slate-400;
+  }
+  .heading-block-sm .heading-block-title {
+    @apply text-xl;
+  }
+  .heading-block-lg .heading-block-title {
+    font-family: 'Cairo', Inter, system-ui, sans-serif;
+    @apply text-3xl font-bold text-palma-navy tracking-tight;
+    letter-spacing: -0.025em;
+  }
+  /* عناوين كريتف: خط سفلي بلون العلامة */
+  .heading-block-title-creative {
+    font-family: 'Cairo', Inter, system-ui, sans-serif;
+    @apply text-2xl font-bold text-palma-navy tracking-tight mb-2 inline-block;
+    letter-spacing: -0.02em;
+    border-bottom: 3px solid rgba(225, 6, 0, 0.35);
+    padding-bottom: 0.35rem;
+  }
+  .heading-block-lg .heading-block-title-creative {
+    @apply text-3xl;
+    letter-spacing: -0.025em;
+  }
+  /* تمييز كلمات في العناوين – أسلوب Placio (خلفية مستديرة بنفسجي/وردي فاتح) */
+  .title-highlight {
+    @apply rounded-lg px-2 py-0.5;
+    background-color: rgba(216, 180, 254, 0.4);
+  }
+  /* تمييز بسيط للعناوين على خلفية داكنة — بدون صناديق بيضاء، مظهر عالمي */
+  .title-highlight-dark {
+    @apply font-black;
+    color: rgba(255, 255, 255, 0.98);
+    text-shadow: 0 0 40px rgba(255, 255, 255, 0.15);
   }
 }
 
@@ -55,6 +106,18 @@
   }
 }
 
+/* Footer خلفية مميزة مع نمط هندسي خفيف */
+.footer-pattern {
+  background-color: #f4f2f7;
+  background-image:
+    linear-gradient(135deg, rgba(148, 163, 184, 0.12) 25%, transparent 25%),
+    linear-gradient(225deg, rgba(148, 163, 184, 0.12) 25%, transparent 25%),
+    linear-gradient(315deg, rgba(148, 163, 184, 0.08) 25%, transparent 25%),
+    linear-gradient(45deg, rgba(148, 163, 184, 0.08) 25%, transparent 25%);
+  background-size: 24px 24px;
+  background-position: 0 0, 12px 0, 12px -12px, 0 12px;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -64,14 +127,78 @@
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* خلفيات بيس لكل سكشن — تبادل بين ألوان ونماذج */
+.section-bg-1 { background-color: #ffffff; }
+.section-bg-2 {
+  background-color: #f8fafc;
+  background-image: radial-gradient(circle at 20% 80%, rgba(225, 6, 0, 0.04) 0%, transparent 50%);
+}
+.section-bg-3 {
+  background-color: #f1f5f9;
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, transparent 30%);
+}
+.section-bg-4 {
+  background-color: #fffbfb;
+  background-image: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(225, 6, 0, 0.06) 0%, transparent 60%);
+}
+.section-bg-5 {
+  background-color: #f8fafc;
+  background-image: linear-gradient(135deg, rgba(241, 245, 249, 0.8) 0%, rgba(248, 250, 252, 1) 100%);
+}
+.section-bg-6 {
+  background-color: #f1f5f9;
+  background-image: radial-gradient(circle at 80% 20%, rgba(225, 6, 0, 0.03) 0%, transparent 45%);
+}
+.section-bg-7 {
+  background-color: #fafafa;
+  background-image: linear-gradient(0deg, rgba(248, 250, 252, 1) 0%, rgba(241, 245, 249, 0.6) 100%);
+}
+.section-bg-8 {
+  background-color: #f4f2f7;
+  background-image: linear-gradient(180deg, transparent 0%, rgba(148, 163, 184, 0.06) 100%);
+}
+.section-bg-9 { background-color: #ffffff; }
+.section-bg-10 {
+  background-color: #f8fafc;
+  background-image: radial-gradient(ellipse 60% 80% at 50% 100%, rgba(225, 6, 0, 0.04) 0%, transparent 50%);
+}
+
 /* Animation Utilities */
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @keyframes zoomIn { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes glowPulse { 0%, 100% { box-shadow: 0 0 20px rgba(225, 6, 0, 0.35); } 50% { box-shadow: 0 0 32px rgba(225, 6, 0, 0.5); } }
+@keyframes shine { 0% { left: -100%; } 100% { left: 100%; } }
+@keyframes countPop { 0% { transform: scale(0.9); opacity: 0; } 60% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
 
 .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
 .animate-slide-up { animation: slideUp 0.5s ease-out forwards; }
 .animate-in.zoom-in-95 { animation: zoomIn 0.2s ease-out forwards; }
+.animate-float { animation: float 4s ease-in-out infinite; }
+.animate-glow-pulse { animation: glowPulse 2.5s ease-in-out infinite; }
+.animate-count-pop { animation: countPop 0.5s ease-out forwards; }
+
+/* تفاعلات جذب الزبون */
+.card-hover-lift {
+  @apply transition-all duration-300;
+}
+.card-hover-lift:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(225, 6, 0, 0.06);
+}
+.cta-glow {
+  box-shadow: 0 4px 24px rgba(225, 6, 0, 0.35);
+}
+.cta-glow:hover {
+  box-shadow: 0 8px 32px rgba(225, 6, 0, 0.45);
+}
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+.stagger-6 { animation-delay: 0.6s; }
 
 /* Focus states - brand primary */
 input:focus, select:focus, textarea:focus, button:focus-visible {
@@ -80,4 +207,69 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
 input:focus, select:focus, textarea:focus {
   border-color: var(--palma-primary);
   box-shadow: 0 0 0 3px rgba(225, 6, 0, 0.08);
+}
+
+/* لوحات التحكم — تصميم حديث */
+.dashboard-page {
+  @apply min-h-screen bg-gradient-to-b from-slate-50/80 to-white;
+}
+.dashboard-header {
+  @apply flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6;
+}
+.dashboard-title-wrap {
+  @apply flex items-center gap-4;
+}
+.dashboard-title-icon {
+  @apply flex items-center justify-center w-12 h-12 rounded-2xl bg-white border border-slate-200/80 shadow-sm text-palma-primary;
+}
+.dashboard-tabs {
+  @apply inline-flex flex-wrap gap-1 p-1.5 bg-white rounded-2xl border border-slate-200/80 shadow-sm;
+}
+.dashboard-tab {
+  @apply px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all duration-200;
+}
+.dashboard-tab-active {
+  @apply bg-palma-primary text-white shadow-md;
+}
+.dashboard-tab-inactive {
+  @apply text-slate-500 hover:text-palma-navy hover:bg-slate-50;
+}
+.dashboard-card {
+  @apply bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden;
+}
+.dashboard-card-body {
+  @apply p-6 sm:p-8;
+}
+.dashboard-table-wrap {
+  @apply overflow-x-auto;
+}
+.dashboard-table thead {
+  @apply bg-slate-50/80 border-b border-slate-100;
+}
+.dashboard-table th {
+  @apply px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-left rtl:text-right;
+}
+.dashboard-table tbody tr {
+  @apply border-b border-slate-50 hover:bg-slate-50/50 transition-colors;
+}
+.dashboard-table td {
+  @apply px-6 py-4 text-sm font-medium text-slate-700;
+}
+.dashboard-input-search {
+  @apply w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-medium placeholder:text-slate-400 focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 outline-none transition-all;
+}
+.dashboard-filter-pills {
+  @apply inline-flex flex-wrap gap-2 p-1.5 bg-slate-50 rounded-xl border border-slate-200;
+}
+.dashboard-filter-pill {
+  @apply px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all;
+}
+.dashboard-empty {
+  @apply flex flex-col items-center justify-center py-16 px-8 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 text-slate-400;
+}
+.dashboard-stat-card {
+  @apply bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden relative;
+}
+.dashboard-stat-card:hover {
+  border-color: rgba(225, 6, 0, 0.12);
 }

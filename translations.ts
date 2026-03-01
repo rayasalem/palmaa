@@ -240,7 +240,7 @@ const ar = {
     roleSubtitle: 'يرجى تحديد الغرض من استخدام المنصة',
     accountPendingTitle: 'حسابك قيد المراجعة',
     accountRejectedTitle: 'تم رفض الطلب',
-    accountPendingMsg: 'فريق الحوكمة التجارية لدينا يقوم حالياً بمراجعة بياناتك.',
+    accountPendingMsg: 'إدارة الموقع تقوم حالياً بمراجعة بياناتك.',
     accountRejectedMsg: 'تم رفض طلبك بناءً على إرشادات الجودة الحالية لدينا.',
     reviewTime: 'تستغرق دورة المراجعة القياسية من 24 إلى 48 ساعة عمل. ستتلقى إشعاراً آلياً بمجرد الموافقة.',
     accountId: 'معرف الحساب',
@@ -388,7 +388,7 @@ const ar = {
   hero: {
     registerNow: 'ابدأ الآن',
     join: 'سجل كتاجر الآن',
-    explore: 'تصفح الخدمات'
+    explore: 'تصفح المنتجات'
   }
 };
 
@@ -599,7 +599,7 @@ const en = {
     ...ar.auth,
     accountPendingTitle: 'Account Under Review',
     accountRejectedTitle: 'Request Rejected',
-    accountPendingMsg: 'Our governance team is currently reviewing your details.',
+    accountPendingMsg: 'Site management is currently reviewing your details.',
     accountRejectedMsg: 'Your professional request was rejected based on current guidelines.',
     reviewTime: 'Standard review cycle is 24-48 business hours. You will receive an automated notification once approved.',
     accountId: 'Account ID',
@@ -886,7 +886,7 @@ const he = {
     roleSubtitle: 'נא לציין את מטרת השימוש בפלטפורמה',
     accountPendingTitle: 'החשבון שלך בבדיקה',
     accountRejectedTitle: 'הבקשה נדחתה',
-    accountPendingMsg: 'צוות הבדיקות בודק כעת את הפרטים שלך.',
+    accountPendingMsg: 'הנהלת האתר בודקת כעת את הפרטים שלך.',
     accountRejectedMsg: 'בקשתך נדחתה בהתאם להנחיות.',
     reviewTime: 'משך הבדיקה 24–48 שעות. תקבל הודעה עם האישור.',
     accountId: 'מזהה חשבון',

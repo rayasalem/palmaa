@@ -29,7 +29,7 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({ lang, brokerId, onB
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="bg-white p-10 rounded-[2rem] shadow-xl text-center max-w-md w-full">
            <span className="text-4xl block mb-4">🔍</span>
-           <h3 className="text-xl font-black text-slate-900 mb-2">Broker Not Found</h3>
+           <h3 className="font-heading text-xl font-black text-palma-navy mb-2">Broker Not Found</h3>
            <p className="text-slate-500 text-sm mb-6">The link you followed may be broken or the broker is no longer active.</p>
            <button onClick={onBack} className="bg-slate-900 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all">Go Home</button>
         </div>
@@ -83,7 +83,7 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({ lang, brokerId, onB
                  
                  <div className="relative z-10">
                     <span className="bg-palma-primary/10 text-palma-primary px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest inline-block mb-2">Certified Partner</span>
-                    <h1 className="text-2xl font-black text-slate-900 leading-tight">{broker.name}</h1>
+                    <h1 className="font-heading text-2xl font-black text-palma-navy leading-tight">{broker.name}</h1>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Verified Broker</p>
                  </div>
 
@@ -120,7 +120,7 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({ lang, brokerId, onB
            <div className="lg:col-span-3 space-y-10">
               <div className="flex justify-between items-end px-4">
                  <div>
-                    <h2 className="text-4xl font-black text-slate-900 tracking-tight uppercase">{lang === 'en' ? 'My Top Picks' : 'مختاراتي المفضلة'}</h2>
+                    <h2 className="font-heading text-4xl font-black text-palma-navy tracking-tight uppercase">{lang === 'en' ? 'My Top Picks' : 'مختاراتي المفضلة'}</h2>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">Hand-picked quality products</p>
                  </div>
               </div>

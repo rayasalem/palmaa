@@ -16,7 +16,7 @@ import {
 } from '../services/flashlineService';
 import { cancelOrder as cancelOrderApi, fetchMyOrders } from '../services/checkoutApi';
 import { sendEmail, getShipmentDetailsTemplate } from '../services/emailService';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   MapPin, 
   User as UserIcon, 
@@ -39,6 +39,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
+import { prefetchComponent, prefetchProductData } from '../prefetch';
 
 interface Props {
   lang: Language;
@@ -57,6 +58,130 @@ interface Props {
   /** When true (e.g. for MERCHANT/BROKER), show only shop + cart in a dedicated section with sub-tabs */
   shopOnlySection?: boolean;
 }
+
+// --- Performance: memoized shop product card to avoid re-rendering all cards when list updates ---
+interface ShopProductCardProps {
+  product: Product;
+  lang: Language;
+  t: ReturnType<typeof translations[keyof typeof translations]>;
+  onViewProduct?: (id: string) => void;
+  onViewProfile?: (profileId: string) => void;
+  onAddToCart: (product: Product) => void;
+}
+const ShopProductCard = React.memo(function ShopProductCard({ product: p, lang, t, onViewProduct, onViewProfile, onAddToCart }: ShopProductCardProps) {
+  const merchantId = p.merchant_id || p.merchantId || '';
+  const merchantName = marketStore.getMerchantNameByUserId(merchantId);
+  const displayImage = p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/400x400?text=No+Image';
+  return (
+    <div className="dashboard-card flex flex-col p-0 overflow-hidden group hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+      <div
+        className="aspect-[4/5] overflow-hidden bg-slate-100 relative cursor-pointer"
+        onClick={() => onViewProduct?.(p.id)}
+      >
+        <img
+          loading="lazy"
+          src={displayImage}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          alt={p.name}
+        />
+        <div
+          className={`absolute top-3 ${lang === 'en' ? 'right-3' : 'left-3'} bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm text-palma-navy border border-slate-200/80`}
+        >
+          ₪{p.price || p.price_ils}
+        </div>
+      </div>
+      <div className="p-4 space-y-3 flex-1 flex flex-col">
+        <div className="flex-1">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (merchantId && onViewProfile) onViewProfile(merchantId);
+            }}
+            className="text-[9px] font-black text-palma-muted uppercase tracking-widest mb-1 block text-left hover:text-palma-primary hover:underline transition-colors"
+          >
+            {merchantName || (lang === 'ar' ? 'التاجر' : 'Merchant')}
+          </button>
+          <h4
+            className="font-bold text-slate-900 text-sm leading-snug line-clamp-2 cursor-pointer"
+            onClick={() => onViewProduct?.(p.id)}
+          >
+            {p.name}
+          </h4>
+        </div>
+        <button
+          onClick={() => onAddToCart(p)}
+          className="btn-primary w-full py-3 text-[10px] uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-2"
+        >
+          <ShoppingBag className="w-3.5 h-3.5" /> {t.product.addToCart}
+        </button>
+      </div>
+    </div>
+  );
+});
+
+// --- Performance: memoized cart row to avoid inline handlers in cart.map ---
+interface CartItemRowProps {
+  item: CartItem;
+  isSelected: boolean;
+  showCheckbox: boolean;
+  onToggleSelection: (id: string) => void;
+  onUpdateQuantity: (productId: string, delta: number) => void;
+  onRemove: (productId: string, productName?: string) => void;
+}
+const CartItemRow = React.memo(function CartItemRow({ item, isSelected, showCheckbox, onToggleSelection, onUpdateQuantity, onRemove }: CartItemRowProps) {
+  return (
+    <div className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-100 shadow-sm flex items-center gap-4 sm:gap-6 group hover:border-palma-primary/20 transition-all">
+      {showCheckbox ? (
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={() => onToggleSelection(item.id)}
+          className="w-5 h-5 rounded border-slate-300 text-palma-primary focus:ring-palma-primary shrink-0"
+        />
+      ) : null}
+      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-slate-50 shrink-0 border border-slate-100">
+        <img src={item.images?.[0] || item.imageUrl || item.image_url || 'https://placehold.co/200x200?text=No+Image'} loading="lazy" className="w-full h-full object-cover" alt="" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h4 className="font-bold text-slate-900 text-sm sm:text-base mb-1 truncate">{item.name}</h4>
+        <p className="text-[10px] font-black text-palma-muted uppercase tracking-widest mb-3">{item.category}</p>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center bg-slate-50 rounded-xl border border-slate-100">
+            <button onClick={() => onUpdateQuantity(item.id, -1)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 transition"><Minus className="w-3.5 h-3.5" /></button>
+            <span className="text-xs font-bold text-slate-900 w-6 text-center">{item.quantity}</span>
+            <button onClick={() => onUpdateQuantity(item.id, 1)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 transition"><Plus className="w-3.5 h-3.5" /></button>
+          </div>
+          <span className="text-sm font-black text-emerald-600">₪{(item.price || item.price_ils || 0) * item.quantity}</span>
+        </div>
+      </div>
+      <button onClick={() => onRemove(item.id, item.name || item.title)} className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+        <Trash2 className="w-5 h-5" />
+      </button>
+    </div>
+  );
+});
+
+// --- Performance: category pill with stable onSelect so parent map has no inline arrow ---
+interface CategoryPillProps {
+  category: string;
+  active: boolean;
+  label: string;
+  onSelect: (category: string) => void;
+}
+const CategoryPill = React.memo(function CategoryPill({ category, active, label, onSelect }: CategoryPillProps) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(category)}
+      className={`dashboard-filter-pill ${
+        active ? 'bg-palma-primary text-white border-palma-primary' : 'text-slate-500 hover:text-palma-navy hover:bg-white border border-transparent'
+      }`}
+    >
+      {label}
+    </button>
+  );
+});
 
 export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCart, removeFromCart, updateQuantity, clearCart, onRefresh, onTabChange, onViewProduct, onViewProfile, onProceedToApiCheckout, shopOnlySection }) => {
   const t = translations[lang];
@@ -147,6 +272,11 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
   }, [cart]);
 
   const selectedCartItems = useMemo(() => cart.filter(c => selectedCartIds.has(c.id)), [cart, selectedCartIds]);
+  // --- Performance: memoize cart total so it is not recalculated every render ---
+  const totalAmount = useMemo(
+    () => selectedCartItems.reduce((s, p) => s + (p.price || p.price_ils || 0) * p.quantity, 0),
+    [selectedCartItems]
+  );
   const myOrders = marketStore.getOrders().filter(o => o.customer_id === user.id || o.customerId === user.id);
   const displayOrders = useMemo(() => {
     const apiIds = new Set(apiOrders.map((o) => o.id));
@@ -479,32 +609,34 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
     }
   };
 
-  const handleAddToCart = (product: Product) => {
+  const handleAddToCart = useCallback((product: Product) => {
     addToCart(product);
     showToast(t.common.success, 'success');
-  };
+  }, [addToCart, showToast, t.common.success]);
 
-  const handleRemoveFromCart = (productId: string, productName?: string) => {
+  const handleRemoveFromCart = useCallback((productId: string, productName?: string) => {
     const msg = lang === 'ar'
       ? `هل تريد إزالة "${productName || 'هذا المنتج'}" من السلة؟`
       : `Remove "${productName || 'this item'}" from cart?`;
     if (!window.confirm(msg)) return;
     removeFromCart(productId);
     showToast(lang === 'ar' ? 'تمت إزالة المنتج من السلة' : 'Item removed from cart', 'info');
-  };
+  }, [lang, removeFromCart, showToast]);
 
-  const totalAmount = selectedCartItems.reduce((s,p) => s + (p.price || p.price_ils || 0) * p.quantity, 0);
-
-  const toggleCartSelection = (id: string) => {
+  const toggleCartSelection = useCallback((id: string) => {
     setSelectedCartIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  };
+  }, []);
 
-  const selectAllCart = () => setSelectedCartIds(new Set(cart.map(c => c.id)));
+  const selectAllCart = useCallback(() => setSelectedCartIds(new Set(cart.map(c => c.id))), [cart]);
+
+  const handleCategorySelect = useCallback((category: string) => {
+    setShopCategoryId(category);
+  }, []);
 
   // Reusable Components for Form
   const InputGroup = ({ label, name, icon: Icon, required = false, type = "text", placeholder, options }: any) => {
@@ -559,26 +691,26 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-20">
+    <div className="space-y-6 sm:space-y-8 max-w-7xl mx-auto pb-20 font-heading dashboard-page px-4 sm:px-6 pt-6">
       
-      {/* Shop/Cart sub-tabs for MERCHANT/BROKER (خانة التسوق) */}
+      {/* Shop/Cart sub-tabs for MERCHANT/BROKER — تصميم حديث */}
       {shopOnlySection && (
-        <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl w-fit">
+        <div className="dashboard-tabs w-fit">
           <button
             type="button"
             onClick={() => setShopOrCart('shop')}
-            className={`px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'shop' ? 'bg-white text-palma-primary shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+            className={`dashboard-tab ${activeTab === 'shop' ? 'dashboard-tab-active' : 'dashboard-tab-inactive'}`}
           >
-            {lang === 'ar' ? 'التسوق' : 'Shop'}
+            <ShoppingBag className="w-4 h-4" /> {lang === 'ar' ? 'التسوق' : 'Shop'}
           </button>
           <button
             type="button"
             onClick={() => setShopOrCart('cart')}
-            className={`px-6 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'cart' ? 'bg-white text-palma-primary shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+            className={`dashboard-tab flex items-center gap-2 ${activeTab === 'cart' ? 'dashboard-tab-active' : 'dashboard-tab-inactive'}`}
           >
             {lang === 'ar' ? 'السلة' : 'Cart'}
             {cart.length > 0 && (
-              <span className="bg-palma-primary text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center">
+              <span className="bg-white/20 text-current text-[10px] font-bold min-w-[20px] h-5 rounded-full flex items-center justify-center px-1.5">
                 {cart.reduce((a, b) => a + b.quantity, 0)}
               </span>
             )}
@@ -629,7 +761,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
              {/* Left Panel */}
              <div className="md:w-1/3 bg-slate-50 border-r border-slate-100 p-8 flex flex-col justify-between">
                 <div>
-                   <h3 className="text-2xl font-black text-palma-navy tracking-tight mb-1">{t.common.checkout}</h3>
+                   <h3 className="font-heading text-2xl font-black text-palma-navy tracking-tight mb-1">{t.common.checkout}</h3>
                    <p className="text-xs font-bold text-slate-400 mb-8">{checkoutStep === 'form' ? (lang === 'ar' ? 'بيانات الشحن' : 'Shipping Details') : (lang === 'ar' ? 'المراجعة والدفع' : 'Review & Pay')}</p>
                    {/* Steps */}
                    <div className="space-y-6">
@@ -726,114 +858,55 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
 
       {activeTab === 'shop' && (
         <div className="space-y-6">
-          {/* Search + category filter for shop */}
-          <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-card flex flex-col md:flex-row items-center gap-4">
+          {/* Search + category filter — تصميم حديث */}
+          <div className="dashboard-card dashboard-card-body flex flex-col md:flex-row items-center gap-4">
             <div className="relative flex-1 w-full">
               <input
                 type="text"
                 placeholder={t.common.search}
-                className="w-full px-4 py-3 rounded-2xl border border-slate-100 bg-slate-50 text-sm font-bold text-palma-navy focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 outline-none transition-all"
+                className="dashboard-input-search"
                 value={shopSearch}
                 onChange={(e) => setShopSearch(e.target.value)}
               />
             </div>
-            <div className="flex flex-wrap gap-2 w-full md:w-auto">
-              <button
-                type="button"
-                onClick={() => setShopCategoryId('all')}
-                className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
-                  shopCategoryId === 'all'
-                    ? 'bg-palma-navy text-white border-palma-navy shadow-md'
-                    : 'bg-slate-50 text-slate-500 border-slate-200 hover:border-palma-primary/40'
-                }`}
-              >
-                {t.common.allCategories}
-              </button>
+            <div className="dashboard-filter-pills w-full md:w-auto flex-wrap">
+              <CategoryPill category="all" active={shopCategoryId === 'all'} label={t.common.allCategories} onSelect={handleCategorySelect} />
               {categories.map((cat) => (
-                <button
+                <CategoryPill
                   key={cat}
-                  type="button"
-                  onClick={() => setShopCategoryId(cat)}
-                  className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
-                    shopCategoryId === cat
-                      ? 'bg-palma-navy text-white border-palma-navy shadow-md'
-                      : 'bg-slate-50 text-slate-500 border-slate-200 hover:border-palma-primary/40'
-                  }`}
-                >
-                  {t.categories[cat as keyof typeof t.categories] || cat}
-                </button>
+                  category={cat}
+                  active={shopCategoryId === cat}
+                  label={t.categories[cat as keyof typeof t.categories] || cat}
+                  onSelect={handleCategorySelect}
+                />
               ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
-            {filteredShopProducts.map((p) => {
-              const merchantId = p.merchant_id || p.merchantId || '';
-              const merchantName = marketStore.getMerchantNameByUserId(merchantId);
-              const displayImage = p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/400x400?text=No+Image';
-              return (
-                <div
-                  key={p.id}
-                  className="bg-white rounded-3xl p-4 border border-slate-100 group shadow-card hover:shadow-hover transition-all duration-300 flex flex-col hover:-translate-y-1"
-                >
-                  <div
-                    className="aspect-[4/5] rounded-2xl overflow-hidden bg-slate-50 mb-4 relative cursor-pointer"
-                    onClick={() => onViewProduct && onViewProduct(p.id)}
-                  >
-                    <img
-                      loading="lazy"
-                      src={displayImage}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                      alt={p.name}
-                    />
-                    <div
-                      className={`absolute top-3 ${
-                        lang === 'en' ? 'right-3' : 'left-3'
-                      } bg-white/90 backdrop-blur px-3 py-1.5 rounded-xl text-xs font-black shadow-sm text-palma-navy border border-slate-100`}
-                    >
-                      ₪{p.price || p.price_ils}
-                    </div>
-                  </div>
-                  <div className="px-1 space-y-3 flex-1 flex flex-col">
-                    <div className="flex-1">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (merchantId && onViewProfile) onViewProfile(merchantId);
-                        }}
-                        className="text-[9px] font-black text-palma-muted uppercase tracking-widest mb-1 block text-left hover:text-palma-primary hover:underline transition-colors"
-                      >
-                        {merchantName || (lang === 'ar' ? 'التاجر' : 'Merchant')}
-                      </button>
-                      <h4
-                        className="font-bold text-slate-900 text-sm leading-snug line-clamp-2 cursor-pointer"
-                        onClick={() => onViewProduct && onViewProduct(p.id)}
-                      >
-                        {p.name}
-                      </h4>
-                    </div>
-                    <button
-                      onClick={() => handleAddToCart(p)}
-                      className="btn-primary w-full py-3 text-[10px] uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-2"
-                    >
-                      <ShoppingBag className="w-3.5 h-3.5" /> {t.product.addToCart}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+            {filteredShopProducts.map((p) => (
+              <div key={p.id} onMouseEnter={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }} onFocus={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}>
+                <ShopProductCard
+                  product={p}
+                  lang={lang}
+                  t={t}
+                  onViewProduct={onViewProduct}
+                  onViewProfile={onViewProfile}
+                  onAddToCart={handleAddToCart}
+                />
+              </div>
+            ))}
           </div>
         </div>
       )}
 
       {activeTab === 'cart' && (
-        <div className="max-w-4xl mx-auto space-y-8">
-           <h2 className="text-2xl font-black text-palma-navy tracking-tight">{t.cart.title}</h2>
+        <div className="max-w-4xl mx-auto space-y-6">
+           <h2 className="font-heading text-xl sm:text-2xl font-black text-palma-navy tracking-tight">{t.cart.title}</h2>
            {cart.length === 0 ? (
-             <div className="bg-white p-20 rounded-[2.5rem] text-center border-2 border-dashed border-slate-100">
-                <span className="text-5xl block mb-6 grayscale opacity-50">🛒</span>
-                <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">{t.cart.empty}</p>
+             <div className="dashboard-empty py-16">
+                <span className="text-4xl block mb-4 grayscale opacity-60">🛒</span>
+                <p className="text-slate-500 font-semibold text-sm">{t.cart.empty}</p>
              </div>
            ) : (
              <div className="space-y-8">
@@ -848,37 +921,23 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
                        </span>
                      </div>
                    )}
-                   {cart.map((item, idx) => (
-                     <div key={idx} className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-100 shadow-sm flex items-center gap-4 sm:gap-6 group hover:border-palma-primary/20 transition-all">
-                        {cart.length > 1 ? (
-                          <input type="checkbox" checked={selectedCartIds.has(item.id)} onChange={() => toggleCartSelection(item.id)} className="w-5 h-5 rounded border-slate-300 text-palma-primary focus:ring-palma-primary shrink-0" />
-                        ) : null}
-                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-slate-50 shrink-0 border border-slate-100">
-                          <img src={item.images?.[0] || item.imageUrl || item.image_url || 'https://placehold.co/200x200?text=No+Image'} loading="lazy" className="w-full h-full object-cover" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                           <h4 className="font-bold text-slate-900 text-sm sm:text-base mb-1 truncate">{item.name}</h4>
-                           <p className="text-[10px] font-black text-palma-muted uppercase tracking-widest mb-3">{item.category}</p>
-                           <div className="flex items-center gap-4">
-                              <div className="flex items-center bg-slate-50 rounded-xl border border-slate-100">
-                                <button onClick={() => updateQuantity(item.id, -1)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 transition"><Minus className="w-3.5 h-3.5" /></button>
-                                <span className="text-xs font-bold text-slate-900 w-6 text-center">{item.quantity}</span>
-                                <button onClick={() => updateQuantity(item.id, 1)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 transition"><Plus className="w-3.5 h-3.5" /></button>
-                              </div>
-                              <span className="text-sm font-black text-emerald-600">₪{(item.price || item.price_ils || 0) * item.quantity}</span>
-                           </div>
-                        </div>
-                        <button onClick={() => handleRemoveFromCart(item.id, item.name || item.title)} className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
-                           <Trash2 className="w-5 h-5" />
-                        </button>
-                     </div>
+                   {cart.map((item) => (
+                     <CartItemRow
+                       key={item.id}
+                       item={item}
+                       isSelected={selectedCartIds.has(item.id)}
+                       showCheckbox={cart.length > 1}
+                       onToggleSelection={toggleCartSelection}
+                       onUpdateQuantity={updateQuantity}
+                       onRemove={handleRemoveFromCart}
+                     />
                    ))}
                 </div>
                 
-                <div className="bg-white border border-slate-100 p-8 rounded-[2.5rem] shadow-soft flex flex-col md:flex-row justify-between items-center gap-8">
+                <div className="bg-white border border-palma-border p-8 rounded-[2.5rem] shadow-card hover:shadow-card-hover transition-shadow flex flex-col md:flex-row justify-between items-center gap-8">
                    <div className="space-y-1 text-center md:text-left rtl:md:text-right">
                       <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t.cart.total}</p>
-                      <h3 className="text-4xl font-black text-palma-navy tracking-tight">₪{selectedCartItems.reduce((s,p) => s + (p.price || p.price_ils || 0) * p.quantity, 0)}</h3>
+                      <h3 className="text-4xl font-black text-palma-navy tracking-tight">₪{totalAmount}</h3>
                       {cart.length > 1 && <p className="text-[10px] text-slate-500">{selectedCartItems.length} {lang === 'ar' ? 'منتج محدد' : 'items selected'}</p>}
                    </div>
                    <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
@@ -900,13 +959,13 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
       {activeTab === 'orders' && (
         <div className="max-w-4xl mx-auto space-y-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <h2 className="text-2xl font-black text-palma-navy tracking-tight">{t.nav.orders}</h2>
+            <h2 className="font-heading text-2xl font-black text-palma-navy tracking-tight">{t.nav.orders}</h2>
             <button type="button" onClick={loadApiOrders} className="flex items-center gap-2 text-sm font-bold text-palma-primary hover:text-palma-navy transition-colors">
               <RefreshCw className="w-4 h-4" /> {lang === 'ar' ? 'تحديث' : 'Refresh'}
             </button>
           </div>
           {displayOrders.length === 0 ? (
-             <div className="bg-white p-16 rounded-[2.5rem] text-center border border-slate-100">
+             <div className="bg-white p-16 rounded-[2.5rem] text-center border border-palma-border shadow-soft">
                 <p className="text-slate-400 font-bold text-sm">No orders found.</p>
              </div>
           ) : (
@@ -921,7 +980,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
                 const orderItemsFromLocal = marketStore.getOrderItems().filter((oi) => oi.order_id === o.id);
                 const orderItems = orderItemsFromApi.length > 0 ? orderItemsFromApi : orderItemsFromLocal;
                 return (
-                <div key={o.id} className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow group">
+                <div key={o.id} className="dashboard-card overflow-hidden hover:shadow-md transition-all group">
                    <div className="p-6 border-b border-slate-50 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
                       <div className="flex items-center gap-3">
                          <div className="p-2 bg-white rounded-xl border border-slate-100 shadow-sm"><Package className="w-5 h-5 text-palma-muted" /></div>

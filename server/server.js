@@ -51,6 +51,7 @@ import sharedProductsRoutes from './routes/sharedProductsRoutes.js';
 import followRoutes from './routes/followRoutes.js';
 import merchantRoutes from './routes/merchantRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
 
 import logger from './utils/logger.js';
 
@@ -107,6 +108,7 @@ app.use('/api/shared-products', sharedProductsRoutes);
 app.use('/api/follow', followRoutes);
 app.use('/api/merchant', merchantRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/chat', chatRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ ok: true, timestamp: new Date().toISOString() });

@@ -3,6 +3,7 @@ import React from 'react';
 import { User, Role } from '../types';
 import Logo from './Logo';
 import { Language, translations } from '../translations';
+import { prefetchForTab } from '../prefetch';
 import { ShoppingCart, Menu, X, Globe, LogOut, LayoutDashboard, Package, ShoppingBag, Banknote, User as UserIcon, TrendingUp, BarChart, Users, Wallet, Home, History, Bell, ChevronDown } from 'lucide-react';
 
 const LANG_LABELS: Record<Language, string> = { ar: 'العربية', en: 'English', he: 'עברית' };
@@ -77,8 +78,8 @@ const Layout: React.FC<LayoutProps> = ({ lang, setLang, user, onLogout, children
   const profileImg = user.avatarUrl || `https://ui-avatars.com/api/?name=${user.name}&background=1F5D42&color=fff&size=80`;
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50/80 font-sans text-palma-text" dir={lang === 'en' ? 'ltr' : 'rtl'}>
-      <header className="bg-white/95 backdrop-blur-md border-b border-palma-border sticky top-0 z-40 shadow-soft transition-all duration-300">
+    <div className="min-h-screen flex flex-col bg-[#f8f7fa] font-sans text-palma-text font-heading" dir={lang === 'en' ? 'ltr' : 'rtl'}>
+      <header className="bg-white/95 backdrop-blur-xl border-b border-palma-border sticky top-0 z-40 shadow-soft transition-all duration-300">
         <div className="max-w-[1800px] mx-auto px-4 sm:px-8 h-16 sm:h-20 flex justify-between items-center">
           <div className="flex items-center gap-4 sm:gap-6">
             <div className="lg:hidden">
@@ -94,6 +95,8 @@ const Layout: React.FC<LayoutProps> = ({ lang, setLang, user, onLogout, children
             {(user.role === Role.CUSTOMER || user.role === Role.MERCHANT || user.role === Role.BROKER || user.role === Role.ADMIN) && (
               <button 
                 onClick={() => onTabChange(user.role === Role.CUSTOMER || user.role === Role.ADMIN ? 'cart' : 'shop')}
+                onMouseEnter={() => prefetchForTab(user.role === Role.CUSTOMER || user.role === Role.ADMIN ? 'cart' : 'shop', user.role as string)}
+                onFocus={() => prefetchForTab(user.role === Role.CUSTOMER || user.role === Role.ADMIN ? 'cart' : 'shop', user.role as string)}
                 className="relative p-2.5 text-palma-muted hover:text-palma-primary hover:bg-palma-primaryLight rounded-xl transition-all duration-200 group focus:outline-none focus:ring-2 focus:ring-palma-primary/20"
                 title={t.nav.cart}
               >
@@ -138,6 +141,8 @@ const Layout: React.FC<LayoutProps> = ({ lang, setLang, user, onLogout, children
             <div className="flex items-center gap-2 sm:gap-3 pl-2">
               <button 
                 onClick={() => onTabChange('profile')}
+                onMouseEnter={() => prefetchForTab('profile', user.role as string)}
+                onFocus={() => prefetchForTab('profile', user.role as string)}
                 className="flex items-center gap-3 p-1.5 rounded-2xl hover:bg-slate-50 transition-all duration-200 group border border-transparent hover:border-palma-border focus:outline-none focus:ring-2 focus:ring-palma-primary/20"
               >
                 <img src={profileImg} className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl border border-palma-border object-cover shadow-soft" alt="Profile" />
@@ -164,19 +169,21 @@ const Layout: React.FC<LayoutProps> = ({ lang, setLang, user, onLogout, children
         {/* Desktop Sidebar */}
         {isProfessional && (
           <aside className={`hidden lg:block w-72 sticky top-20 h-[calc(100vh-5rem)] overflow-y-auto py-8 pr-6 rtl:pr-0 rtl:pl-6`}>
-            <div className="bg-white rounded-2xl shadow-card border border-palma-border h-full flex flex-col p-4">
-              <div className="px-3 py-3 mb-1">
-                <h3 className="text-xs font-bold text-palma-muted uppercase tracking-widest">{t.common.dashboard}</h3>
+            <div className="bg-white rounded-2xl shadow-card border border-palma-border h-full flex flex-col p-4 hover:shadow-card-hover transition-shadow duration-300">
+              <div className="px-3 py-3 mb-1 border-b border-palma-border/50 pb-4">
+                <h3 className="text-xs font-black text-palma-navy uppercase tracking-widest">{t.common.dashboard}</h3>
               </div>
               <nav className="space-y-0.5 flex-1">
                 {userMenuItems.map(item => (
                   <button 
                     key={item.id}
                     onClick={() => onTabChange(item.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 group relative overflow-hidden ${
+                    onMouseEnter={() => prefetchForTab(item.id, user.role as string)}
+                    onFocus={() => prefetchForTab(item.id, user.role as string)}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 group relative overflow-hidden ${
                       activeTab === item.id 
-                        ? 'bg-palma-primaryLight text-palma-primary shadow-soft' 
-                        : 'text-palma-muted hover:bg-slate-50 hover:text-palma-navy'
+                        ? 'bg-palma-primaryLight text-palma-primary shadow-soft ring-1 ring-palma-primary/20' 
+                        : 'text-palma-muted hover:bg-slate-50 hover:text-palma-navy hover:rounded-2xl'
                     }`}
                   >
                     {activeTab === item.id && (
@@ -238,8 +245,8 @@ const Layout: React.FC<LayoutProps> = ({ lang, setLang, user, onLogout, children
           </div>
         )}
 
-        <main className={`flex-1 min-w-0 p-4 sm:p-6 lg:p-8`}>
-          <div className="max-w-7xl mx-auto animate-fade-in">
+        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto animate-fade-in min-h-[60vh]">
             {children}
           </div>
         </main>

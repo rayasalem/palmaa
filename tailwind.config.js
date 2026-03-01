@@ -29,7 +29,8 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['IBM Plex Sans Arabic', 'Inter', 'system-ui', 'sans-serif'],
+        sans: ['Cairo', 'Inter', 'system-ui', 'sans-serif'],
+        heading: ['Cairo', 'Inter', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
         '2.5xl': '1.25rem',

@@ -119,7 +119,7 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({ lang, user,
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 font-sans p-6">
         <div className="text-center space-y-6 animate-fade-in max-w-md">
            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm border border-slate-100 text-3xl">🔍</div>
-           <h2 className="text-xl font-black text-palma-navy">{lang === 'ar' ? 'المنتج غير موجود' : 'Product Not Found'}</h2>
+           <h2 className="font-heading text-xl font-black text-palma-navy">{lang === 'ar' ? 'المنتج غير موجود' : 'Product Not Found'}</h2>
            <p className="text-sm text-slate-500">{lang === 'ar' ? 'قد يكون المنتج محذوفاً أو غير متوفر.' : 'The product may have been removed or is unavailable.'}</p>
            <button onClick={onBack} className="bg-palma-navy text-white px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-palma-primary transition-all shadow-lg">
              {t.common.back}
@@ -324,7 +324,7 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({ lang, user,
                              <span className="text-xs font-black mt-0.5">{likesCount}</span>
                           </div>
                        </div>
-                       <h1 className="text-3xl sm:text-4xl font-black text-palma-navy leading-[1.1] mb-4 tracking-tight">{product.name || product.title || '-'}</h1>
+                       <h1 className="font-heading text-3xl sm:text-4xl font-black text-palma-navy leading-[1.1] mb-4 tracking-tight">{product.name || product.title || '-'}</h1>
                        <div className="flex items-baseline gap-4">
                           <span className="text-4xl sm:text-5xl font-black text-palma-primary tracking-tight">₪{product.price || product.price_ils}</span>
                           {product.discount && (

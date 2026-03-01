@@ -261,7 +261,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
         <button type="button" onClick={onBack} className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-8 font-medium">
           <ArrowLeft className="w-4 h-4" /> {lang === 'ar' ? 'العودة' : 'Back'}
         </button>
-        <h1 className="text-2xl font-black text-slate-900 mb-2">
+        <h1 className="font-heading text-2xl font-black text-palma-navy mb-2">
           {lang === 'ar' ? 'الدفع والشحن' : 'Checkout (Payment + Shipment)'}
         </h1>
         <p className="text-slate-500 text-sm mb-8">

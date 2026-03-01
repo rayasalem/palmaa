@@ -447,39 +447,42 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
   };
 
   const StatCard = ({ title, value, icon: Icon, color, trend }: any) => (
-    <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-card border border-slate-100 flex flex-col justify-between group hover:shadow-hover transition-all duration-300 relative overflow-hidden h-40">
-      <div className="absolute -right-6 -top-6 p-4 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity transform group-hover:scale-110 duration-700">
-          <Icon className="w-32 h-32 text-palma-navy" />
+    <div className="dashboard-stat-card flex flex-col justify-between min-h-[140px] group">
+      <div className="absolute -right-4 -top-4 p-3 opacity-[0.06] group-hover:opacity-[0.1] transition-opacity">
+        <Icon className="w-20 h-20 text-palma-navy" />
       </div>
       <div className="flex justify-between items-start z-10">
-        <div className={`p-3 rounded-2xl ${color} text-white shadow-lg`}>
-           <Icon className="w-5 h-5" />
+        <div className={`p-2.5 rounded-xl ${color} text-white shadow-sm`}>
+          <Icon className="w-5 h-5" />
         </div>
         {trend && (
-           <span className="bg-emerald-50 text-emerald-600 text-[10px] font-black px-2.5 py-1 rounded-full flex items-center gap-1 border border-emerald-100">
-             <span className="text-base leading-none">↗</span> {trend}
-           </span>
+          <span className="bg-emerald-50 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-emerald-100">
+            ↗ {trend}
+          </span>
         )}
       </div>
       <div className="z-10">
-        <h3 className="text-[10px] font-bold text-palma-muted uppercase tracking-widest mb-1">{title}</h3>
-        <p className="text-3xl font-black text-palma-navy tracking-tight">{value}</p>
+        <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">{title}</h3>
+        <p className="text-2xl font-black text-palma-navy tracking-tight">{value}</p>
       </div>
     </div>
   );
 
   return (
     <>
-    <div className="space-y-10 animate-fade-in pb-20">
+    <div className="space-y-8 sm:space-y-10 animate-fade-in pb-20 dashboard-page px-4 sm:px-6 pt-6 max-w-7xl mx-auto">
       
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-palma-navy tracking-tight mb-1">{t.common.dashboard}</h1>
-          <p className="text-xs sm:text-sm font-medium text-palma-muted">{t.common.manageStore}</p>
+      {/* Header — تصميم حديث */}
+      <div className="dashboard-header">
+        <div className="dashboard-title-wrap">
+          <div className="dashboard-title-icon"><LayoutDashboard className="w-6 h-6 text-palma-primary" /></div>
+          <div>
+            <h1 className="font-heading text-2xl sm:text-3xl font-black text-palma-navy tracking-tight">{t.common.dashboard}</h1>
+            <p className="text-xs sm:text-sm font-medium text-slate-500 mt-0.5">{t.common.manageStore}</p>
+          </div>
         </div>
         
-        <div className="flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200">
+        <div className="dashboard-tabs">
           {[
             { id: 'dashboard', label: t.common.dashboard, icon: LayoutDashboard },
             { id: 'orders', label: t.common.orders, icon: Truck },
@@ -488,7 +491,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
             <button 
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)} 
-              className={`px-4 py-2.5 rounded-xl text-[10px] sm:text-xs font-bold flex items-center gap-2 transition-all ${activeTab === tab.id ? 'bg-palma-navy text-white shadow-md' : 'text-slate-500 hover:text-palma-navy hover:bg-slate-50'}`}
+              className={`dashboard-tab ${activeTab === tab.id ? 'dashboard-tab-active' : 'dashboard-tab-inactive'}`}
             >
               <tab.icon className="w-3.5 h-3.5" /> {tab.label}
             </button>
@@ -517,7 +520,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
             </div>
           )}
           {dashboardData?.subscription && (
-            <div className="bg-white p-6 rounded-3xl shadow-card border border-slate-100">
+            <div className="dashboard-card dashboard-card-body hover:shadow-md transition-shadow">
               <h3 className="text-sm font-black text-palma-navy uppercase tracking-wider mb-3">{lang === 'ar' ? 'حالة الاشتراك' : lang === 'he' ? 'סטטוס מנוי' : 'Subscription status'}</h3>
               <div className="flex flex-wrap gap-4 text-sm">
                 <span><strong>{lang === 'ar' ? 'النوع:' : lang === 'he' ? 'סוג:' : 'Type:'}</strong> {dashboardData.subscription.subscription_type === 'paid' ? (lang === 'ar' ? 'مدفوع' : lang === 'he' ? 'בתשלום' : 'Paid') : (lang === 'ar' ? 'مجاني' : lang === 'he' ? 'חינם' : 'Free')}</span>
@@ -604,7 +607,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                 {lang === 'ar' ? 'لا يمكن إضافة منتجات جديدة حتى تجديد الاشتراك.' : lang === 'he' ? 'לא ניתן להוסיף מוצרים עד לחידוש המנוי.' : 'You cannot add new products until you renew your subscription.'}
               </div>
             )}
-            <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-card border border-slate-100 max-xl:static xl:sticky xl:top-28 transition-all">
+            <div className="dashboard-card dashboard-card-body max-xl:static xl:sticky xl:top-28 transition-all">
               <div className="flex items-center justify-between gap-4 mb-6">
                  <div className="flex items-center gap-3">
                     <div className="p-2.5 bg-palma-navy rounded-xl text-white shadow-lg shadow-soft">
@@ -721,7 +724,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
 
           {/* Product List */}
           <div className="xl:col-span-2">
-             <div className="bg-white rounded-3xl shadow-card border border-slate-100 overflow-hidden flex flex-col h-full">
+             <div className="bg-white rounded-3xl shadow-card border border-palma-border overflow-hidden flex flex-col h-full hover:shadow-card-hover transition-shadow">
                 <div className="p-6 sm:p-8 border-b border-slate-100 flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-palma-soft rounded-lg"><Box className="w-5 h-5 text-palma-navy" /></div>
@@ -798,7 +801,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
 
       {/* Orders Tab - remains the same */}
       {activeTab === 'orders' && (
-         <div className="bg-white rounded-3xl shadow-card border border-slate-100 overflow-hidden">
+         <div className="bg-white rounded-3xl shadow-card border border-palma-border overflow-hidden hover:shadow-card-hover transition-shadow">
             <div className="p-6 sm:p-8 border-b border-slate-100 flex justify-between items-center bg-white">
                <h3 className="font-black text-palma-navy text-lg sm:text-xl">{t.common.recentOrders}</h3>
                <button type="button" onClick={() => refreshData()} disabled={loading} className="text-[10px] font-bold text-palma-primary hover:bg-palma-primaryLight flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-palma-border transition-colors disabled:opacity-50">

@@ -1,23 +1,31 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import Layout from './components/Layout';
 import { Auth } from './components/Auth';
-import PublicWebsite from './components/PublicWebsite';
-import PublicCatalog from './components/PublicCatalog';
-import { CustomerView } from './views/CustomerView';
 import { CheckoutPage } from './views/CheckoutPage';
 import { CheckoutReturnPage } from './views/CheckoutReturnPage';
-import { MerchantView } from './views/MerchantView';
 import { BrokerView } from './views/BrokerView';
-import { AdminView } from './views/AdminView';
-import ProfileView from './views/ProfileView';
 import PublicBrokerPage from './views/PublicBrokerPage';
-import PublicProfileView from './views/PublicProfileView'; // Updated View
-import PublicProductDetails from './views/PublicProductDetails';
+import PublicProfileView from './views/PublicProfileView';
 import { NotificationsView } from './views/NotificationsView';
 import { MerchantTermsView } from './views/MerchantTermsView';
 import { PendingReview } from './components/PendingReview';
 import VerifyEmail from './components/VerifyEmail';
+import { PageLoader } from './components/PageLoader';
+import { SupportChat } from './components/SupportChat';
+
+/*
+ * Code splitting (React.lazy + Suspense): heavy views are loaded on demand so the initial bundle is smaller.
+ * Split: PublicWebsite, PublicCatalog, CustomerView, MerchantView, AdminView, ProfileView, PublicProductDetails.
+ * Routing paths, guards, and role-based rendering are unchanged; business logic is untouched.
+ */
+const PublicWebsite = lazy(() => import('./components/PublicWebsite'));
+const PublicCatalog = lazy(() => import('./components/PublicCatalog'));
+const CustomerView = lazy(() => import('./views/CustomerView').then((m) => ({ default: m.CustomerView })));
+const MerchantView = lazy(() => import('./views/MerchantView').then((m) => ({ default: m.MerchantView })));
+const AdminView = lazy(() => import('./views/AdminView').then((m) => ({ default: m.AdminView })));
+const ProfileView = lazy(() => import('./views/ProfileView'));
+const PublicProductDetails = lazy(() => import('./views/PublicProductDetails'));
 import { User, Product, CartItem } from './types';
 import { marketStore } from './store';
 import { authService } from './services/authService';
@@ -28,6 +36,7 @@ import { ToastProvider, useToast } from './components/ToastProvider';
 import { useCart } from './hooks/useCart';
 import * as cartApi from './services/cartApi';
 import { SESSION_EXPIRED_EVENT } from './api/client';
+import { prefetchAfterLogin } from './prefetch';
 
 const loadUser = (): User | null => {
   const stored = localStorage.getItem('palma_current_user');
@@ -189,6 +198,7 @@ const AppContent: React.FC = () => {
         setUser(u);
         setDefaultView(u);
         localStorage.setItem('palma_current_user', JSON.stringify(u));
+        prefetchAfterLogin(u);
       } else {
         if (is401) localStorage.removeItem('palma_current_user');
         const savedUser = loadUser();
@@ -259,6 +269,8 @@ const AppContent: React.FC = () => {
     setUser(loggedInUser);
     localStorage.setItem('palma_current_user', JSON.stringify(loggedInUser));
     setDefaultView(loggedInUser);
+    // Prefetch API data by role so Orders/Merchant/Admin tabs load faster (no state/route change)
+    prefetchAfterLogin(loggedInUser);
   };
 
   const handleLogout = () => {
@@ -379,138 +391,171 @@ const AppContent: React.FC = () => {
 
   if (checkoutReturnOrderId && checkoutReturnPayment) {
     return (
-      <CheckoutReturnPage
-        lang={lang}
-        orderId={checkoutReturnOrderId}
-        paymentParam={checkoutReturnPayment}
-        clearCart={clearCart}
-        onBack={() => {
-          setCheckoutReturnOrderId(null);
-          setCheckoutReturnPayment(null);
-          if (typeof window !== 'undefined') {
-            window.history.replaceState({}, '', window.location.pathname || '/');
-            window.dispatchEvent(new CustomEvent('palma-refresh-orders'));
-          }
-        }}
-      />
+      <>
+        <CheckoutReturnPage
+          lang={lang}
+          orderId={checkoutReturnOrderId}
+          paymentParam={checkoutReturnPayment}
+          clearCart={clearCart}
+          onBack={() => {
+            setCheckoutReturnOrderId(null);
+            setCheckoutReturnPayment(null);
+            if (typeof window !== 'undefined') {
+              window.history.replaceState({}, '', window.location.pathname || '/');
+              window.dispatchEvent(new CustomEvent('palma-refresh-orders'));
+            }
+          }}
+        />
+        <SupportChat lang={lang} user={user} />
+      </>
     );
   }
 
   if (user && showApiCheckout) {
     return (
-      <CheckoutPage
-        lang={lang}
-        cart={checkoutCart.length > 0 ? checkoutCart : cart}
-        clearCart={clearCart}
-        onBack={() => { setShowApiCheckout(false); setCheckoutCart([]); }}
-      />
+      <>
+        <CheckoutPage
+          lang={lang}
+          cart={checkoutCart.length > 0 ? checkoutCart : cart}
+          clearCart={clearCart}
+          onBack={() => { setShowApiCheckout(false); setCheckoutCart([]); }}
+        />
+        <SupportChat lang={lang} user={user} />
+      </>
     );
   }
 
   if (!user) {
     if (publicState === 'PRODUCT_DETAILS' && selectedProductId) {
       return (
-        <PublicProductDetails 
-          lang={lang}
-          user={null}
-          productId={selectedProductId}
-          onBack={() => { setPublicState('CATALOG'); updateHash('catalog'); }}
-          onLoginClick={() => openAuth('LOGIN')}
-          addToCart={addToCart}
-        />
+        <>
+          <Suspense fallback={<PageLoader />}>
+            <PublicProductDetails 
+              lang={lang}
+              user={null}
+              productId={selectedProductId}
+              onBack={() => { setPublicState('CATALOG'); updateHash('catalog'); }}
+              onLoginClick={() => openAuth('LOGIN')}
+              addToCart={addToCart}
+            />
+          </Suspense>
+          <SupportChat lang={lang} user={user} />
+        </>
       );
     }
 
     if (publicState === 'PUBLIC_PROFILE' && selectedProfileId) {
       return (
-        <PublicProfileView 
-          lang={lang}
-          currentUser={null}
-          profileId={selectedProfileId}
-          onBack={() => { setPublicState('LANDING'); updateHash(''); }}
-          onProductClick={handleViewProduct}
-          onLoginClick={() => openAuth('LOGIN')}
-          setLang={setLang}
-        />
+        <>
+          <PublicProfileView 
+            lang={lang}
+            currentUser={null}
+            profileId={selectedProfileId}
+            onBack={() => { setPublicState('LANDING'); updateHash(''); }}
+            onProductClick={handleViewProduct}
+            onLoginClick={() => openAuth('LOGIN')}
+            setLang={setLang}
+          />
+          <SupportChat lang={lang} user={user} />
+        </>
       );
     }
 
     if (publicState === 'BROKER_PAGE' && publicBrokerId) {
       return (
-        <PublicBrokerPage 
-          lang={lang}
-          brokerId={publicBrokerId}
-          onBack={() => { setPublicState('LANDING'); updateHash(''); }}
-          onProductClick={handleViewProduct}
-          onLoginClick={() => openAuth('LOGIN')}
-          setLang={setLang}
-        />
+        <>
+          <PublicBrokerPage 
+            lang={lang}
+            brokerId={publicBrokerId}
+            onBack={() => { setPublicState('LANDING'); updateHash(''); }}
+            onProductClick={handleViewProduct}
+            onLoginClick={() => openAuth('LOGIN')}
+            setLang={setLang}
+          />
+          <SupportChat lang={lang} user={user} />
+        </>
       );
     }
 
     if (showMerchantTermsPage) {
       return (
-        <MerchantTermsView
-          lang={lang}
-          onBack={() => {
-            setShowMerchantTermsPage(false);
-            setPendingAuthAfterTerms(null);
-            updateHash('');
-          }}
-          onAccept={
-            pendingAuthAfterTerms === 'REGISTER_MERCHANT'
-              ? () => {
-                  setShowMerchantTermsPage(false);
-                  setPendingAuthAfterTerms(null);
-                  setAuthView('REGISTER_MERCHANT');
-                  setPublicState('AUTH');
-                  updateHash('register-merchant');
-                }
-              : undefined
-          }
-        />
+        <>
+          <MerchantTermsView
+            lang={lang}
+            onBack={() => {
+              setShowMerchantTermsPage(false);
+              setPendingAuthAfterTerms(null);
+              updateHash('');
+            }}
+            onAccept={
+              pendingAuthAfterTerms === 'REGISTER_MERCHANT'
+                ? () => {
+                    setShowMerchantTermsPage(false);
+                    setPendingAuthAfterTerms(null);
+                    setAuthView('REGISTER_MERCHANT');
+                    setPublicState('AUTH');
+                    updateHash('register-merchant');
+                  }
+                : undefined
+            }
+          />
+          <SupportChat lang={lang} user={user} />
+        </>
       );
     }
 
     if (publicState === 'LANDING') {
       return (
-        <PublicWebsite 
-          lang={lang}
-          setLang={setLang}
-          onLoginClick={() => openAuth('LOGIN')}
-          onJoinMerchant={() => openAuth('REGISTER_MERCHANT')}
-          onJoinBroker={() => openAuth('REGISTER_BROKER')}
-          onExploreProducts={() => { setPublicState('CATALOG'); updateHash('catalog'); }}
-          onViewProduct={handleViewProduct}
-          onOpenTerms={() => {
-            setPendingAuthAfterTerms(null);
-            setShowMerchantTermsPage(true);
-            updateHash('terms');
-          }}
-        />
+        <>
+          <Suspense fallback={<PageLoader />}>
+            <PublicWebsite 
+              lang={lang}
+              setLang={setLang}
+              onLoginClick={() => openAuth('LOGIN')}
+              onJoinMerchant={() => openAuth('REGISTER_MERCHANT')}
+              onJoinBroker={() => openAuth('REGISTER_BROKER')}
+              onExploreProducts={() => { setPublicState('CATALOG'); updateHash('catalog'); }}
+              onViewProduct={handleViewProduct}
+              onOpenTerms={() => {
+                setPendingAuthAfterTerms(null);
+                setShowMerchantTermsPage(true);
+                updateHash('terms');
+              }}
+            />
+          </Suspense>
+          <SupportChat lang={lang} user={user} />
+        </>
       );
     }
     
     if (publicState === 'CATALOG') {
       return (
-        <PublicCatalog 
-          onBack={() => { setPublicState('LANDING'); updateHash(''); }}
-          onLoginClick={() => openAuth('LOGIN')}
-          onProductClick={handleViewProduct} 
-        />
+        <>
+          <Suspense fallback={<PageLoader />}>
+            <PublicCatalog 
+              onBack={() => { setPublicState('LANDING'); updateHash(''); }}
+              onLoginClick={() => openAuth('LOGIN')}
+              onProductClick={handleViewProduct} 
+            />
+          </Suspense>
+          <SupportChat lang={lang} user={user} />
+        </>
       );
     }
     
     return (
-      <Auth
-        onLogin={handleLogin}
-        initialView={authView}
-        onOpenTerms={() => {
-          setPendingAuthAfterTerms('REGISTER_MERCHANT');
-          setShowMerchantTermsPage(true);
-          updateHash('terms');
-        }}
-      />
+      <>
+        <Auth
+          onLogin={handleLogin}
+          initialView={authView}
+          onOpenTerms={() => {
+            setPendingAuthAfterTerms('REGISTER_MERCHANT');
+            setShowMerchantTermsPage(true);
+            updateHash('terms');
+          }}
+        />
+        <SupportChat lang={lang} user={user} />
+      </>
     );
   }
 
@@ -518,25 +563,34 @@ const AppContent: React.FC = () => {
   const roleUpper = (user.role || '').toUpperCase();
   if (roleUpper === 'ADMIN' && !user.emailVerified) {
     return (
-      <VerifyEmail
-        user={user}
-        onVerified={(verifiedUser) => {
-          authService.setCurrentUser(verifiedUser);
-          setUser(verifiedUser);
-          localStorage.setItem('palma_current_user', JSON.stringify(verifiedUser));
-        }}
-        onLogout={handleLogout}
-        lang={lang}
-      />
+      <>
+        <VerifyEmail
+          user={user}
+          onVerified={(verifiedUser) => {
+            authService.setCurrentUser(verifiedUser);
+            setUser(verifiedUser);
+            localStorage.setItem('palma_current_user', JSON.stringify(verifiedUser));
+          }}
+          onLogout={handleLogout}
+          lang={lang}
+        />
+        <SupportChat lang={lang} user={user} />
+      </>
     );
   }
 
   // فقط الحسابات المرفوضة تبقى محجوبة؛ التسجيل الجديد يدخل مباشرة لصفحته
   if (user.status === 'REJECTED' && roleUpper !== 'ADMIN') {
-    return <PendingReview user={user} onLogout={handleLogout} lang={lang} />;
+    return (
+      <>
+        <PendingReview user={user} onLogout={handleLogout} lang={lang} />
+        <SupportChat lang={lang} user={user} />
+      </>
+    );
   }
 
   return (
+    <>
     <Layout 
       user={user} 
       lang={lang}
@@ -553,26 +607,30 @@ const AppContent: React.FC = () => {
       cartCount={cart.reduce((a, b) => a + b.quantity, 0)}
     >
       {currentView === 'profile' ? (
-        <ProfileView 
-          lang={lang}
-          user={user}
-          onRefresh={refreshUser}
-          onViewProduct={(id) => {
-              setSelectedProductId(id);
-              setCurrentView('product_details');
-          }}
-        />
-      ) : currentView === 'product_details' && selectedProductId ? (
-          <PublicProductDetails 
+        <Suspense fallback={<PageLoader />}>
+          <ProfileView 
             lang={lang}
             user={user}
-            productId={selectedProductId}
-            onBack={() => setCurrentView('home')}
-            onLoginClick={() => {}} 
             onRefresh={refreshUser}
-            onViewProfile={(id) => { setSelectedProfileId(id); setCurrentView('public_profile'); }}
-            addToCart={addToCart}
+            onViewProduct={(id) => {
+                setSelectedProductId(id);
+                setCurrentView('product_details');
+            }}
           />
+        </Suspense>
+      ) : currentView === 'product_details' && selectedProductId ? (
+          <Suspense fallback={<PageLoader />}>
+            <PublicProductDetails 
+              lang={lang}
+              user={user}
+              productId={selectedProductId}
+              onBack={() => setCurrentView('home')}
+              onLoginClick={() => {}} 
+              onRefresh={refreshUser}
+              onViewProfile={(id) => { setSelectedProfileId(id); setCurrentView('public_profile'); }}
+              addToCart={addToCart}
+            />
+          </Suspense>
       ) : currentView === 'public_profile' && selectedProfileId ? (
           <PublicProfileView 
             lang={lang}
@@ -598,112 +656,124 @@ const AppContent: React.FC = () => {
         <>
           {(user.role === 'CUSTOMER') && (
             <div className={'block'}>
-              <CustomerView 
-                user={user} 
-                view={currentView === 'orders_customer' ? 'orders' : currentView} 
-                cart={cart}
-                addToCart={addToCart}
-                removeFromCart={removeFromCart}
-                updateQuantity={updateQuantity}
-                clearCart={clearCart}
-                lang={lang}
-                onRefresh={refreshUser}
-                onViewProduct={(id) => {
-                    setSelectedProductId(id);
-                    setCurrentView('product_details');
-                }}
-                onViewProfile={(id) => {
-                    setSelectedProfileId(id);
-                    setCurrentView('public_profile');
-                }}
-                onTabChange={(tab) => {
-                    if (tab === 'home' || tab === 'shop') setCurrentView('home');
-                    else if (tab === 'cart') setCurrentView('cart');
-                    else if (tab === 'orders') setCurrentView('orders_customer');
-                    else setCurrentView(tab);
-                }}
-                onProceedToApiCheckout={(items) => { setCheckoutCart(items); setShowApiCheckout(true); }}
-              />
+              <Suspense fallback={<PageLoader />}>
+                <CustomerView 
+                  user={user} 
+                  view={currentView === 'orders_customer' ? 'orders' : currentView} 
+                  cart={cart}
+                  addToCart={addToCart}
+                  removeFromCart={removeFromCart}
+                  updateQuantity={updateQuantity}
+                  clearCart={clearCart}
+                  lang={lang}
+                  onRefresh={refreshUser}
+                  onViewProduct={(id) => {
+                      setSelectedProductId(id);
+                      setCurrentView('product_details');
+                  }}
+                  onViewProfile={(id) => {
+                      setSelectedProfileId(id);
+                      setCurrentView('public_profile');
+                  }}
+                  onTabChange={(tab) => {
+                      if (tab === 'home' || tab === 'shop') setCurrentView('home');
+                      else if (tab === 'cart') setCurrentView('cart');
+                      else if (tab === 'orders') setCurrentView('orders_customer');
+                      else setCurrentView(tab);
+                  }}
+                  onProceedToApiCheckout={(items) => { setCheckoutCart(items); setShowApiCheckout(true); }}
+                />
+              </Suspense>
             </div>
           )}
 
           {user.role === 'MERCHANT' && (currentView === 'shop' || currentView === 'cart') && (
             <div className="block">
-              <CustomerView
-                user={user}
-                view={currentView}
-                cart={cart}
-                addToCart={addToCart}
-                removeFromCart={removeFromCart}
-                updateQuantity={updateQuantity}
-                clearCart={clearCart}
-                lang={lang}
-                onRefresh={refreshUser}
-                onViewProduct={(id) => { setSelectedProductId(id); setCurrentView('product_details'); }}
-                onViewProfile={(id) => { setSelectedProfileId(id); setCurrentView('public_profile'); }}
-                onTabChange={(tab) => { if (tab === 'shop' || tab === 'cart') setCurrentView(tab); updateHash(tab); }}
-                onProceedToApiCheckout={(items) => { setCheckoutCart(items); setShowApiCheckout(true); }}
-                shopOnlySection
-              />
+              <Suspense fallback={<PageLoader />}>
+                <CustomerView
+                  user={user}
+                  view={currentView}
+                  cart={cart}
+                  addToCart={addToCart}
+                  removeFromCart={removeFromCart}
+                  updateQuantity={updateQuantity}
+                  clearCart={clearCart}
+                  lang={lang}
+                  onRefresh={refreshUser}
+                  onViewProduct={(id) => { setSelectedProductId(id); setCurrentView('product_details'); }}
+                  onViewProfile={(id) => { setSelectedProfileId(id); setCurrentView('public_profile'); }}
+                  onTabChange={(tab) => { if (tab === 'shop' || tab === 'cart') setCurrentView(tab); updateHash(tab); }}
+                  onProceedToApiCheckout={(items) => { setCheckoutCart(items); setShowApiCheckout(true); }}
+                  shopOnlySection
+                />
+              </Suspense>
             </div>
           )}
 
           {user.role === 'MERCHANT' && currentView !== 'shop' && currentView !== 'cart' && (
-            <MerchantView 
-              user={user} 
-              view={currentView} 
-              onViewProduct={(id) => { setSelectedProductId(id); setCurrentView('product_details'); }}
-              onViewProfile={(id) => { setSelectedProfileId(id); setCurrentView('public_profile'); }}
-            />
-          )}
-          
-          {user.role === 'ADMIN' && (currentView === 'shop' || currentView === 'cart') && (
-            <div className="block">
-              <CustomerView
-                user={user}
-                view={currentView}
-                cart={cart}
-                addToCart={addToCart}
-                removeFromCart={removeFromCart}
-                updateQuantity={updateQuantity}
-                clearCart={clearCart}
-                lang={lang}
-                onRefresh={refreshUser}
-                onViewProduct={(id) => { setSelectedProductId(id); setCurrentView('product_details'); }}
-                onViewProfile={(id) => { setSelectedProfileId(id); setCurrentView('public_profile'); }}
-                onTabChange={(tab) => { if (tab === 'shop' || tab === 'cart') setCurrentView(tab); updateHash(tab); }}
-                onProceedToApiCheckout={(items) => { setCheckoutCart(items); setShowApiCheckout(true); }}
-                shopOnlySection
-              />
-            </div>
-          )}
-
-          {user.role === 'ADMIN' && currentView !== 'shop' && currentView !== 'cart' && (
-              <AdminView 
+            <Suspense fallback={<PageLoader />}>
+              <MerchantView 
+                user={user} 
                 view={currentView} 
                 onViewProduct={(id) => { setSelectedProductId(id); setCurrentView('product_details'); }}
                 onViewProfile={(id) => { setSelectedProfileId(id); setCurrentView('public_profile'); }}
               />
+            </Suspense>
+          )}
+          
+          {user.role === 'ADMIN' && (currentView === 'shop' || currentView === 'cart') && (
+            <div className="block">
+              <Suspense fallback={<PageLoader />}>
+                <CustomerView
+                  user={user}
+                  view={currentView}
+                  cart={cart}
+                  addToCart={addToCart}
+                  removeFromCart={removeFromCart}
+                  updateQuantity={updateQuantity}
+                  clearCart={clearCart}
+                  lang={lang}
+                  onRefresh={refreshUser}
+                  onViewProduct={(id) => { setSelectedProductId(id); setCurrentView('product_details'); }}
+                  onViewProfile={(id) => { setSelectedProfileId(id); setCurrentView('public_profile'); }}
+                  onTabChange={(tab) => { if (tab === 'shop' || tab === 'cart') setCurrentView(tab); updateHash(tab); }}
+                  onProceedToApiCheckout={(items) => { setCheckoutCart(items); setShowApiCheckout(true); }}
+                  shopOnlySection
+                />
+              </Suspense>
+            </div>
+          )}
+
+          {user.role === 'ADMIN' && currentView !== 'shop' && currentView !== 'cart' && (
+              <Suspense fallback={<PageLoader />}>
+                <AdminView 
+                  view={currentView} 
+                  onViewProduct={(id) => { setSelectedProductId(id); setCurrentView('product_details'); }}
+                  onViewProfile={(id) => { setSelectedProfileId(id); setCurrentView('public_profile'); }}
+                />
+              </Suspense>
           )}
 
           {user.role === 'BROKER' && (currentView === 'shop' || currentView === 'cart') && (
             <div className="block">
-              <CustomerView
-                user={user}
-                view={currentView}
-                cart={cart}
-                addToCart={addToCart}
-                removeFromCart={removeFromCart}
-                updateQuantity={updateQuantity}
-                clearCart={clearCart}
-                lang={lang}
-                onRefresh={refreshUser}
-                onViewProduct={(id) => { setSelectedProductId(id); setCurrentView('product_details'); }}
-                onViewProfile={(id) => { setSelectedProfileId(id); setCurrentView('public_profile'); }}
-                onTabChange={(tab) => { if (tab === 'shop' || tab === 'cart') setCurrentView(tab); updateHash(tab); }}
-                onProceedToApiCheckout={(items) => { setCheckoutCart(items); setShowApiCheckout(true); }}
-                shopOnlySection
-              />
+              <Suspense fallback={<PageLoader />}>
+                <CustomerView
+                  user={user}
+                  view={currentView}
+                  cart={cart}
+                  addToCart={addToCart}
+                  removeFromCart={removeFromCart}
+                  updateQuantity={updateQuantity}
+                  clearCart={clearCart}
+                  lang={lang}
+                  onRefresh={refreshUser}
+                  onViewProduct={(id) => { setSelectedProductId(id); setCurrentView('product_details'); }}
+                  onViewProfile={(id) => { setSelectedProfileId(id); setCurrentView('public_profile'); }}
+                  onTabChange={(tab) => { if (tab === 'shop' || tab === 'cart') setCurrentView(tab); updateHash(tab); }}
+                  onProceedToApiCheckout={(items) => { setCheckoutCart(items); setShowApiCheckout(true); }}
+                  shopOnlySection
+                />
+              </Suspense>
             </div>
           )}
 
@@ -721,6 +791,8 @@ const AppContent: React.FC = () => {
         </>
       )}
     </Layout>
+    <SupportChat lang={lang} user={user} />
+    </>
   );
 };
 

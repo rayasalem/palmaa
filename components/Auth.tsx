@@ -144,7 +144,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
   if (view === 'REGISTER_MERCHANT') return <RegisterMerchant onRegister={onLogin} onBackToLogin={() => setView('LOGIN')} onOpenTerms={onOpenTerms} />;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 sm:p-6 font-sans" dir={lang === 'en' ? 'ltr' : 'rtl'}>
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 sm:p-6 font-sans font-heading" dir={lang === 'en' ? 'ltr' : 'rtl'}>
       <div className="w-full max-w-lg transition-all duration-500 ease-out animate-fade-in">
         <div className="text-center space-y-8 mb-10">
            <div className="flex justify-center transform scale-125"><Logo /></div>
@@ -166,11 +166,11 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
           </div>
 
           <div className="p-8 sm:p-10 pt-4">
-            <div className="mb-10 text-center">
-               <h2 className="text-2xl font-black text-palma-navy mb-2 tracking-tight">
+            <div className="heading-block mb-10">
+               <h2 className="heading-block-title font-heading">
                  {view === 'LOGIN' ? t.auth.welcomeHeadline : t.auth.chooseRole}
                </h2>
-               <p className="text-sm font-medium text-slate-400">
+               <p className="heading-block-sub">
                  {view === 'LOGIN' ? t.auth.digitalJourney : t.auth.roleSubtitle}
                </p>
             </div>
@@ -193,7 +193,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
             {view === 'LOGIN' && showForgotPassword && (
               <div className="space-y-6 animate-fade-in">
                 {error && <p className="text-xs font-bold text-red-500">{error}</p>}
-                <h3 className="text-lg font-bold text-palma-navy">
+                <h3 className="font-heading text-lg font-bold text-palma-navy">
                   {forgotStep === 'email' && t.auth.forgotPassword}
                   {forgotStep === 'otp' && t.auth.enterCodeSent}
                   {forgotStep === 'password' && t.auth.newPasswordStep}
@@ -376,7 +376,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
             {verificationMode && (
               <div className="space-y-6 animate-fade-in">
                 <div className="text-center space-y-2">
-                  <h3 className="text-lg font-bold text-palma-navy">
+                  <h3 className="font-heading text-lg font-bold text-palma-navy">
                     {lang === 'ar' ? 'تأكيد البريد الإلكتروني' : lang === 'he' ? 'אימות כתובת אימייל' : 'Verify your email'}
                   </h3>
                   <p className="text-xs text-slate-500">

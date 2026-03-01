@@ -142,14 +142,14 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
           {step === 'FORM' ? (
             <>
               {/* Header */}
-              <div className="space-y-3">
+              <div className="heading-block heading-block-lg space-y-3 text-left">
                 <div className="inline-block mb-4" onClick={onBackToLogin}>
                    <Logo size="small" />
                 </div>
-                <h1 className="text-4xl font-black text-palma-navy tracking-tight leading-tight">
+                <h1 className="heading-block-title font-heading text-3xl">
                   {lang === 'en' ? 'Create Account' : 'إنشاء حساب جديد'}
                 </h1>
-                <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">
+                <p className="heading-block-sub">
                   {t.auth.customerSubtitle}
                 </p>
               </div>
@@ -291,7 +291,7 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
                <div className="w-20 h-20 bg-palma-primaryLight text-palma-primary rounded-full flex items-center justify-center mx-auto mb-6">
                   <Mail className="w-8 h-8" />
                </div>
-               <h2 className="text-2xl font-black text-slate-900 mb-2">{lang === 'en' ? 'Verify Email' : 'تحقق من البريد الإلكتروني'}</h2>
+               <h2 className="font-heading text-2xl font-black text-palma-navy mb-2">{lang === 'en' ? 'Verify Email' : 'تحقق من البريد الإلكتروني'}</h2>
                <p className="text-slate-500 text-sm mb-2">{lang === 'en' ? `We sent a code to ${formData.email}` : `أرسلنا رمزاً إلى ${formData.email}`}</p>
                {emailNotSent && (
                  <p className="mb-4 px-4 py-2 bg-amber-50 text-amber-800 text-sm rounded-xl border border-amber-200">

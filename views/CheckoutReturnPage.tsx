@@ -123,7 +123,7 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({ lang, or
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6" dir={isRtl ? 'rtl' : 'ltr'}>
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 max-w-md w-full text-center">
           <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-xl font-black text-slate-900 mb-2">{lang === 'ar' ? 'فشل الدفع' : 'Payment failed'}</h1>
+          <h1 className="font-heading text-xl font-black text-palma-navy mb-2">{lang === 'ar' ? 'فشل الدفع' : 'Payment failed'}</h1>
           <p className="text-slate-600 text-sm mb-6">{lang === 'ar' ? 'لم يتم تأكيد الدفع.' : 'Payment was not confirmed.'}</p>
           <button type="button" onClick={onBack} className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold">{lang === 'ar' ? 'العودة للتسوق' : 'Back to shop'}</button>
         </div>
@@ -136,7 +136,7 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({ lang, or
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6" dir={isRtl ? 'rtl' : 'ltr'}>
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 max-w-md w-full text-center">
           <Loader2 className="w-12 h-12 text-green-600 animate-spin mx-auto mb-4" />
-          <h1 className="text-xl font-black text-slate-900 mb-2">{lang === 'ar' ? 'جاري تأكيد الدفع...' : 'Confirming payment...'}</h1>
+          <h1 className="font-heading text-xl font-black text-palma-navy mb-2">{lang === 'ar' ? 'جاري تأكيد الدفع...' : 'Confirming payment...'}</h1>
           <p className="text-slate-600 text-sm">{lang === 'ar' ? 'انتظر قليلاً.' : 'Please wait.'}</p>
         </div>
       </div>
@@ -148,7 +148,7 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({ lang, or
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6" dir={isRtl ? 'rtl' : 'ltr'}>
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 max-w-md w-full text-center">
           <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
-          <h1 className="text-xl font-black text-slate-900 mb-2">{lang === 'ar' ? 'تم الدفع' : 'Payment successful'}</h1>
+          <h1 className="font-heading text-xl font-black text-palma-navy mb-2">{lang === 'ar' ? 'تم الدفع' : 'Payment successful'}</h1>
           <Loader2 className="w-8 h-8 text-green-600 animate-spin mx-auto mt-4" />
           <p className="text-slate-600 text-sm mt-4">{lang === 'ar' ? 'جاري إنشاء الشحنة...' : 'Creating shipment...'}</p>
         </div>
@@ -161,7 +161,7 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({ lang, or
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6" dir={isRtl ? 'rtl' : 'ltr'}>
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 max-w-md w-full text-center">
           <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-xl font-black text-slate-900 mb-2">{lang === 'ar' ? 'حدث خطأ' : 'Something went wrong'}</h1>
+          <h1 className="font-heading text-xl font-black text-palma-navy mb-2">{lang === 'ar' ? 'حدث خطأ' : 'Something went wrong'}</h1>
           <p className="text-slate-600 text-sm mb-6">{error}</p>
           <button type="button" onClick={onBack} className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold">{lang === 'ar' ? 'العودة' : 'Back'}</button>
         </div>
@@ -173,7 +173,7 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({ lang, or
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6" dir={isRtl ? 'rtl' : 'ltr'}>
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 max-w-md w-full text-center">
         <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
-        <h1 className="text-xl font-black text-slate-900 mb-2">{lang === 'ar' ? 'تم تأكيد الطلب' : 'Order confirmed'}</h1>
+        <h1 className="font-heading text-xl font-black text-palma-navy mb-2">{lang === 'ar' ? 'تم تأكيد الطلب' : 'Order confirmed'}</h1>
         <p className="text-slate-600 text-sm mb-6">{lang === 'ar' ? 'تم الدفع وإنشاء الشحنة.' : 'Payment and shipment completed.'}</p>
         <div className="bg-slate-50 rounded-xl p-4 text-left rtl:text-right space-y-2 mb-6">
           <p className="text-xs font-bold text-slate-500">{lang === 'ar' ? 'رقم الطلب' : 'Order ID'}</p>

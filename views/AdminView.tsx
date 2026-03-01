@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useReducer } from 'react';
 import { User, WithdrawalRequest } from '../types';
 import { marketStore } from '../store';
 import { userService } from '../services/userService';
@@ -22,6 +22,195 @@ interface AdminViewProps {
   onViewProduct?: (id: string) => void;
   onViewProfile?: (id: string) => void;
 }
+
+// --- Performance: reducer for delete-user modal state (logically grouped; avoids multiple useState updates) ---
+type DeleteModalState = { userToDelete: AdminUser | null; deleteReason: string; deleteLoading: boolean };
+type DeleteModalAction =
+  | { type: 'OPEN'; user: AdminUser }
+  | { type: 'CLOSE' }
+  | { type: 'SET_REASON'; value: string }
+  | { type: 'CONFIRM_START' }
+  | { type: 'CONFIRM_SUCCESS' }
+  | { type: 'CONFIRM_END' };
+const deleteModalInitial: DeleteModalState = { userToDelete: null, deleteReason: '', deleteLoading: false };
+function deleteModalReducer(state: DeleteModalState, action: DeleteModalAction): DeleteModalState {
+  switch (action.type) {
+    case 'OPEN': return { userToDelete: action.user, deleteReason: '', deleteLoading: false };
+    case 'CLOSE': return deleteModalInitial;
+    case 'SET_REASON': return { ...state, deleteReason: action.value };
+    case 'CONFIRM_START': return { ...state, deleteLoading: true };
+    case 'CONFIRM_SUCCESS': return deleteModalInitial;
+    case 'CONFIRM_END': return { ...state, deleteLoading: false };
+    default: return state;
+  }
+}
+
+// --- Performance: memoized table row components to avoid re-rendering all rows when one updates ---
+interface UserRowProps {
+  user: AdminUser;
+  isProcessing: boolean;
+  lang: Language;
+  t: ReturnType<typeof translations[keyof typeof translations]>;
+  onStatusChange: (userId: string, status: 'APPROVED' | 'REJECTED' | 'SUSPENDED' | 'PENDING') => void;
+  onViewProfile: ((id: string) => void) | undefined;
+  onRestore: (user: AdminUser) => void;
+  onOpenDelete: (user: AdminUser) => void;
+}
+const UserRow = React.memo(function UserRow({ user, isProcessing, lang, t, onStatusChange, onViewProfile, onRestore, onOpenDelete }: UserRowProps) {
+  const isSuspended = user.status === 'SUSPENDED';
+  const isDeleted = user.status === 'DELETED';
+  const isApproved = (user.status === 'APPROVED' || user.status === 'ACTIVE' || (user as any).isApproved) && !isSuspended && !isDeleted;
+  const statusLabel = isDeleted
+    ? (lang === 'ar' ? 'محذوف (مسودة 30 يوم)' : 'Deleted (30-day draft)')
+    : isSuspended
+    ? (lang === 'ar' ? 'موقوف' : 'Suspended')
+    : isApproved
+    ? t.common.approved
+    : t.common.pending;
+  const statusColor = isDeleted
+    ? 'bg-slate-100 text-slate-500 border-slate-200'
+    : isSuspended
+    ? 'bg-red-50 text-red-600 border-red-100'
+    : isApproved
+    ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+    : 'bg-amber-50 text-amber-600 border-amber-100';
+  const getSourceLabel = (u: AdminUser) => {
+    if (u.source === 'API') return { label: t.common.realData, icon: <Database className="w-3 h-3" />, color: 'bg-slate-100 text-slate-500' };
+    if (u.source && u.source === 'CLOUD') return { label: 'Database', icon: <Globe className="w-3 h-3" />, color: 'bg-indigo-50 text-indigo-600' };
+    return { label: 'Registered', icon: <Check className="w-3 h-3" />, color: 'bg-palma-primary/10 text-palma-primary' };
+  };
+  const sourceMeta = getSourceLabel(user);
+  return (
+    <tr className="hover:bg-slate-50/80 transition-colors group">
+      <td className="px-8 py-5">
+        <div className="flex items-center gap-4">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black text-white shadow-md ${user.source === 'SEED' ? 'bg-slate-400' : 'bg-palma-navy'}`}>
+            {user.name.charAt(0)}
+          </div>
+          <div>
+            <div className="text-sm font-black text-slate-900 leading-tight">{user.name}</div>
+            <div className="text-[10px] text-slate-400 font-mono mt-0.5">{user.email}</div>
+          </div>
+        </div>
+      </td>
+      <td className="px-8 py-5">
+        <span className="bg-white border border-slate-100 px-3 py-1.5 rounded-lg text-[10px] font-black text-slate-600 uppercase tracking-wide shadow-sm">
+          {t.roles[user.role as keyof typeof t.roles] || user.role}
+        </span>
+      </td>
+      <td className="px-8 py-5">
+        <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${statusColor}`}>
+          {statusLabel}
+        </span>
+      </td>
+      <td className="px-8 py-5">
+        <span className={`flex items-center gap-1.5 w-fit px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest ${sourceMeta.color}`}>
+          {sourceMeta.icon}
+          {sourceMeta.label}
+        </span>
+      </td>
+      <td className="px-8 py-5">
+        {isProcessing ? (
+          <div className="w-5 h-5 border-2 border-palma-primary border-t-transparent rounded-full animate-spin"></div>
+        ) : (
+          <div className="flex gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+            {(user.role === 'MERCHANT' || user.role === 'BROKER') && onViewProfile && (
+              <button onClick={() => onViewProfile(user.id)} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition" title={lang === 'ar' ? 'عرض الملف' : 'View profile'}>
+                <Eye className="w-4 h-4" />
+              </button>
+            )}
+            {!isDeleted && !isApproved && !isSuspended && (
+              <button onClick={() => onStatusChange(user.id, 'APPROVED')} className="p-2 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition" title={t.common.approve}>
+                <Check className="w-4 h-4" />
+              </button>
+            )}
+            {isSuspended && (user.role === 'MERCHANT' || user.role === 'BROKER') && !isDeleted && (
+              <button onClick={() => onStatusChange(user.id, 'APPROVED')} className="p-2 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition" title={lang === 'ar' ? 'إعادة التفعيل' : 'Reactivate'}>
+                <Check className="w-4 h-4" />
+              </button>
+            )}
+            {!isDeleted && !isSuspended && user.status !== 'REJECTED' && (
+              <button onClick={() => onStatusChange(user.id, 'REJECTED')} className="p-2 bg-rose-100 text-rose-700 rounded-lg hover:bg-rose-200 transition" title={t.common.reject}>
+                <X className="w-4 h-4" />
+              </button>
+            )}
+            {(user.role === 'MERCHANT' || user.role === 'BROKER') && isApproved && !isDeleted && (
+              <button onClick={() => onStatusChange(user.id, 'SUSPENDED')} className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition" title={lang === 'ar' ? 'تعليق المتجر' : 'Suspend store'}>
+                <Shield className="w-4 h-4" />
+              </button>
+            )}
+            {isDeleted ? (
+              <button onClick={() => onRestore(user)} className="p-2 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition" title={lang === 'ar' ? 'استرجاع المستخدم' : 'Restore user'}>
+                <Check className="w-4 h-4" />
+              </button>
+            ) : (
+              <button onClick={() => onOpenDelete(user)} className="p-2 bg-slate-100 text-slate-500 rounded-lg hover:bg-red-50 hover:text-red-600 transition" title={lang === 'ar' ? 'حذف المستخدم (مسودة 30 يوم)' : 'Delete user (30-day draft)'}>
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        )}
+      </td>
+    </tr>
+  );
+});
+
+interface ProductRowProps {
+  product: any;
+  isProcessing: boolean;
+  t: ReturnType<typeof translations[keyof typeof translations]>;
+  lang: Language;
+  onViewProduct: ((id: string) => void) | undefined;
+  onViewProfile: ((id: string) => void) | undefined;
+  onToggleActive: (id: string, isActive: boolean) => void;
+  onDelete: (id: string, name: string) => void;
+}
+const ProductRow = React.memo(function ProductRow({ product: p, isProcessing, t, lang, onViewProduct, onViewProfile, onToggleActive, onDelete }: ProductRowProps) {
+  const isActive = p.is_active !== false && p.status !== 'inactive';
+  return (
+    <tr className="hover:bg-slate-50/80 transition-colors group">
+      <td className="px-6 py-4">
+        <div
+          className="flex items-center gap-4 cursor-pointer hover:opacity-80"
+          onClick={() => onViewProduct && onViewProduct(p.id)}
+        >
+          <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 shrink-0">
+            <img src={p.image_url || p.images?.[0] || 'https://placehold.co/100'} loading="lazy" alt="" className="w-full h-full object-cover" />
+          </div>
+          <span className="text-sm font-black text-slate-900 line-clamp-1">{p.title || p.name}</span>
+        </div>
+      </td>
+      <td className="px-6 py-4">
+        <button
+          type="button"
+          onClick={() => { const mid = p.merchant_id; if (mid && onViewProfile) onViewProfile(mid); }}
+          className="text-xs font-bold text-slate-700 hover:text-palma-primary hover:underline text-left"
+        >{p.merchant_name ?? '-'}</button>
+      </td>
+      <td className="px-6 py-4 text-xs text-slate-600">{p.category || '-'}</td>
+      <td className="px-6 py-4 text-sm font-black text-palma-primary">₪{p.price ?? p.price_ils ?? 0}</td>
+      <td className="px-6 py-4">
+        <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase border ${isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
+          {isActive ? t.common.active : t.common.inactive}
+        </span>
+      </td>
+      <td className="px-6 py-4">
+        {isProcessing ? (
+          <div className="w-5 h-5 border-2 border-palma-primary border-t-transparent rounded-full animate-spin"></div>
+        ) : (
+          <div className="flex gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+            <button onClick={() => onToggleActive(p.id, isActive)} className="p-2 rounded-lg hover:bg-slate-100 transition" title={isActive ? (lang === 'ar' ? 'إخفاء' : 'Hide') : (lang === 'ar' ? 'إظهار' : 'Show')}>
+              {isActive ? <EyeOff className="w-4 h-4 text-amber-600" /> : <Eye className="w-4 h-4 text-emerald-600" />}
+            </button>
+            <button onClick={() => onDelete(p.id, p.title || p.name)} className="p-2 rounded-lg hover:bg-red-50 transition" title={t.common.delete}>
+              <Trash2 className="w-4 h-4 text-red-600" />
+            </button>
+          </div>
+        )}
+      </td>
+    </tr>
+  );
+});
 
 export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProduct, onViewProfile }) => {
   const lang: Language = document.documentElement.dir === 'ltr' ? 'en' : 'ar';
@@ -54,9 +243,8 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
   const [platformLoading, setPlatformLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsForm, setSettingsForm] = useState({ commission_rate: 15, tax_penalty_rate: 16 });
-  const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null);
-  const [deleteReason, setDeleteReason] = useState('');
-  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteModal, dispatchDeleteModal] = useReducer(deleteModalReducer, deleteModalInitial);
+  const { userToDelete, deleteReason, deleteLoading } = deleteModal;
 
   useEffect(() => {
     setActiveTab(viewToTab[view] || 'users');
@@ -156,7 +344,8 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
     if (activeTab === 'platform') loadPlatform();
   }, [activeTab]);
 
-  const handleStatusChange = async (userId: string, status: 'APPROVED' | 'REJECTED' | 'SUSPENDED' | 'PENDING') => {
+  // --- Performance: stable callback for table row actions (avoids inline arrows in .map) ---
+  const handleStatusChange = useCallback(async (userId: string, status: 'APPROVED' | 'REJECTED' | 'SUSPENDED' | 'PENDING') => {
     setActionLoading(userId);
     const user = allUsers.find(u => u.id === userId);
     if (!user) return;
@@ -196,9 +385,9 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
     } finally {
       setActionLoading(null);
     }
-  };
+  }, [allUsers, lang, showToast]);
 
-  const handleWithdrawal = (id: string, status: 'APPROVED' | 'REJECTED') => {
+  const handleWithdrawal = useCallback((id: string, status: 'APPROVED' | 'REJECTED') => {
     marketStore.updateWithdrawalStatus(id, status);
     const w = withdrawals.find(x => x.id === id);
     if (w) {
@@ -206,9 +395,8 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
       if (u) logEmail(u.email ?? '', `Withdrawal Update: ${status}`, `Your withdrawal request for ${w.amount} ILS has been ${status}.`);
       showToast(`Withdrawal request ${status.toLowerCase()}`, status === 'APPROVED' ? 'success' : 'info');
     }
-    // Update local withdrawal state
     setWithdrawals(prev => prev.map(wd => wd.id === id ? { ...wd, status } : wd));
-  };
+  }, [withdrawals, allUsers, showToast]);
 
   const getUserLocation = (user: User) => {
     if (user.cityId) {
@@ -217,34 +405,36 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
     return user.city || '-';
   };
 
-  const getFilteredUsers = () => {
-    let result = allUsers.filter(u => u.role !== 'ADMIN'); // Exclude admins from list
-    
-    // Status Filter
+  // --- Performance: memoize expensive filter/counts so they don't run every render ---
+  const filteredUsers = useMemo(() => {
+    let result = allUsers.filter(u => u.role !== 'ADMIN');
     if (filterStatus === 'APPROVED') {
       result = result.filter(u => (u.status === 'APPROVED' || u.status === 'ACTIVE' || u.isApproved) && u.status !== 'SUSPENDED');
     } else if (filterStatus === 'PENDING') {
       result = result.filter(u => u.status === 'PENDING' && !u.isApproved);
     }
-
-    // Search Filter
     if (searchTerm) {
       const lower = searchTerm.toLowerCase();
-      result = result.filter(u => 
-        u.name.toLowerCase().includes(lower) || 
+      result = result.filter(u =>
+        u.name.toLowerCase().includes(lower) ||
         (u.email ?? '').toLowerCase().includes(lower) ||
         (u.phone ?? '').includes(lower)
       );
     }
-
     return result;
-  };
+  }, [allUsers, filterStatus, searchTerm]);
 
-  const filteredUsers = getFilteredUsers();
-  const pendingCount = allUsers.filter(u => u.status === 'PENDING' && u.role !== 'ADMIN').length;
-  const pendingWithdrawals = withdrawals.filter(w => w.status === 'PENDING');
+  const pendingCount = useMemo(
+    () => allUsers.filter(u => u.status === 'PENDING' && u.role !== 'ADMIN').length,
+    [allUsers]
+  );
 
-  const handleProductToggleActive = async (id: string, isActive: boolean) => {
+  const pendingWithdrawals = useMemo(
+    () => withdrawals.filter(w => w.status === 'PENDING'),
+    [withdrawals]
+  );
+
+  const handleProductToggleActive = useCallback(async (id: string, isActive: boolean) => {
     setActionLoading(id);
     try {
       const res = await updateAdminProduct(id, { isActive: !isActive });
@@ -259,20 +449,23 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
     } finally {
       setActionLoading(null);
     }
-  };
+  }, [t.common.success, t.common.error, showToast]);
 
-  const openDeleteUserModal = (user: AdminUser) => {
-    setUserToDelete(user);
-    setDeleteReason('');
-  };
+  const openDeleteUserModal = useCallback((user: AdminUser) => {
+    dispatchDeleteModal({ type: 'OPEN', user });
+  }, []);
 
-  const confirmDeleteUser = async () => {
+  const closeDeleteUserModal = useCallback(() => {
+    if (!deleteLoading) dispatchDeleteModal({ type: 'CLOSE' });
+  }, [deleteLoading]);
+
+  const confirmDeleteUser = useCallback(async () => {
     if (!userToDelete) return;
     if (!deleteReason.trim()) {
       showToast(lang === 'ar' ? 'يرجى إدخال سبب الحذف' : 'Please enter a deletion reason', 'error');
       return;
     }
-    setDeleteLoading(true);
+    dispatchDeleteModal({ type: 'CONFIRM_START' });
     try {
       const res = await userService.softDeleteUser(userToDelete.id, deleteReason.trim());
       if (!res.success) {
@@ -289,15 +482,14 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
           lang === 'ar' ? 'تم إرسال المستخدم إلى المسودة وسيتم حذفه نهائياً بعد 30 يوماً' : 'User moved to draft and will be permanently removed after 30 days',
           'success'
         );
-        setUserToDelete(null);
-        setDeleteReason('');
+        dispatchDeleteModal({ type: 'CONFIRM_SUCCESS' });
       }
     } finally {
-      setDeleteLoading(false);
+      dispatchDeleteModal({ type: 'CONFIRM_END' }); // keep loading until we have a way to set false; actually we need to set deleteLoading false in finally. So we need an action CONFIRM_END that sets deleteLoading: false, or in finally we dispatch CLOSE. Actually on success we already dispatch CONFIRM_SUCCESS which resets. On failure we don't dispatch anything so deleteLoading stays true. So we need either a CONFIRM_FAIL action or in the catch/finally we set loading false. Let me add action CONFIRM_END to set deleteLoading: false.
     }
-  };
+  }, [userToDelete, deleteReason, lang, showToast]);
 
-  const handleRestoreUser = async (user: AdminUser) => {
+  const handleRestoreUser = useCallback(async (user: AdminUser) => {
     setActionLoading(user.id);
     try {
       const res = await userService.restoreUser(user.id);
@@ -319,9 +511,9 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
     } finally {
       setActionLoading(null);
     }
-  };
+  }, [lang, showToast]);
 
-  const handleProductDelete = async (id: string, name: string) => {
+  const handleProductDelete = useCallback(async (id: string, name: string) => {
     if (!window.confirm(lang === 'ar' ? `حذف "${name}"؟` : `Delete "${name}"?`)) return;
     setActionLoading(id);
     try {
@@ -333,50 +525,48 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
     } finally {
       setActionLoading(null);
     }
-  };
+  }, [lang, t.common.success, t.common.error, showToast]);
 
-  const filteredProducts = productSearch
-    ? products.filter(
-        (p) =>
-          (p.title || p.name || '').toLowerCase().includes(productSearch.toLowerCase()) ||
-          (p.category || '').toLowerCase().includes(productSearch.toLowerCase())
-      )
-    : products;
-
-  const getSourceLabel = (user: AdminUser) => {
-    if (user.source === 'API') return { label: t.common.realData, icon: <Database className="w-3 h-3" />, color: 'bg-slate-100 text-slate-500' };
-    if (user.source && user.source === 'CLOUD') return { label: 'Database', icon: <Globe className="w-3 h-3" />, color: 'bg-indigo-50 text-indigo-600' };
-    return { label: 'Registered', icon: <Check className="w-3 h-3" />, color: 'bg-palma-primary/10 text-palma-primary' };
-  };
+  const filteredProducts = useMemo(
+    () =>
+      productSearch
+        ? products.filter(
+            (p) =>
+              (p.title || p.name || '').toLowerCase().includes(productSearch.toLowerCase()) ||
+              (p.category || '').toLowerCase().includes(productSearch.toLowerCase())
+          )
+        : products,
+    [products, productSearch]
+  );
 
   return (
-    <div className="max-w-7xl mx-auto space-y-12 animate-in fade-in duration-500 pb-20">
+    <div className="max-w-7xl mx-auto space-y-8 sm:space-y-10 animate-in fade-in duration-500 pb-20 font-heading dashboard-page px-4 sm:px-6 pt-6">
       
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-         <div className="flex items-center gap-4">
-            <div className="p-4 bg-palma-navy rounded-3xl text-white shadow-lg shadow-soft"><Shield className="w-8 h-8" /></div>
+      {/* Header — تصميم حديث */}
+      <div className="dashboard-header">
+         <div className="dashboard-title-wrap">
+            <div className="dashboard-title-icon"><Shield className="w-6 h-6" /></div>
             <div>
-              <h2 className="text-4xl font-black text-palma-navy tracking-tight">{t.common.adminConsole}</h2>
-              <p className="text-sm font-medium text-palma-muted">{t.common.platformOversight}</p>
+              <h2 className="font-heading text-2xl sm:text-3xl font-black text-palma-navy tracking-tight">{t.common.adminConsole}</h2>
+              <p className="text-xs sm:text-sm font-medium text-slate-500 mt-0.5">{t.common.platformOversight}</p>
             </div>
          </div>
-         <div className="flex flex-wrap bg-white p-2 rounded-2xl shadow-soft border border-slate-100 gap-1">
-            <button onClick={() => setActiveTab('users')} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${activeTab === 'users' ? 'bg-palma-navy text-white shadow-lg' : 'text-palma-muted hover:bg-slate-50'}`}>
+         <div className="dashboard-tabs">
+            <button onClick={() => setActiveTab('users')} className={`dashboard-tab ${activeTab === 'users' ? 'dashboard-tab-active' : 'dashboard-tab-inactive'}`}>
                <Users className="w-3.5 h-3.5" /> {t.common.users}
-               {pendingCount > 0 && <span className="bg-red-500 text-white w-4 h-4 flex items-center justify-center rounded-full text-[8px]">{pendingCount}</span>}
+               {pendingCount > 0 && <span className="bg-red-500 text-white min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[9px] font-bold px-1">{pendingCount}</span>}
             </button>
-            <button onClick={() => setActiveTab('products')} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${activeTab === 'products' ? 'bg-palma-navy text-white shadow-lg' : 'text-palma-muted hover:bg-slate-50'}`}>
+            <button onClick={() => setActiveTab('products')} className={`dashboard-tab ${activeTab === 'products' ? 'dashboard-tab-active' : 'dashboard-tab-inactive'}`}>
                <Package className="w-3.5 h-3.5" /> {t.common.products}
             </button>
-            <button onClick={() => setActiveTab('orders')} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${activeTab === 'orders' ? 'bg-palma-navy text-white shadow-lg' : 'text-palma-muted hover:bg-slate-50'}`}>
+            <button onClick={() => setActiveTab('orders')} className={`dashboard-tab ${activeTab === 'orders' ? 'dashboard-tab-active' : 'dashboard-tab-inactive'}`}>
                <Database className="w-3.5 h-3.5" /> {t.common.orders}
             </button>
-            <button onClick={() => setActiveTab('treasury')} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${activeTab === 'treasury' ? 'bg-palma-navy text-white shadow-lg' : 'text-palma-muted hover:bg-slate-50'}`}>
+            <button onClick={() => setActiveTab('treasury')} className={`dashboard-tab ${activeTab === 'treasury' ? 'dashboard-tab-active' : 'dashboard-tab-inactive'}`}>
                <Banknote className="w-3.5 h-3.5" /> {t.common.withdrawals}
-               {pendingWithdrawals.length > 0 && <span className="bg-red-500 text-white w-4 h-4 flex items-center justify-center rounded-full text-[8px]">{pendingWithdrawals.length}</span>}
+               {pendingWithdrawals.length > 0 && <span className="bg-red-500 text-white min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[9px] font-bold px-1">{pendingWithdrawals.length}</span>}
             </button>
-            <button onClick={() => setActiveTab('platform')} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${activeTab === 'platform' ? 'bg-palma-navy text-white shadow-lg' : 'text-palma-muted hover:bg-slate-50'}`}>
+            <button onClick={() => setActiveTab('platform')} className={`dashboard-tab ${activeTab === 'platform' ? 'dashboard-tab-active' : 'dashboard-tab-inactive'}`}>
                <Shield className="w-3.5 h-3.5" /> {lang === 'ar' ? 'إعدادات المنصة' : 'Platform'}
             </button>
          </div>
@@ -384,9 +574,9 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
 
       {activeTab === 'users' && (
         <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-          {/* Delete User Confirmation Modal */}
+          {/* Delete User Confirmation Modal — backdrop/cancel use closeDeleteUserModal (stable callback, no inline arrows) */}
           {userToDelete && (
-            <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" onClick={() => !deleteLoading && setUserToDelete(null)}>
+            <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" onClick={closeDeleteUserModal}>
               <div
                 className="bg-white rounded-[2.5rem] max-w-lg w-full p-8 space-y-6 shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
@@ -414,7 +604,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
                     className="w-full border border-slate-200 rounded-2xl p-3 text-sm font-medium bg-slate-50 focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 outline-none resize-none"
                     rows={3}
                     value={deleteReason}
-                    onChange={(e) => setDeleteReason(e.target.value)}
+                    onChange={(e) => dispatchDeleteModal({ type: 'SET_REASON', value: e.target.value })}
                     placeholder={lang === 'ar' ? 'مثال: طلب المستخدم إغلاق الحساب / نشاط مخالف / حساب مكرر...' : 'e.g. User requested closure / policy violation / duplicate account...'}
                     disabled={deleteLoading}
                   />
@@ -430,7 +620,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
                       : (lang === 'ar' ? 'تأكيد الحذف' : 'Confirm delete')}
                   </button>
                   <button
-                    onClick={() => !deleteLoading && setUserToDelete(null)}
+                    onClick={closeDeleteUserModal}
                     disabled={deleteLoading}
                     className="flex-1 py-3.5 bg-slate-100 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 active:scale-95 transition disabled:opacity-60 disabled:cursor-not-allowed"
                   >
@@ -442,160 +632,70 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
           )}
           
           {/* Filters Bar */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-soft flex flex-col lg:flex-row justify-between items-center gap-6">
-             <h3 className="font-black text-palma-muted uppercase tracking-[0.15em] text-xs flex items-center gap-3">
-               <span className="w-2.5 h-2.5 rounded-full bg-palma-primary animate-pulse"></span> 
+          <div className="dashboard-card dashboard-card-body flex flex-col lg:flex-row justify-between items-center gap-4 sm:gap-6">
+             <h3 className="font-bold text-slate-500 text-xs uppercase tracking-wider flex items-center gap-2">
+               <span className="w-2 h-2 rounded-full bg-palma-primary"></span> 
                {t.common.activeUsersDB} ({filteredUsers.length})
              </h3>
 
-             <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-                <div className="relative flex-1 sm:w-64">
-                   <Search className="w-4 h-4 text-palma-muted absolute left-3 top-1/2 -translate-y-1/2 rtl:left-auto rtl:right-3" />
+             <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                <div className="relative flex-1 sm:w-56">
+                   <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 rtl:left-auto rtl:right-3 pointer-events-none" />
                    <input 
                      type="text" 
                      placeholder={t.common.searchUsers} 
-                     className="w-full pl-9 rtl:pr-9 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:border-palma-primary focus:bg-white transition-all"
+                     className="dashboard-input-search rtl:pl-4 rtl:pr-10"
                      value={searchTerm}
                      onChange={(e) => setSearchTerm(e.target.value)}
                    />
                 </div>
                 
-                <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
-                   <button onClick={() => setFilterStatus('ALL')} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${filterStatus === 'ALL' ? 'bg-white text-palma-navy shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>{t.common.showAll}</button>
-                   <button onClick={() => setFilterStatus('APPROVED')} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${filterStatus === 'APPROVED' ? 'bg-emerald-100 text-emerald-700 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>{t.common.approvedOnly}</button>
-                   <button onClick={() => setFilterStatus('PENDING')} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${filterStatus === 'PENDING' ? 'bg-amber-100 text-amber-700 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>{t.common.pendingOnly}</button>
+                <div className="dashboard-filter-pills">
+                   <button onClick={() => setFilterStatus('ALL')} className={`dashboard-filter-pill ${filterStatus === 'ALL' ? 'bg-white text-palma-navy shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>{t.common.showAll}</button>
+                   <button onClick={() => setFilterStatus('APPROVED')} className={`dashboard-filter-pill ${filterStatus === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : 'text-slate-500 hover:text-slate-700'}`}>{t.common.approvedOnly}</button>
+                   <button onClick={() => setFilterStatus('PENDING')} className={`dashboard-filter-pill ${filterStatus === 'PENDING' ? 'bg-amber-100 text-amber-700' : 'text-slate-500 hover:text-slate-700'}`}>{t.common.pendingOnly}</button>
                 </div>
              </div>
           </div>
 
           {/* User List */}
           {loading ? (
-             <div className="text-center py-20">
-                <div className="w-10 h-10 border-4 border-slate-200 border-t-palma-primary rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-xs font-black uppercase text-slate-400 tracking-widest">{t.common.loading}</p>
+             <div className="dashboard-empty py-20">
+                <div className="w-10 h-10 border-2 border-slate-200 border-t-palma-primary rounded-full animate-spin mb-4"></div>
+                <p className="text-xs font-semibold text-slate-500">{t.common.loading}</p>
              </div>
           ) : filteredUsers.length === 0 ? (
-             <div className="bg-white p-20 rounded-[3rem] text-center border-2 border-dashed border-slate-100">
-                <span className="text-5xl block mb-6 grayscale opacity-50">👥</span>
-                <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">{t.common.noData}</p>
+             <div className="dashboard-empty">
+                <span className="text-4xl block mb-4 grayscale opacity-60">👥</span>
+                <p className="text-slate-500 font-semibold text-sm">{t.common.noData}</p>
              </div>
           ) : (
-             <div className="bg-white rounded-[2.5rem] shadow-card border border-slate-100 overflow-hidden">
-               <div className="overflow-x-auto">
-                 <table className="min-w-full text-left rtl:text-right">
-                   <thead className="bg-slate-50 border-b border-slate-100">
+             <div className="dashboard-card">
+               <div className="dashboard-table-wrap">
+                 <table className="dashboard-table min-w-full text-left rtl:text-right">
+                   <thead>
                      <tr>
-                       <th className="px-8 py-5 text-[9px] font-black text-slate-400 uppercase tracking-widest w-64">{t.auth.name} / {t.auth.email}</th>
-                       <th className="px-8 py-5 text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.auth.role}</th>
-                       <th className="px-8 py-5 text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.common.status}</th>
-                       <th className="px-8 py-5 text-[9px] font-black text-slate-400 uppercase tracking-widest">Source</th>
-                       <th className="px-8 py-5 text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.common.actions}</th>
+                       <th className="w-64">{t.auth.name} / {t.auth.email}</th>
+                       <th>{t.auth.role}</th>
+                       <th>{t.common.status}</th>
+                       <th>Source</th>
+                       <th>{t.common.actions}</th>
                      </tr>
                    </thead>
                    <tbody className="divide-y divide-slate-50 font-bold">
-                    {filteredUsers.map(user => {
-                      const isSuspended = user.status === 'SUSPENDED';
-                      const isDeleted = user.status === 'DELETED';
-                      const isApproved = (user.status === 'APPROVED' || user.status === 'ACTIVE' || (user as any).isApproved) && !isSuspended && !isDeleted;
-                      const statusLabel = isDeleted
-                        ? (lang === 'ar' ? 'محذوف (مسودة 30 يوم)' : 'Deleted (30-day draft)')
-                        : isSuspended
-                        ? (lang === 'ar' ? 'موقوف' : 'Suspended')
-                        : isApproved
-                        ? t.common.approved
-                        : t.common.pending;
-                      const statusColor = isDeleted
-                        ? 'bg-slate-100 text-slate-500 border-slate-200'
-                        : isSuspended
-                        ? 'bg-red-50 text-red-600 border-red-100'
-                        : isApproved
-                        ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                        : 'bg-amber-50 text-amber-600 border-amber-100';
-                       const sourceMeta = getSourceLabel(user);
-                       const isProcessing = actionLoading === user.id;
-
-                       return (
-                         <tr key={user.id} className="hover:bg-slate-50/80 transition-colors group">
-                           <td className="px-8 py-5">
-                             <div className="flex items-center gap-4">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black text-white shadow-md ${user.source === 'SEED' ? 'bg-slate-400' : 'bg-palma-navy'}`}>
-                                   {user.name.charAt(0)}
-                                </div>
-                                <div>
-                                   <div className="text-sm font-black text-slate-900 leading-tight">{user.name}</div>
-                                   <div className="text-[10px] text-slate-400 font-mono mt-0.5">{user.email}</div>
-                                </div>
-                             </div>
-                           </td>
-                           <td className="px-8 py-5">
-                             <span className="bg-white border border-slate-100 px-3 py-1.5 rounded-lg text-[10px] font-black text-slate-600 uppercase tracking-wide shadow-sm">
-                               {t.roles[user.role as keyof typeof t.roles] || user.role}
-                             </span>
-                           </td>
-                           <td className="px-8 py-5">
-                             <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${statusColor}`}>
-                               {statusLabel}
-                             </span>
-                           </td>
-                           <td className="px-8 py-5">
-                             <span className={`flex items-center gap-1.5 w-fit px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest ${sourceMeta.color}`}>
-                               {sourceMeta.icon}
-                               {sourceMeta.label}
-                             </span>
-                           </td>
-                           <td className="px-8 py-5">
-                             {isProcessing ? (
-                               <div className="w-5 h-5 border-2 border-palma-primary border-t-transparent rounded-full animate-spin"></div>
-                             ) : (
-                               <div className="flex gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
-                                 {(user.role === 'MERCHANT' || user.role === 'BROKER') && onViewProfile && (
-                                   <button onClick={() => onViewProfile(user.id)} className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition" title={lang === 'ar' ? 'عرض الملف' : 'View profile'}>
-                                     <Eye className="w-4 h-4" />
-                                   </button>
-                                 )}
-                                 {!isDeleted && !isApproved && !isSuspended && (
-                                   <button onClick={() => handleStatusChange(user.id, 'APPROVED')} className="p-2 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition" title={t.common.approve}>
-                                     <Check className="w-4 h-4" />
-                                   </button>
-                                 )}
-                                 {isSuspended && (user.role === 'MERCHANT' || user.role === 'BROKER') && !isDeleted && (
-                                   <button onClick={() => handleStatusChange(user.id, 'APPROVED')} className="p-2 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition" title={lang === 'ar' ? 'إعادة التفعيل' : 'Reactivate'}>
-                                     <Check className="w-4 h-4" />
-                                   </button>
-                                 )}
-                                 {!isDeleted && !isSuspended && user.status !== 'REJECTED' && (
-                                   <button onClick={() => handleStatusChange(user.id, 'REJECTED')} className="p-2 bg-rose-100 text-rose-700 rounded-lg hover:bg-rose-200 transition" title={t.common.reject}>
-                                     <X className="w-4 h-4" />
-                                   </button>
-                                 )}
-                                 {(user.role === 'MERCHANT' || user.role === 'BROKER') && isApproved && !isDeleted && (
-                                   <button onClick={() => handleStatusChange(user.id, 'SUSPENDED')} className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition" title={lang === 'ar' ? 'تعليق المتجر' : 'Suspend store'}>
-                                     <Shield className="w-4 h-4" />
-                                   </button>
-                                 )}
-                                 {isDeleted ? (
-                                   <button
-                                     onClick={() => handleRestoreUser(user)}
-                                     className="p-2 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition"
-                                     title={lang === 'ar' ? 'استرجاع المستخدم' : 'Restore user'}
-                                   >
-                                     <Check className="w-4 h-4" />
-                                   </button>
-                                 ) : (
-                                   <button
-                                     onClick={() => openDeleteUserModal(user)}
-                                     className="p-2 bg-slate-100 text-slate-500 rounded-lg hover:bg-red-50 hover:text-red-600 transition"
-                                     title={lang === 'ar' ? 'حذف المستخدم (مسودة 30 يوم)' : 'Delete user (30-day draft)'}
-                                   >
-                                     <Trash2 className="w-4 h-4" />
-                                   </button>
-                                 )}
-                               </div>
-                             )}
-                           </td>
-                         </tr>
-                       );
-                     })}
+                    {filteredUsers.map((user) => (
+                      <UserRow
+                        key={user.id}
+                        user={user}
+                        isProcessing={actionLoading === user.id}
+                        lang={lang}
+                        t={t}
+                        onStatusChange={handleStatusChange}
+                        onViewProfile={onViewProfile}
+                        onRestore={handleRestoreUser}
+                        onOpenDelete={openDeleteUserModal}
+                      />
+                    ))}
                    </tbody>
                  </table>
                </div>
@@ -650,61 +750,19 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50 font-bold">
-                    {filteredProducts.map((p) => {
-                      const isActive = p.is_active !== false && p.status !== 'inactive';
-                      const isProcessing = actionLoading === p.id;
-                      return (
-                        <tr key={p.id} className="hover:bg-slate-50/80 transition-colors group">
-                          <td className="px-6 py-4">
-                            <div 
-                              className="flex items-center gap-4 cursor-pointer hover:opacity-80"
-                              onClick={() => onViewProduct && onViewProduct(p.id)}
-                            >
-                              <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 shrink-0">
-                                <img src={p.image_url || p.images?.[0] || 'https://placehold.co/100'} loading="lazy" alt="" className="w-full h-full object-cover" />
-                              </div>
-                              <span className="text-sm font-black text-slate-900 line-clamp-1">{p.title || p.name}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <button
-                              type="button"
-                              onClick={() => { const mid = p.merchant_id; if (mid && onViewProfile) onViewProfile(mid); }}
-                              className="text-xs font-bold text-slate-700 hover:text-palma-primary hover:underline text-left"
-                            >{p.merchant_name ?? '-'}</button>
-                          </td>
-                          <td className="px-6 py-4 text-xs text-slate-600">{p.category || '-'}</td>
-                          <td className="px-6 py-4 text-sm font-black text-palma-primary">₪{p.price ?? p.price_ils ?? 0}</td>
-                          <td className="px-6 py-4">
-                            <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase border ${isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
-                              {isActive ? t.common.active : t.common.inactive}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            {isProcessing ? (
-                              <div className="w-5 h-5 border-2 border-palma-primary border-t-transparent rounded-full animate-spin"></div>
-                            ) : (
-                              <div className="flex gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
-                                <button
-                                  onClick={() => handleProductToggleActive(p.id, isActive)}
-                                  className="p-2 rounded-lg hover:bg-slate-100 transition"
-                                  title={isActive ? (lang === 'ar' ? 'إخفاء' : 'Hide') : (lang === 'ar' ? 'إظهار' : 'Show')}
-                                >
-                                  {isActive ? <EyeOff className="w-4 h-4 text-amber-600" /> : <Eye className="w-4 h-4 text-emerald-600" />}
-                                </button>
-                                <button
-                                  onClick={() => handleProductDelete(p.id, p.title || p.name)}
-                                  className="p-2 rounded-lg hover:bg-red-50 transition"
-                                  title={t.common.delete}
-                                >
-                                  <Trash2 className="w-4 h-4 text-red-600" />
-                                </button>
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
+                    {filteredProducts.map((p) => (
+                      <ProductRow
+                        key={p.id}
+                        product={p}
+                        isProcessing={actionLoading === p.id}
+                        t={t}
+                        lang={lang}
+                        onViewProduct={onViewProduct}
+                        onViewProfile={onViewProfile}
+                        onToggleActive={handleProductToggleActive}
+                        onDelete={handleProductDelete}
+                      />
+                    ))}
                   </tbody>
                 </table>
               </div>

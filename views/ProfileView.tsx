@@ -240,7 +240,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
           <div className="bg-white rounded-3xl lg:rounded-[3rem] p-6 sm:p-10 max-w-4xl w-full max-h-[90vh] overflow-y-auto space-y-10 animate-in zoom-in-95 shadow-2xl relative" onClick={e => e.stopPropagation()}>
             <button onClick={() => setIsAddingProduct(false)} className="absolute top-6 right-6 w-10 h-10 bg-slate-50 text-slate-400 hover:text-slate-900 rounded-xl flex items-center justify-center transition-all">✕</button>
             <div className="text-center md:text-left rtl:md:text-right pt-4 sm:pt-0">
-               <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{t.common.addProduct}</h3>
+               <h3 className="font-heading text-2xl sm:text-3xl font-black text-palma-navy tracking-tight">{t.common.addProduct}</h3>
             </div>
             <form onSubmit={handleAddProductSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
                <div className="space-y-6">
@@ -346,7 +346,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
                <span className="bg-palma-primary/10 text-palma-primary px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">{user.role} Dashboard</span>
                {user.isApproved && <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[9px] font-black uppercase">✓ Approved</span>}
             </div>
-            <h1 className="text-[22px] sm:text-[30px] lg:text-[40px] font-black text-slate-900 tracking-tight leading-tight">
+            <h1 className="font-heading text-[22px] sm:text-[30px] lg:text-[40px] font-black text-palma-navy tracking-tight leading-tight">
               {isEditing ? <input name="name" className="bg-slate-50 border-none rounded-xl px-4 py-1 w-full" value={formData.name} onChange={handleInputChange} /> : user.name}
             </h1>
           </div>

@@ -119,8 +119,8 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
               <div className="flex justify-center mb-6">
                 <Logo size="medium" theme="dark" showText={false} />
               </div>
-              <h1 className="text-2xl font-black tracking-tight">{t.auth.joinBroker}</h1>
-              <p className="text-white/80 text-[10px] font-black uppercase tracking-widest mt-2">{t.auth.brokerVerification}</p>
+              <h1 className="font-heading text-2xl font-black tracking-tight">{t.auth.joinBroker}</h1>
+              <p className="heading-block-sub text-white/80 mt-2">{t.auth.brokerVerification}</p>
             </div>
 
             <form onSubmit={handleSubmit} className={`p-10 space-y-5 ${lang === 'en' ? 'text-left' : 'text-right'}`}>
