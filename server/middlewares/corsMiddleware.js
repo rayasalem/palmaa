@@ -17,6 +17,9 @@ const ALLOWED_ORIGINS = [
   'http://127.0.0.1:3000',
   'http://localhost:5173',
   'http://127.0.0.1:5173',
+  // Vite قد يختار منافذ أخرى (مثل 3001) إذا كان 3000 مستخدماً
+  'http://localhost:3001',
+  'http://127.0.0.1:3001',
 ];
 
 function getAllowedOrigins(envFrontendUrl) {

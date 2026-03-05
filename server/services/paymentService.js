@@ -9,6 +9,7 @@ import * as orderService from './orderService.js';
 import * as productService from './productService.js';
 import * as profitService from './profitService.js';
 import * as transactionService from './transactionService.js';
+import { createCardPayment as cybersourceCreateCardPayment } from './cybersourceClient.js';
 
 const ORDERS_TABLE = 'orders';
 const IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000;
@@ -111,10 +112,97 @@ async function handlePaymentCallback(orderId, status, idempotencyKey) {
   return result;
 }
 
+/**
+ * Process a card payment via Cybersource Sandbox/REST.
+ * - Validates order and amount
+ * - Sends card data to Cybersource (never stored in DB)
+ * - On AUTHORIZED: reuses handlePaymentCallback to update order & settlements
+ * - Records a PAYMENT row in transactions table for all attempts
+ */
+async function processCybersourceCardPayment(orderId, amount, currency, card) {
+  const numAmount = Number(amount);
+  if (Number.isNaN(numAmount) || numAmount <= 0) {
+    return { success: false, decision: 'ERROR', error: new Error('amount must be a positive number') };
+  }
+
+  // Make sure order exists and is not already paid
+  const { data: order, error: orderErr } = await orderService.getOrderById(orderId);
+  if (orderErr || !order) {
+    return { success: false, decision: 'ERROR', error: orderErr || new Error('Order not found') };
+  }
+  const currentStatus = String(order.status || '').toUpperCase();
+  if (currentStatus === 'PAID' || currentStatus === 'COMPLETED') {
+    return { success: false, decision: 'ERROR', error: new Error('Order already paid') };
+  }
+
+  let decision = 'ERROR';
+  let transactionId = null;
+
+  try {
+    const { decision: dec, transactionId: txId } = await cybersourceCreateCardPayment({
+      orderId,
+      amount: numAmount,
+      currency,
+      card: {
+        number: card.number,
+        expMonth: card.expMonth,
+        expYear: card.expYear,
+        cvv: card.cvv,
+      },
+    });
+    decision = dec;
+    transactionId = txId;
+  } catch (err) {
+    console.error('[paymentService] Cybersource error:', err.message);
+    decision = 'ERROR';
+  }
+
+  const upperDecision = String(decision).toUpperCase();
+
+  // Record payment attempt regardless of outcome
+  await transactionService.recordPaymentAttempt(
+    orderId,
+    numAmount,
+    currency,
+    upperDecision === 'AUTHORIZED' ? 'COMPLETED' : 'FAILED',
+    transactionId,
+    'online'
+  );
+
+  if (upperDecision === 'AUTHORIZED') {
+    // الدفع بالبطاقة = إلكتروني: حدّث الطلب لاحتساب العمولة والغرامة الضريبية (16% عند عدم رفع الفاتورة)
+    await supabase.from(ORDERS_TABLE).update({ payment_method: 'online', updated_at: new Date().toISOString() }).eq('id', orderId);
+    // Reuse existing callback logic (idempotent) to update order status, stock, profits, settlement
+    const idempotencyKey = transactionId ? `cybersource:${transactionId}` : undefined;
+    const { error } = await handlePaymentCallback(orderId, 'success', idempotencyKey);
+    if (error) {
+      return { success: false, decision: 'ERROR', transactionId, error };
+    }
+    return { success: true, decision: upperDecision, transactionId, error: null };
+  }
+
+  if (upperDecision === 'DECLINE') {
+    return {
+      success: false,
+      decision: upperDecision,
+      transactionId,
+      error: new Error('Payment was declined by issuer'),
+    };
+  }
+
+  return {
+    success: false,
+    decision: upperDecision,
+    transactionId,
+    error: new Error('Payment failed'),
+  };
+}
+
 export {
   updateOrderStatus,
   buildSandboxPaymentUrl,
   createPayment,
   handlePaymentCallback,
   ORDERS_TABLE,
+  processCybersourceCardPayment,
 };

@@ -63,6 +63,17 @@ async function login(req, res) {
       logger.warn('login failed', { email, reason: (error && error.message) || 'no user' });
       return res.status(401).json({ success: false, error: (error && error.message) || 'Invalid credentials' });
     }
+    // في الإنتاج: منع الدخول حتى يتم تأكيد البريد (الواجهة تتوقع requiresEmailVerification)
+    const emailVerified = user.is_email_verified ?? user.email_verified ?? false;
+    if (!emailVerified) {
+      logger.info('login blocked: email not verified', { email: user.email });
+      return res.status(401).json({
+        success: false,
+        error: 'Please verify your email before continuing.',
+        requiresEmailVerification: true,
+        message: 'Please verify your email before continuing.',
+      });
+    }
     const token = jwtService.sign({ sub: user.id, email: user.email, role: user.role });
     res.cookie(jwtService.getCookieName(), token, jwtService.getCookieOptions());
     logger.info('login success', { userId: user.id, role: user.role });

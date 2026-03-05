@@ -1,6 +1,8 @@
 /**
  * Subscription service: free/paid, start/end dates, status.
- * Default: free trial (active until subscription_end_date).
+ * Default model:
+ * - MERCHANT: اشتراك مجاني دائم (يُستخدم الحقل فقط للعرض في الواجهة).
+ * - BROKER: شهر مجاني (free) ثم تعتمد المنصة على تاريخ الانتهاء لتقييد المزايا.
  */
 
 import { supabase } from '../config/supabaseClient.js';
@@ -71,23 +73,58 @@ async function setFreeTrial(userId) {
 }
 
 /**
- * Check if merchant can add products (subscription active and not suspended).
+ * Check if merchant can add products.
+ * - MERCHANT: مجاني دائماً؛ الوحيد الذي يمنع هو SUSPENDED.
+ * - BROKER: لا يُستخدم هنا؛ يوجد فحص منفصل لمزايا الوسيط.
  * Uses users.status for suspension (SUSPENDED = blocked).
  */
 async function canAddProducts(userId) {
   const { data: user, error } = await supabase
     .from(USERS_TABLE)
-    .select('id, status, subscription_type, subscription_end_date, subscription_status')
+    .select('id, role, status, subscription_type, subscription_end_date, subscription_status')
     .eq('id', userId)
     .single();
   if (error || !user) return { allowed: false, reason: 'User not found' };
-  if (user.status === 'SUSPENDED') return { allowed: false, reason: 'MERCHANT_SUSPENDED' };
+  const role = (user.role || '').toString().toUpperCase();
+  if (user.status === 'SUSPENDED') {
+    const code = role === 'BROKER' ? 'BROKER_SUSPENDED' : 'MERCHANT_SUSPENDED';
+    return { allowed: false, reason: code };
+  }
+
+  // Merchants: الاشتراك مجاني دائماً، طالما المتجر غير معلّق
+  if (role === 'MERCHANT') {
+    return { allowed: true, reason: null };
+  }
+
   const sub = {
     subscription_type: user.subscription_type,
     subscription_end_date: user.subscription_end_date,
     subscription_status: user.subscription_status,
   };
   if (!isActive(sub)) return { allowed: false, reason: 'SUBSCRIPTION_EXPIRED' };
+  return { allowed: true, reason: null };
+}
+
+/**
+ * Check if broker can use broker-specific features (sharing products, etc.).
+ * BROKER: شهر مجاني (free) ثم تُعتبر المزايا منتهية عند انتهاء الفترة.
+ */
+async function canUseBrokerFeatures(userId) {
+  const { data: user, error } = await supabase
+    .from(USERS_TABLE)
+    .select('id, role, status, subscription_type, subscription_end_date, subscription_status')
+    .eq('id', userId)
+    .single();
+  if (error || !user) return { allowed: false, reason: 'User not found' };
+  const role = (user.role || '').toString().toUpperCase();
+  if (role !== 'BROKER') return { allowed: false, reason: 'NOT_BROKER' };
+  if (user.status === 'SUSPENDED') return { allowed: false, reason: 'BROKER_SUSPENDED' };
+  const sub = {
+    subscription_type: user.subscription_type,
+    subscription_end_date: user.subscription_end_date,
+    subscription_status: user.subscription_status,
+  };
+  if (!isActive(sub)) return { allowed: false, reason: 'BROKER_SUBSCRIPTION_EXPIRED' };
   return { allowed: true, reason: null };
 }
 
@@ -135,6 +172,7 @@ export {
   isActive,
   setFreeTrial,
   canAddProducts,
+  canUseBrokerFeatures,
   renewSubscription,
   markExpired,
   DEFAULT_FREE_DAYS,

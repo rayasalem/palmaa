@@ -84,6 +84,40 @@ async function recordOrderSettlement(orderId, totalAmount, paymentMethod, invoic
 }
 
 /**
+ * Record a payment attempt (e.g. Cybersource card charge).
+ * - type: 'PAYMENT'
+ * - status: 'COMPLETED' | 'FAILED'
+ * Does NOT change order status; caller is responsible for that.
+ */
+async function recordPaymentAttempt(orderId, amount, currency, status, gatewayTransactionId, paymentMethod = 'online') {
+  const total = Number(amount) || 0;
+  const { merchantId } = await getOrderMerchantId(orderId);
+
+  const row = {
+    order_id: orderId,
+    merchant_id: merchantId,
+    amount: total,
+    total_amount: total,
+    type: 'PAYMENT',
+    status: status || 'FAILED',
+    payment_method: paymentMethod,
+    currency: currency || null,
+    gateway_transaction_id: gatewayTransactionId || null,
+  };
+
+  const { data, error } = await supabase
+    .from(TRANSACTIONS_TABLE)
+    .insert(row)
+    .select()
+    .single();
+  if (error) {
+    console.error('[transactionService] recordPaymentAttempt error:', error.message);
+    return { data: null, error };
+  }
+  return { data, error: null };
+}
+
+/**
  * Get transaction stats for a merchant (for dashboard).
  */
 async function getMerchantStats(merchantId) {
@@ -120,4 +154,5 @@ export {
   getOrderMerchantId,
   COMMISSION_RATE,
   TAX_PENALTY_RATE,
+  recordPaymentAttempt,
 };

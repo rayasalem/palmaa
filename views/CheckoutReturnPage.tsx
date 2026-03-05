@@ -71,7 +71,12 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({ lang, or
     let cancelled = false;
     (async () => {
       try {
-        const currentOrder = order || (await getOrder(orderId)).order;
+        let currentOrder = order;
+        if (!currentOrder) {
+          const orderRes = await getOrder(orderId);
+          if (cancelled) return;
+          currentOrder = (orderRes && typeof orderRes === 'object' && orderRes.order) ? orderRes.order : null;
+        }
         if (cancelled || !currentOrder) return;
 
         const shipmentKey = `checkout-shipment-${orderId}`;
@@ -81,8 +86,16 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({ lang, or
           setStep('error');
           return;
         }
-        const payload = JSON.parse(stored);
-        if (!payload.addressLine1 || !payload.cityId || !payload.villageId) {
+        let payload: Record<string, unknown>;
+        try {
+          const parsed = JSON.parse(stored);
+          payload = parsed && typeof parsed === 'object' ? parsed : {};
+        } catch {
+          setError(lang === 'ar' ? 'بيانات الشحن غير صالحة' : 'Invalid shipment data.');
+          setStep('error');
+          return;
+        }
+        if (!payload || typeof payload !== 'object' || !payload.addressLine1 || !payload.cityId || !payload.villageId) {
           setError(lang === 'ar' ? 'بيانات الشحن ناقصة' : 'Shipment data incomplete.');
           setStep('error');
           return;
@@ -91,7 +104,7 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({ lang, or
         const res = await createShipment({
           ...payload,
           orderId,
-        });
+        } as Parameters<typeof createShipment>[0]);
         if (cancelled) return;
         if (res.success) {
           setOrder(res.order || currentOrder);

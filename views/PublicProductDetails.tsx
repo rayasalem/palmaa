@@ -7,6 +7,7 @@ import Logo from '../components/Logo';
 import { Language, translations } from '../translations';
 import { ArrowRight, Star, ShoppingBag, Truck, ShieldCheck, Heart, MessageCircle, Send, Minus, Plus } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
+import { ProductConditionBadge } from '../components/ProductConditionBadge';
 import {
   getProductLikesCount,
   getProductIsLiked,
@@ -313,7 +314,10 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({ lang, user,
                     
                     <div>
                        <div className="flex items-center gap-3 mb-4">
-                          <span className="bg-slate-50 text-palma-navy px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border border-slate-100">{t.categories[product.category as keyof typeof t.categories] || product.category}</span>
+                          <span className="bg-slate-50 text-palma-navy px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border border-slate-100">
+                            {t.categories[product.category as keyof typeof t.categories] || product.category}
+                          </span>
+                          <ProductConditionBadge condition={product.condition || 'new'} lang={lang} />
                           <div className="flex items-center gap-1 text-palma-gold">
                              <Star className="w-3.5 h-3.5 fill-current" />
                              <span className="text-xs font-black text-palma-navy mt-0.5">{rating.average.toFixed(1)}</span>

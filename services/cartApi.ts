@@ -18,6 +18,7 @@ export interface CartItemResponse {
     name?: string;
     image_url?: string;
     price_ils?: number;
+    condition?: string;
   };
 }
 

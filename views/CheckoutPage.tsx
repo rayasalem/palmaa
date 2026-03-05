@@ -1,16 +1,13 @@
 /**
- * Checkout page: extended shipment form (recipient, full destination address,
- * COD, notes, invoice, sender/receiver details).
- * - Cities/villages loaded from backend /api/addresses/*
- * - Validates all fields, then createOrder → createPayment → redirect to payment URL.
- * - Shipment details are stored in localStorage keyed by orderId for use on return page.
+ * Checkout page: createOrder → Hosted Checkout (تحويل لصفحة Cybersource حسب توثيق البنك).
+ * Shipment details stored in localStorage keyed by orderId for use on return page.
  */
 
 import React, { useEffect, useState } from 'react';
 import { ArrowRight, ArrowLeft, MapPin, User, Phone } from 'lucide-react';
 import {
   createOrder,
-  createPayment,
+  createCybersourceHostedSession,
   getCities,
   getVillages,
   type City,
@@ -24,9 +21,11 @@ interface CheckoutPageProps {
   cart: CartItem[];
   clearCart: () => void;
   onBack: () => void;
+  /** بعد نجاح الدفع: ينتقل لصفحة العودة لربط الشحن بالطلب */
+  onPaymentSuccess?: (orderId: string) => void;
 }
 
-export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCart, onBack }) => {
+export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCart, onBack, onPaymentSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -48,6 +47,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
     receiverPhone: '',
     quantity: 1,
     description: '',
+    cardNumber: '',
+    cardExpiryMonth: '',
+    cardExpiryYear: '',
+    cardCvv: '',
+    cardholderName: '',
   });
   const [cities, setCities] = useState<City[]>([]);
   const [villages, setVillages] = useState<Village[]>([]);
@@ -149,13 +153,39 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
       setError(lang === 'ar' ? 'الكمية يجب أن تكون موجبة' : 'Quantity must be positive');
       return false;
     }
-    const phoneStr = form.phone.trim();
-    if (!/^[0-9+\-\s]{6,}$/.test(phoneStr)) {
-      setError(lang === 'ar' ? 'رقم الهاتف غير صالح' : 'Invalid phone number');
+    const phoneDigits = form.phone.replace(/\s+/g, '');
+    if (!/^\d{6,}$/.test(phoneDigits)) {
+      setError(lang === 'ar' ? 'رقم الهاتف غير صالح (أرقام فقط)' : 'Invalid phone number (digits only)');
       return false;
     }
     if (totalAmount <= 0 || cart.length === 0) {
       setError(lang === 'ar' ? 'السلة فارغة' : 'Cart is empty');
+      return false;
+    }
+    // Basic card validation (no storage, just in-memory check)
+    const cardNumberDigits = form.cardNumber.replace(/\s+/g, '');
+    if (!cardNumberDigits || !/^\d{12,19}$/.test(cardNumberDigits)) {
+      setError(lang === 'ar' ? 'رقم البطاقة غير صالح (أرقام فقط)' : 'Invalid card number (digits only)');
+      return false;
+    }
+    if (!form.cardExpiryMonth.trim() || !form.cardExpiryYear.trim()) {
+      setError(lang === 'ar' ? 'تاريخ انتهاء البطاقة مطلوب' : 'Card expiry is required');
+      return false;
+    }
+    if (!/^\d{1,2}$/.test(form.cardExpiryMonth.trim())) {
+      setError(lang === 'ar' ? 'شهر الانتهاء غير صالح' : 'Invalid expiry month');
+      return false;
+    }
+    if (!/^\d{2,4}$/.test(form.cardExpiryYear.trim())) {
+      setError(lang === 'ar' ? 'سنة الانتهاء غير صالحة' : 'Invalid expiry year');
+      return false;
+    }
+    if (!form.cardCvv.trim() || !/^\d{3,4}$/.test(form.cardCvv.trim())) {
+      setError(lang === 'ar' ? 'رمز CVV غير صالح' : 'Invalid CVV');
+      return false;
+    }
+    if (!form.cardholderName.trim()) {
+      setError(lang === 'ar' ? 'اسم حامل البطاقة مطلوب' : 'Cardholder name is required');
       return false;
     }
     return true;
@@ -228,27 +258,58 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
         console.warn('[Checkout] Failed to store shipment details:', e);
       }
 
-      const returnUrl = window.location.origin + (window.location.pathname || '/');
-      const payRes = await createPayment(orderId, totalAmount, returnUrl);
-      if (!payRes.success) {
-        setError((payRes as any).error || (lang === 'ar' ? 'فشل إنشاء الدفع' : 'Failed to create payment'));
+      // Hosted Checkout (الطريقة الموصى بها من البنك – Secure Acceptance Redirection)
+      const session = await createCybersourceHostedSession(orderId, totalAmount);
+      if (!session.success) {
+        setError(
+          (session as any).error ||
+            (lang === 'ar' ? 'فشل إنشاء جلسة الدفع. تحقق من CYBS_PROFILE_ID و CYBS_ACCESS_KEY و CYBS_SECRET_KEY في .env' : 'Failed to create payment session. Check CYBS_* in .env')
+        );
         setLoading(false);
         return;
       }
-      if ((payRes as any).sandboxSimulation || !payRes.paymentUrl) {
-        setError('');
+      const actionUrl = (session as any).actionUrl || (session as any).action_url;
+      const fields = (session as any).fields || {};
+      if (!actionUrl || !Object.keys(fields).length) {
+        setError(lang === 'ar' ? 'استجابة غير صالحة من الباكند (Hosted Checkout).' : 'Invalid Hosted Checkout response.');
         setLoading(false);
-        alert(lang === 'ar'
-          ? 'تم إنشاء الطلب بنجاح. في وضع التجربة لا يتم التحويل لبوابة الدفع. يمكنك متابعة الطلب من صفحة الطلبات.'
-          : 'Order created successfully. In sandbox mode no payment redirect. You can track the order from your orders.');
-        onBack();
         return;
       }
-      window.location.href = payRes.paymentUrl;
+      const redirectForm = document.createElement('form');
+      redirectForm.method = 'POST';
+      redirectForm.action = actionUrl;
+      Object.entries(fields).forEach(([name, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = String(value);
+        redirectForm.appendChild(input);
+      });
+      document.body.appendChild(redirectForm);
+      redirectForm.submit();
       return;
     } catch (err: any) {
       console.error('[Checkout] Error:', err);
-      setError(err?.message || (lang === 'ar' ? 'خطأ في الاتصال' : 'Connection error'));
+      const msg = err?.message || '';
+      const data = err?.data;
+      const isGatewayError = data && (data.stage === 'authorization' || data.stage === 'capture');
+      const isServerUnreachable = !data && (msg === 'Not found' || msg.includes('404') || msg.includes('Failed to fetch'));
+      let friendly: string;
+      if (isGatewayError) {
+        const raw = data?.raw;
+        friendly =
+          lang === 'ar'
+            ? `فشل من بوابة الدفع (Cybersource). ${raw ? `السبب: ${typeof raw === 'string' ? raw : JSON.stringify(raw)}` : 'تحقق من تفعيل REST API لحسابك في Business Center.'}`
+            : `Payment gateway error (Cybersource). ${raw ? `Details: ${typeof raw === 'string' ? raw : JSON.stringify(raw)}` : 'Check that REST API is enabled for your account in Business Center.'}`;
+      } else if (isServerUnreachable) {
+        friendly =
+          lang === 'ar'
+            ? 'الخادم غير متصل أو الرابط غير صحيح. شغّل الباكند محلياً (مثلاً: npm run dev من مجلد server) وضبط VITE_API_URL=http://localhost:5000 في .env'
+            : 'Server not reachable or wrong API URL. Run the backend locally (e.g. npm run dev from server folder) and set VITE_API_URL=http://localhost:5000 in .env';
+      } else {
+        friendly = msg || (lang === 'ar' ? 'خطأ في الاتصال' : 'Connection error');
+      }
+      setError(friendly);
     }
     setLoading(false);
   };
@@ -435,6 +496,90 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
               onChange={handleChange}
               className="w-full py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
+          </div>
+          {/* Payment details */}
+          <div className="pt-2 border-t border-slate-200 mt-4">
+            <h2 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
+              {lang === 'ar' ? 'بيانات البطاقة' : 'Card details'}
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1">
+                  {lang === 'ar' ? 'رقم البطاقة' : 'Card number'}
+                </label>
+                <input
+                  type="text"
+                  name="cardNumber"
+                  value={form.cardNumber}
+                  onChange={handleChange}
+                  maxLength={19}
+                  inputMode="numeric"
+                  className="w-full py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="4111 1111 1111 1111"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1">
+                    {lang === 'ar' ? 'شهر الانتهاء' : 'Expiry month'}
+                  </label>
+                  <input
+                    type="text"
+                    name="cardExpiryMonth"
+                    value={form.cardExpiryMonth}
+                    onChange={handleChange}
+                    maxLength={2}
+                    inputMode="numeric"
+                    className="w-full py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="MM"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1">
+                    {lang === 'ar' ? 'سنة الانتهاء' : 'Expiry year'}
+                  </label>
+                  <input
+                    type="text"
+                    name="cardExpiryYear"
+                    value={form.cardExpiryYear}
+                    onChange={handleChange}
+                    maxLength={4}
+                    inputMode="numeric"
+                    className="w-full py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="YYYY"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1">
+                    CVV
+                  </label>
+                  <input
+                    type="text"
+                    name="cardCvv"
+                    value={form.cardCvv}
+                    onChange={handleChange}
+                    maxLength={4}
+                    inputMode="numeric"
+                    className="w-full py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="123"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1">
+                  {lang === 'ar' ? 'اسم حامل البطاقة' : 'Cardholder name'}
+                </label>
+                <input
+                  type="text"
+                  name="cardholderName"
+                  value={form.cardholderName}
+                  onChange={handleChange}
+                  maxLength={64}
+                  className="w-full py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder={lang === 'ar' ? 'كما هو على البطاقة' : 'As shown on card'}
+                />
+              </div>
+            </div>
           </div>
           {error && <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm">{error}</div>}
           <button type="submit" disabled={loading} className="w-full py-4 bg-green-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-70">

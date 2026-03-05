@@ -9,6 +9,7 @@ import { logEmail } from '../services/emailService';
 import { resolveLocationName } from '../services/flashlineService';
 import { Check, X, Shield, Users, Banknote, Package, Search, Database, Globe, Trash2, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
+import { ProductConditionBadge } from '../components/ProductConditionBadge';
 
 interface AdminUser extends User {
   isMock?: boolean;
@@ -177,7 +178,14 @@ const ProductRow = React.memo(function ProductRow({ product: p, isProcessing, t,
           <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 shrink-0">
             <img src={p.image_url || p.images?.[0] || 'https://placehold.co/100'} loading="lazy" alt="" className="w-full h-full object-cover" />
           </div>
-          <span className="text-sm font-black text-slate-900 line-clamp-1">{p.title || p.name}</span>
+          <div className="min-w-0">
+            <span className="text-sm font-black text-slate-900 line-clamp-1 block">
+              {p.title || p.name}
+            </span>
+            <div className="mt-1">
+              <ProductConditionBadge condition={p.condition || 'new'} lang={lang} />
+            </div>
+          </div>
         </div>
       </td>
       <td className="px-6 py-4">
@@ -415,8 +423,8 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
     }
     if (searchTerm) {
       const lower = searchTerm.toLowerCase();
-      result = result.filter(u =>
-        u.name.toLowerCase().includes(lower) ||
+      result = result.filter(u => 
+        u.name.toLowerCase().includes(lower) || 
         (u.email ?? '').toLowerCase().includes(lower) ||
         (u.phone ?? '').includes(lower)
       );
@@ -530,11 +538,11 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
   const filteredProducts = useMemo(
     () =>
       productSearch
-        ? products.filter(
-            (p) =>
-              (p.title || p.name || '').toLowerCase().includes(productSearch.toLowerCase()) ||
-              (p.category || '').toLowerCase().includes(productSearch.toLowerCase())
-          )
+    ? products.filter(
+        (p) =>
+          (p.title || p.name || '').toLowerCase().includes(productSearch.toLowerCase()) ||
+          (p.category || '').toLowerCase().includes(productSearch.toLowerCase())
+      )
         : products,
     [products, productSearch]
   );
@@ -970,7 +978,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
                 </button>
               </div>
             </>
-          )}
+            )}
         </div>
       )}
     </div>

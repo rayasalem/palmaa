@@ -99,6 +99,8 @@ ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS tax_penalty_amount NUME
 ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS merchant_net_amount NUMERIC;
 ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS payment_method TEXT;
 ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS invoice_uploaded BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS gateway_transaction_id TEXT;
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS currency TEXT;
 
 -- إعدادات المنصة (عمولة % وغرامة ضريبية % - للأدمن)
 CREATE TABLE IF NOT EXISTS public.platform_settings (
@@ -161,6 +163,7 @@ ALTER TABLE public.products ADD COLUMN IF NOT EXISTS sku TEXT;
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS weight NUMERIC;
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS dimensions TEXT;
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS tags TEXT[];
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS condition TEXT NOT NULL DEFAULT 'new';
 
 -- ORDERS
 CREATE TABLE IF NOT EXISTS public.orders (

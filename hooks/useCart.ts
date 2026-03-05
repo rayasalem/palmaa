@@ -24,6 +24,7 @@ function toCartItem(item: CartItemResponse): CartItem {
     price_ils: item.price,
     image_url: p?.image_url,
     imageUrl: p?.image_url,
+    condition: p?.condition,
   } as CartItem;
 }
 

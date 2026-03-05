@@ -424,7 +424,9 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                 {lang === 'ar' ? 'اختر سعر الاشتراك المناسب لك في بالما' : 'Choose the plan that fits you'}
               </h2>
               <p className="heading-block-sub max-w-xl mx-auto">
-                {lang === 'ar' ? 'الاشتراك الشهري مجاني؛ بعد انتهاء الفترة المجانية تُطبَّق رسوم الاشتراك وفق ما تحدده إدارة الموقع. يمكنك التجديد أو الترقية في أي وقت.' : 'Monthly subscription is free; after the free period, subscription fees apply as set by site management. You can renew or upgrade anytime.'}
+                {lang === 'ar'
+                  ? 'التاجر: اشتراكه داخل المنصة مجاني دائماً. الوسيط / المسوّق: يحصل على شهر مجاني للتجربة، وبعدها يمكنه اختيار باقة اشتراك مدفوعة حسب سياسة المنصة.'
+                  : 'Merchants stay on a free in-platform plan. Brokers/affiliates get a free first month, then can choose a paid subscription plan according to platform policy.'}
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
@@ -748,7 +750,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
             <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-palma-navy">{t.nav.contact}</h5>
             <div className="space-y-1 text-sm font-bold text-palma-muted">
               <p className="text-palma-primary hover:underline cursor-pointer">office@palma.ps</p>
-              <p>{lang === 'ar' ? 'هاتف: 0599-000000' : 'Phone: +970 599 000 000'}</p>
+              <p>{lang === 'ar' ? 'هاتف: 0569-676-111' : 'Phone: +970 569 676 111'}</p>
               <p>{lang === 'ar' ? 'فلسطين 🇵🇸' : lang === 'he' ? 'פלסטין 🇵🇸' : 'Palestine 🇵🇸'}</p>
             </div>
             <p className="text-xs font-bold text-palma-muted mt-1">{lang === 'ar' ? 'تابعنا على:' : 'Follow us:'}</p>

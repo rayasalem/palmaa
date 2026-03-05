@@ -39,6 +39,7 @@ function mapDbToProduct(row: any): Product {
     reviewCount: row.review_count,
     createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
     created_at: row.created_at,
+    condition: row.condition,
   };
 }
 
@@ -103,6 +104,7 @@ export const productService = {
         weight: data.weight,
         dimensions: data.dimensions,
         tags: data.tags,
+        condition: data.condition || 'new',
       };
       const res = await api<{ success: boolean; product: any }>('/api/products', {
         method: 'POST',
@@ -134,6 +136,7 @@ export const productService = {
       if (data.images) body.images = data.images;
       if (data.image_url !== undefined) body.image_url = data.image_url;
       if (data.tags !== undefined) body.tags = data.tags;
+      if (data.condition !== undefined) body.condition = data.condition;
       const res = await api<{ success: boolean; product: any }>(`/api/products/${productId}`, {
         method: 'PUT',
         body: JSON.stringify(body),

@@ -52,6 +52,8 @@ import followRoutes from './routes/followRoutes.js';
 import merchantRoutes from './routes/merchantRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
+import cybersourceHostedRoutes from './modules/payments/cybersource/cybersource.routes.js';
+import { processRestPaymentHandler } from './modules/payments/cybersource/cybersource.rest.controller.js';
 
 import logger from './utils/logger.js';
 
@@ -80,6 +82,13 @@ app.use(requestLogger);
 app.use(sanitizeErrorResponse);
 
 // API routes BEFORE static so /api/* never returns 404 when this server is hit
+// Cybersource REST process – أول مسار لضمان عدم 404 (برودكشن)
+app.post(
+  '/api/payments/cybersource/rest/process',
+  paymentLimiter(),
+  (req, res, next) => processRestPaymentHandler(req, res).catch(next)
+);
+logger.info('Cybersource route registered: POST /api/payments/cybersource/rest/process');
 app.use('/api/orders', orderRoutes);
 app.use('/api/products', cacheMiddleware(600), productRoutes);
 
@@ -97,6 +106,12 @@ try {
   logger.info('Arabic Bank payment module not loaded (optional). To enable, run: npm run build:payment');
 }
 app.use('/api/payment', paymentRouter);
+
+// Cybersource: باقي المسارات (hosted-session, notify, rest/test)
+const paymentsApiRouter = express.Router();
+paymentsApiRouter.use(paymentLimiter());
+paymentsApiRouter.use('/cybersource', cybersourceHostedRoutes);
+app.use('/api/payments', paymentsApiRouter);
 
 app.use('/api/shipment', shipmentRoutes);
 app.use('/api/auth', authRoutes);

@@ -12,6 +12,9 @@
     "build:server": "cd server && npm install && npm run build",
     "start:server": "cd server && node server.js",
     "build:for-render": "npm run build && node scripts/copy-dist-to-server.cjs",
+    "cy:open": "cypress open",
+    "cy:run": "cypress run",
+    "cy:run:live": "CYPRESS_BASE_URL=https://your-app.vercel.app cypress run",
     "postinstall": "node -e \"try{if(process.platform!=='win32')require('fs').chmodSync('node_modules/.bin/vite',0o755);}catch(e){}\""
   },
   "dependencies": {
@@ -25,6 +28,7 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "cypress": "^13.6.0",
     "@types/react": "^18.2.64",
     "@types/react-dom": "^18.2.21",
     "@types/uuid": "^9.0.8",

@@ -107,6 +107,7 @@ async function createProduct(merchantId, payload) {
   const stock = Number(payload.stock) || 0;
   const isActive = payload.isActive !== undefined ? payload.isActive : true;
   const images = (payload.images && payload.images.length) ? payload.images : (payload.image_url ? [payload.image_url] : []);
+  const condition = payload.condition || 'new';
   const row = {
     merchant_id: merchantId,
     title: payload.name ?? payload.title,
@@ -118,6 +119,7 @@ async function createProduct(merchantId, payload) {
     category: payload.category ?? 'other',
     status: isActive ? 'active' : 'inactive',
     is_active: isActive,
+    condition,
     images,
     image_url: images[0] ?? '',
     is_bestseller: payload.is_bestseller ?? false,
@@ -154,6 +156,7 @@ async function updateProduct(productId, merchantId, payload) {
   }
   if (payload.stock !== undefined) updates.stock = Number(payload.stock);
   if (payload.category !== undefined) updates.category = payload.category;
+  if (payload.condition !== undefined) updates.condition = payload.condition;
   if (payload.isActive !== undefined) {
     updates.status = payload.isActive ? 'active' : 'inactive';
     updates.is_active = payload.isActive;

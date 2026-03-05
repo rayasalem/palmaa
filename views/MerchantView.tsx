@@ -6,11 +6,12 @@ import { productService } from '../services/productService';
 import { storageService } from '../services/storageService'; // Updated import
 import { FlashLineService, cancelLogestechsShipment } from '../services/flashlineService';
 import { createShipmentApi, cancelShipmentApi, getShipmentStatusApi } from '../services/shipmentApi';
-import { fetchMerchantOrders } from '../services/checkoutApi';
+import { fetchMerchantOrders, updateOrderInvoice } from '../services/checkoutApi';
 import { getMerchantDashboard, type MerchantDashboardResponse } from '../services/merchantDashboardService';
 import { translations, getAuthErrorMessage, type Language } from '../translations';
 import { Package, Truck, Plus, Trash2, Image as ImageIcon, Search, LayoutDashboard, DollarSign, Box, ExternalLink, XCircle, MoreHorizontal, Filter, AlertCircle, Edit, Eye, EyeOff, X, CreditCard, Receipt } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
+import { ProductConditionBadge } from '../components/ProductConditionBadge';
 
 interface MerchantViewProps {
   user: User;
@@ -34,14 +35,29 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [productForm, setProductForm] = useState<Partial<Product>>({
-    name: '', description: '', shortDescription: '', price: 0, discount: 0, 
-    stock: 0, category: '', sku: '', weight: 0, dimensions: '', tags: [], images: [], isActive: true,
+    name: '',
+    description: '',
+    shortDescription: '',
+    price: 0,
+    discount: 0,
+    stock: 0,
+    category: '',
+    sku: '',
+    weight: 0,
+    dimensions: '',
+    tags: [],
+    images: [],
+    isActive: true,
+    condition: 'new',
   });
   const [tagsInput, setTagsInput] = useState('');
   const [uploadQueue, setUploadQueue] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [productToDelete, setProductToDelete] = useState<{ id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [orderToInvoice, setOrderToInvoice] = useState<Order | null>(null);
+  const [invoiceUrlInput, setInvoiceUrlInput] = useState('');
+  const [uploadingInvoice, setUploadingInvoice] = useState(false);
 
   useEffect(() => {
     if (user.role === 'MERCHANT') {
@@ -79,6 +95,9 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
             shipping_name: row.shipping_name,
             shipping_phone: row.shipping_phone,
             shipping_address: row.shipping_address,
+            payment_method: row.payment_method,
+            invoice_uploaded: !!row.invoice_uploaded,
+            invoice_file_url: row.invoice_file_url,
             shippingAddress: {
               cityName: row.shipping_address || row.city || '—',
               addressDetails: row.shipping_address || '',
@@ -112,7 +131,21 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
   };
 
   const resetForm = () => {
-    setProductForm({ name: '', description: '', shortDescription: '', price: 0, discount: 0, stock: 0, category: '', sku: '', weight: 0, dimensions: '', isActive: true, images: [] });
+    setProductForm({
+      name: '',
+      description: '',
+      shortDescription: '',
+      price: 0,
+      discount: 0,
+      stock: 0,
+      category: '',
+      sku: '',
+      weight: 0,
+      dimensions: '',
+      isActive: true,
+      images: [],
+      condition: 'new',
+    });
     setTagsInput('');
     setUploadQueue([]);
     setIsEditing(false);
@@ -125,7 +158,8 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
       // Ensure numeric values
       price: product.price || product.price_ils,
       // Ensure images array exists
-      images: product.images && product.images.length > 0 ? product.images : (product.imageUrl ? [product.imageUrl] : [])
+      images: product.images && product.images.length > 0 ? product.images : (product.imageUrl ? [product.imageUrl] : []),
+      condition: product.condition || 'new',
     });
     setTagsInput(product.tags ? product.tags.join(', ') : '');
     setEditingId(product.id);
@@ -205,7 +239,8 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
         image_url: uploadedUrls[0],
         imageUrl: uploadedUrls[0],
         price_ils: productForm.price, // Ensure DB field mapping
-        stock: Number(productForm.stock) // Ensure number
+        stock: Number(productForm.stock), // Ensure number
+        condition: productForm.condition || 'new',
       };
 
       if (isEditing && editingId) {
@@ -446,6 +481,26 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
     }
   };
 
+  const handleSubmitInvoice = async () => {
+    if (!orderToInvoice || !invoiceUrlInput.trim()) return;
+    setUploadingInvoice(true);
+    try {
+      const res = await updateOrderInvoice(orderToInvoice.id, invoiceUrlInput.trim());
+      if (res.success) {
+        showToast(lang === 'ar' ? 'تم رفع الفاتورة بنجاح' : 'Invoice uploaded successfully', 'success');
+        setOrderToInvoice(null);
+        setInvoiceUrlInput('');
+        refreshData();
+      } else {
+        showToast((res as any).error || t.common.error, 'error');
+      }
+    } catch (e: any) {
+      showToast(getAuthErrorMessage(e?.message || '', lang) || e?.message || t.common.error, 'error');
+    } finally {
+      setUploadingInvoice(false);
+    }
+  };
+
   const StatCard = ({ title, value, icon: Icon, color, trend }: any) => (
     <div className="dashboard-stat-card flex flex-col justify-between min-h-[140px] group">
       <div className="absolute -right-4 -top-4 p-3 opacity-[0.06] group-hover:opacity-[0.1] transition-opacity">
@@ -502,15 +557,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
       {/* Content */}
       {activeTab === 'dashboard' && (
         <div className="space-y-6">
-          {dashboardData && !dashboardData.subscription.is_active && (
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
-              <AlertCircle className="w-6 h-6 text-amber-600 shrink-0" />
-              <div>
-                <p className="font-bold text-amber-800">{lang === 'ar' ? 'انتهت فترة الاشتراك' : lang === 'he' ? 'תקופת המנוי הסתיימה' : 'Subscription expired'}</p>
-                <p className="text-sm text-amber-700">{lang === 'ar' ? 'يجب تجديد الاشتراك لإضافة منتجات جديدة.' : lang === 'he' ? 'יש לחדש את המנוי כדי להוסיף מוצרים חדשים.' : 'Please renew your subscription to add new products.'}</p>
-              </div>
-            </div>
-          )}
+          {/* التاجر: الاشتراك داخل المنصة مجاني دائماً؛ لا نعرض رسالة انتهاء اشتراك */}
           {dashboardData && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard title={lang === 'ar' ? 'إجمالي المبيعات' : lang === 'he' ? 'סה"כ מכירות' : 'Total sales'} value={`₪${(dashboardData.stats.total_sales || 0).toLocaleString()}`} icon={DollarSign} color="bg-palma-primary" />
@@ -520,58 +567,21 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
             </div>
           )}
           {dashboardData?.subscription && (
-            <div className="dashboard-card dashboard-card-body hover:shadow-md transition-shadow">
-              <h3 className="text-sm font-black text-palma-navy uppercase tracking-wider mb-3">{lang === 'ar' ? 'حالة الاشتراك' : lang === 'he' ? 'סטטוס מנוי' : 'Subscription status'}</h3>
-              <div className="flex flex-wrap gap-4 text-sm">
-                <span><strong>{lang === 'ar' ? 'النوع:' : lang === 'he' ? 'סוג:' : 'Type:'}</strong> {dashboardData.subscription.subscription_type === 'paid' ? (lang === 'ar' ? 'مدفوع' : lang === 'he' ? 'בתשלום' : 'Paid') : (lang === 'ar' ? 'مجاني' : lang === 'he' ? 'חינם' : 'Free')}</span>
-                <span><strong>{t.common.status}:</strong> {dashboardData.subscription.is_active ? t.common.active : (lang === 'ar' ? 'منتهي' : lang === 'he' ? 'פג תוקף' : 'Expired')}</span>
-                {dashboardData.subscription.subscription_end_date && (
-                  <span><strong>{lang === 'ar' ? 'ينتهي:' : lang === 'he' ? 'מסתיים:' : 'Ends:'}</strong> {new Date(dashboardData.subscription.subscription_end_date).toLocaleDateString()}</span>
-                )}
-              </div>
-              {/* Subscription packages UI – display only, does not change backend subscription logic */}
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div className={`rounded-2xl border p-4 space-y-2 ${dashboardData.subscription.subscription_type === 'free' ? 'border-palma-primary bg-palma-primaryLight/40' : 'border-slate-200 bg-slate-50'}`}>
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-black text-palma-navy text-xs uppercase tracking-widest">
-                      {lang === 'ar' ? 'الخطة المجانية' : lang === 'he' ? 'תכנית חינמית' : 'Free plan'}
-                    </h4>
-                    {dashboardData.subscription.subscription_type === 'free' && (
-                      <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
-                        {lang === 'ar' ? 'الخطة الحالية' : lang === 'he' ? 'תכנית פעילה' : 'Current plan'}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-slate-600">
-                    {lang === 'ar'
-                      ? 'شهر أول مجاني للتجربة، مع أدوات أساسية لإدارة منتجاتك وطلباتك.'
-                      : lang === 'he'
-                      ? 'חודש ראשון חינם עם כלים בסיסיים לניהול מוצרים והזמנות.'
-                      : 'First month free with basic tools to manage products and orders.'}
-                  </p>
-                </div>
-                <div className={`rounded-2xl border p-4 space-y-2 ${dashboardData.subscription.subscription_type === 'paid' ? 'border-palma-primary bg-white' : 'border-dashed border-slate-300 bg-slate-50'}`}>
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-black text-palma-navy text-xs uppercase tracking-widest">
-                      {lang === 'ar' ? 'الخطة المدفوعة (قريباً)' : lang === 'he' ? 'מנוי בתשלום (בקרוב)' : 'Paid plan (coming soon)'}
-                    </h4>
-                  </div>
-                  <p className="text-[11px] text-slate-600">
-                    {lang === 'ar'
-                      ? 'مزايا إضافية مثل ظهور أعلى في نتائج البحث وتقارير متقدمة – سيتم تفعيلها لاحقاً.'
-                      : lang === 'he'
-                      ? 'יתרונות נוספים כמו חשיפה גבוהה יותר ודוחות מתקדמים – יופעל בהמשך.'
-                      : 'Extra benefits such as higher visibility and advanced reports – to be enabled later.'}
-                  </p>
-                  <button
-                    type="button"
-                    disabled
-                    className="mt-2 inline-flex items-center justify-center px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-200 text-slate-500 cursor-not-allowed"
-                  >
-                    {lang === 'ar' ? 'قريباً' : lang === 'he' ? 'בקרוב' : 'Coming soon'}
-                  </button>
-                </div>
-              </div>
+            <div className="dashboard-card dashboard-card-body hover:shadow-sm transition-shadow">
+              <h3 className="text-sm font-black text-palma-navy uppercase tracking-wider mb-2">
+                {lang === 'ar'
+                  ? 'اشتراك التاجر'
+                  : lang === 'he'
+                  ? 'מנוי סוחר'
+                  : 'Merchant subscription'}
+              </h3>
+              <p className="text-sm text-slate-600">
+                {lang === 'ar'
+                  ? 'اشتراكك في المنصة مجاني دائماً، ولا توجد أي رسوم اشتراك شهرية للتاجر.'
+                  : lang === 'he'
+                  ? 'המנוי שלך בפלטפורמה חינמי לחלוטין – ללא דמי מנוי חודשיים לסוחר.'
+                  : 'Your merchant account on the platform is always free – no monthly subscription fees.'}
+              </p>
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -641,6 +651,36 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{t.common.stock} *</label>
                     <input type="number" required className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 transition shadow-sm" value={productForm.stock || ''} onChange={e => setProductForm({...productForm, stock: parseInt(e.target.value)})} />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                    {lang === 'ar'
+                      ? 'حالة المنتج'
+                      : lang === 'he'
+                      ? 'סטטוס המוצר'
+                      : 'Product condition'}{' '}
+                    *
+                  </label>
+                  <select
+                    required
+                    className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 transition shadow-sm appearance-none cursor-pointer"
+                    value={productForm.condition || 'new'}
+                    onChange={(e) => setProductForm({ ...productForm, condition: e.target.value })}
+                  >
+                    <option value="new">
+                      {lang === 'ar' ? 'جديد' : lang === 'he' ? 'חדש' : 'New'}
+                    </option>
+                    <option value="used_like_new">
+                      {lang === 'ar' ? 'مستعمل – كالجديد' : lang === 'he' ? 'משומש – כמו חדש' : 'Used – Like New'}
+                    </option>
+                    <option value="used_good">
+                      {lang === 'ar' ? 'مستعمل – حالة جيدة' : lang === 'he' ? 'משומש – מצב טוב' : 'Used – Good'}
+                    </option>
+                    <option value="refurbished">
+                      {lang === 'ar' ? 'مجدّد' : lang === 'he' ? 'מחודש' : 'Refurbished'}
+                    </option>
+                  </select>
                 </div>
 
                 <div>
@@ -762,8 +802,15 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                               <h4 
                                 className="font-bold text-palma-navy text-sm sm:text-base truncate mb-1 cursor-pointer hover:text-palma-primary"
                                 onClick={() => onViewProduct && onViewProduct(product.id)}
-                              >{product.name}</h4>
-                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">{t.categories[product.category as keyof typeof t.categories] || product.category}</p>
+                              >
+                                {product.name}
+                              </h4>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">
+                                  {t.categories[product.category as keyof typeof t.categories] || product.category}
+                                </p>
+                                <ProductConditionBadge condition={product.condition || 'new'} lang={lang} />
+                              </div>
                             </div>
                             
                             <div className="flex flex-col sm:items-center">
@@ -832,6 +879,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                           <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.common.customerInfo}</th>
                           <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.common.amount}</th>
                           <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.common.status}</th>
+                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">{lang === 'ar' ? 'الفاتورة' : 'Invoice'}</th>
                           <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.common.actions}</th>
                         </tr>
                     </thead>
@@ -870,6 +918,21 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                                 )}
                               </td>
                               <td className="px-6 py-4">
+                                {order.payment_method === 'online' ? (
+                                  order.invoice_uploaded && order.invoice_file_url ? (
+                                    <a href={order.invoice_file_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 hover:underline">
+                                      <Receipt className="w-3.5 h-3.5" /> {lang === 'ar' ? 'مرفوعة — عرض' : 'Uploaded — View'}
+                                    </a>
+                                  ) : (
+                                    <button type="button" onClick={() => { setOrderToInvoice(order); setInvoiceUrlInput(''); }} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition">
+                                      <Receipt className="w-3.5 h-3.5" /> {lang === 'ar' ? 'رفع الفاتورة' : 'Upload invoice'}
+                                    </button>
+                                  )
+                                ) : (
+                                  <span className="text-[10px] text-slate-400">—</span>
+                                )}
+                              </td>
+                              <td className="px-6 py-4">
                                 <div className="flex items-center gap-2">
                                   {order.status === 'PENDING' && (
                                       <button onClick={() => createShipment(order)} disabled={loading} className="bg-palma-navy text-white px-3 py-1.5 rounded-lg text-[9px] font-bold hover:bg-palma-primary transition shadow-sm flex items-center gap-1.5">
@@ -898,6 +961,46 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
          </div>
       )}
     </div>
+
+      {/* Modal رفع الفاتورة الضريبية */}
+      {orderToInvoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={() => !uploadingInvoice && (setOrderToInvoice(null), setInvoiceUrlInput(''))}>
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full p-6 sm:p-8 animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()} dir={lang === 'en' ? 'ltr' : 'rtl'}>
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center shrink-0">
+                <Receipt className="w-7 h-7 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-palma-navy">
+                  {lang === 'ar' ? 'رفع الفاتورة الضريبية' : 'Upload tax invoice'}
+                </h3>
+                <p className="text-sm text-slate-500 mt-0.5">
+                  {lang === 'ar' ? 'أدخل رابط الفاتورة (رابط عام لملف PDF أو صورة).' : 'Enter the invoice link (public URL to PDF or image).'}
+                </p>
+              </div>
+            </div>
+            <p className="text-slate-600 text-sm mb-3 rounded-xl bg-slate-50 p-3 border border-slate-100">
+              {lang === 'ar' ? 'الطلب' : 'Order'} <span className="font-mono font-bold">{orderToInvoice.id}</span>
+            </p>
+            <label className="block text-xs font-bold text-slate-500 mb-2">{lang === 'ar' ? 'رابط الفاتورة' : 'Invoice URL'}</label>
+            <input
+              type="url"
+              value={invoiceUrlInput}
+              onChange={(e) => setInvoiceUrlInput(e.target.value)}
+              placeholder={lang === 'ar' ? 'https://...' : 'https://...'}
+              className="w-full py-3 px-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
+            />
+            <div className="flex gap-3 mt-6">
+              <button type="button" onClick={() => !uploadingInvoice && (setOrderToInvoice(null), setInvoiceUrlInput(''))} disabled={uploadingInvoice} className="flex-1 min-h-[48px] py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition border border-slate-200 disabled:opacity-50">
+                {t.common.cancel}
+              </button>
+              <button type="button" onClick={handleSubmitInvoice} disabled={uploadingInvoice || !invoiceUrlInput.trim()} className="flex-1 min-h-[48px] py-3 rounded-xl font-bold text-white bg-amber-500 hover:bg-amber-600 transition shadow-lg shadow-amber-500/25 disabled:opacity-50 flex items-center justify-center gap-2">
+                {uploadingInvoice ? (lang === 'ar' ? 'جاري الرفع...' : 'Uploading...') : (lang === 'ar' ? 'رفع الفاتورة' : 'Upload invoice')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal تأكيد حذف المنتج */}
       {productToDelete && (

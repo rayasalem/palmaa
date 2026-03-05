@@ -30,7 +30,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [loading, setLoading] = useState(false);
-  // UI-only subscription plan selection (does not change backend logic yet)
+  // UI-only subscription plan selection (لا يغيّر منطق الاشتراك المجاني للتاجر في الباكند)
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'paid'>('free');
   const [verificationCode, setVerificationCode] = useState('');
   const [emailNotSent, setEmailNotSent] = useState(false);
@@ -272,12 +272,12 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
               </div>
             </div>
 
-            {/* Subscription plan selection – UI only, backend always uses existing free-trial logic */}
+            {/* Subscription plan selection – UI only, backend keeps merchant subscription free */}
             <div className="space-y-3">
               <p className="text-[10px] font-black uppercase text-slate-500">
                 {lang === 'ar'
-                  ? 'خطة الاشتراك (واجهة فقط – الشهر الأول مجاني)'
-                  : 'Subscription plan (UI only – first month free)'}
+                  ? 'خطة الاشتراك (واجهة فقط – اشتراك التاجر مجاني دائماً)'
+                  : 'Subscription plan (UI only – merchant stays on a free plan)'}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
@@ -294,8 +294,8 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
                   </span>
                   <span className="block text-[11px]">
                     {lang === 'ar'
-                      ? 'شهر أول مجاني للتجربة، ثم رسوم تُحدد لاحقاً.'
-                      : 'First month free for trial, then pricing announced later.'}
+                      ? 'اشتراك مجاني للتاجر داخل المنصة، مع إمكانية إضافة باقات مدفوعة لاحقاً.'
+                      : 'Free subscription for merchants inside the platform, with optional paid tiers in the future.'}
                   </span>
                 </button>
                 <button

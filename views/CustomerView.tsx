@@ -3,18 +3,21 @@ import { Product, User, PaymentMethod, OrderStatus, Order, OrderItem, CartItem, 
 import { marketStore, paymentProcessor } from '../store';
 import { productService } from '../services/productService';
 import { Language, translations, getAuthErrorMessage } from '../translations';
-import { 
-  createShipment, 
+import {
+  createShipment,
   prepareShipmentPayload,
-  cancelLogestechsShipment, 
-  getShipmentStatus, 
+  cancelLogestechsShipment,
+  getShipmentStatus,
   mapFlashlineStatus,
   getInternalCities,
   getInternalVillages,
   getShipmentLabels,
-  resolveLocationName
+  resolveLocationName,
 } from '../services/flashlineService';
-import { cancelOrder as cancelOrderApi, fetchMyOrders } from '../services/checkoutApi';
+import {
+  cancelOrder as cancelOrderApi,
+  fetchMyOrders,
+} from '../services/checkoutApi';
 import { sendEmail, getShipmentDetailsTemplate } from '../services/emailService';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
@@ -40,6 +43,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
 import { prefetchComponent, prefetchProductData } from '../prefetch';
+import { ProductConditionBadge } from '../components/ProductConditionBadge';
 
 interface Props {
   lang: Language;
@@ -58,6 +62,80 @@ interface Props {
   /** When true (e.g. for MERCHANT/BROKER), show only shop + cart in a dedicated section with sub-tabs */
   shopOnlySection?: boolean;
 }
+
+// --- Stable form input (defined outside to avoid focus loss on re-render) ---
+interface ShippingInputGroupProps {
+  label: string;
+  name: string;
+  icon: React.ComponentType<{ className?: string }>;
+  required?: boolean;
+  type?: string;
+  placeholder?: string;
+  options?: React.ReactNode;
+  value: string | number | undefined;
+  error?: boolean;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
+  lang: Language;
+  disabled?: boolean;
+}
+const ShippingInputGroup = React.memo(function ShippingInputGroup({
+  label,
+  name,
+  icon: Icon,
+  required = false,
+  type = 'text',
+  placeholder,
+  options,
+  value,
+  error = false,
+  onChange,
+  lang,
+  disabled = false
+}: ShippingInputGroupProps) {
+  const inputValue = value ?? '';
+  const displayValue = type === 'select' ? inputValue : String(inputValue);
+  return (
+    <div className="space-y-1.5 w-full">
+      <label className="text-[10px] font-black uppercase text-palma-muted tracking-widest flex items-center gap-1">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <div className="relative group">
+        <div className={`absolute top-1/2 -translate-y-1/2 ${lang === 'en' ? 'left-4' : 'right-4'} text-slate-400 group-focus-within:text-palma-primary transition-colors`}>
+          <Icon className="w-5 h-5" />
+        </div>
+        {type === 'select' ? (
+          <select
+            name={name}
+            required={required}
+            className={`w-full ${lang === 'en' ? 'pl-12 pr-4' : 'pr-12 pl-4'} py-3.5 bg-slate-50 border ${error ? 'border-red-300 ring-2 ring-red-100' : 'border-slate-200'} rounded-2xl text-sm font-bold text-palma-navy outline-none focus:bg-white focus:border-palma-primary focus:ring-4 focus:ring-palma-primary/10 transition-all appearance-none cursor-pointer`}
+            value={displayValue}
+            onChange={onChange}
+            disabled={disabled}
+          >
+            {options}
+          </select>
+        ) : (
+          <input
+            type={type === 'email' ? 'email' : 'text'}
+            name={name}
+            required={required}
+            placeholder={placeholder}
+            inputMode={name === 'phone' || name === 'phone2' ? 'tel' : undefined}
+            maxLength={name === 'phone' || name === 'phone2' ? 20 : undefined}
+            className={`w-full ${lang === 'en' ? 'pl-12 pr-4' : 'pr-12 pl-4'} py-3.5 bg-slate-50 border ${error ? 'border-red-300 ring-2 ring-red-100' : 'border-slate-200'} rounded-2xl text-sm font-bold text-palma-navy outline-none focus:bg-white focus:border-palma-primary focus:ring-4 focus:ring-palma-primary/10 transition-all placeholder:text-slate-400`}
+            value={displayValue}
+            onChange={onChange}
+          />
+        )}
+        {type === 'select' && (
+          <div className={`absolute top-1/2 -translate-y-1/2 ${lang === 'en' ? 'right-4' : 'left-4'} text-slate-400 pointer-events-none`}>
+            <ArrowRight className="w-4 h-4 rotate-90" />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
 
 // --- Performance: memoized shop product card to avoid re-rendering all cards when list updates ---
 interface ShopProductCardProps {
@@ -92,6 +170,9 @@ const ShopProductCard = React.memo(function ShopProductCard({ product: p, lang, 
       </div>
       <div className="p-4 space-y-3 flex-1 flex flex-col">
         <div className="flex-1">
+          <div className="mb-1">
+            <ProductConditionBadge condition={p.condition || 'new'} lang={lang} />
+          </div>
           <button
             type="button"
             onClick={(e) => {
@@ -128,8 +209,9 @@ interface CartItemRowProps {
   onToggleSelection: (id: string) => void;
   onUpdateQuantity: (productId: string, delta: number) => void;
   onRemove: (productId: string, productName?: string) => void;
+  lang: Language;
 }
-const CartItemRow = React.memo(function CartItemRow({ item, isSelected, showCheckbox, onToggleSelection, onUpdateQuantity, onRemove }: CartItemRowProps) {
+const CartItemRow = React.memo(function CartItemRow({ item, isSelected, showCheckbox, onToggleSelection, onUpdateQuantity, onRemove, lang }: CartItemRowProps) {
   return (
     <div className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-100 shadow-sm flex items-center gap-4 sm:gap-6 group hover:border-palma-primary/20 transition-all">
       {showCheckbox ? (
@@ -145,7 +227,10 @@ const CartItemRow = React.memo(function CartItemRow({ item, isSelected, showChec
       </div>
       <div className="flex-1 min-w-0">
         <h4 className="font-bold text-slate-900 text-sm sm:text-base mb-1 truncate">{item.name}</h4>
-        <p className="text-[10px] font-black text-palma-muted uppercase tracking-widest mb-3">{item.category}</p>
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          <p className="text-[10px] font-black text-palma-muted uppercase tracking-widest">{item.category}</p>
+          <ProductConditionBadge condition={item.condition || 'new'} lang={lang} />
+        </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center bg-slate-50 rounded-xl border border-slate-100">
             <button onClick={() => onUpdateQuantity(item.id, -1)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 transition"><Minus className="w-3.5 h-3.5" /></button>
@@ -216,7 +301,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
   const [shippingData, setShippingData] = useState({
     fullName: user.name || '',
     email: user.email || '',
-    phone: user.phone || '',
+    phone: String(user.phone ?? ''),
     phone2: '',
     address: '',
     paymentMethod: PaymentMethod.COD,
@@ -252,6 +337,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
   const [selectedCartIds, setSelectedCartIds] = useState<Set<string>>(() => new Set(cart.map(c => c.id)));
   const [shopSearch, setShopSearch] = useState('');
   const [shopCategoryId, setShopCategoryId] = useState<string>('all');
+  const [shopConditionFilter, setShopConditionFilter] = useState<string>('all');
   const categories = useMemo(() => marketStore.getAllUniqueCategories(), []);
 
   useEffect(() => {
@@ -311,6 +397,9 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
     if (shopCategoryId !== 'all') {
       base = base.filter(p => p.category === shopCategoryId);
     }
+    if (shopConditionFilter !== 'all') {
+      base = base.filter(p => (p.condition || 'new') === shopConditionFilter);
+    }
     const term = shopSearch.trim().toLowerCase();
     if (term) {
       base = base.filter(p =>
@@ -319,7 +408,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
       );
     }
     return base;
-  }, [products, shopCategoryId, shopSearch]);
+  }, [products, shopCategoryId, shopConditionFilter, shopSearch]);
 
   useEffect(() => {
     if (activeTab === 'orders' && apiOrders.length === 0) {
@@ -342,7 +431,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
     const { name, value } = e.target;
     setShippingData(prev => ({
       ...prev,
-      [name]: value,
+      [name]: name === 'phone' || name === 'phone2' ? String(value) : value,
     }));
     if (formErrors[name]) {
       setFormErrors(prev => ({ ...prev, [name]: false }));
@@ -615,12 +704,15 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
   }, [addToCart, showToast, t.common.success]);
 
   const handleRemoveFromCart = useCallback((productId: string, productName?: string) => {
-    const msg = lang === 'ar'
-      ? `هل تريد إزالة "${productName || 'هذا المنتج'}" من السلة؟`
-      : `Remove "${productName || 'this item'}" from cart?`;
-    if (!window.confirm(msg)) return;
+    // حذف مباشر بضغطة واحدة + رسالة واضحة للمستخدم
     removeFromCart(productId);
-    showToast(lang === 'ar' ? 'تمت إزالة المنتج من السلة' : 'Item removed from cart', 'info');
+    const name = productName || (lang === 'ar' ? 'المنتج' : 'item');
+    showToast(
+      lang === 'ar'
+        ? `تمت إزالة "${name}" من السلة.`
+        : `\"${name}\" has been removed from your cart.`,
+      'info'
+    );
   }, [lang, removeFromCart, showToast]);
 
   const toggleCartSelection = useCallback((id: string) => {
@@ -637,53 +729,6 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
   const handleCategorySelect = useCallback((category: string) => {
     setShopCategoryId(category);
   }, []);
-
-  // Reusable Components for Form
-  const InputGroup = ({ label, name, icon: Icon, required = false, type = "text", placeholder, options }: any) => {
-    const rawValue = shippingData[name as keyof typeof shippingData] as any;
-    const inputValue = rawValue ?? '';
-    return (
-    <div className="space-y-1.5 w-full">
-      <label className="text-[10px] font-black uppercase text-palma-muted tracking-widest flex items-center gap-1">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      <div className="relative group">
-        <div className={`absolute top-1/2 -translate-y-1/2 ${lang === 'en' ? 'left-4' : 'right-4'} text-slate-400 group-focus-within:text-palma-primary transition-colors`}>
-          <Icon className="w-5 h-5" />
-        </div>
-        {type === 'select' ? (
-          <select 
-            name={name} 
-            required={required}
-            className={`w-full ${lang === 'en' ? 'pl-12 pr-4' : 'pr-12 pl-4'} py-3.5 bg-slate-50 border ${formErrors[name] ? 'border-red-300 ring-2 ring-red-100' : 'border-slate-200'} rounded-2xl text-sm font-bold text-palma-navy outline-none focus:bg-white focus:border-palma-primary focus:ring-4 focus:ring-palma-primary/10 transition-all appearance-none cursor-pointer`}
-            value={name === 'cityId' ? selectedCityId ?? '' : inputValue}
-            onChange={name === 'cityId' ? handleCityChange : name === 'villageId' ? handleVillageChange : handleInputChange}
-            disabled={name === 'villageId' && !selectedCityId}
-          >
-            {options}
-          </select>
-        ) : (
-          <input
-            type={type}
-            name={name}
-            required={required}
-            placeholder={placeholder}
-            className={`w-full ${lang === 'en' ? 'pl-12 pr-4' : 'pr-12 pl-4'} py-3.5 bg-slate-50 border ${
-              formErrors[name] ? 'border-red-300 ring-2 ring-red-100' : 'border-slate-200'
-            } rounded-2xl text-sm font-bold text-palma-navy outline-none focus:bg-white focus:border-palma-primary focus:ring-4 focus:ring-palma-primary/10 transition-all placeholder:text-slate-400`}
-            value={inputValue}
-            onChange={handleInputChange}
-          />
-        )}
-        {type === 'select' && (
-           <div className={`absolute top-1/2 -translate-y-1/2 ${lang === 'en' ? 'right-4' : 'left-4'} text-slate-400 pointer-events-none`}>
-             <ArrowRight className={`w-4 h-4 rotate-90`} />
-           </div>
-        )}
-      </div>
-    </div>
-  );
-  };
 
   const setShopOrCart = (tab: 'shop' | 'cart') => {
     setActiveTab(tab);
@@ -797,25 +842,25 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
                       {/* ... Inputs ... */}
                       <div className="space-y-4">
                          <div className="grid md:grid-cols-2 gap-5">
-                            <InputGroup label={t.auth.name} name="fullName" icon={UserIcon} required placeholder={lang === 'ar' ? 'الاسم الكامل' : 'Full Name'} />
-                            <InputGroup label={t.auth.email} name="email" icon={Mail} type="email" required placeholder="example@mail.com" />
+                            <ShippingInputGroup label={t.auth.name} name="fullName" icon={UserIcon} required placeholder={lang === 'ar' ? 'الاسم الكامل' : 'Full Name'} value={shippingData.fullName} error={!!formErrors.fullName} onChange={handleInputChange} lang={lang} />
+                            <ShippingInputGroup label={t.auth.email} name="email" icon={Mail} type="email" required placeholder="example@mail.com" value={shippingData.email} error={!!formErrors.email} onChange={handleInputChange} lang={lang} />
                          </div>
                          <div className="grid md:grid-cols-2 gap-5">
-                            <InputGroup label={t.auth.phone} name="phone" icon={Phone} required placeholder="05x-xxxxxxx" />
-                            <InputGroup label={lang === 'en' ? 'Alternative Phone' : 'هاتف بديل'} name="phone2" icon={Phone} placeholder={lang === 'ar' ? 'اختياري' : 'Optional'} />
+                            <ShippingInputGroup label={t.auth.phone} name="phone" icon={Phone} required placeholder="05x-xxxxxxx" value={shippingData.phone} error={!!formErrors.phone} onChange={handleInputChange} lang={lang} />
+                            <ShippingInputGroup label={lang === 'en' ? 'Alternative Phone' : 'هاتف بديل'} name="phone2" icon={Phone} placeholder={lang === 'ar' ? 'اختياري' : 'Optional'} value={shippingData.phone2} error={!!formErrors.phone2} onChange={handleInputChange} lang={lang} />
                          </div>
                       </div>
                       <div className="space-y-4">
                          <div className="grid md:grid-cols-2 gap-5">
-                            <InputGroup label={lang === 'ar' ? 'المدينة' : 'City'} name="cityId" icon={Building} type="select" required options={<>{cities.map(c => <option key={c.id} value={c.id}>{lang === 'ar' ? c.nameAr : c.nameEn}</option>)}</>} />
-                            <InputGroup label={lang === 'ar' ? 'القرية/المنطقة' : 'Area'} name="villageId" icon={Navigation} type="select" required options={<>{availableVillages.map(v => <option key={v.id} value={v.id}>{lang === 'ar' ? v.nameAr : v.nameEn}</option>)}</>} />
+                            <ShippingInputGroup label={lang === 'ar' ? 'المدينة' : 'City'} name="cityId" icon={Building} type="select" required options={<>{cities.map(c => <option key={c.id} value={c.id}>{lang === 'ar' ? c.nameAr : c.nameEn}</option>)}</>} value={selectedCityId ?? ''} error={!!formErrors.cityId} onChange={handleCityChange} lang={lang} />
+                            <ShippingInputGroup label={lang === 'ar' ? 'القرية/المنطقة' : 'Area'} name="villageId" icon={Navigation} type="select" required options={<>{availableVillages.map(v => <option key={v.id} value={v.id}>{lang === 'ar' ? v.nameAr : v.nameEn}</option>)}</>} value={shippingData.villageId ?? ''} error={!!formErrors.villageId} onChange={handleVillageChange} lang={lang} disabled={!selectedCityId} />
                          </div>
-                         <InputGroup label={t.checkout.address} name="address" icon={MapPin} required placeholder={lang === 'ar' ? 'اسم الشارع، رقم العمارة، الطابق...' : 'Street name, Building No, Floor...'} />
+                         <ShippingInputGroup label={t.checkout.address} name="address" icon={MapPin} required placeholder={lang === 'ar' ? 'اسم الشارع، رقم العمارة، الطابق...' : 'Street name, Building No, Floor...'} value={shippingData.address} error={!!formErrors.address} onChange={handleInputChange} lang={lang} />
                       </div>
                       <div className="space-y-4">
                          <div className="grid md:grid-cols-2 gap-5">
-                            <InputGroup label={lang === 'en' ? 'Shipment Mode' : 'نمط الشحن'} name="shipmentType" icon={Truck} type="select" options={<><option value="COD">COD</option><option value="REGULAR">Regular</option></>} />
-                            <InputGroup label={lang === 'en' ? 'Notes' : 'ملاحظات'} name="notes" icon={FileText} placeholder={lang === 'ar' ? 'مثال: الرجاء الاتصال قبل الوصول' : 'e.g. Call before arrival'} />
+                            <ShippingInputGroup label={lang === 'en' ? 'Shipment Mode' : 'نمط الشحن'} name="shipmentType" icon={Truck} type="select" options={<><option value="COD">COD</option><option value="REGULAR">Regular</option></>} value={shippingData.shipmentType} error={!!formErrors.shipmentType} onChange={handleInputChange} lang={lang} />
+                            <ShippingInputGroup label={lang === 'en' ? 'Notes' : 'ملاحظات'} name="notes" icon={FileText} placeholder={lang === 'ar' ? 'مثال: الرجاء الاتصال قبل الوصول' : 'e.g. Call before arrival'} value={shippingData.notes} error={!!formErrors.notes} onChange={handleInputChange} lang={lang} />
                          </div>
                       </div>
                       <div className="pt-4 flex justify-end">
@@ -880,6 +925,31 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
                   onSelect={handleCategorySelect}
                 />
               ))}
+              <select
+                className="mt-2 md:mt-0 ml-0 md:ml-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-bold text-slate-600 outline-none focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 transition cursor-pointer"
+                value={shopConditionFilter}
+                onChange={(e) => setShopConditionFilter(e.target.value)}
+              >
+                <option value="all">
+                  {lang === 'ar'
+                    ? 'كل الحالات'
+                    : lang === 'he'
+                    ? 'כל המצבים'
+                    : 'All conditions'}
+                </option>
+                <option value="new">
+                  {lang === 'ar' ? 'جديد' : lang === 'he' ? 'חדש' : 'New'}
+                </option>
+                <option value="used_like_new">
+                  {lang === 'ar' ? 'مستعمل – كالجديد' : lang === 'he' ? 'משומש – כמו חדש' : 'Used – Like New'}
+                </option>
+                <option value="used_good">
+                  {lang === 'ar' ? 'مستعمل – حالة جيدة' : lang === 'he' ? 'משומש – מצב טוב' : 'Used – Good'}
+                </option>
+                <option value="refurbished">
+                  {lang === 'ar' ? 'مجدّد' : lang === 'he' ? 'מחודש' : 'Refurbished'}
+                </option>
+              </select>
             </div>
           </div>
 
@@ -930,6 +1000,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
                        onToggleSelection={toggleCartSelection}
                        onUpdateQuantity={updateQuantity}
                        onRemove={handleRemoveFromCart}
+                       lang={lang}
                      />
                    ))}
                 </div>
@@ -941,14 +1012,17 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
                       {cart.length > 1 && <p className="text-[10px] text-slate-500">{selectedCartItems.length} {lang === 'ar' ? 'منتج محدد' : 'items selected'}</p>}
                    </div>
                    <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                      <button onClick={() => { setCheckoutStep('form'); setShowCheckoutForm(true); }} disabled={selectedCartItems.length === 0} className="btn-primary w-full md:w-auto px-10 py-5 text-[11px] uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed">
-                         {lang === 'ar' ? 'متابعة للدفع' : 'Proceed to Checkout'} <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+                      <button
+                        onClick={() => {
+                          if (selectedCartItems.length === 0) return;
+                          onProceedToApiCheckout?.(selectedCartItems);
+                        }}
+                        disabled={selectedCartItems.length === 0}
+                        className="btn-primary w-full md:w-auto px-10 py-5 text-[11px] uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                         {lang === 'ar' ? 'متابعة للدفع' : 'Proceed to Checkout'}{' '}
+                         <ArrowRight className="w-4 h-4 rtl:rotate-180" />
                       </button>
-                      {onProceedToApiCheckout && (
-                        <button onClick={() => selectedCartItems.length > 0 && onProceedToApiCheckout(selectedCartItems)} disabled={selectedCartItems.length === 0} className="w-full md:w-auto bg-emerald-600 text-white px-10 py-5 rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl hover:bg-emerald-700 transition-all active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed">
-                           {lang === 'ar' ? 'دفع + شحن (رابط تجريبي)' : 'Payment + Shipment (API)'}
-                        </button>
-                      )}
                    </div>
                 </div>
              </div>
@@ -1006,7 +1080,12 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
                                </div>
                                <div className="min-w-0">
                                   <p className="text-xs font-bold text-slate-900 truncate mb-0.5">{prod?.name}</p>
-                                  <p className="text-[10px] font-medium text-slate-500">Qty: {item.quantity} × ₪{item.price ?? item.price_ils ?? 0}</p>
+                                  <div className="flex items-center gap-2 mb-0.5">
+                                    <p className="text-[10px] font-medium text-slate-500">
+                                      Qty: {item.quantity} × ₪{item.price ?? item.price_ils ?? 0}
+                                    </p>
+                                    <ProductConditionBadge condition={prod?.condition || 'new'} lang={lang} />
+                                  </div>
                                </div>
                             </div>
                           );

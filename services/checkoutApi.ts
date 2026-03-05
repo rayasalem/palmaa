@@ -13,13 +13,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     headers: { 'Content-Type': 'application/json', ...getAuthHeaders(), ...(options.headers as object) },
   });
   const data = await res.json().catch(() => ({}));
+  const safeData = data != null && typeof data === 'object' ? data : {};
   if (!res.ok) {
-    const err = new Error((data as any)?.error || (data as any)?.message || `HTTP ${res.status}`);
+    const err = new Error((safeData as any)?.error || (safeData as any)?.message || `HTTP ${res.status}`);
     (err as any).status = res.status;
-    (err as any).data = data;
+    (err as any).data = safeData;
     throw err;
   }
-  return data as T;
+  return safeData as T;
 }
 
 export interface CreateOrderBody {
@@ -103,6 +104,14 @@ export async function cancelOrder(orderId: string): Promise<{ success: boolean; 
   });
 }
 
+/** رفع رابط الفاتورة الضريبية للطلب (للتاجر بعد الدفع). */
+export async function updateOrderInvoice(orderId: string, invoiceUrl: string): Promise<{ success: boolean; order?: Order }> {
+  return request<{ success: boolean; order?: Order }>(`/api/orders/${orderId}/invoice`, {
+    method: 'PATCH',
+    body: JSON.stringify({ invoiceUrl: invoiceUrl.trim() }),
+  });
+}
+
 export async function fetchMyOrders(): Promise<{ success: boolean; orders: Order[] }> {
   return request<{ success: boolean; orders: Order[] }>('/api/orders');
 }
@@ -123,6 +132,72 @@ export async function createPayment(
   });
 }
 
+/** Direct REST card charge (legacy path) – used by inline card form. */
+export interface CybersourceChargeBody {
+  orderId: string;
+  amount: number;
+  currency: string;
+  cardNumber: string;
+  expMonth: string;
+  expYear: string;
+  cvv: string;
+  cardholderName: string;
+}
+
+export async function createCybersourceCharge(
+  body: CybersourceChargeBody
+): Promise<{
+  success: boolean;
+  orderId?: string;
+  amount?: number;
+  currency?: string;
+  transactionId?: string;
+  decision?: string;
+  error?: string;
+}> {
+  return request<any>('/api/payment/cybersource/charge', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+/** Cybersource Hosted Checkout (Secure Acceptance) – الطريقة الموصى بها من البنك حسب التوثيق. */
+export async function createCybersourceHostedSession(
+  orderId: string,
+  amount: number
+): Promise<{
+  success: boolean;
+  action_url?: string;
+  actionUrl?: string;
+  fields?: Record<string, string>;
+  error?: string;
+}> {
+  return request<any>('/api/payments/cybersource/hosted-session', {
+    method: 'POST',
+    body: JSON.stringify({ orderId, amount }),
+  });
+}
+
+/** Cybersource REST (Simple Order) – احتياطي إذا كان الحساب مفعّل لـ REST API. */
+export async function processCybersourceRestPayment(
+  orderId: string,
+  amount: number,
+  currency: string = 'USD'
+): Promise<{
+  success: boolean;
+  orderId?: string;
+  paymentId?: string;
+  captureId?: string;
+  error?: string;
+  stage?: string;
+  raw?: unknown;
+}> {
+  return request<any>('/api/payments/cybersource/rest/process', {
+    method: 'POST',
+    body: JSON.stringify({ orderId, amount, currency }),
+  });
+}
+
 export async function createShipment(body: CreateShipmentBody): Promise<{
   success: boolean;
   order?: Order;
@@ -132,6 +207,27 @@ export async function createShipment(body: CreateShipmentBody): Promise<{
   return request<any>('/api/shipment/create', {
     method: 'POST',
     body: JSON.stringify(body),
+  });
+}
+
+/**
+ * Cybersource REST (Simple Order) – Sandbox test endpoint.
+ * Calls POST /api/payments/cybersource/rest/test on the backend.
+ */
+export async function testCybersourceRestPayment(
+  amount: number,
+  currency: string = 'USD'
+): Promise<{
+  success: boolean;
+  stage?: 'authorization' | 'capture';
+  error?: string;
+  paymentId?: string;
+  captureId?: string;
+  raw?: any;
+}> {
+  return request<any>('/api/payments/cybersource/rest/test', {
+    method: 'POST',
+    body: JSON.stringify({ amount, currency }),
   });
 }
 

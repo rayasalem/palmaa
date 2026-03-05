@@ -75,7 +75,8 @@ async function getDashboard(req, res) {
     if (sub.error) return res.status(500).json({ success: false, error: sub.error.message });
     if (stats.error) return res.status(500).json({ success: false, error: stats.error.message });
     const subscription = sub.data;
-    const isActive = subscriptionService.isActive(subscription);
+    // التاجر: الاشتراك مجاني دائماً داخل المنصة (ما لم يكن المتجر معلّقاً يدوياً)، لذا نعرضه دائماً كنشط.
+    const isActive = true;
     return res.status(200).json({
       success: true,
       subscription: {

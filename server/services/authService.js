@@ -136,12 +136,27 @@ async function registerUser(params) {
     created_at: now,
   };
 
-  // Merchants: تبقى بحاجة موافقة خاصة مع اشتراك تجريبي
+  // Merchants: موافقة خاصة مع اشتراك مجاني دائم
   if (roleVal === 'MERCHANT' && termsAccepted) {
     insertPayload.terms_accepted = true;
     insertPayload.terms_accepted_at = now;
     if (termsVersion) insertPayload.terms_version = termsVersion;
     insertPayload.status = 'APPROVED';
+    insertPayload.is_approved = true;
+    // التاجر: اشتراك مجاني دائماً (لا تاريخ انتهاء، حالة نشطة)
+    insertPayload.subscription_type = 'free';
+    insertPayload.subscription_start_date = now;
+    insertPayload.subscription_end_date = null;
+    insertPayload.subscription_status = 'active';
+  }
+  // Customers: تفعيل مباشر بدون مراجعة أدمن
+  else if (roleVal === 'CUSTOMER') {
+    insertPayload.status = 'ACTIVE';
+    insertPayload.is_approved = true;
+  }
+  // Brokers: تفعيل مباشر + شهر مجاني كتجربة، بعدها تعتمد المنصة على حقل الاشتراك لانتهاء الفترة
+  else if (roleVal === 'BROKER') {
+    insertPayload.status = 'ACTIVE';
     insertPayload.is_approved = true;
     const trialEnd = new Date();
     trialEnd.setDate(trialEnd.getDate() + 30);
@@ -150,16 +165,11 @@ async function registerUser(params) {
     insertPayload.subscription_end_date = trialEnd.toISOString();
     insertPayload.subscription_status = 'active';
   }
-  // Customers & brokers: تفعيل مباشر بدون مراجعة أدمن
-  else if (roleVal === 'CUSTOMER' || roleVal === 'BROKER') {
-    insertPayload.status = 'ACTIVE';
-    insertPayload.is_approved = true;
-  }
   let result = await supabase.from(USERS_TABLE).insert(insertPayload).select().single();
   if (result.error) {
     const msg = (result.error.message || '').toLowerCase();
     const isMissingColumn = result.error.code === '42703' || /column\s+.*\s+(does\s*not\s*exist|of\s+relation)/i.test(result.error.message || '');
-    if (isMissingColumn && roleVal === 'MERCHANT') {
+    if (isMissingColumn && (roleVal === 'MERCHANT' || roleVal === 'BROKER')) {
       delete insertPayload.subscription_type;
       delete insertPayload.subscription_start_date;
       delete insertPayload.subscription_end_date;

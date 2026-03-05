@@ -84,6 +84,7 @@ async function create(req, res) {
       weight: body.weight,
       dimensions: body.dimensions,
       tags: body.tags,
+      condition: body.condition,
     });
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to create product' });
@@ -116,6 +117,7 @@ async function update(req, res) {
       weight: body.weight,
       dimensions: body.dimensions,
       tags: body.tags,
+    condition: body.condition,
     });
     if (error) {
       return res.status((error.message && error.message.includes('0 rows')) ? 404 : 500).json({

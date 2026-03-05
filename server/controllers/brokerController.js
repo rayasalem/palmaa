@@ -3,6 +3,7 @@
  */
 
 import * as sharedProductsService from '../services/sharedProductsService.js';
+import { canUseBrokerFeatures } from '../services/subscriptionService.js';
 import logger from '../utils/logger.js';
 
 async function upsertSharedProduct(req, res) {
@@ -11,6 +12,14 @@ async function upsertSharedProduct(req, res) {
     if (!brokerId) return res.status(401).json({ success: false, error: 'Authentication required' });
     if ((req.auth && req.auth.role && String(req.auth.role).toUpperCase()) !== 'BROKER') {
       return res.status(403).json({ success: false, error: 'Only brokers can share products' });
+    }
+    const { allowed, reason } = await canUseBrokerFeatures(brokerId);
+    if (!allowed) {
+      const msg =
+        reason === 'BROKER_SUBSCRIPTION_EXPIRED'
+          ? 'Your broker subscription has expired. Please contact support to renew your plan.'
+          : 'Broker features are not available for this account.';
+      return res.status(403).json({ success: false, error: msg, reason });
     }
     const { productId } = req.params;
     const body = req.body || {};
@@ -62,6 +71,14 @@ async function toggleFeatured(req, res) {
   try {
     const brokerId = (req.auth && req.auth.sub);
     if (!brokerId) return res.status(401).json({ success: false, error: 'Authentication required' });
+    const { allowed, reason } = await canUseBrokerFeatures(brokerId);
+    if (!allowed) {
+      const msg =
+        reason === 'BROKER_SUBSCRIPTION_EXPIRED'
+          ? 'Your broker subscription has expired. Please contact support to renew your plan.'
+          : 'Broker features are not available for this account.';
+      return res.status(403).json({ success: false, error: msg, reason });
+    }
     const { shareId } = req.params;
     if (!shareId) return res.status(400).json({ success: false, error: 'shareId is required' });
     const { data, error } = await sharedProductsService.toggleFeatured(brokerId, shareId);

@@ -40,7 +40,7 @@ async function getCartWithItems(userId) {
     (items || []).map(async (item) => {
       const { data: product } = await supabase
         .from(PRODUCTS_TABLE)
-        .select('id, name, image_url, price_ils')
+        .select('id, name, image_url, price_ils, condition')
         .eq('id', item.product_id)
         .single();
       return {

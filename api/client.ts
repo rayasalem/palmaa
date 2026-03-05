@@ -15,11 +15,13 @@ function isHttpUrl(s: string): boolean {
   return typeof s === 'string' && (s.startsWith('http://') || s.startsWith('https://'));
 }
 
+/** Default backend port when running frontend locally. */
+const LOCAL_API = 'http://localhost:5000';
+
 /**
  * Resolve API base on every call (not cached).
- * When the site is loaded from palma.ps we always use PRODUCTION_API (Render URL)
- * so the site works even if api.palma.ps certificate is not yet issued.
- * Set VITE_API_URL only when your custom API domain has valid SSL.
+ * - On palma.ps (or any non-local host): always PRODUCTION_API.
+ * - On localhost: use VITE_API_URL if set; otherwise LOCAL_API so local backend works without .env.
  */
 function getApiBase(): string {
   const env = (import.meta as { env?: { PROD?: boolean; VITE_API_URL?: string } }).env;
@@ -28,6 +30,9 @@ function getApiBase(): string {
     const h = window.location.hostname.toLowerCase();
     if (h === 'palma.ps' || h.endsWith('.palma.ps')) return PRODUCTION_API;
     if (h && h !== 'localhost' && h !== '127.0.0.1') return PRODUCTION_API;
+    // Running on localhost: prefer explicit URL, else use local backend
+    if (isHttpUrl(candidate)) return candidate;
+    return LOCAL_API;
   }
   if (isHttpUrl(candidate)) return candidate;
   return (env?.PROD ? PRODUCTION_API : '') || PRODUCTION_API;

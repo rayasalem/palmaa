@@ -95,6 +95,9 @@ const AppContent: React.FC = () => {
     const parts = raw.split('/').filter(Boolean);
     const top = parts[0] || '';
     isApplyingHashRef.current = true;
+    // أي تغيير في الـ hash يلغي صفحة الشروط، ما لم نكن على /terms أو /register-merchant
+    setShowMerchantTermsPage(false);
+    setPendingAuthAfterTerms(null);
     if (top === 'catalog') {
       setPublicState('CATALOG');
       setCurrentView('home');
@@ -419,6 +422,12 @@ const AppContent: React.FC = () => {
           cart={checkoutCart.length > 0 ? checkoutCart : cart}
           clearCart={clearCart}
           onBack={() => { setShowApiCheckout(false); setCheckoutCart([]); }}
+          onPaymentSuccess={(orderId) => {
+            setCheckoutReturnOrderId(orderId);
+            setCheckoutReturnPayment('success');
+            setShowApiCheckout(false);
+            setCheckoutCart([]);
+          }}
         />
         <SupportChat lang={lang} user={user} />
       </>

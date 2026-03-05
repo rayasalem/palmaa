@@ -146,7 +146,7 @@ export interface CartItemResponse {
   quantity: number;
   price: number;
   created_at?: string;
-  product?: { id: string; name?: string; image_url?: string; price_ils?: number };
+  product?: { id: string; name?: string; image_url?: string; price_ils?: number; condition?: string };
 }
 
 /** Full cart response for GET /api/cart */

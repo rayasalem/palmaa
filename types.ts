@@ -82,6 +82,8 @@ export interface Product {
   createdAt?: number; // Legacy
   created_at?: string; // New
   updatedAt?: number;
+  /** Product condition (e.g. new, used_like_new, used_good, used_fair, refurbished, open_box, vintage) */
+  condition?: string;
 }
 
 export interface SharedProduct {
@@ -207,6 +209,10 @@ export interface Order {
   awb_url?: string;
   delivery_status?: string;
   expected_delivery_date?: string;
+  /** الفاتورة الضريبية مرفوعة (للدفع الإلكتروني). */
+  invoice_uploaded?: boolean;
+  /** رابط ملف الفاتورة. */
+  invoice_file_url?: string;
 }
 
 export interface Transaction {
