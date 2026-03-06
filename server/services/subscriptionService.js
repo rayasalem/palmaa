@@ -2,14 +2,15 @@
  * Subscription service: free/paid, start/end dates, status.
  * Default model:
  * - MERCHANT: اشتراك مجاني دائم (يُستخدم الحقل فقط للعرض في الواجهة).
- * - BROKER: شهر مجاني (free) ثم تعتمد المنصة على تاريخ الانتهاء لتقييد المزايا.
+ * - BROKER: ٦ أشهر مجانية (free) ثم تعتمد المنصة على تاريخ الانتهاء لتقييد المزايا.
  */
 
 import { supabase } from '../config/supabaseClient.js';
 
 const USERS_TABLE = 'users';
 
-const DEFAULT_FREE_DAYS = 30;
+// يُستخدم في حال احتجنا فترة تجريبية افتراضية (حالياً ٦ أشهر = 180 يوم للوسيط)
+const DEFAULT_FREE_DAYS = 180;
 
 /**
  * Get subscription for a user (merchant).
@@ -107,7 +108,7 @@ async function canAddProducts(userId) {
 
 /**
  * Check if broker can use broker-specific features (sharing products, etc.).
- * BROKER: شهر مجاني (free) ثم تُعتبر المزايا منتهية عند انتهاء الفترة.
+ * BROKER: ٦ أشهر مجانية (free) ثم تُعتبر المزايا منتهية عند انتهاء الفترة.
  */
 async function canUseBrokerFeatures(userId) {
   const { data: user, error } = await supabase

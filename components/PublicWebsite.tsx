@@ -425,16 +425,20 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
               </h2>
               <p className="heading-block-sub max-w-xl mx-auto">
                 {lang === 'ar'
-                  ? 'التاجر: اشتراكه داخل المنصة مجاني دائماً. الوسيط / المسوّق: يحصل على شهر مجاني للتجربة، وبعدها يمكنه اختيار باقة اشتراك مدفوعة حسب سياسة المنصة.'
-                  : 'Merchants stay on a free in-platform plan. Brokers/affiliates get a free first month, then can choose a paid subscription plan according to platform policy.'}
+                  ? 'التاجر: اشتراكه داخل المنصة مجاني دائماً. الوسيط / المسوّق: يحصل على ٦ أشهر مجانية للتجربة، وبعدها يمكنه اختيار باقة اشتراك مدفوعة حسب سياسة المنصة.'
+                  : 'Merchants stay on a free in-platform plan. Brokers/affiliates get a free 6‑month trial, then can choose a paid subscription plan according to platform policy.'}
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
               <div className="bg-white rounded-2xl border border-palma-border p-6 shadow-soft text-center card-hover-lift hover:border-palma-primary/30 transition-all duration-300">
                 <p className="font-heading text-lg font-black text-palma-navy mb-1">{lang === 'ar' ? 'تجربة مجانية' : 'Free trial'}</p>
                 <p className="text-3xl font-black text-palma-primary mb-2">$0</p>
-                <p className="text-xs text-slate-500 mb-4">{lang === 'ar' ? 'شهر أول للتجربة' : 'First month to try'}</p>
-                <button type="button" onClick={onJoinMerchant} className="btn-primary w-full py-3 text-xs hover:scale-[1.02] transition-transform">{lang === 'ar' ? 'ابدأ مجاناً' : 'Start free'}</button>
+                <p className="text-xs text-slate-500 mb-4">
+                  {lang === 'ar' ? '٦ أشهر مجانية لتجربة المنصة' : '6‑month free trial to try the platform'}
+                </p>
+                <button type="button" onClick={onJoinMerchant} className="btn-primary w-full py-3 text-xs hover:scale-[1.02] transition-transform">
+                  {lang === 'ar' ? 'ابدأ مجاناً' : 'Start free'}
+                </button>
               </div>
               <div className="bg-palma-navy rounded-2xl border-2 border-palma-primary p-6 shadow-card text-center text-white relative card-hover-lift hover:shadow-[0_20px_40px_-12px_rgba(225,6,0,0.25)] transition-all duration-300">
                 <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-palma-primary text-white text-[10px] font-black uppercase px-3 py-1 rounded-full">{lang === 'ar' ? 'الأكثر شيوعاً' : 'Most popular'}</span>

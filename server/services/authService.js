@@ -154,12 +154,13 @@ async function registerUser(params) {
     insertPayload.status = 'ACTIVE';
     insertPayload.is_approved = true;
   }
-  // Brokers: تفعيل مباشر + شهر مجاني كتجربة، بعدها تعتمد المنصة على حقل الاشتراك لانتهاء الفترة
+  // Brokers: تفعيل مباشر + ٦ أشهر مجانية كتجربة، بعدها تعتمد المنصة على حقل الاشتراك لانتهاء الفترة
   else if (roleVal === 'BROKER') {
     insertPayload.status = 'ACTIVE';
     insertPayload.is_approved = true;
     const trialEnd = new Date();
-    trialEnd.setDate(trialEnd.getDate() + 30);
+    // ٦ أشهر ≈ 180 يوم (يمكن لاحقاً استخدام منطق شهور فعلي لو لزم الأمر)
+    trialEnd.setDate(trialEnd.getDate() + 180);
     insertPayload.subscription_type = 'free';
     insertPayload.subscription_start_date = now;
     insertPayload.subscription_end_date = trialEnd.toISOString();
