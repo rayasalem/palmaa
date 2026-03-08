@@ -76,7 +76,7 @@
 | transaction_type | sale (دفع فوري) | `transaction_type: 'sale'` | ✅ |
 | locale عربي | ar-xn | `CYBS_LOCALE` افتراضي 'ar-xn' | ✅ |
 | إشعار التاجر | Merchant POST URL يستقبل decision + signed response | POST /api/payments/cybersource/notify، urlencoded، verifySignature ثم handlePaymentCallback | ✅ |
-| بطاقات الاختبار | Visa 4111111111111111، إزالة المسافات | البطاقات من دليل الاختبار؛ المشروع لا يرسل البطاقة (Hosted يدخلها العميل) | ✅ |
+| بطاقات الاختبار | Visa 4111111111111111، إزالة المسافات | البطاقات من دليل الاختبار؛ المشروع لا يرسل البطاقة (Hosted يدخلها الزبون) | ✅ |
 
 ---
 

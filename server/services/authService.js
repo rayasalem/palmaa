@@ -329,13 +329,13 @@ async function login(email, password) {
   }
 
   if (!userRow) {
-    // إذا الجدول فاضي أو المستخدم غير موجود: إنشاء أدمن تجريبي بالبيانات الثابتة فقط
-    if (emailNorm === 'admin@palma.demo' && passTrimmed === 'Admin@123456') {
+    // إذا الجدول فاضي أو المستخدم غير موجود: إنشاء أدمن بالبريد الرسمي
+    if (emailNorm === 'info@palma.ps' && passTrimmed === 'Admin@123456') {
       const hashed = await hashPassword(passTrimmed);
       const { data: inserted, error: insertErr } = await supabase
         .from(USERS_TABLE)
         .insert({
-          email: 'admin@palma.demo',
+          email: 'info@palma.ps',
           name: 'أدمن بالما',
           role: 'ADMIN',
           status: 'ACTIVE',
@@ -370,8 +370,8 @@ async function login(email, password) {
   const stored = userRow.password && String(userRow.password).trim();
   let match = false;
 
-  // مستخدم تجريبي ثابت: لو البريد وكلمة السر هذي بالضبط → ادخل مباشرة (حل نهائي لما الداتا والكي موجودين واللوجن لسه 401)
-  if (emailNorm === 'admin@palma.demo' && passTrimmed === 'Admin@123456') {
+  // حساب الأدمن الرسمي: info@palma.ps
+  if (emailNorm === 'info@palma.ps' && passTrimmed === 'Admin@123456') {
     match = true;
     if (!stored || !stored.startsWith('$2')) {
       const hashed = await hashPassword(passTrimmed);
@@ -380,11 +380,9 @@ async function login(email, password) {
   }
 
   // كلمات سر بقية مستخدمي التجربة من setup.sql (لو هاش Postgres ما تطابق Node نصلحها مرة واحدة)
+  // كلمة سر الأدمن الرسمي فقط (لا حسابات تجريبية أخرى)
   const DEMO_PASSWORDS = {
-    'admin@palma.demo': 'Admin@123456',
-    'merchant@palma.demo': 'Merchant@123456',
-    'broker@palma.demo': 'Broker@123456',
-    'customer@palma.demo': 'Customer@123456',
+    'info@palma.ps': 'Admin@123456',
   };
 
   if (!match && stored && stored.startsWith('$2') && stored.length >= 50) {

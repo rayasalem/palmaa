@@ -52,7 +52,7 @@
 | **order_profits** | كلهم ALL | تفعيل RLS: قراءة/كتابة للباك إند فقط (service_role)؛ لا وصول لـ anon/authenticated إن أمكن | عالي | 1) ENABLE RLS 2) سياسة واحدة: استخدام service_role فقط 3) اختبار تسجيل الأرباح بعد الدفع |
 | **transactions** | كلهم ALL | تفعيل RLS: قراءة محدودة (مثلاً التاجر لمعاملاته)، كتابة للباك إند فقط | عالي | 1) ENABLE RLS 2) سياسات للقراءة حسب الدور 3) INSERT/UPDATE لـ service_role 4) اختبار التقارير والدفعات |
 | **order_items** | كلهم ALL | تفعيل RLS: مرتبط بـ orders؛ قراءة حسب صلاحية الطلب، كتابة للباك إند فقط | عالي | 1) تفعيل RLS على orders أولاً 2) ENABLE RLS على order_items 3) سياسات عبر order_id 4) اختبار الطلبات والدفع |
-| **orders** | كلهم ALL | تفعيل RLS: العميل يرى طلباته، التاجر طلباته، الأدمن الكل؛ الكتابة من الباك إند | عالي | 1) ENABLE RLS 2) SELECT WHERE customer_id = auth.uid() OR merchant_id = auth.uid() أو role أدمن 3) INSERT/UPDATE لـ service_role 4) اختبار قوائم الطلبات والدفع |
+| **orders** | كلهم ALL | تفعيل RLS: الزبون يرى طلباته، التاجر طلباته، الأدمن الكل؛ الكتابة من الباك إند | عالي | 1) ENABLE RLS 2) SELECT WHERE customer_id = auth.uid() OR merchant_id = auth.uid() أو role أدمن 3) INSERT/UPDATE لـ service_role 4) اختبار قوائم الطلبات والدفع |
 | **products** | كلهم ALL | تفعيل RLS: قراءة عامة للمنتجات النشطة، تحديث/حذف للتاجر صاحب المنتج أو service_role | عالي | 1) ENABLE RLS 2) SELECT للجميع (أو حسب status) 3) UPDATE/DELETE لـ merchant_id = auth.uid() أو service_role 4) اختبار CRUD المنتجات |
 | **withdrawals** | كلهم ALL | تفعيل RLS: المستخدم يرى طلبات سحبه فقط؛ التحديث (موافقة/رفض) للأدمن أو service_role | عالي | 1) ENABLE RLS 2) SELECT WHERE user_id = auth.uid() 3) UPDATE للـ service_role 4) اختبار طلبات السحب |
 | **commissions** | كلهم ALL | تفعيل RLS: الوسيط يرى عمولاته؛ التحديث للباك إند فقط | عالي | 1) ENABLE RLS 2) SELECT WHERE broker_id = auth.uid() 3) INSERT/UPDATE لـ service_role 4) اختبار لوحة الوسيط |
@@ -120,7 +120,7 @@
 | 9 | **order_profits** | ENABLE RLS + سياسة service_role فقط (أو بدون سياسة للـ anon/authenticated) | بعد دفع طلب، التحقق من ظهور صفوف في order_profits؛ مراجعة سجلات profitService |
 | 10 | **carts** | ENABLE RLS + SELECT/INSERT/UPDATE/DELETE WHERE user_id = auth.uid() أو service_role | اختبار إضافة سلة، إضافة عنصر، حذف عنصر، الدفع |
 | 11 | **cart_items** | ENABLE RLS + سياسات مرتبطة بـ carts (مثلاً عبر cart_id و cart.user_id) أو service_role | نفس اختبارات السلة |
-| 12 | **order_items** | ENABLE RLS + سياسات مرتبطة بـ orders (العميل يرى عناصر طلباته، الباك إند يكتب) أو service_role | اختبار إنشاء طلب وعرض تفاصيل الطلب |
+| 12 | **order_items** | ENABLE RLS + سياسات مرتبطة بـ orders (الزبون يرى عناصر طلباته، الباك إند يكتب) أو service_role | اختبار إنشاء طلب وعرض تفاصيل الطلب |
 | 13 | **orders** | ENABLE RLS + SELECT حسب customer_id / merchant_id / أدمن؛ INSERT/UPDATE لـ service_role | اختبار قائمة الطلبات، تحديث الحالة، الدفع، الشحن |
 | 14 | **transactions** | ENABLE RLS + قراءة محدودة حسب الدور؛ كتابة لـ service_role | اختبار تقارير المعاملات والتسوية |
 
@@ -156,7 +156,7 @@
 
 ## 7. تحذيرات لأي تغييرات قد تؤثر على الإنتاج
 
-1. **تفعيل RLS دون سياسة لـ service_role (أو الاعتماد على تجاوز RLS):** في Supabase، service_role يتجاوز RLS؛ لذلك لن يكسر الباك إند. لكن أي عميل يستخدم **anon** أو **authenticated** للوصول المباشر لجدول سيفشل بعد تفعيل RLS ما لم تُضف له سياسة. **في هذا المشروع:** لا وصول جدول من الفرونت إند، لذا الخطر على الإنتاج منخفض عند اتباع الخطة أعلاه.
+1. **تفعيل RLS دون سياسة لـ service_role (أو الاعتماد على تجاوز RLS):** في Supabase، service_role يتجاوز RLS؛ لذلك لن يكسر الباك إند. لكن أي زبون يستخدم **anon** أو **authenticated** للوصول المباشر لجدول سيفشل بعد تفعيل RLS ما لم تُضف له سياسة. **في هذا المشروع:** لا وصول جدول من الفرونت إند، لذا الخطر على الإنتاج منخفض عند اتباع الخطة أعلاه.
 
 2. **سحب GRANT من anon/authenticated:** إذا أزلت `GRANT ALL ... TO anon, authenticated` دون تفعيل RLS، لن يتأثر الباك إند (يعمل بـ service_role). لكن إن كان أي أداة أو مستقبلاً واجهة تستخدم anon للمباشرة بالجدول فستتوقف. التوصية: الاعتماد على RLS للتحكم بالوصول بدلاً من إزالة الـ GRANT في البداية، ثم تقييد الـ GRANT لاحقاً إن لزم.
 

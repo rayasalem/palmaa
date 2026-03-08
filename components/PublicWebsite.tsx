@@ -6,23 +6,31 @@ import { prefetchComponent, prefetchProductData } from '../prefetch';
 import Logo from './Logo';
 import { Language, translations } from '../translations';
 import ComingSoonHero from './ComingSoonHero';
-import { ShoppingBag, TrendingUp, Store, Globe, ChevronDown, Menu, X, Users, Shield, ShieldCheck, Lock, BarChart3, Server, Sparkles, Rocket, Layers, Package, UserPlus, Settings, LineChart, Facebook, Instagram, Linkedin, Youtube, MessageCircle, MailCheck } from 'lucide-react';
+import { ShoppingBag, TrendingUp, Store, Globe, ChevronDown, Menu, X, Users, Shield, ShieldCheck, Lock, BarChart3, Server, Sparkles, Rocket, Layers, Package, UserPlus, Settings, LineChart, Facebook, Instagram, MessageCircle, MailCheck } from 'lucide-react';
 
 const LANG_LABELS: Record<Language, string> = { ar: 'العربية', en: 'English', he: 'עברית' };
+
+/** إيميل وهاتف التواصل في الفوتر — غيّرهما لإيميلك ورقمك الحقيقيين */
+const FOOTER_CONTACT_EMAIL = 'office@palma.ps';
+const FOOTER_CONTACT_PHONE = '+970569676111';
+const FOOTER_CONTACT_PHONE_DISPLAY = '+970569676111';
 
 interface PublicWebsiteProps {
   lang: Language;
   setLang: (l: Language) => void;
   onLoginClick: () => void;
+  /** فتح صفحة انشاء حساب جديد (اختيار الدور: تاجر / زبون / مسوق) */
+  onJoinRegister: () => void;
   onJoinMerchant: () => void;
   onJoinBroker: () => void;
+  onJoinCustomer: () => void;
   onExploreProducts: () => void;
   onViewProduct?: (id: string) => void;
   onOpenTerms?: () => void;
 }
 
 const PublicWebsite: React.FC<PublicWebsiteProps> = ({ 
-  lang, setLang, onLoginClick, onJoinMerchant, onJoinBroker, onExploreProducts, onViewProduct, onOpenTerms 
+  lang, setLang, onLoginClick, onJoinRegister, onJoinMerchant, onJoinBroker, onJoinCustomer, onExploreProducts, onViewProduct, onOpenTerms 
 }) => {
   const t = translations[lang];
   const [products, setProducts] = useState<Product[]>([]);
@@ -47,7 +55,6 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
   const navSections = [
     { id: 'hero', ar: 'الرئيسية', en: 'Home', he: 'בית' },
     { id: 'features', ar: 'المزايا', en: 'Features', he: 'תכונות' },
-    { id: 'pricing', ar: 'الأسعار', en: 'Pricing', he: 'מחירים' },
     { id: 'products', ar: 'المنتجات', en: 'Products', he: 'מוצרים' },
     { id: 'faq', ar: 'الأسئلة الشائعة', en: 'FAQ', he: 'שאלות נפוצות' },
     { id: 'contact', ar: 'تواصل', en: 'Contact', he: 'צור קשר' },
@@ -86,7 +93,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                 ))}
               </nav>
             </div>
-            {/* لغة + دخول + سجل كتاجر — نفس المحاذاة */}
+            {/* لغة + تسجيل دخول + انضم لبالما */}
             <div className="hidden sm:flex items-center gap-3 sm:gap-4 shrink-0">
                <div className="relative flex items-center">
                  <button onClick={() => setLangMenuOpen(prev => !prev)} className="flex items-center gap-1.5 text-[10px] font-semibold uppercase text-palma-muted hover:text-palma-primary transition tracking-wider py-2">
@@ -109,7 +116,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                </div>
                <div className="w-px h-4 bg-palma-border self-stretch" aria-hidden />
                <button onClick={onLoginClick} className="text-sm font-semibold text-palma-navy hover:text-palma-primary transition py-2">{t.nav.login}</button>
-               <button onClick={onJoinMerchant} className="btn-primary px-4 py-2 text-[10px] sm:text-xs tracking-wide h-9 flex items-center justify-center">{t.hero.join}</button>
+               <button onClick={onJoinRegister} className="btn-primary px-4 py-2 text-[10px] sm:text-xs tracking-wide h-9 flex items-center justify-center">{lang === 'ar' ? 'انضم لبالما' : lang === 'he' ? 'הצטרף לפלמה' : 'Join Palma'}</button>
             </div>
          </div>
 
@@ -154,8 +161,8 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                  <button onClick={() => { onLoginClick(); setMobileMenuOpen(false); }} className="w-full py-3.5 text-sm font-semibold text-palma-navy hover:bg-palma-primaryLight rounded-xl transition-colors">
                    {t.nav.login}
                  </button>
-                 <button onClick={() => { onJoinMerchant(); setMobileMenuOpen(false); }} className="btn-primary w-full py-3.5 text-[10px] tracking-wide">
-                   {t.hero.join}
+                 <button onClick={() => { onJoinRegister(); setMobileMenuOpen(false); }} className="btn-primary w-full py-3.5 text-[10px] tracking-wide">
+                   {lang === 'ar' ? 'انضم لبالما' : lang === 'he' ? 'הצטרף לפלמה' : 'Join Palma'}
                  </button>
                </div>
              </div>
@@ -169,9 +176,8 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
         <section id="hero" aria-label={lang === 'ar' ? 'الرئيسية' : 'Hero'}>
         <ComingSoonHero 
           lang={lang} 
-          onJoinMerchant={onJoinMerchant}
+          onStartNow={onJoinRegister}
           onExploreProducts={onExploreProducts}
-          onRegister={onLoginClick}
         />
         </section>
 
@@ -225,34 +231,34 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                {/* Feature 1 - Merchant */}
-               <div className="card card-hover-lift p-8 rounded-2xl transition-all duration-300 group cursor-pointer border-2 border-transparent hover:border-palma-primary/20">
+               <div className="card card-hover-lift p-8 rounded-2xl transition-all duration-300 group cursor-pointer border-2 border-transparent hover:border-palma-primary/20" onClick={onJoinMerchant}>
                   <div className="w-16 h-16 bg-palma-primaryLight rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-palma-primary/10 transition-all duration-300 shadow-soft">
                      <Store className="w-8 h-8 text-palma-navy" />
                   </div>
                   <h3 className="font-heading text-xl font-black text-palma-navy mb-3">{t.landing.features.merchantTitle}</h3>
                   <p className="heading-block-sub text-slate-500 mb-4">{t.landing.features.merchantDesc}</p>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-palma-primary group-hover:underline">{lang === 'ar' ? 'اكتشف المزيد ←' : 'Learn more ←'}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-palma-primary group-hover:underline">{lang === 'ar' ? 'سجّل كتاجر ←' : 'Register as merchant ←'}</span>
                </div>
 
                {/* Feature 2 - Broker (Highlighted) */}
-               <div className="bg-palma-navy p-8 rounded-2xl shadow-card-hover transition-all duration-300 group text-white relative overflow-hidden card-hover-lift cursor-pointer border-2 border-palma-primary/50 hover:border-palma-primary">
+               <div className="bg-palma-navy p-8 rounded-2xl shadow-card-hover transition-all duration-300 group text-white relative overflow-hidden card-hover-lift cursor-pointer border-2 border-palma-primary/50 hover:border-palma-primary" onClick={onJoinBroker}>
                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150 duration-700"></div>
                   <div className="w-16 h-16 bg-white/10 rounded-xl flex items-center justify-center mb-6 backdrop-blur-md relative z-10 group-hover:scale-110 transition-transform ring-1 ring-white/10">
                      <TrendingUp className="w-8 h-8 text-white" />
                   </div>
                   <h3 className="font-heading text-xl font-black mb-3 relative z-10">{t.landing.features.brokerTitle}</h3>
                   <p className="text-sm text-slate-300 font-medium leading-relaxed relative z-10 mb-4">{t.landing.features.brokerDesc}</p>
-                  <span className="relative z-10 text-[10px] font-black uppercase tracking-widest text-white/90 group-hover:underline">{lang === 'ar' ? 'اكتشف المزيد ←' : 'Learn more ←'}</span>
+                  <span className="relative z-10 text-[10px] font-black uppercase tracking-widest text-white/90 group-hover:underline">{lang === 'ar' ? 'سجّل كمسوق ←' : 'Register as marketer ←'}</span>
                </div>
 
-               {/* Feature 3 - Customer */}
-               <div className="card card-hover-lift p-8 rounded-2xl transition-all duration-300 group cursor-pointer border-2 border-transparent hover:border-palma-primary/20">
+               {/* Feature 3 - Customer (زبون) */}
+               <div className="card card-hover-lift p-8 rounded-2xl transition-all duration-300 group cursor-pointer border-2 border-transparent hover:border-palma-primary/20" onClick={onJoinCustomer}>
                   <div className="w-16 h-16 bg-palma-primaryLight rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-palma-primary/10 transition-all duration-300 shadow-soft">
                      <ShoppingBag className="w-8 h-8 text-palma-navy" />
                   </div>
                   <h3 className="font-heading text-xl font-black text-palma-navy mb-3">{t.landing.features.customerTitle}</h3>
                   <p className="heading-block-sub text-slate-500 mb-4">{t.landing.features.customerDesc}</p>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-palma-primary group-hover:underline">{lang === 'ar' ? 'اكتشف المزيد ←' : 'Learn more ←'}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-palma-primary group-hover:underline">{lang === 'ar' ? 'سجّل كزبون ←' : 'Register as customer ←'}</span>
                </div>
             </div>
           </div>
@@ -281,9 +287,9 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                 {
                   step: 1,
                   arTitle: 'إنشاء الحساب',
-                  arDesc: 'سجّل كتاجر أو عميل خلال ثواني واختر نوع حسابك.',
+                  arDesc: 'سجّل كتاجر أو زبون أو مسوق خلال ثواني واختر نوع حسابك.',
                   enTitle: 'Create your account',
-                  enDesc: 'Sign up as a merchant or customer in seconds and choose your account type.',
+                  enDesc: 'Sign up as a merchant, customer, or marketer in seconds and choose your account type.',
                   Icon: UserPlus,
                 },
                 {
@@ -333,8 +339,8 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
               })}
             </div>
             <div className="text-center mt-12">
-              <button type="button" onClick={onJoinMerchant} className="btn-primary cta-glow px-8 py-4 text-sm font-black uppercase tracking-widest hover:scale-105 transition-transform duration-300">
-                {lang === 'ar' ? 'أنشئ متجرك الآن' : 'Create your store now'}
+              <button type="button" onClick={onJoinRegister} className="btn-primary cta-glow px-8 py-4 text-sm font-black uppercase tracking-widest hover:scale-105 transition-transform duration-300">
+                {lang === 'ar' ? 'انضم لبالما' : lang === 'he' ? 'הצטרף לפלמה' : 'Join Palma'}
               </button>
             </div>
           </div>
@@ -394,7 +400,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
               {[
                 { ar: 'أمان على مستوى المتجر', en: 'Store-level security', descAr: 'كل متجر وبياناته محمية بشكل مستقل ضمن المنصة.', descEn: 'Each store and its data are protected independently on the platform.', Icon: Shield },
                 { ar: 'حماية البيانات والخصوصية', en: 'Data protection & privacy', descAr: 'يتم حفظ ومعالجة بياناتك وفق أفضل ممارسات الأمان.', descEn: 'Your data is stored and processed following best security practices.', Icon: Lock },
-                { ar: 'أنواع الحسابات (تاجر / عميل / وسيط)', en: 'Account types (merchant / customer / broker)', descAr: 'كل نوع حساب له صلاحياته: التاجر يدير متجره، العميل يتصفح ويطلب، الوسيط يروّج.', descEn: 'Each account type has its permissions: merchant manages store, customer browses and orders, broker promotes.', Icon: Users },
+                { ar: 'أنواع الحسابات (تاجر / زبون / وسيط)', en: 'Account types (merchant / customer / broker)', descAr: 'كل نوع حساب له صلاحياته: التاجر يدير متجره، الزبون يتصفح ويطلب، الوسيط يروّج.', descEn: 'Each account type has its permissions: merchant manages store, customer browses and orders, broker promotes.', Icon: Users },
                 { ar: 'شفافية الاستخدام', en: 'Usage transparency', descAr: 'تتبّع واضح للطلبات والأرباح والعمولات دون غموض.', descEn: 'Clear tracking of orders, earnings, and commissions.', Icon: BarChart3 },
                 { ar: 'تحقق البريد الإلكتروني', en: 'Email verification', descAr: 'التحقق من البريد عند التسجيل واستعادة كلمة المرور برمز آمن يُرسل إلى بريدك.', descEn: 'Verify your email on signup and reset password with a secure code sent to your inbox.', Icon: MailCheck },
                 { ar: 'بنية تحتية موثوقة وقابلة للتوسّع', en: 'Reliable, scalable infrastructure', descAr: 'بنية حديثة تضمن الأداء والاستقرار والنمو المستقبلي.', descEn: 'Modern infrastructure for performance, stability, and future growth.', Icon: Server },
@@ -416,48 +422,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
           </div>
         </section>
 
-        {/* 6. اختر سعر الاشتراك */}
-        <section id="pricing" className="section-bg-5 py-24 border-b border-palma-border">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="heading-block mb-12">
-              <h2 className="heading-block-title heading-block-title-creative font-heading text-3xl sm:text-4xl">
-                {lang === 'ar' ? 'اختر سعر الاشتراك المناسب لك في بالما' : 'Choose the plan that fits you'}
-              </h2>
-              <p className="heading-block-sub max-w-xl mx-auto">
-                {lang === 'ar'
-                  ? 'التاجر: اشتراكه داخل المنصة مجاني دائماً. الوسيط / المسوّق: يحصل على ٦ أشهر مجانية للتجربة، وبعدها يمكنه اختيار باقة اشتراك مدفوعة حسب سياسة المنصة.'
-                  : 'Merchants stay on a free in-platform plan. Brokers/affiliates get a free 6‑month trial, then can choose a paid subscription plan according to platform policy.'}
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-              <div className="bg-white rounded-2xl border border-palma-border p-6 shadow-soft text-center card-hover-lift hover:border-palma-primary/30 transition-all duration-300">
-                <p className="font-heading text-lg font-black text-palma-navy mb-1">{lang === 'ar' ? 'تجربة مجانية' : 'Free trial'}</p>
-                <p className="text-3xl font-black text-palma-primary mb-2">$0</p>
-                <p className="text-xs text-slate-500 mb-4">
-                  {lang === 'ar' ? '٦ أشهر مجانية لتجربة المنصة' : '6‑month free trial to try the platform'}
-                </p>
-                <button type="button" onClick={onJoinMerchant} className="btn-primary w-full py-3 text-xs hover:scale-[1.02] transition-transform">
-                  {lang === 'ar' ? 'ابدأ مجاناً' : 'Start free'}
-                </button>
-              </div>
-              <div className="bg-palma-navy rounded-2xl border-2 border-palma-primary p-6 shadow-card text-center text-white relative card-hover-lift hover:shadow-[0_20px_40px_-12px_rgba(225,6,0,0.25)] transition-all duration-300">
-                <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-palma-primary text-white text-[10px] font-black uppercase px-3 py-1 rounded-full">{lang === 'ar' ? 'الأكثر شيوعاً' : 'Most popular'}</span>
-                <p className="font-heading text-lg font-black mb-1">{lang === 'ar' ? 'اشتراك شهري' : 'Monthly'}</p>
-                <p className="text-3xl font-black mb-2">$25</p>
-                <p className="text-xs text-white/70 mb-4">{lang === 'ar' ? 'يتم الدفع شهرياً' : 'Billed monthly'}</p>
-                <button type="button" onClick={onJoinMerchant} className="w-full py-3 rounded-xl bg-white text-palma-navy font-black text-xs hover:bg-slate-50 hover:scale-[1.02] transition-all duration-200 cta-glow">{lang === 'ar' ? 'انضم الآن' : 'Join now'}</button>
-              </div>
-              <div className="bg-white rounded-2xl border border-palma-border p-6 shadow-soft text-center card-hover-lift hover:border-palma-primary/30 transition-all duration-300">
-                <p className="font-heading text-lg font-black text-palma-navy mb-1">{lang === 'ar' ? '3 أشهر' : '3 months'}</p>
-                <p className="text-3xl font-black text-palma-navy mb-2">$65</p>
-                <p className="text-xs text-slate-500 mb-4">{lang === 'ar' ? 'أفضل قيمة' : 'Best value'}</p>
-                <button type="button" onClick={onJoinMerchant} className="btn-secondary w-full py-3 text-xs hover:scale-[1.02] transition-transform">{lang === 'ar' ? 'احصل على الخصم' : 'Get discount'}</button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 7. المنتجات المميزة */}
+        {/* 6. المنتجات المميزة */}
         <section id="products" className="section-bg-6 py-24 sm:py-32">
           <div className="max-w-7xl mx-auto px-6">
             <div className="heading-block mb-20">
@@ -586,9 +551,9 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
               {[
                 {
                   qAr: 'هل التسجيل مجاني؟',
-                  aAr: 'نعم، إنشاء حساب أساسي مجاني، مع شهر أول مجاني لخطة الاشتراك للتجار، ثم تُعلن رسوم الباقات بشكل واضح داخل المنصة.',
+                  aAr: 'نعم، إنشاء حساب أساسي مجاني. التاجر اشتراكه مجاني دائماً، والمسوق يحصل على فترة تجريبية ثم يمكنه اختيار باقة لاحقاً.',
                   qEn: 'Is registration free?',
-                  aEn: 'Yes. Creating a basic account is free, and merchants get the first month of their subscription plan for free. Package pricing is shown clearly inside the platform.',
+                  aEn: 'Yes. Creating a basic account is free. Merchant subscription is always free; marketers get a trial period and can choose a plan later.',
                 },
                 {
                   qAr: 'كيف بصير التواصل؟',
@@ -598,9 +563,9 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                 },
                 {
                   qAr: 'هل في عمولة على الصفقات؟',
-                  aAr: 'نعم، عند الدخول كتاجر تُحتسب عمولة 15% لصالح منصة بالما من كل منتج يتم بيعه عبر المتجر، بالإضافة إلى رسوم الاشتراك وفق ما تحدده إدارة الموقع بعد انتهاء الفترة المجانية.',
+                  aAr: 'نعم، عند الدخول كتاجر تُحتسب عمولة 15% لصالح منصة بالما من كل منتج يتم بيعه عبر المتجر.',
                   qEn: 'Is there a commission on deals?',
-                  aEn: 'Yes. As a merchant, a 15% commission is charged to Palma on every product sold through the store, plus subscription fees as set by site management after the free period.',
+                  aEn: 'Yes. As a merchant, a 15% commission is charged to Palma on every product sold through the store.',
                 },
                 {
                   qAr: 'ماذا عن الفاتورة الضريبية؟',
@@ -653,7 +618,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                 },
                 {
                   tagAr: 'تسويق',
-                  titleAr: 'كيف تستخدم التسويق الرقمي لجذب عملاء جدد؟',
+                  titleAr: 'كيف تستخدم التسويق الرقمي لجذب زبائن جدد؟',
                   tagEn: 'Marketing',
                   titleEn: 'How to use digital marketing to attract new customers',
                 },
@@ -753,26 +718,28 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
           <div className={`flex flex-col gap-4 ${lang === 'en' ? 'text-left' : 'text-right'}`}>
             <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-palma-navy">{t.nav.contact}</h5>
             <div className="space-y-1 text-sm font-bold text-palma-muted">
-              <p className="text-palma-primary hover:underline cursor-pointer">office@palma.ps</p>
-              <p>{lang === 'ar' ? 'هاتف: 0569-676-111' : 'Phone: +970 569 676 111'}</p>
+              <a href={`mailto:${FOOTER_CONTACT_EMAIL}`} className="text-palma-primary hover:underline cursor-pointer block">
+                {FOOTER_CONTACT_EMAIL}
+              </a>
+              <a href={`tel:${FOOTER_CONTACT_PHONE}`} className="block text-palma-muted hover:text-palma-primary transition-colors">
+                {lang === 'ar' ? (
+                  <>هاتف: <span dir="ltr">{FOOTER_CONTACT_PHONE_DISPLAY}</span></>
+                ) : (
+                  <>Phone: <span dir="ltr">{FOOTER_CONTACT_PHONE_DISPLAY}</span></>
+                )}
+              </a>
               <p>{lang === 'ar' ? 'فلسطين 🇵🇸' : lang === 'he' ? 'פלסטין 🇵🇸' : 'Palestine 🇵🇸'}</p>
             </div>
             <p className="text-xs font-bold text-palma-muted mt-1">{lang === 'ar' ? 'تابعنا على:' : 'Follow us:'}</p>
             <div className={`flex gap-2.5 ${lang === 'en' ? 'flex-row' : 'flex-row-reverse'}`}>
-              <a href="https://facebook.com" target="_blank" rel="noreferrer" aria-label="Facebook" className="w-9 h-9 rounded-full bg-slate-700 text-white flex items-center justify-center hover:bg-palma-primary hover:scale-105 transition-all duration-300">
-                <Facebook className="w-4 h-4" />
-              </a>
-              <a href="https://wa.me/970599000000" target="_blank" rel="noreferrer" aria-label="WhatsApp" className="w-9 h-9 rounded-full bg-slate-700 text-white flex items-center justify-center hover:bg-emerald-500 hover:scale-105 transition-all duration-300">
+              <a href={`https://wa.me/${FOOTER_CONTACT_PHONE.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" aria-label="WhatsApp" className="w-9 h-9 rounded-full bg-slate-700 text-white flex items-center justify-center hover:bg-emerald-500 hover:scale-105 transition-all duration-300">
                 <MessageCircle className="w-4 h-4" />
               </a>
-              <a href="https://instagram.com" target="_blank" rel="noreferrer" aria-label="Instagram" className="w-9 h-9 rounded-full bg-slate-700 text-white flex items-center justify-center hover:bg-pink-500 hover:scale-105 transition-all duration-300">
+              <a href="https://www.facebook.com/people/%D8%B3%D9%88%D9%82-%D9%81%D9%84%D8%B3%D8%B7%D9%8A%D9%86-%D8%A7%D9%84%D8%B1%D9%82%D9%85%D9%8A-Palma/61586428723394/" target="_blank" rel="noreferrer" aria-label="Facebook" className="w-9 h-9 rounded-full bg-slate-700 text-white flex items-center justify-center hover:bg-palma-primary hover:scale-105 transition-all duration-300">
+                <Facebook className="w-4 h-4" />
+              </a>
+              <a href="https://www.instagram.com/palma.ps26" target="_blank" rel="noreferrer" aria-label="Instagram" className="w-9 h-9 rounded-full bg-slate-700 text-white flex items-center justify-center hover:bg-pink-500 hover:scale-105 transition-all duration-300">
                 <Instagram className="w-4 h-4" />
-              </a>
-              <a href="https://linkedin.com" target="_blank" rel="noreferrer" aria-label="LinkedIn" className="w-9 h-9 rounded-full bg-slate-700 text-white flex items-center justify-center hover:bg-[#0A66C2] hover:scale-105 transition-all duration-300">
-                <Linkedin className="w-4 h-4" />
-              </a>
-              <a href="https://youtube.com" target="_blank" rel="noreferrer" aria-label="YouTube" className="w-9 h-9 rounded-full bg-slate-700 text-white flex items-center justify-center hover:bg-red-600 hover:scale-105 transition-all duration-300">
-                <Youtube className="w-4 h-4" />
               </a>
             </div>
           </div>

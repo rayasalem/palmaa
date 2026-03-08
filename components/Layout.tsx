@@ -4,7 +4,7 @@ import { User, Role } from '../types';
 import Logo from './Logo';
 import { Language, translations } from '../translations';
 import { prefetchForTab } from '../prefetch';
-import { ShoppingCart, Menu, X, Globe, LogOut, LayoutDashboard, Package, ShoppingBag, Banknote, User as UserIcon, TrendingUp, BarChart, Users, Wallet, Home, History, Bell, ChevronDown } from 'lucide-react';
+import { ShoppingCart, Menu, X, Globe, LogOut, LayoutDashboard, Package, ShoppingBag, Banknote, User as UserIcon, TrendingUp, BarChart, Users, Wallet, Home, History, Bell, ChevronDown, FileText } from 'lucide-react';
 
 const LANG_LABELS: Record<Language, string> = { ar: 'العربية', en: 'English', he: 'עברית' };
 
@@ -45,7 +45,8 @@ const Layout: React.FC<LayoutProps> = ({ lang, setLang, user, onLogout, children
       History: <History size={size} />,
       ShoppingCart: <ShoppingCart size={size} />,
       TrendingUp: <TrendingUp size={size} />,
-      Bell: <Bell size={size} />
+      Bell: <Bell size={size} />,
+      FileText: <FileText size={size} />
     };
     return icons[iconName] || <LayoutDashboard size={size} />;
   };
@@ -58,6 +59,7 @@ const Layout: React.FC<LayoutProps> = ({ lang, setLang, user, onLogout, children
     { id: 'shop', label: t.nav.shop, icon: 'ShoppingCart' },
     { id: 'profile', label: t.common.profile, icon: 'User' },
   ] : user.role === Role.BROKER ? [
+    { id: 'subscription', label: (lang === 'ar' ? 'باقة الاشتراك' : lang === 'he' ? 'חבילת מנוי' : 'Subscription'), icon: 'FileText' },
     { id: 'promote', label: t.nav.market, icon: 'Globe' },
     { id: 'earnings', label: t.common.earnings, icon: 'Banknote' },
     { id: 'stats', label: t.common.stats, icon: 'BarChart' },

@@ -1,11 +1,6 @@
 {
-  "customer": {
-    "email": "customer@palma.demo",
-    "password": "Customer@123456",
-    "name": "Test Customer"
-  },
   "admin": {
-    "email": "admin@palma.demo",
+    "email": "info@palma.ps",
     "password": "Admin@123456",
     "name": "Admin User"
   }

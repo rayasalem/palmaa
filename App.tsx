@@ -37,6 +37,7 @@ import { useCart } from './hooks/useCart';
 import * as cartApi from './services/cartApi';
 import { SESSION_EXPIRED_EVENT } from './api/client';
 import { prefetchAfterLogin } from './prefetch';
+import { ROUTES } from './routes';
 
 const loadUser = (): User | null => {
   const stored = localStorage.getItem('palma_current_user');
@@ -89,32 +90,33 @@ const AppContent: React.FC = () => {
     }
   }, []);
 
-  /** Read hash and apply to state so back/forward and bookmarks work */
+  /** Read hash and apply to state — مسارات محددة في routes.ts */
   const applyHashToState = useCallback(() => {
     const raw = window.location.hash.replace(/^#\/?/, '').trim() || '';
     const parts = raw.split('/').filter(Boolean);
     const top = parts[0] || '';
     isApplyingHashRef.current = true;
-    // أي تغيير في الـ hash يلغي صفحة الشروط، ما لم نكن على /terms أو /register-merchant
     setShowMerchantTermsPage(false);
     setPendingAuthAfterTerms(null);
-    if (top === 'catalog') {
+    if (top === ROUTES.CATALOG) {
       setPublicState('CATALOG');
-      setCurrentView('home');
-    } else if (top === 'login') {
+      setCurrentView(ROUTES.HOME_APP);
+    } else if (top === ROUTES.LOGIN) {
       setPublicState('AUTH');
       setAuthView('LOGIN');
-    } else if (top === 'register-merchant') {
-      // تسجيل التاجر يمر دائماً أولاً على صفحة الشروط والأحكام قبل إظهار نموذج التسجيل
+    } else if (top === ROUTES.JOIN) {
+      setPublicState('AUTH');
+      setAuthView('ROLE_SELECT');
+    } else if (top === ROUTES.REGISTER_MERCHANT) {
       setPendingAuthAfterTerms('REGISTER_MERCHANT');
       setShowMerchantTermsPage(true);
-    } else if (top === 'register-broker') {
+    } else if (top === ROUTES.REGISTER_BROKER) {
       setPublicState('AUTH');
       setAuthView('REGISTER_BROKER');
-    } else if (top === 'register') {
+    } else if (top === ROUTES.REGISTER) {
       setPublicState('AUTH');
       setAuthView('REGISTER_CUSTOMER');
-    } else if (top === 'terms') {
+    } else if (top === ROUTES.TERMS) {
       setShowMerchantTermsPage(true);
     } else if (top === 'product' && parts[1]) {
       setSelectedProductId(parts[1]);
@@ -127,14 +129,13 @@ const AppContent: React.FC = () => {
     } else if (top === 'broker' && parts[1]) {
       setPublicBrokerId(parts[1]);
       setPublicState('BROKER_PAGE');
-    } else if (['admin', 'dashboard', 'home', 'cart', 'shop', 'products', 'notifications', 'profile', 'orders'].includes(top)) {
-      setCurrentView(top === 'orders' ? 'orders_customer' : top);
+    } else if ([ROUTES.ADMIN, ROUTES.DASHBOARD, ROUTES.SUBSCRIPTION, ROUTES.PROMOTE, ROUTES.EARNINGS, ROUTES.STATS, ROUTES.HOME_APP, ROUTES.CART, ROUTES.SHOP, ROUTES.PRODUCTS, ROUTES.NOTIFICATIONS, ROUTES.PROFILE, ROUTES.ORDERS].includes(top)) {
+      setCurrentView(top === ROUTES.ORDERS ? 'orders_customer' : top);
       if (top !== 'product_details') setSelectedProductId(null);
       if (top !== 'public_profile') setSelectedProfileId(null);
     } else {
-      // hash فارغ أو غير معروف (مثلاً زر الرجوع) → الرئيسية
       setPublicState('LANDING');
-      setCurrentView('home');
+      setCurrentView(ROUTES.HOME_APP);
       setSelectedProductId(null);
       setSelectedProfileId(null);
     }
@@ -170,7 +171,7 @@ const AppContent: React.FC = () => {
       if (brokerRef) {
         setPublicBrokerId(brokerRef);
         setPublicState('BROKER_PAGE');
-        updateHash(`broker/${brokerRef}`);
+        updateHash(ROUTES.broker(brokerRef));
       }
 
       if (profileRef) {
@@ -286,7 +287,7 @@ const AppContent: React.FC = () => {
     setCurrentView('home');
     setPublicState('LANDING');
     setAuthView('LOGIN');
-    updateHash('');
+    updateHash(ROUTES.HOME);
   };
 
   /** Add to cart: uses backend when user is set, else local state + localStorage (multi-user safe) */
@@ -358,23 +359,25 @@ const AppContent: React.FC = () => {
     if (view === 'REGISTER_MERCHANT') {
       setPendingAuthAfterTerms('REGISTER_MERCHANT');
       setShowMerchantTermsPage(true);
-      updateHash('terms');
+      updateHash(ROUTES.TERMS);
       return;
     }
     setAuthView(view);
     setPublicState('AUTH');
     const path =
-      view === 'REGISTER_BROKER'
-        ? 'register-broker'
+      view === 'ROLE_SELECT'
+        ? ROUTES.JOIN
+        : view === 'REGISTER_BROKER'
+        ? ROUTES.REGISTER_BROKER
         : view === 'REGISTER_CUSTOMER'
-        ? 'register'
-        : 'login';
+        ? ROUTES.REGISTER
+        : ROUTES.LOGIN;
     updateHash(path);
   };
 
   const handleViewProduct = (productId: string) => {
     setSelectedProductId(productId);
-    updateHash(`product/${productId}`);
+    updateHash(ROUTES.product(productId));
     if (user) {
         setCurrentView('product_details');
     } else {
@@ -384,7 +387,7 @@ const AppContent: React.FC = () => {
 
   const handleViewProfile = (profileId: string) => {
     setSelectedProfileId(profileId);
-    updateHash(`profile/${profileId}`);
+    updateHash(ROUTES.profile(profileId));
     if (user) {
         setCurrentView('public_profile');
     } else {
@@ -443,7 +446,7 @@ const AppContent: React.FC = () => {
               lang={lang}
               user={null}
               productId={selectedProductId}
-              onBack={() => { setPublicState('CATALOG'); updateHash('catalog'); }}
+              onBack={() => { setPublicState('CATALOG'); updateHash(ROUTES.CATALOG); }}
               onLoginClick={() => openAuth('LOGIN')}
               addToCart={addToCart}
             />
@@ -460,7 +463,7 @@ const AppContent: React.FC = () => {
             lang={lang}
             currentUser={null}
             profileId={selectedProfileId}
-            onBack={() => { setPublicState('LANDING'); updateHash(''); }}
+            onBack={() => { setPublicState('LANDING'); updateHash(ROUTES.HOME); }}
             onProductClick={handleViewProduct}
             onLoginClick={() => openAuth('LOGIN')}
             setLang={setLang}
@@ -476,7 +479,7 @@ const AppContent: React.FC = () => {
           <PublicBrokerPage 
             lang={lang}
             brokerId={publicBrokerId}
-            onBack={() => { setPublicState('LANDING'); updateHash(''); }}
+            onBack={() => { setPublicState('LANDING'); updateHash(ROUTES.HOME); }}
             onProductClick={handleViewProduct}
             onLoginClick={() => openAuth('LOGIN')}
             setLang={setLang}
@@ -494,7 +497,7 @@ const AppContent: React.FC = () => {
             onBack={() => {
               setShowMerchantTermsPage(false);
               setPendingAuthAfterTerms(null);
-              updateHash('');
+              updateHash(ROUTES.HOME);
             }}
             onAccept={
               pendingAuthAfterTerms === 'REGISTER_MERCHANT'
@@ -503,7 +506,7 @@ const AppContent: React.FC = () => {
                     setPendingAuthAfterTerms(null);
                     setAuthView('REGISTER_MERCHANT');
                     setPublicState('AUTH');
-                    updateHash('register-merchant');
+                    updateHash(ROUTES.REGISTER_MERCHANT);
                   }
                 : undefined
             }
@@ -521,14 +524,16 @@ const AppContent: React.FC = () => {
               lang={lang}
               setLang={setLang}
               onLoginClick={() => openAuth('LOGIN')}
+              onJoinRegister={() => openAuth('ROLE_SELECT')}
               onJoinMerchant={() => openAuth('REGISTER_MERCHANT')}
               onJoinBroker={() => openAuth('REGISTER_BROKER')}
-              onExploreProducts={() => { setPublicState('CATALOG'); updateHash('catalog'); }}
+              onJoinCustomer={() => openAuth('REGISTER_CUSTOMER')}
+              onExploreProducts={() => { setPublicState('CATALOG'); updateHash(ROUTES.CATALOG); }}
               onViewProduct={handleViewProduct}
               onOpenTerms={() => {
                 setPendingAuthAfterTerms(null);
                 setShowMerchantTermsPage(true);
-                updateHash('terms');
+                updateHash(ROUTES.TERMS);
               }}
             />
           </Suspense>
@@ -542,7 +547,7 @@ const AppContent: React.FC = () => {
         <>
           <Suspense fallback={<PageLoader />}>
             <PublicCatalog 
-              onBack={() => { setPublicState('LANDING'); updateHash(''); }}
+              onBack={() => { setPublicState('LANDING'); updateHash(ROUTES.HOME); }}
               onLoginClick={() => openAuth('LOGIN')}
               onProductClick={handleViewProduct} 
             />
@@ -560,7 +565,7 @@ const AppContent: React.FC = () => {
           onOpenTerms={() => {
             setPendingAuthAfterTerms('REGISTER_MERCHANT');
             setShowMerchantTermsPage(true);
-            updateHash('terms');
+            updateHash(ROUTES.TERMS);
           }}
         />
         <SupportChat lang={lang} user={user} />

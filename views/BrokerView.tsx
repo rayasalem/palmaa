@@ -248,6 +248,7 @@ export const BrokerView: React.FC<Props> = ({ lang, user, onRefresh, activeTab, 
       {/* Tabs */}
       <div className="bg-white p-4 rounded-[2rem] border border-palma-border shadow-soft flex overflow-x-auto scrollbar-hide gap-2">
          {[
+          { id: 'subscription', label: lang === 'en' ? 'Subscription' : 'باقة الاشتراك', icon: '📋' },
           { id: 'promote', label: lang === 'en' ? 'Market Promotion' : 'سوق الترويج', icon: '🏪' },
           { id: 'portfolio', label: lang === 'en' ? 'My Portfolio' : 'محفظتي', icon: '💼' },
           { id: 'earnings', label: t.common.earnings, icon: '💸' },
@@ -257,7 +258,7 @@ export const BrokerView: React.FC<Props> = ({ lang, user, onRefresh, activeTab, 
             key={tab.id} 
             onClick={() => onTabChange(tab.id as any)} 
             className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all whitespace-nowrap ${
-              activeTab === tab.id ? 'bg-palma-primary text-white shadow-soft' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+              (activeTab === tab.id || (activeTab === 'dashboard' && tab.id === 'subscription')) ? 'bg-palma-primary text-white shadow-soft' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
             }`}
           >
             <span className="text-base">{tab.icon}</span>
@@ -265,6 +266,37 @@ export const BrokerView: React.FC<Props> = ({ lang, user, onRefresh, activeTab, 
           </button>
         ))}
       </div>
+
+      {(activeTab === 'subscription' || activeTab === 'dashboard') && (
+        <div className="space-y-6 animate-in fade-in duration-500">
+          <div className="heading-block heading-block-sm text-left">
+            <h2 className="heading-block-title font-heading text-palma-navy">{lang === 'en' ? 'Subscription plan' : 'باقة الاشتراك'}</h2>
+            <p className="heading-block-sub">{lang === 'en' ? 'Your plan and renewal options for the broker account.' : 'خطتك وخيارات التجديد لحساب الوسيط.'}</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+            <div className="bg-white rounded-2xl border-2 border-palma-primary/30 p-6 shadow-soft hover:shadow-md transition-shadow">
+              <h4 className="font-heading text-lg font-black text-palma-navy mb-2">{lang === 'en' ? 'Free trial' : 'تجربة مجانية'}</h4>
+              <p className="text-2xl font-black text-palma-primary mb-2">$0</p>
+              <p className="text-sm text-slate-600 mb-4">
+                {lang === 'en' ? '6 months free to try the platform, then choose a plan to continue.' : '٦ أشهر مجانية لتجربة المنصة، ثم اختر باقة للمتابعة.'}
+              </p>
+              <span className="inline-block text-[10px] font-black uppercase bg-palma-primaryLight text-palma-primary px-3 py-1.5 rounded-full">
+                {lang === 'en' ? 'Current default' : 'الافتراضي الحالي'}
+              </span>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-soft opacity-90">
+              <h4 className="font-heading text-lg font-black text-palma-navy mb-2">{lang === 'en' ? 'Paid plan' : 'باقة مدفوعة'}</h4>
+              <p className="text-2xl font-black text-slate-400 mb-2">—</p>
+              <p className="text-sm text-slate-600 mb-4">
+                {lang === 'en' ? 'Extra benefits and extended usage. Coming soon – contact support for early access.' : 'مزايا إضافية واستخدام ممتد. قريباً – تواصل مع الدعم للوصول المبكر.'}
+              </p>
+              <button type="button" disabled className="mt-2 inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs font-black uppercase bg-slate-200 text-slate-500 cursor-not-allowed">
+                {lang === 'en' ? 'Coming soon' : 'قريباً'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {activeTab === 'promote' && (
         <div className="space-y-6">

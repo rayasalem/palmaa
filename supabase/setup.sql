@@ -423,15 +423,12 @@ GRANT ALL ON public.otp_codes TO anon, authenticated, service_role;
 NOTIFY pgrst, 'reload schema';
 
 -- =============================================================================
--- 5. SEED DEMO USERS (ادمن، تاجر، وسيط، زبون)
+-- 5. SEED: أدمن فقط (بدون تاجر/وسيط/زبون تجريبي)
 -- =============================================================================
--- كلمات السر: Admin@123456, Merchant@123456, Broker@123456, Customer@123456
+-- كلمة السر الافتراضية: Admin@123456
 INSERT INTO public.users (email, name, role, status, email_verified, terms_accepted, password)
 VALUES
-  ('admin@palma.demo', 'أدمن بالما', 'ADMIN', 'ACTIVE', TRUE, TRUE, crypt('Admin@123456', gen_salt('bf'))),
-  ('merchant@palma.demo', 'تاجر تجريبي', 'MERCHANT', 'ACTIVE', TRUE, TRUE, crypt('Merchant@123456', gen_salt('bf'))),
-  ('broker@palma.demo', 'وسيط تجريبي', 'BROKER', 'ACTIVE', TRUE, TRUE, crypt('Broker@123456', gen_salt('bf'))),
-  ('customer@palma.demo', 'زبون تجريبي', 'CUSTOMER', 'ACTIVE', TRUE, FALSE, crypt('Customer@123456', gen_salt('bf')))
+  ('info@palma.ps', 'أدمن بالما', 'ADMIN', 'ACTIVE', TRUE, TRUE, crypt('Admin@123456', gen_salt('bf')))
 ON CONFLICT (email) DO UPDATE SET
   name = EXCLUDED.name,
   role = EXCLUDED.role,
@@ -857,15 +854,12 @@ GRANT ALL ON public.otp_codes TO anon, authenticated, service_role;
 NOTIFY pgrst, 'reload schema';
 
 -- =============================================================================
--- 5. SEED DEMO USERS (ادمن، تاجر، وسيط، زبون)
+-- 5. SEED: أدمن فقط (بدون تاجر/وسيط/زبون تجريبي)
 -- =============================================================================
--- كلمات السر: Admin@123456, Merchant@123456, Broker@123456, Customer@123456
+-- كلمة السر الافتراضية: Admin@123456
 INSERT INTO public.users (email, name, role, status, email_verified, terms_accepted, password)
 VALUES
-  ('admin@palma.demo', 'أدمن بالما', 'ADMIN', 'ACTIVE', TRUE, TRUE, crypt('Admin@123456', gen_salt('bf'))),
-  ('merchant@palma.demo', 'تاجر تجريبي', 'MERCHANT', 'ACTIVE', TRUE, TRUE, crypt('Merchant@123456', gen_salt('bf'))),
-  ('broker@palma.demo', 'وسيط تجريبي', 'BROKER', 'ACTIVE', TRUE, TRUE, crypt('Broker@123456', gen_salt('bf'))),
-  ('customer@palma.demo', 'زبون تجريبي', 'CUSTOMER', 'ACTIVE', TRUE, FALSE, crypt('Customer@123456', gen_salt('bf')))
+  ('info@palma.ps', 'أدمن بالما', 'ADMIN', 'ACTIVE', TRUE, TRUE, crypt('Admin@123456', gen_salt('bf')))
 ON CONFLICT (email) DO UPDATE SET
   name = EXCLUDED.name,
   role = EXCLUDED.role,

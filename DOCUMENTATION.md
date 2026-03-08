@@ -2,7 +2,7 @@
 
 ## نظرة عامة
 
-**بالما** منصة سوق إلكتروني (marketplace) تدعم عدة أدوار: عميل، تاجر، وسيط (بروكر)، ومسؤول. المشروع مبني بـ **React 18** و **TypeScript** و **Vite**، مع واجهة عربية/إنجليزية وواجهة متجاوبة.
+**بالما** منصة سوق إلكتروني (marketplace) تدعم عدة أدوار: زبون، تاجر، وسيط (بروكر)، ومسؤول. المشروع مبني بـ **React 18** و **TypeScript** و **Vite**، مع واجهة عربية/إنجليزية وواجهة متجاوبة.
 
 ---
 
@@ -17,7 +17,7 @@ palma-marketplace/
 ├── store.ts                # واجهة موحدة للخدمات (marketStore, paymentProcessor)
 ├── translations.ts         # نصوص الواجهة (ar, en, he)
 ├── api/
-│   ├── client.ts           # عميل HTTP الأساسي و JWT
+│   ├── client.ts           # عميل HTTP الأساسي و JWT (برنامج العميل)
 │   └── index.ts
 ├── components/             # مكونات واجهة المستخدم
 ├── views/                  # صفحات/مشاهد حسب الدور
@@ -51,7 +51,7 @@ palma-marketplace/
   - `#/` أو فارغ → الصفحة الرئيسية (PublicWebsite)
   - `#/catalog` → كتالوج المنتجات (PublicCatalog)
   - `#/login` → تسجيل الدخول
-  - `#/register` → تسجيل عميل
+  - `#/register` → تسجيل زبون
   - `#/register-merchant` → تسجيل تاجر (بعد الشروط)
   - `#/register-broker` → تسجيل وسيط
   - `#/product/:id` → تفاصيل منتج (عام)
@@ -60,7 +60,7 @@ palma-marketplace/
   - `#/terms` → الشروط والأحكام
 
 - **بعد تسجيل الدخول (حسب الدور):**
-  - `#/home`, `#/shop`, `#/cart`, `#/orders`, `#/profile`, `#/notifications` للعميل
+  - `#/home`, `#/shop`, `#/cart`, `#/orders`, `#/profile`, `#/notifications` للزبون
   - `#/dashboard`, `#/products`, `#/orders`, `#/earnings`, `#/shop`, `#/profile` للتاجر
   - لوحة البروكر والإحصائيات للوسيط
   - `#/admin`, `#/users`, `#/products`, `#/orders`, `#/withdrawals` للأدمن
@@ -73,7 +73,7 @@ palma-marketplace/
 
 | الدور | الوصف |
 |------|--------|
-| **CUSTOMER** | عميل: تسوق، سلة، طلبات، إشعارات، ملف شخصي |
+| **CUSTOMER** | زبون: تسوق، سلة، طلبات، إشعارات، ملف شخصي |
 | **MERCHANT** | تاجر: لوحة تحكم، منتجات، طلبات، أرباح، تسوق/سلة |
 | **BROKER** | وسيط: تسويق، إحصائيات، أرباح، تسوق/سلة |
 | **ADMIN** | مسؤول: مستخدمين، منتجات، طلبات، سحوبات، إعدادات المنصة |
@@ -91,10 +91,10 @@ palma-marketplace/
 - **PageLoader** – مؤشر تحميل للصفحات المُحمّلة كسولاً (React.lazy).
 
 ### المصادقة والتسجيل
-- **Auth** – تسجيل دخول واختيار نوع التسجيل (عميل/تاجر/وسيط).
+- **Auth** – تسجيل دخول واختيار نوع التسجيل (زبون/تاجر/وسيط).
 - **RegisterMerchant** – نموذج تسجيل تاجر (مدن/قرى، بيانات متجر).
 - **RegisterBroker** – نموذج تسجيل وسيط.
-- **RegisterCustomer** – تسجيل عميل.
+- **RegisterCustomer** – تسجيل زبون.
 - **VerifyEmail** – تأكيد البريد للأدمن.
 - **PendingReview** – رسالة انتظار الموافقة للحسابات المرفوضة.
 
@@ -205,8 +205,8 @@ palma-marketplace/
 
 ## السلة والدفع
 
-- **عميل غير مسجّل:** سلة محلية (useState) + حفظ في `localStorage` (palma_cart).
-- **عميل مسجّل:** سلة من الخادم عبر **cartApi** و **useCart**.
+- **زبون غير مسجّل:** سلة محلية (useState) + حفظ في `localStorage` (palma_cart).
+- **زبون مسجّل:** سلة من الخادم عبر **cartApi** و **useCart**.
 - عند تسجيل الدخول: دمج السلة المحلية في سلة الخادم ثم تفريغ المحلية.
 - الدفع: **CheckoutPage** (عند استخدام دفع API) و **CheckoutReturnPage** لعرض النتيجة بعد العودة.
 

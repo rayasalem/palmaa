@@ -48,7 +48,7 @@ const getLoginCredentials = (email?: string, password?: string) => ({
 });
 
 const getAdminCredentials = (email?: string, password?: string) => ({
-  email: email ?? Cypress.env('TEST_ADMIN_EMAIL') ?? 'admin@palma.demo',
+  email: email ?? Cypress.env('TEST_ADMIN_EMAIL') ?? 'info@palma.ps',
   password: password ?? Cypress.env('TEST_ADMIN_PASSWORD') ?? 'Admin@123456',
 });
 

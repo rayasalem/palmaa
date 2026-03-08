@@ -27,7 +27,7 @@ export default defineConfig({
     // Test user credentials – set in CI or .env; use real test account for live runs
     TEST_USER_EMAIL: process.env.CYPRESS_TEST_USER_EMAIL || 'customer@palma.demo',
     TEST_USER_PASSWORD: process.env.CYPRESS_TEST_USER_PASSWORD || 'Customer@123456',
-    TEST_ADMIN_EMAIL: process.env.CYPRESS_TEST_ADMIN_EMAIL || 'admin@palma.demo',
+    TEST_ADMIN_EMAIL: process.env.CYPRESS_TEST_ADMIN_EMAIL || 'info@palma.ps',
     TEST_ADMIN_PASSWORD: process.env.CYPRESS_TEST_ADMIN_PASSWORD || 'Admin@123456',
   },
 });

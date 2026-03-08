@@ -14,7 +14,7 @@
 | 2 | **PublicCatalog** | `./components/PublicCatalog` | `!user` و `publicState === 'CATALOG'` (مثلاً `#/catalog`) | كتالوج المنتجات للضيف: بحث، فلترة، ترتيب، شبكة منتجات مع إمكانية الدخول لتفاصيل المنتج. |
 | 3 | **PublicProductDetails** | `./views/PublicProductDetails` | (أ) ضيف: `publicState === 'PRODUCT_DETAILS'` و `selectedProductId` (مثلاً `#/product/:id`). (ب) مسجّل: `currentView === 'product_details'` و `selectedProductId` | صفحة تفاصيل منتج واحدة: صور، سعر، وصف، تقييمات، تعليقات، إضافة للسلة. |
 | 4 | **ProfileView** | `./views/ProfileView` | مسجّل دخول و `currentView === 'profile'` (مثلاً `#/profile`) | الملف الشخصي: بيانات المستخدم، مدينة/قرية، (للتاجر) منتجاتي، تعديل الملف. |
-| 5 | **CustomerView** | `./views/CustomerView` | مسجّل و (CUSTOMER مع أي من home/shop/cart/orders) أو (MERCHANT/ADMIN/BROKER مع `currentView === 'shop'` أو `'cart'`) | واجهة العميل: متجر، سلة، طلبات، دفع، شحن؛ وللتاجر/أدمن/وسيط: تبويبا Shop و Cart فقط. |
+| 5 | **CustomerView** | `./views/CustomerView` | مسجّل و (CUSTOMER مع أي من home/shop/cart/orders) أو (MERCHANT/ADMIN/BROKER مع `currentView === 'shop'` أو `'cart'`) | واجهة الزبون: متجر، سلة، طلبات، دفع، شحن؛ وللتاجر/أدمن/وسيط: تبويبا Shop و Cart فقط. |
 | 6 | **MerchantView** | `./views/MerchantView` | مسجّل و `user.role === 'MERCHANT'` و `currentView` ليس shop أو cart (مثلاً dashboard, products, orders, earnings) | لوحة التاجر: إحصائيات، منتجات، طلبات، أرباح، إعدادات اشتراك. |
 | 7 | **AdminView** | `./views/AdminView` | مسجّل و `user.role === 'ADMIN'` و `currentView` ليس shop أو cart (مثلاً users, products, orders, treasury, platform) | لوحة الأدمن: مستخدمين، منتجات، طلبات، سحوبات، إعدادات المنصة وأرباح العمولة. |
 
@@ -57,8 +57,8 @@
 | **PublicCatalog** (ضيف): النقر على بطاقة منتج في الشبكة | PublicProductDetails | تحميل مسبق لـ PublicProductDetails + بيانات المنتج عند hover على البطاقة. |
 | **Layout** (مسجّل): تبويب "الملف" (Profile) في الشريط الجانبي | ProfileView | تحميل مسبق لـ ProfileView عند hover على التبويب. |
 | **Layout** (مسجّل): زر صورة المستخدم في الهيدر (يفتح الملف) | ProfileView | نفس التحميل المسبق عند hover على الزر. |
-| **Layout** (عميل): تبويبات Home, Shop, Cart, Orders | CustomerView | تحميل مسبق لـ CustomerView عند hover على أي من هذه التبويبات. |
-| **Layout** (عميل/أدمن): أيقونة السلة (تفتح Cart أو Shop حسب الدور) | CustomerView | تحميل مسبق لـ CustomerView عند hover على أيقونة السلة. |
+| **Layout** (زبون): تبويبات Home, Shop, Cart, Orders | CustomerView | تحميل مسبق لـ CustomerView عند hover على أي من هذه التبويبات. |
+| **Layout** (زبون/أدمن): أيقونة السلة (تفتح Cart أو Shop حسب الدور) | CustomerView | تحميل مسبق لـ CustomerView عند hover على أيقونة السلة. |
 | **Layout** (تاجر): تبويبات Dashboard, Products, Orders, Earnings | MerchantView | تحميل مسبق لـ MerchantView عند hover. |
 | **Layout** (تاجر): تبويبا Shop و Cart | CustomerView | تحميل مسبق لـ CustomerView عند hover. |
 | **Layout** (أدمن): تبويبات Users, Products, Orders, Withdrawals, Platform | AdminView | تحميل مسبق لـ AdminView عند hover. |
@@ -77,7 +77,7 @@
 | بطاقة/رابط منتج (ضيف أو مسجّل) | PublicProductDetails | `productService.fetchById(productId)` | تحميل chunk التفاصيل + طلب المنتج يقلل زمن ظهور الصفحة عند الضغط. |
 | زر الرجوع من الكتالوج | PublicWebsite | — | تسريع العودة للصفحة الرئيسية. |
 | تبويب Profile / زر الملف | ProfileView | — | تسريع فتح الملف الشخصي. |
-| تبويبات Shop, Cart, Orders, Home (عميل) | CustomerView | بعد تسجيل الدخول: `fetchMyOrders()` | تسريع فتح الطلبات عند أول ضغط على Orders. |
+| تبويبات Shop, Cart, Orders, Home (زبون) | CustomerView | بعد تسجيل الدخول: `fetchMyOrders()` | تسريع فتح الطلبات عند أول ضغط على Orders. |
 | تبويبات لوحة التاجر | MerchantView | بعد تسجيل الدخول: `productService.getByMerchantId(user.id)` | تسريع ظهور منتجات التاجر ولوحته. |
 | تبويبات لوحة الأدمن | AdminView | بعد تسجيل الدخول: `userService.getAll()`, `getAdminProducts()`, `getAdminOrders()`, `getAdminSettings()`, `getAdminPlatformEarnings()` | تسريع تبويبات المستخدمين، المنتجات، الطلبات، الإعدادات والأرباح. |
 | أيقونة السلة | CustomerView | — | تسريع فتح السلة/المتجر. |
@@ -105,8 +105,8 @@
 
 | الاستدعاء | المكان | متى ولماذا | فرصة Prefetch |
 |----------|--------|------------|----------------|
-| `productService.getAll()` | useEffect مرة واحدة عند mount | لملء قائمة المنتجات في المتجر | يمكن بعد تسجيل الدخول (للعميل/تاجر) استدعاء getAll في الخلفية إن لم يكن قد نُفّذ في initApp. |
-| `fetchMyOrders()` (checkoutApi) | useEffect عند `activeTab === 'orders'` | عند فتح تبويب الطلبات لجلب طلبات المستخدم من الـ API | **prefetch بعد تسجيل الدخول للعميل:** استدعاء fetchMyOrders() في الخلفية لتسريع أول فتح لتبويب Orders. |
+| `productService.getAll()` | useEffect مرة واحدة عند mount | لملء قائمة المنتجات في المتجر | يمكن بعد تسجيل الدخول (للزبون/تاجر) استدعاء getAll في الخلفية إن لم يكن قد نُفّذ في initApp. |
+| `fetchMyOrders()` (checkoutApi) | useEffect عند `activeTab === 'orders'` | عند فتح تبويب الطلبات لجلب طلبات المستخدم من الـ API | **prefetch بعد تسجيل الدخول للزبون:** استدعاء fetchMyOrders() في الخلفية لتسريع أول فتح لتبويب Orders. |
 
 ### 5.4 AdminView
 
@@ -192,7 +192,7 @@
 | # | التحسين | الوصف | الفائدة المتوقعة |
 |---|---------|--------|-------------------|
 | 1 | **Prefetch الـ chunk عند hover/focus** | لكل رابط أو زر يفتح مكونًا كسولًا، تشغيل نفس `import(...)` عند onMouseEnter/onFocus (في طبقة prefetch منفصلة أو في المكون الحالي دون تغيير الـ props). | تقليل زمن تحميل الـ chunk عند الضغط؛ تحسين TTI و First Paint للصفحة المستهدفة. |
-| 2 | **Prefetch بيانات الطلبات للعميل** | بعد تسجيل الدخول، إذا كان الدور CUSTOMER، استدعاء `fetchMyOrders()` مرة واحدة في الخلفية (بدون كتابة النتيجة في state التطبيق؛ أو تخزينها في cache للاستخدام لاحقًا إن وُجدت آلية). | تسريع أول فتح لتبويب الطلبات بعد تسجيل الدخول. |
+| 2 | **Prefetch بيانات الطلبات للزبون** | بعد تسجيل الدخول، إذا كان الدور CUSTOMER، استدعاء `fetchMyOrders()` مرة واحدة في الخلفية (بدون كتابة النتيجة في state التطبيق؛ أو تخزينها في cache للاستخدام لاحقًا إن وُجدت آلية). | تسريع أول فتح لتبويب الطلبات بعد تسجيل الدخول. |
 | 3 | **Prefetch منتجات التاجر** | بعد تسجيل الدخول للتاجر، استدعاء `productService.getByMerchantId(user.id)` في الخلفية. | تسريع MerchantView و ProfileView عند أول فتح. |
 | 4 | **Prefetch بيانات الأدمن** | بعد تسجيل الدخول للأدمن، استدعاء `userService.getAll()` و (اختياري) `getAdminProducts()`, `getAdminOrders()`, `getAdminSettings()`, `getAdminPlatformEarnings()` في الخلفية. | تسريع تبويبات لوحة الأدمن عند أول فتح. |
 | 5 | **Prefetch بيانات المنتج عند hover على رابط منتج** | عند hover على أي بطاقة أو رابط منتج، استدعاء `productService.fetchById(productId)` في الخلفية. | تقليل زمن ظهور صفحة تفاصيل المنتج أو جعلها فورية إن وُجدت آلية cache. |

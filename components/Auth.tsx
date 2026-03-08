@@ -15,6 +15,7 @@ import RegisterMerchant from './RegisterMerchant';
 import Logo from './Logo';
 import { useToast } from './ToastProvider';
 import { userService } from '../services/userService';
+import { ROUTES } from '../routes';
 
 /** Allowed initial views; REGISTER_STUDENT is legacy and treated as LOGIN */
 export type AuthView = 'LOGIN' | 'ROLE_SELECT' | 'REGISTER_MERCHANT' | 'REGISTER_BROKER' | 'REGISTER_CUSTOMER';
@@ -95,7 +96,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
         'error'
       );
       if (typeof window !== 'undefined') {
-        window.location.hash = '#/verify-email';
+        window.location.hash = `#/${ROUTES.VERIFY_EMAIL}`;
       }
     } else if (result.success && result.data) {
       showToast(t.common.success, 'success');
@@ -505,7 +506,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                       setVerificationCode('');
                       setError('');
                       if (typeof window !== 'undefined') {
-                        window.location.hash = '#/login';
+                        window.location.hash = `#/${ROUTES.LOGIN}`;
                       }
                     }}
                   >

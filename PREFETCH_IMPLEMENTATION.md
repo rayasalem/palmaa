@@ -23,7 +23,7 @@
 | **PublicCatalog** (ضيف) | زر الرجوع | `PublicWebsite` |
 | **PublicCatalog** (ضيف) | بطاقة منتج في الشبكة | `PublicProductDetails` |
 | **Layout** (مسجّل دخول) | تبويب Profile (شريط جانبي + زر الصورة) | `ProfileView` |
-| **Layout** (مسجّل دخول) | تبويبات Home / Shop / Cart / Orders (عميل) | `CustomerView` |
+| **Layout** (مسجّل دخول) | تبويبات Home / Shop / Cart / Orders (زبون) | `CustomerView` |
 | **Layout** (مسجّل دخول) | تبويبات Dashboard / Products / Orders / Earnings (تاجر) | `MerchantView` |
 | **Layout** (مسجّل دخول) | تبويبات Shop / Cart (تاجر/أدمن/وسيط) | `CustomerView` |
 | **Layout** (مسجّل دخول) | تبويبات Users / Products / Orders / Treasury / Platform (أدمن) | `AdminView` |
@@ -69,7 +69,7 @@
 | ضيف: بطاقة منتج (هيرو/كتالوج) | PublicProductDetails | `productService.fetchById(id)` |
 | ضيف: زر الرجوع من الكتالوج | PublicWebsite | — |
 | مسجّل: تبويب Profile | ProfileView | — |
-| مسجّل: تبويب Home/Shop/Cart/Orders (عميل) | CustomerView | بعد تسجيل الدخول: `fetchMyOrders()` |
+| مسجّل: تبويب Home/Shop/Cart/Orders (زبون) | CustomerView | بعد تسجيل الدخول: `fetchMyOrders()` |
 | مسجّل: تبويب Dashboard/Products/Orders/Earnings (تاجر) | MerchantView | بعد تسجيل الدخول: `getByMerchantId(user.id)` |
 | مسجّل: تبويب Shop/Cart (تاجر/أدمن/وسيط) | CustomerView | — |
 | مسجّل: تبويب Users/Products/Orders/Treasury/Platform (أدمن) | AdminView | بعد تسجيل الدخول: `getAll()`, `getAdminProducts()`, `getAdminOrders()`, `getAdminSettings()`, `getAdminPlatformEarnings()` |

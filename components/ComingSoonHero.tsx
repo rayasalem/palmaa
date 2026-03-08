@@ -6,15 +6,15 @@ import { prefetchComponent } from '../prefetch';
 
 interface Props {
   lang: Language;
-  onJoinMerchant: () => void;
+  /** انضم لبالما — يفتح صفحة انشاء حساب (اختيار الدور) */
+  onStartNow: () => void;
   onExploreProducts: () => void;
-  onRegister: () => void;
 }
 
 // صورة الهيرو — رجل يبدو كأنه يستخدم بالما (لابتوب/منصة). يمكن استبدالها بـ public/hero.png
 const HERO_IMAGE = '/hero.png';
 
-const ComingSoonHero: React.FC<Props> = ({ lang, onJoinMerchant, onExploreProducts, onRegister }) => {
+const ComingSoonHero: React.FC<Props> = ({ lang, onStartNow, onExploreProducts }) => {
   const t = translations[lang];
   const isAr = lang === 'ar';
 
@@ -60,14 +60,14 @@ const ComingSoonHero: React.FC<Props> = ({ lang, onJoinMerchant, onExploreProduc
               : 'A digital marketplace connecting merchants and customers. Browse products, order with ease, and get delivery across regions.'}
           </p>
 
-          {/* أزرار — متجاوبة للجوال واللابتوب */}
+          {/* أزرار — انضم لبالما (صفحة انشاء حساب) + تصفح المنتجات */}
           <div className={`flex flex-col sm:flex-row gap-3 sm:gap-4 ${isAr ? 'sm:flex-row-reverse lg:justify-end' : ''}`}>
             <button
-              onClick={onJoinMerchant}
+              onClick={onStartNow}
               className="group inline-flex items-center justify-center gap-2 bg-palma-primary hover:bg-palma-primaryHover text-white font-bold px-6 py-3.5 sm:px-8 sm:py-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm uppercase tracking-wider shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 w-full sm:w-auto"
             >
               <ArrowLeft className={`w-4 h-4 shrink-0 ${isAr ? 'rotate-180' : ''}`} />
-              <span>{isAr ? 'ابدأ الآن' : 'Start now'}</span>
+              <span>{lang === 'ar' ? 'انضم لبالما' : lang === 'he' ? 'הצטרף לפלמה' : 'Join Palma'}</span>
             </button>
             <button
               onClick={onExploreProducts}
