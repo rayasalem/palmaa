@@ -27,7 +27,6 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
   const [minPrice, setMinPrice] = useState<string>('');
   const [maxPrice, setMaxPrice] = useState<string>('');
   const [minRating, setMinRating] = useState<number>(0);
-  const [merchantId, setMerchantId] = useState<string>('all');
   const [categoryId, setCategoryId] = useState<string>('all');
   const [conditionId, setConditionId] = useState<string>('all');
 
@@ -38,7 +37,6 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
 
   // Load auxiliary static data — عرض كل التصنيفات المفصّلة مع الإيموجي
   const categories = PRODUCT_CATEGORIES;
-  const merchants = marketStore.getAllApprovedMerchants();
 
   // Sync with URL params on mount
   useEffect(() => {
@@ -48,7 +46,6 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
     if (params.get('maxP')) setMaxPrice(params.get('maxP')!);
     if (params.get('minR')) setMinRating(parseInt(params.get('minR')!));
     if (params.get('sort')) setSortBy(params.get('sort')!);
-    if (params.get('merchant')) setMerchantId(params.get('merchant')!);
     if (params.get('category')) setCategoryId(params.get('category')!);
     if (params.get('condition')) setConditionId(params.get('condition')!);
   }, []);
@@ -68,7 +65,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
             maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
             minRating,
             sortBy,
-            merchantId,
+            merchantId: 'all',
             categoryId,
             conditionId: conditionId !== 'all' ? conditionId : undefined,
         });
@@ -79,7 +76,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
     } finally {
         setIsLoading(false);
     }
-  }, [searchTerm, minPrice, maxPrice, minRating, sortBy, merchantId, categoryId, conditionId]);
+  }, [searchTerm, minPrice, maxPrice, minRating, sortBy, categoryId, conditionId]);
 
   // Execute fetch on state change
   useEffect(() => {
@@ -92,14 +89,12 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
     setMaxPrice('');
     setMinRating(0);
     setSortBy('newest');
-    setMerchantId('all');
     setCategoryId('all');
     setConditionId('all');
   };
 
   const removeFilter = (key: string) => {
     switch (key) {
-      case 'merchant': setMerchantId('all'); break;
       case 'category': setCategoryId('all'); break;
       case 'condition': setConditionId('all'); break;
       case 'rating': setMinRating(0); break;
@@ -150,20 +145,6 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
               <button onClick={resetFilters} className="text-[10px] font-black uppercase text-palma-primary hover:underline tracking-widest">
                 {t.common.resetFilters}
               </button>
-            </div>
-
-            <div className="space-y-4 border-b border-slate-100 pb-6">
-              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">🏪 {t.common.merchantName}</p>
-              <select 
-                value={merchantId}
-                onChange={(e) => setMerchantId(e.target.value)}
-                className="w-full p-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-xs font-bold outline-none focus:ring-2 focus:ring-palma-primary focus:bg-white transition-all cursor-pointer"
-              >
-                <option value="all">{t.common.allMerchants}</option>
-                {merchants.map(m => (
-                  <option key={m.id} value={m.id}>{marketStore.getMerchantNameByUserId(m.id)}</option>
-                ))}
-              </select>
             </div>
 
             <p className="text-[10px] text-slate-400 font-medium pb-2 border-b border-slate-100">💡 {(t.common as Record<string, string>).clickAgainToClearFilter ?? 'اضغط على الخيار مرة ثانية لإلغاء الفلتر'}</p>
@@ -264,7 +245,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                <select 
                 value={sortBy} 
                 onChange={(e) => setSortBy(e.target.value)}
-                className="flex-1 md:w-56 bg-slate-50 border border-transparent rounded-2xl px-5 py-4 text-[10px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-palma-primary cursor-pointer text-palma-navy appearance-none"
+                className="flex-1 md:w-56 bg-slate-50 border border-transparent rounded-2xl px-5 py-4 text-xs sm:text-[10px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-palma-primary cursor-pointer text-palma-navy appearance-none min-h-[44px]"
               >
                 <option value="newest">{t.common.newest}</option>
                 <option value="most_sold">{t.common.mostSold}</option>
@@ -285,17 +266,12 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
           </div>
 
           <div className="flex flex-wrap items-center gap-3 px-2">
-            {(merchantId !== 'all' || categoryId !== 'all' || conditionId !== 'all' || minRating > 0 || (minPrice || maxPrice) || searchTerm) && (
+            {(categoryId !== 'all' || conditionId !== 'all' || minRating > 0 || (minPrice || maxPrice) || searchTerm) && (
               <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-2">{t.common.activeFilters}:</span>
             )}
             {conditionId !== 'all' && (
               <button onClick={() => removeFilter('condition')} className="flex items-center gap-2 bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all">
                 <ProductConditionBadge condition={conditionId} lang={lang} /> ✕
-              </button>
-            )}
-            {merchantId !== 'all' && (
-              <button onClick={() => removeFilter('merchant')} className="flex items-center gap-2 bg-palma-primary/10 text-palma-primary px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-palma-primary/20 transition-all">
-                {marketStore.getMerchantNameByUserId(merchantId)} ✕
               </button>
             )}
             {categoryId !== 'all' && (
@@ -380,8 +356,8 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                           )}
                           <ProductConditionBadge condition={p.condition} lang={lang} className="shrink-0" />
                         </div>
-                        <div className="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-slate-400">{mName}</span>
+                        <div className="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between gap-2 min-h-0">
+                          <span className="text-xs sm:text-[10px] font-bold text-slate-400 truncate min-w-0" title={mName}>{mName}</span>
                           <span className="w-8 h-8 rounded-full bg-palma-navy text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow">
                             <ArrowRight className="w-4 h-4 rtl:rotate-180" />
                           </span>
@@ -404,13 +380,6 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
               <button onClick={() => setIsMobileFilterOpen(false)} className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-palma-navy hover:bg-slate-200 transition">✕</button>
             </div>
             <div className="space-y-8">
-              <div className="space-y-3">
-                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">🏪 {t.common.merchantName}</p>
-                <select value={merchantId} onChange={(e) => setMerchantId(e.target.value)} className="w-full p-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-xs font-bold outline-none focus:ring-2 focus:ring-palma-primary">
-                  <option value="all">{t.common.allMerchants}</option>
-                  {merchants.map(m => (<option key={m.id} value={m.id}>{marketStore.getMerchantNameByUserId(m.id)}</option>))}
-                </select>
-              </div>
               <p className="text-[10px] text-slate-400 font-medium">💡 {(t.common as Record<string, string>).clickAgainToClearFilter ?? 'اضغط مرة ثانية لإلغاء الفلتر'}</p>
               <div className="space-y-3">
                 <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">📂 {t.common.category}</p>

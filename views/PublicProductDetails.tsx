@@ -26,9 +26,10 @@ interface PublicProductDetailsProps {
   onRefresh?: () => void;
   onViewProfile?: (profileId: string) => void;
   addToCart?: (product: Product, quantity: number) => void;
+  addingToCartProductId?: string | null;
 }
 
-const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({ lang, user, productId, onBack, onLoginClick, onRefresh, onViewProfile, addToCart }) => {
+const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({ lang, user, productId, onBack, onLoginClick, onRefresh, onViewProfile, addToCart, addingToCartProductId }) => {
   const t = translations[lang];
   const { showToast } = useToast();
   
@@ -208,13 +209,8 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({ lang, user,
 
   const handleAddToCart = () => {
     if (!user) return onLoginClick();
-    
-    if (addToCart) {
-        addToCart(product, quantity);
-        showToast(t.common.success, 'success');
-    } else {
-        showToast(lang === 'en' ? 'Add to cart is not available.' : 'إضافة للسلة غير متاحة.', 'warning');
-    }
+    if (addToCart) addToCart(product, quantity);
+    else showToast(lang === 'en' ? 'Add to cart is not available.' : 'إضافة للسلة غير متاحة.', 'warning');
   };
 
   const handleImageChange = (index: number) => {
@@ -378,8 +374,12 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({ lang, user,
                        </div>
                        
                        <div className="flex flex-col sm:flex-row gap-4">
-                          <button onClick={handleAddToCart} className="btn-primary flex-1 py-5 text-[11px] uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-3">
-                             <ShoppingBag className="w-4 h-4" /> {t.product.addToCart}
+                          <button type="button" onClick={handleAddToCart} disabled={!!(product && addingToCartProductId === product.id)} className="btn-primary flex-1 py-5 text-[11px] uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-70 disabled:pointer-events-none">
+                             {product && addingToCartProductId === product.id ? (
+                               <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> {lang === 'ar' ? 'جاري الإضافة...' : lang === 'he' ? 'מוסיף...' : 'Adding...'}</>
+                             ) : (
+                               <><ShoppingBag className="w-4 h-4" /> {t.product.addToCart}</>
+                             )}
                           </button>
                        </div>
                     </div>

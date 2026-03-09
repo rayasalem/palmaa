@@ -78,6 +78,7 @@ const AppContent: React.FC = () => {
   const [checkoutCart, setCheckoutCart] = useState<CartItem[]>([]);
   const [showMerchantTermsPage, setShowMerchantTermsPage] = useState(false);
   const [pendingAuthAfterTerms, setPendingAuthAfterTerms] = useState<'REGISTER_MERCHANT' | null>(null);
+  const [addingToCartProductId, setAddingToCartProductId] = useState<string | null>(null);
   const isApplyingHashRef = useRef(false);
 
   /** Update browser URL hash so the path changes when navigating (e.g. palma.ps/#/catalog, #/admin) */
@@ -299,9 +300,14 @@ const AppContent: React.FC = () => {
         showToast(lang === 'ar' ? 'منتج غير صالح' : 'Invalid product', 'error');
         return;
       }
-      const ok = await apiCart.addItem(productId, quantity);
-      if (ok) showToast(lang === 'ar' ? 'تمت الإضافة للسلة' : 'Added to cart', 'success');
-      else if (apiCart.error) showToast(getAuthErrorMessage(apiCart.error, lang) || apiCart.error, 'error');
+      setAddingToCartProductId(productId);
+      try {
+        const ok = await apiCart.addItem(productId, quantity);
+        if (ok) showToast(lang === 'ar' ? 'تمت الإضافة للسلة' : 'Added to cart', 'success');
+        else if (apiCart.error) showToast(getAuthErrorMessage(apiCart.error, lang) || apiCart.error, 'error');
+      } finally {
+        setAddingToCartProductId(null);
+      }
     } else {
       setLocalCart(prev => {
         const existing = prev.find(p => p.id === product.id);
@@ -645,6 +651,7 @@ const AppContent: React.FC = () => {
               onRefresh={refreshUser}
               onViewProfile={(id) => { setSelectedProfileId(id); setCurrentView('public_profile'); }}
               addToCart={addToCart}
+              addingToCartProductId={addingToCartProductId}
             />
           </Suspense>
       ) : currentView === 'public_profile' && selectedProfileId ? (
@@ -678,6 +685,7 @@ const AppContent: React.FC = () => {
                   view={currentView === 'orders_customer' ? 'orders' : currentView} 
                   cart={cart}
                   addToCart={addToCart}
+                  addingToCartProductId={addingToCartProductId}
                   removeFromCart={removeFromCart}
                   updateQuantity={updateQuantity}
                   clearCart={clearCart}
@@ -711,6 +719,7 @@ const AppContent: React.FC = () => {
                   view={currentView}
                   cart={cart}
                   addToCart={addToCart}
+                  addingToCartProductId={addingToCartProductId}
                   removeFromCart={removeFromCart}
                   updateQuantity={updateQuantity}
                   clearCart={clearCart}

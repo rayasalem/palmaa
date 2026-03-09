@@ -90,8 +90,9 @@ export interface ShopProductCardProps {
   onViewProduct?: (id: string) => void;
   onViewProfile?: (profileId: string) => void;
   onAddToCart: (product: Product) => void;
+  isAddingToCart?: boolean;
 }
-export const ShopProductCard = React.memo(function ShopProductCard({ product: p, lang, t, onViewProduct, onViewProfile, onAddToCart }: ShopProductCardProps) {
+export const ShopProductCard = React.memo(function ShopProductCard({ product: p, lang, t, onViewProduct, onViewProfile, onAddToCart, isAddingToCart }: ShopProductCardProps) {
   const merchantId = p.merchant_id || p.merchantId || '';
   const merchantName = marketStore.getMerchantNameByUserId(merchantId);
   const displayImage = p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/400x400?text=No+Image';
@@ -136,10 +137,21 @@ export const ShopProductCard = React.memo(function ShopProductCard({ product: p,
           </h4>
         </div>
         <button
+          type="button"
           onClick={() => onAddToCart(p)}
-          className="btn-primary w-full py-3 text-[10px] uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-2"
+          disabled={isAddingToCart}
+          className="btn-primary w-full py-3 text-[10px] uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:pointer-events-none"
         >
-          <ShoppingBag className="w-3.5 h-3.5" /> {t.product.addToCart}
+          {isAddingToCart ? (
+            <>
+              <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin shrink-0" />
+              {lang === 'ar' ? 'جاري الإضافة...' : lang === 'he' ? 'מוסיף...' : 'Adding...'}
+            </>
+          ) : (
+            <>
+              <ShoppingBag className="w-3.5 h-3.5" /> {t.product.addToCart}
+            </>
+          )}
         </button>
       </div>
     </div>

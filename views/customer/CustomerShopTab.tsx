@@ -52,6 +52,7 @@ export interface CustomerShopTabProps {
   setShowAllGroups: (v: boolean) => void;
   onCategorySelect: (category: string) => void;
   onAddToCart: (product: Product) => void;
+  addingToCartProductId?: string | null;
   onViewProduct?: (id: string) => void;
   onViewProfile?: (profileId: string) => void;
 }
@@ -73,6 +74,7 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
   setShowAllGroups,
   onCategorySelect,
   onAddToCart,
+  addingToCartProductId,
   onViewProduct,
   onViewProfile,
 }) => {
@@ -246,6 +248,7 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
                   onViewProduct={onViewProduct}
                   onViewProfile={onViewProfile}
                   onAddToCart={onAddToCart}
+                  isAddingToCart={addingToCartProductId === p.id}
                 />
               </div>
             ))}

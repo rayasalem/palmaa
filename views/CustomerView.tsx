@@ -48,6 +48,8 @@ interface Props {
   view: string; 
   cart: CartItem[];
   addToCart: (product: Product) => void;
+  /** Product id currently being added (for loading state on button) */
+  addingToCartProductId?: string | null;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, delta: number) => void;
   clearCart: () => void;
@@ -60,7 +62,7 @@ interface Props {
   shopOnlySection?: boolean;
 }
 
-export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCart, removeFromCart, updateQuantity, clearCart, onRefresh, onTabChange, onViewProduct, onViewProfile, onProceedToApiCheckout, shopOnlySection }) => {
+export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCart, addingToCartProductId, removeFromCart, updateQuantity, clearCart, onRefresh, onTabChange, onViewProduct, onViewProfile, onProceedToApiCheckout, shopOnlySection }) => {
   const t = translations[lang];
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'shop' | 'cart' | 'orders'>('shop');
@@ -725,6 +727,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
             setShowAllGroups={setShowAllGroups}
             onCategorySelect={handleCategorySelect}
             onAddToCart={handleAddToCart}
+            addingToCartProductId={addingToCartProductId}
             onViewProduct={onViewProduct}
             onViewProfile={onViewProfile}
           />
