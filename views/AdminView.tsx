@@ -253,6 +253,8 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
   const [settingsForm, setSettingsForm] = useState({ commission_rate: 15, tax_penalty_rate: 16 });
   const [deleteModal, dispatchDeleteModal] = useReducer(deleteModalReducer, deleteModalInitial);
   const { userToDelete, deleteReason, deleteLoading } = deleteModal;
+  const [productToDelete, setProductToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [productDeleteLoading, setProductDeleteLoading] = useState(false);
 
   useEffect(() => {
     setActiveTab(viewToTab[view] || 'users');
@@ -522,18 +524,24 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
   }, [lang, showToast]);
 
   const handleProductDelete = useCallback(async (id: string, name: string) => {
-    if (!window.confirm(lang === 'ar' ? `حذف "${name}"؟` : `Delete "${name}"?`)) return;
+    setProductDeleteLoading(true);
     setActionLoading(id);
     try {
       await deleteAdminProduct(id);
       setProducts((prev) => prev.filter((p) => p.id !== id));
+      setProductToDelete(null);
       showToast(t.common.success, 'success');
     } catch (e) {
       showToast(t.common.error, 'error');
     } finally {
+      setProductDeleteLoading(false);
       setActionLoading(null);
     }
-  }, [lang, t.common.success, t.common.error, showToast]);
+  }, [t.common.success, t.common.error, showToast]);
+
+  const requestProductDelete = useCallback((id: string, name: string) => {
+    setProductToDelete({ id, name });
+  }, []);
 
   const filteredProducts = useMemo(
     () =>
@@ -712,6 +720,58 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
         </div>
       )}
 
+      {/* مودال تأكيد حذف المنتج — رسالة مناسبة للمستخدم بدون نافذة المتصفح */}
+      {productToDelete && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" onClick={() => !productDeleteLoading && setProductToDelete(null)}>
+          <div
+            className="bg-white rounded-[2.5rem] max-w-md w-full p-8 space-y-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center shrink-0">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-palma-navy">
+                  {lang === 'ar' ? 'حذف المنتج' : 'Delete product'}
+                </h3>
+                <p className="text-sm text-slate-500 mt-0.5">
+                  {lang === 'ar' ? 'هل تريد حذف هذا المنتج؟ لن يمكنك التراجع عن ذلك.' : 'Are you sure you want to delete this product? This cannot be undone.'}
+                </p>
+              </div>
+            </div>
+            <div className="bg-slate-50 rounded-xl px-4 py-3 text-sm font-bold text-palma-navy border border-slate-100">
+              «{productToDelete.name}»
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => !productDeleteLoading && setProductToDelete(null)}
+                disabled={productDeleteLoading}
+                className="flex-1 py-3.5 rounded-xl border-2 border-slate-200 text-slate-600 font-black text-sm uppercase tracking-wider hover:bg-slate-50 transition disabled:opacity-50"
+              >
+                {lang === 'ar' ? 'إلغاء' : 'Cancel'}
+              </button>
+              <button
+                type="button"
+                onClick={() => productToDelete && handleProductDelete(productToDelete.id, productToDelete.name)}
+                disabled={productDeleteLoading}
+                className="flex-1 py-3.5 rounded-xl bg-red-600 text-white font-black text-sm uppercase tracking-wider hover:bg-red-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {productDeleteLoading ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    {lang === 'ar' ? 'جاري الحذف...' : 'Deleting...'}
+                  </>
+                ) : (
+                  lang === 'ar' ? 'حذف' : 'Delete'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {activeTab === 'products' && (
         <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
           <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-soft flex flex-col lg:flex-row justify-between items-center gap-6">
@@ -768,7 +828,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
                         onViewProduct={onViewProduct}
                         onViewProfile={onViewProfile}
                         onToggleActive={handleProductToggleActive}
-                        onDelete={handleProductDelete}
+                        onDelete={requestProductDelete}
                       />
                     ))}
                   </tbody>

@@ -3,6 +3,7 @@
  */
 
 import { supabase } from '../config/supabaseClient.js';
+import logger from '../utils/logger.js';
 
 const TABLE = 'product_comments';
 
@@ -18,7 +19,7 @@ async function addComment(productId, userId, content) {
     .select()
     .single();
   if (error) {
-    console.error('[productCommentService] addComment error:', error.message);
+    logger.error('productCommentService addComment error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };
@@ -31,7 +32,7 @@ async function getComments(productId) {
     .eq('product_id', productId)
     .order('created_at', { ascending: false });
   if (error) {
-    console.error('[productCommentService] getComments error:', error.message);
+    logger.error('productCommentService getComments error', { message: error.message });
     return { data: [], error };
   }
   return { data: data || [], error: null };

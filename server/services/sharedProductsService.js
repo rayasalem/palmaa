@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '../config/supabaseClient.js';
+import logger from '../utils/logger.js';
 
 const TABLE = 'shared_products';
 
@@ -32,7 +33,7 @@ async function upsert(brokerId, productId, data) {
       .select()
       .single();
     if (error) {
-      console.error('[sharedProductsService] update error:', error.message);
+      logger.error('sharedProductsService update error', { message: error.message });
       return { data: null, error };
     }
     return { data: updated, error: null };
@@ -49,7 +50,7 @@ async function upsert(brokerId, productId, data) {
     .select()
     .single();
   if (error) {
-    console.error('[sharedProductsService] insert error:', error.message);
+    logger.error('sharedProductsService insert error:', error.message);
     return { data: null, error };
   }
   return { data: inserted, error: null };
@@ -62,7 +63,7 @@ async function listByBrokerId(brokerId) {
     .eq('broker_id', brokerId)
     .order('shared_at', { ascending: false });
   if (error) {
-    console.error('[sharedProductsService] listByBrokerId error:', error.message);
+    logger.error('sharedProductsService listByBrokerId error', { message: error.message });
     return { data: [], error };
   }
   return { data: data || [], error: null };
@@ -75,7 +76,7 @@ async function remove(brokerId, productId) {
     .eq('broker_id', brokerId)
     .eq('product_id', productId);
   if (error) {
-    console.error('[sharedProductsService] remove error:', error.message);
+    logger.error('sharedProductsService remove error', { message: error.message });
     return { error };
   }
   return { error: null };
@@ -97,7 +98,7 @@ async function toggleFeatured(brokerId, shareId) {
     .select()
     .single();
   if (error) {
-    console.error('[sharedProductsService] toggleFeatured error:', error.message);
+    logger.error('sharedProductsService toggleFeatured error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };

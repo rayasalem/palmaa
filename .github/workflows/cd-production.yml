@@ -1,0 +1,35 @@
+# Palma Marketplace – CD: deploy to production (manual or after approval)
+name: CD Production
+on:
+  workflow_dispatch:
+  # Optional: trigger from release or tag
+  # release:
+  #   types: [published]
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Build frontend
+        run: npm ci && npm run build
+        env:
+          VITE_API_URL: ${{ vars.PRODUCTION_API_URL }}
+          VITE_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.PRODUCTION_SUPABASE_ANON_KEY }}
+
+      - name: Build backend
+        run: npm ci --prefix server
+
+      - name: Deploy to production (placeholder)
+        run: |
+          echo "Production deploy: use your provider's CLI or API."
+          echo "Ensure secrets (JWT_SECRET, SUPABASE_SERVICE_KEY, etc.) are in environment."

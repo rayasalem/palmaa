@@ -39,6 +39,7 @@ import { SESSION_EXPIRED_EVENT } from './api/client';
 import { prefetchAfterLogin } from './prefetch';
 import { ROUTES } from './routes';
 
+/** Restore user profile from storage for UI (not JWT; auth uses httpOnly cookie or Bearer). */
 const loadUser = (): User | null => {
   const stored = localStorage.getItem('palma_current_user');
   return stored ? JSON.parse(stored) : null;
@@ -311,6 +312,7 @@ const AppContent: React.FC = () => {
         localStorage.setItem('palma_cart', JSON.stringify(newCart));
         return newCart;
       });
+      showToast(lang === 'ar' ? 'تمت الإضافة للسلة' : 'Added to cart', 'success');
     }
   };
 

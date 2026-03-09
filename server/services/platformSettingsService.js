@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '../config/supabaseClient.js';
+import logger from '../utils/logger.js';
 
 const TABLE = 'platform_settings';
 
@@ -19,7 +20,7 @@ async function getSetting(key) {
     .eq('key', key)
     .maybeSingle();
   if (error) {
-    console.error('[platformSettingsService] getSetting error:', error.message);
+    logger.error('platformSettingsService getSetting error', { message: error.message });
     return { value: DEFAULTS[key] ?? null, error };
   }
   const raw = (data && data.value);
@@ -48,7 +49,7 @@ async function setSetting(key, value) {
     .select()
     .single();
   if (error) {
-    console.error('[platformSettingsService] setSetting error:', error.message);
+    logger.error('platformSettingsService setSetting error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };

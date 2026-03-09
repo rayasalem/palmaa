@@ -1,5 +1,5 @@
 
-import { Product, User, PaymentMethod, OrderStatus, Order, OrderItem, CartItem, ShipmentType } from '../types';
+import { Product, User, PaymentMethod, OrderStatus, Order, OrderItem, CartItem, ShipmentType, PRODUCT_CATEGORIES } from '../types';
 import { marketStore, paymentProcessor } from '../store';
 import { productService } from '../services/productService';
 import { Language, translations, getAuthErrorMessage } from '../translations';
@@ -19,31 +19,28 @@ import {
   fetchMyOrders,
 } from '../services/checkoutApi';
 import { sendEmail, getShipmentDetailsTemplate } from '../services/emailService';
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { 
-  MapPin, 
-  User as UserIcon, 
-  Mail, 
-  Phone, 
-  FileText, 
-  Truck, 
-  CreditCard, 
-  CheckCircle, 
-  ArrowRight, 
+import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense, lazy } from 'react';
+import { ConfirmModal } from '../components/ConfirmModal';
+import { ShippingInputGroup } from '../components/CustomerShared';
+import {
+  MapPin,
+  User as UserIcon,
+  Mail,
+  Phone,
+  FileText,
+  Truck,
+  ArrowRight,
   ArrowLeft,
   X,
-  Package,
   Building,
   Navigation,
-  Trash2,
-  Minus,
-  Plus,
   ShoppingBag,
-  RefreshCw
 } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
-import { prefetchComponent, prefetchProductData } from '../prefetch';
-import { ProductConditionBadge } from '../components/ProductConditionBadge';
+
+const CustomerShopTab = lazy(() => import('./customer/CustomerShopTab').then((m) => ({ default: m.CustomerShopTab })));
+const CustomerCartTab = lazy(() => import('./customer/CustomerCartTab').then((m) => ({ default: m.CustomerCartTab })));
+const CustomerOrdersTab = lazy(() => import('./customer/CustomerOrdersTab').then((m) => ({ default: m.CustomerOrdersTab })));
 
 interface Props {
   lang: Language;
@@ -63,211 +60,6 @@ interface Props {
   shopOnlySection?: boolean;
 }
 
-// --- Stable form input (defined outside to avoid focus loss on re-render) ---
-interface ShippingInputGroupProps {
-  label: string;
-  name: string;
-  icon: React.ComponentType<{ className?: string }>;
-  required?: boolean;
-  type?: string;
-  placeholder?: string;
-  options?: React.ReactNode;
-  value: string | number | undefined;
-  error?: boolean;
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
-  lang: Language;
-  disabled?: boolean;
-}
-const ShippingInputGroup = React.memo(function ShippingInputGroup({
-  label,
-  name,
-  icon: Icon,
-  required = false,
-  type = 'text',
-  placeholder,
-  options,
-  value,
-  error = false,
-  onChange,
-  lang,
-  disabled = false
-}: ShippingInputGroupProps) {
-  const inputValue = value ?? '';
-  const displayValue = type === 'select' ? inputValue : String(inputValue);
-  return (
-    <div className="space-y-1.5 w-full">
-      <label className="text-[10px] font-black uppercase text-palma-muted tracking-widest flex items-center gap-1">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
-      <div className="relative group">
-        <div className={`absolute top-1/2 -translate-y-1/2 ${lang === 'en' ? 'left-4' : 'right-4'} text-slate-400 group-focus-within:text-palma-primary transition-colors`}>
-          <Icon className="w-5 h-5" />
-        </div>
-        {type === 'select' ? (
-          <select
-            name={name}
-            required={required}
-            className={`w-full ${lang === 'en' ? 'pl-12 pr-4' : 'pr-12 pl-4'} py-3.5 bg-slate-50 border ${error ? 'border-red-300 ring-2 ring-red-100' : 'border-slate-200'} rounded-2xl text-sm font-bold text-palma-navy outline-none focus:bg-white focus:border-palma-primary focus:ring-4 focus:ring-palma-primary/10 transition-all appearance-none cursor-pointer`}
-            value={displayValue}
-            onChange={onChange}
-            disabled={disabled}
-          >
-            {options}
-          </select>
-        ) : (
-          <input
-            type={type === 'email' ? 'email' : 'text'}
-            name={name}
-            required={required}
-            placeholder={placeholder}
-            inputMode={name === 'phone' || name === 'phone2' ? 'tel' : undefined}
-            maxLength={name === 'phone' || name === 'phone2' ? 20 : undefined}
-            className={`w-full ${lang === 'en' ? 'pl-12 pr-4' : 'pr-12 pl-4'} py-3.5 bg-slate-50 border ${error ? 'border-red-300 ring-2 ring-red-100' : 'border-slate-200'} rounded-2xl text-sm font-bold text-palma-navy outline-none focus:bg-white focus:border-palma-primary focus:ring-4 focus:ring-palma-primary/10 transition-all placeholder:text-slate-400`}
-            value={displayValue}
-            onChange={onChange}
-          />
-        )}
-        {type === 'select' && (
-          <div className={`absolute top-1/2 -translate-y-1/2 ${lang === 'en' ? 'right-4' : 'left-4'} text-slate-400 pointer-events-none`}>
-            <ArrowRight className="w-4 h-4 rotate-90" />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-});
-
-// --- Performance: memoized shop product card to avoid re-rendering all cards when list updates ---
-interface ShopProductCardProps {
-  product: Product;
-  lang: Language;
-  t: ReturnType<typeof translations[keyof typeof translations]>;
-  onViewProduct?: (id: string) => void;
-  onViewProfile?: (profileId: string) => void;
-  onAddToCart: (product: Product) => void;
-}
-const ShopProductCard = React.memo(function ShopProductCard({ product: p, lang, t, onViewProduct, onViewProfile, onAddToCart }: ShopProductCardProps) {
-  const merchantId = p.merchant_id || p.merchantId || '';
-  const merchantName = marketStore.getMerchantNameByUserId(merchantId);
-  const displayImage = p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/400x400?text=No+Image';
-  return (
-    <div className="dashboard-card flex flex-col p-0 overflow-hidden group hover:shadow-md hover:-translate-y-1 transition-all duration-300">
-      <div
-        className="aspect-[4/5] overflow-hidden bg-slate-100 relative cursor-pointer"
-        onClick={() => onViewProduct?.(p.id)}
-      >
-        <img
-          loading="lazy"
-          src={displayImage}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          alt={p.name}
-        />
-        <div
-          className={`absolute top-3 ${lang === 'en' ? 'right-3' : 'left-3'} bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm text-palma-navy border border-slate-200/80`}
-        >
-          ₪{p.price || p.price_ils}
-        </div>
-      </div>
-      <div className="p-4 space-y-3 flex-1 flex flex-col">
-        <div className="flex-1">
-          <div className="mb-1">
-            <ProductConditionBadge condition={p.condition || 'new'} lang={lang} />
-          </div>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (merchantId && onViewProfile) onViewProfile(merchantId);
-            }}
-            className="text-[9px] font-black text-palma-muted uppercase tracking-widest mb-1 block text-left hover:text-palma-primary hover:underline transition-colors"
-          >
-            {merchantName || (lang === 'ar' ? 'التاجر' : 'Merchant')}
-          </button>
-          <h4
-            className="font-bold text-slate-900 text-sm leading-snug line-clamp-2 cursor-pointer"
-            onClick={() => onViewProduct?.(p.id)}
-          >
-            {p.name}
-          </h4>
-        </div>
-        <button
-          onClick={() => onAddToCart(p)}
-          className="btn-primary w-full py-3 text-[10px] uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-2"
-        >
-          <ShoppingBag className="w-3.5 h-3.5" /> {t.product.addToCart}
-        </button>
-      </div>
-    </div>
-  );
-});
-
-// --- Performance: memoized cart row to avoid inline handlers in cart.map ---
-interface CartItemRowProps {
-  item: CartItem;
-  isSelected: boolean;
-  showCheckbox: boolean;
-  onToggleSelection: (id: string) => void;
-  onUpdateQuantity: (productId: string, delta: number) => void;
-  onRemove: (productId: string, productName?: string) => void;
-  lang: Language;
-}
-const CartItemRow = React.memo(function CartItemRow({ item, isSelected, showCheckbox, onToggleSelection, onUpdateQuantity, onRemove, lang }: CartItemRowProps) {
-  return (
-    <div className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-100 shadow-sm flex items-center gap-4 sm:gap-6 group hover:border-palma-primary/20 transition-all">
-      {showCheckbox ? (
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={() => onToggleSelection(item.id)}
-          className="w-5 h-5 rounded border-slate-300 text-palma-primary focus:ring-palma-primary shrink-0"
-        />
-      ) : null}
-      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-slate-50 shrink-0 border border-slate-100">
-        <img src={item.images?.[0] || item.imageUrl || item.image_url || 'https://placehold.co/200x200?text=No+Image'} loading="lazy" className="w-full h-full object-cover" alt="" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <h4 className="font-bold text-slate-900 text-sm sm:text-base mb-1 truncate">{item.name}</h4>
-        <div className="flex flex-wrap items-center gap-2 mb-3">
-          <p className="text-[10px] font-black text-palma-muted uppercase tracking-widest">{item.category}</p>
-          <ProductConditionBadge condition={item.condition || 'new'} lang={lang} />
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center bg-slate-50 rounded-xl border border-slate-100">
-            <button onClick={() => onUpdateQuantity(item.id, -1)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 transition"><Minus className="w-3.5 h-3.5" /></button>
-            <span className="text-xs font-bold text-slate-900 w-6 text-center">{item.quantity}</span>
-            <button onClick={() => onUpdateQuantity(item.id, 1)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 transition"><Plus className="w-3.5 h-3.5" /></button>
-          </div>
-          <span className="text-sm font-black text-emerald-600">₪{(item.price || item.price_ils || 0) * item.quantity}</span>
-        </div>
-      </div>
-      <button onClick={() => onRemove(item.id, item.name || item.title)} className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
-        <Trash2 className="w-5 h-5" />
-      </button>
-    </div>
-  );
-});
-
-// --- Performance: category pill with stable onSelect so parent map has no inline arrow ---
-interface CategoryPillProps {
-  category: string;
-  active: boolean;
-  label: string;
-  onSelect: (category: string) => void;
-}
-const CategoryPill = React.memo(function CategoryPill({ category, active, label, onSelect }: CategoryPillProps) {
-  return (
-    <button
-      type="button"
-      onClick={() => onSelect(category)}
-      className={`dashboard-filter-pill ${
-        active ? 'bg-palma-primary text-white border-palma-primary' : 'text-slate-500 hover:text-palma-navy hover:bg-white border border-transparent'
-      }`}
-    >
-      {label}
-    </button>
-  );
-});
-
 export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCart, removeFromCart, updateQuantity, clearCart, onRefresh, onTabChange, onViewProduct, onViewProfile, onProceedToApiCheckout, shopOnlySection }) => {
   const t = translations[lang];
   const { showToast } = useToast();
@@ -286,6 +78,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingCancelId, setProcessingCancelId] = useState<string | null>(null);
+  const [cancelConfirmOrderId, setCancelConfirmOrderId] = useState<string | null>(null);
   const [checkingStatusId, setCheckingStatusId] = useState<string | null>(null);
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
   const [showCheckoutForm, setShowCheckoutForm] = useState(false);
@@ -338,9 +131,15 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
   const [shopSearch, setShopSearch] = useState('');
   const [shopCategoryId, setShopCategoryId] = useState<string>('all');
   const [shopConditionFilter, setShopConditionFilter] = useState<string>('all');
-  const categories = useMemo(() => marketStore.getAllUniqueCategories(), []);
+  const [categorySearch, setCategorySearch] = useState('');
+  const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null);
+  const [showAllGroups, setShowAllGroups] = useState(false);
+  const categories = PRODUCT_CATEGORIES;
+  const productsFetchedRef = useRef(false);
 
   useEffect(() => {
+    if (productsFetchedRef.current) return;
+    productsFetchedRef.current = true;
     const load = async () => {
       const all = await productService.getAll();
       setProducts(all.filter(p => p.isActive !== false));
@@ -438,8 +237,8 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
     }
   };
 
-  const handleCityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const cityId = parseInt(e.target.value, 10);
+  const handleCityChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const cityId = parseInt((e.target as HTMLSelectElement).value, 10);
     const city = cities.find(c => c.id === cityId);
     if (city) {
       setSelectedCityId(cityId);
@@ -455,8 +254,8 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
     }
   };
 
-  const handleVillageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const vId = parseInt(e.target.value, 10);
+  const handleVillageChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const vId = parseInt((e.target as HTMLSelectElement).value, 10);
     const v = availableVillages.find(vv => vv.id === vId);
     if (v) {
       setShippingData(prev => ({
@@ -511,8 +310,8 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
     if (!shippingData.fullName?.trim()) errors.fullName = true;
     if (!shippingData.email?.trim()) errors.email = true;
     if (!shippingData.phone?.trim()) errors.phone = true;
-    if (shippingData.cityId == null || shippingData.cityId === undefined || shippingData.cityId === '') errors.cityId = true;
-    if (shippingData.villageId == null || shippingData.villageId === undefined || shippingData.villageId === '') errors.villageId = true;
+    if (shippingData.cityId == null || shippingData.cityId === undefined) errors.cityId = true;
+    if (shippingData.villageId == null || shippingData.villageId === undefined) errors.villageId = true;
     if (!shippingData.address?.trim()) errors.address = true;
 
     if (Object.keys(errors).length > 0) {
@@ -619,10 +418,6 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
   };
 
   const handleCancelOrderApi = async (orderId: string) => {
-    const msg = lang === 'ar'
-      ? 'هل أنت متأكد من إلغاء هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.'
-      : 'Are you sure you want to cancel this order? This action cannot be undone.';
-    if (!window.confirm(msg)) return;
     setProcessingCancelId(orderId);
     try {
       const res = await cancelOrderApi(orderId);
@@ -681,7 +476,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
       const response = await cancelLogestechsShipment(
         deliveryId,
         user.email,
-        user.password || 'password' 
+        user.password ?? ''
       );
 
       if (response.success) {
@@ -700,8 +495,8 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
 
   const handleAddToCart = useCallback((product: Product) => {
     addToCart(product);
-    showToast(t.common.success, 'success');
-  }, [addToCart, showToast, t.common.success]);
+    // Toast is shown by App.addToCart on success/error; avoid duplicate "تمت العملية بنجاح"
+  }, [addToCart]);
 
   const handleRemoveFromCart = useCallback((productId: string, productName?: string) => {
     // حذف مباشر بضغطة واحدة + رسالة واضحة للمستخدم
@@ -727,7 +522,7 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
   const selectAllCart = useCallback(() => setSelectedCartIds(new Set(cart.map(c => c.id))), [cart]);
 
   const handleCategorySelect = useCallback((category: string) => {
-    setShopCategoryId(category);
+    setShopCategoryId((prev) => (prev === category ? 'all' : category));
   }, []);
 
   const setShopOrCart = (tab: 'shop' | 'cart') => {
@@ -737,7 +532,17 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
 
   return (
     <div className="space-y-6 sm:space-y-8 max-w-7xl mx-auto pb-20 font-heading dashboard-page px-4 sm:px-6 pt-6">
-      
+      <ConfirmModal
+        isOpen={!!cancelConfirmOrderId}
+        title={lang === 'ar' ? 'إلغاء الطلب' : 'Cancel order'}
+        message={lang === 'ar' ? 'هل أنت متأكد من إلغاء هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء.' : 'Are you sure you want to cancel this order? This action cannot be undone.'}
+        confirmLabel={lang === 'ar' ? 'نعم، إلغاء' : 'Yes, cancel'}
+        cancelLabel={lang === 'ar' ? 'إبقاء الطلب' : 'Keep order'}
+        onConfirm={() => { if (cancelConfirmOrderId) { handleCancelOrderApi(cancelConfirmOrderId); setCancelConfirmOrderId(null); } }}
+        onCancel={() => setCancelConfirmOrderId(null)}
+        isLoading={!!cancelConfirmOrderId && processingCancelId === cancelConfirmOrderId}
+        variant="danger"
+      />
       {/* Shop/Cart sub-tabs for MERCHANT/BROKER — تصميم حديث */}
       {shopOnlySection && (
         <div className="dashboard-tabs w-fit">
@@ -902,272 +707,63 @@ export const CustomerView: React.FC<Props> = ({ lang, user, view, cart, addToCar
       )}
 
       {activeTab === 'shop' && (
-        <div className="space-y-6">
-          {/* Search + category filter — تصميم حديث */}
-          <div className="dashboard-card dashboard-card-body flex flex-col md:flex-row items-center gap-4">
-            <div className="relative flex-1 w-full">
-              <input
-                type="text"
-                placeholder={t.common.search}
-                className="dashboard-input-search"
-                value={shopSearch}
-                onChange={(e) => setShopSearch(e.target.value)}
-              />
-            </div>
-            <div className="dashboard-filter-pills w-full md:w-auto flex-wrap">
-              <CategoryPill category="all" active={shopCategoryId === 'all'} label={t.common.allCategories} onSelect={handleCategorySelect} />
-              {categories.map((cat) => (
-                <CategoryPill
-                  key={cat}
-                  category={cat}
-                  active={shopCategoryId === cat}
-                  label={t.categories[cat as keyof typeof t.categories] || cat}
-                  onSelect={handleCategorySelect}
-                />
-              ))}
-              <select
-                className="mt-2 md:mt-0 ml-0 md:ml-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-bold text-slate-600 outline-none focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 transition cursor-pointer"
-                value={shopConditionFilter}
-                onChange={(e) => setShopConditionFilter(e.target.value)}
-              >
-                <option value="all">
-                  {lang === 'ar'
-                    ? 'كل الحالات'
-                    : lang === 'he'
-                    ? 'כל המצבים'
-                    : 'All conditions'}
-                </option>
-                <option value="new">
-                  {lang === 'ar' ? 'جديد' : lang === 'he' ? 'חדש' : 'New'}
-                </option>
-                <option value="used_like_new">
-                  {lang === 'ar' ? 'مستعمل – كالجديد' : lang === 'he' ? 'משומש – כמו חדש' : 'Used – Like New'}
-                </option>
-                <option value="used_good">
-                  {lang === 'ar' ? 'مستعمل – حالة جيدة' : lang === 'he' ? 'משומש – מצב טוב' : 'Used – Good'}
-                </option>
-                <option value="refurbished">
-                  {lang === 'ar' ? 'مجدّد' : lang === 'he' ? 'מחודש' : 'Refurbished'}
-                </option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {filteredShopProducts.map((p) => (
-              <div key={p.id} onMouseEnter={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }} onFocus={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}>
-                <ShopProductCard
-                  product={p}
-                  lang={lang}
-                  t={t}
-                  onViewProduct={onViewProduct}
-                  onViewProfile={onViewProfile}
-                  onAddToCart={handleAddToCart}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
+        <Suspense fallback={<div className="py-12 text-center text-slate-500 font-medium">{t.common.loading}</div>}>
+          <CustomerShopTab
+            lang={lang}
+            t={t}
+            filteredShopProducts={filteredShopProducts}
+            shopSearch={shopSearch}
+            setShopSearch={setShopSearch}
+            shopCategoryId={shopCategoryId}
+            shopConditionFilter={shopConditionFilter}
+            setShopConditionFilter={setShopConditionFilter}
+            categorySearch={categorySearch}
+            setCategorySearch={setCategorySearch}
+            expandedGroupId={expandedGroupId}
+            setExpandedGroupId={setExpandedGroupId}
+            showAllGroups={showAllGroups}
+            setShowAllGroups={setShowAllGroups}
+            onCategorySelect={handleCategorySelect}
+            onAddToCart={handleAddToCart}
+            onViewProduct={onViewProduct}
+            onViewProfile={onViewProfile}
+          />
+        </Suspense>
       )}
 
       {activeTab === 'cart' && (
-        <div className="max-w-4xl mx-auto space-y-6">
-           <h2 className="font-heading text-xl sm:text-2xl font-black text-palma-navy tracking-tight">{t.cart.title}</h2>
-           {cart.length === 0 ? (
-             <div className="dashboard-empty py-16">
-                <span className="text-4xl block mb-4 grayscale opacity-60">🛒</span>
-                <p className="text-slate-500 font-semibold text-sm">{t.cart.empty}</p>
-             </div>
-           ) : (
-             <div className="space-y-8">
-                <div className="space-y-4">
-                   {cart.length > 1 && (
-                     <div className="flex items-center justify-between mb-4">
-                       <button type="button" onClick={selectAllCart} className="text-xs font-bold text-palma-primary hover:underline">
-                         {lang === 'ar' ? 'تحديد الكل' : 'Select all'}
-                       </button>
-                       <span className="text-[10px] font-bold text-slate-500">
-                         {selectedCartItems.length} / {cart.length} {lang === 'ar' ? 'محدد' : 'selected'}
-                       </span>
-                     </div>
-                   )}
-                   {cart.map((item) => (
-                     <CartItemRow
-                       key={item.id}
-                       item={item}
-                       isSelected={selectedCartIds.has(item.id)}
-                       showCheckbox={cart.length > 1}
-                       onToggleSelection={toggleCartSelection}
-                       onUpdateQuantity={updateQuantity}
-                       onRemove={handleRemoveFromCart}
-                       lang={lang}
-                     />
-                   ))}
-                </div>
-                
-                <div className="bg-white border border-palma-border p-8 rounded-[2.5rem] shadow-card hover:shadow-card-hover transition-shadow flex flex-col md:flex-row justify-between items-center gap-8">
-                   <div className="space-y-1 text-center md:text-left rtl:md:text-right">
-                      <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t.cart.total}</p>
-                      <h3 className="text-4xl font-black text-palma-navy tracking-tight">₪{totalAmount}</h3>
-                      {cart.length > 1 && <p className="text-[10px] text-slate-500">{selectedCartItems.length} {lang === 'ar' ? 'منتج محدد' : 'items selected'}</p>}
-                   </div>
-                   <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                      <button
-                        onClick={() => {
-                          if (selectedCartItems.length === 0) return;
-                          onProceedToApiCheckout?.(selectedCartItems);
-                        }}
-                        disabled={selectedCartItems.length === 0}
-                        className="btn-primary w-full md:w-auto px-10 py-5 text-[11px] uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                         {lang === 'ar' ? 'متابعة للدفع' : 'Proceed to Checkout'}{' '}
-                         <ArrowRight className="w-4 h-4 rtl:rotate-180" />
-                      </button>
-                   </div>
-                </div>
-             </div>
-           )}
-        </div>
+        <Suspense fallback={<div className="py-12 text-center text-slate-500 font-medium">{t.common.loading}</div>}>
+          <CustomerCartTab
+            lang={lang}
+            t={t}
+            cart={cart}
+            selectedCartIds={selectedCartIds}
+            selectedCartItems={selectedCartItems}
+            totalAmount={totalAmount}
+            onToggleSelection={toggleCartSelection}
+            onSelectAll={selectAllCart}
+            onUpdateQuantity={updateQuantity}
+            onRemove={handleRemoveFromCart}
+            onProceedToCheckout={onProceedToApiCheckout}
+          />
+        </Suspense>
       )}
 
       {activeTab === 'orders' && (
-        <div className="max-w-4xl mx-auto space-y-8">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <h2 className="font-heading text-2xl font-black text-palma-navy tracking-tight">{t.nav.orders}</h2>
-            <button type="button" onClick={loadApiOrders} className="flex items-center gap-2 text-sm font-bold text-palma-primary hover:text-palma-navy transition-colors">
-              <RefreshCw className="w-4 h-4" /> {lang === 'ar' ? 'تحديث' : 'Refresh'}
-            </button>
-          </div>
-          {displayOrders.length === 0 ? (
-             <div className="bg-white p-16 rounded-[2.5rem] text-center border border-palma-border shadow-soft">
-                <p className="text-slate-400 font-bold text-sm">No orders found.</p>
-             </div>
-          ) : (
-            <div className="grid gap-6">
-              {(apiOrders.length > 0 ? [...displayOrders].reverse() : displayOrders.slice().reverse()).map(o => {
-                const orderStatus = (o.status || o.delivery_status || '').toUpperCase();
-                const isPending = orderStatus === 'PENDING';
-                const isCancelled = orderStatus === 'CANCELLED';
-                const isDelivered = orderStatus === 'DELIVERED';
-                const isApiOrder = apiOrders.some((ao) => ao.id === o.id);
-                const orderItemsFromApi = Array.isArray(o.order_items) ? o.order_items : [];
-                const orderItemsFromLocal = marketStore.getOrderItems().filter((oi) => oi.order_id === o.id);
-                const orderItems = orderItemsFromApi.length > 0 ? orderItemsFromApi : orderItemsFromLocal;
-                return (
-                <div key={o.id} className="dashboard-card overflow-hidden hover:shadow-md transition-all group">
-                   <div className="p-6 border-b border-slate-50 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
-                      <div className="flex items-center gap-3">
-                         <div className="p-2 bg-white rounded-xl border border-slate-100 shadow-sm"><Package className="w-5 h-5 text-palma-muted" /></div>
-                         <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Order Ref</p>
-                            <p className="text-xs font-mono font-bold text-slate-900">{o.id}</p>
-                         </div>
-                      </div>
-                      <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${isCancelled ? 'bg-red-50 text-red-600 border-red-100' : (isDelivered ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-blue-50 text-blue-600 border-blue-100')}`}>
-                        {mapFlashlineStatus(o.delivery_status || o.status)}
-                      </span>
-                   </div>
-                   
-                   <div className="p-6 sm:p-8 grid md:grid-cols-2 gap-8">
-                      <div className="space-y-4">
-                        {orderItems.length > 0 ? orderItems.map((item: OrderItem | CartItem, idx: number) => {
-                          const productId = item.product_id ?? item.productId;
-                          const prod = marketStore.getProducts().find((p) => p.id === productId);
-                          return (
-                            <div key={item.id || `oi-${idx}`} className="flex items-center gap-4">
-                               <div className="w-14 h-14 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden shrink-0">
-                                  <img src={prod?.images?.[0] || prod?.imageUrl || 'https://placehold.co/100x100?text=No+Image'} loading="lazy" className="w-full h-full object-cover" />
-                               </div>
-                               <div className="min-w-0">
-                                  <p className="text-xs font-bold text-slate-900 truncate mb-0.5">{prod?.name}</p>
-                                  <div className="flex items-center gap-2 mb-0.5">
-                                    <p className="text-[10px] font-medium text-slate-500">
-                                      Qty: {item.quantity} × ₪{item.price ?? item.price_ils ?? 0}
-                                    </p>
-                                    <ProductConditionBadge condition={prod?.condition || 'new'} lang={lang} />
-                                  </div>
-                               </div>
-                            </div>
-                          );
-                        }) : (
-                          <div className="text-sm font-bold text-slate-600">
-                            ₪{o.total_amount ?? o.amount ?? '—'} {o.shipping_address || o.address || ''}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 flex flex-col justify-center space-y-4">
-                         <div>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.checkout.address}</p>
-                            <p className="text-xs font-bold text-slate-700 leading-relaxed">
-                              {o.shippingAddress?.cityName || o.city || ''} - {o.shippingAddress?.villageName || ''}<br/>
-                              <span className="text-slate-500 font-medium">{o.shipping_address || o.shippingAddress?.addressDetails || o.address || ''}</span>
-                            </p>
-                         </div>
-                         {(o.delivery_id || o.shipmentId) && !isCancelled && !isDelivered && (
-                           <div className="bg-white rounded-xl p-4 border border-palma-primary/20 space-y-3">
-                             <p className="text-xs font-bold text-palma-navy">
-                               {lang === 'ar' ? 'يمكنك مراقبة حالة الشحن وتحديثها مباشرة من هنا.' : 'You can track and update your shipment status here.'}
-                             </p>
-                             <button
-                               type="button"
-                               onClick={() => handleCheckOrderStatus(o)}
-                               disabled={checkingStatusId === o.id}
-                               className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-palma-primary text-white hover:bg-palma-navy transition-all flex items-center justify-center gap-2 disabled:opacity-60"
-                             >
-                               {checkingStatusId === o.id ? (
-                                 <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> {lang === 'ar' ? 'جاري التحقق...' : 'Checking...'}</>
-                               ) : (
-                                 <><Truck className="w-4 h-4" /> {lang === 'ar' ? 'مراقبة حالة الطلب' : 'Track order status'}</>
-                               )}
-                             </button>
-                           </div>
-                         )}
-                         {isApiOrder && isPending && (
-                           <div className="pt-4 border-t border-slate-200">
-                             <button 
-                               onClick={() => handleCancelOrderApi(o.id)} 
-                               disabled={processingCancelId === o.id}
-                               className={`w-full py-2.5 rounded-xl text-[9px] font-black uppercase transition-all flex items-center justify-center gap-2 border ${
-                                 processingCancelId === o.id 
-                                  ? 'bg-slate-100 text-slate-400 border-transparent cursor-not-allowed' 
-                                  : 'bg-white text-red-500 border-red-100 hover:bg-red-50'
-                               }`}
-                             >
-                               {processingCancelId === o.id ? (
-                                 <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                               ) : (
-                                 <>{lang === 'ar' ? 'إلغاء الطلب' : 'Cancel Order'}</>
-                               )}
-                             </button>
-                           </div>
-                         )}
-                         {!isApiOrder && o.delivery_id && !isCancelled && !isDelivered && (
-                           <div className="pt-4 border-t border-slate-200">
-                             <button 
-                               onClick={() => setOrderToCancel(o)} 
-                               disabled={processingCancelId === o.id}
-                               className={`w-full py-2.5 rounded-xl text-[9px] font-black uppercase transition-all flex items-center justify-center gap-2 border ${
-                                 processingCancelId === o.id 
-                                  ? 'bg-slate-100 text-slate-400 border-transparent cursor-not-allowed' 
-                                  : 'bg-white text-red-500 border-red-100 hover:bg-red-50'
-                               }`}
-                             >
-                               {processingCancelId === o.id ? (
-                                 <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                               ) : (
-                                 <>Cancel Shipment</>
-                               )}
-                             </button>
-                           </div>
-                         )}
-                      </div>
-                   </div>
-                </div>
-              );})}
-            </div>
-          )}
-        </div>
+        <Suspense fallback={<div className="py-12 text-center text-slate-500 font-medium">{t.common.loading}</div>}>
+          <CustomerOrdersTab
+            lang={lang}
+            t={t}
+            displayOrders={displayOrders}
+            apiOrders={apiOrders}
+            onRefreshOrders={loadApiOrders}
+            processingCancelId={processingCancelId}
+            setCancelConfirmOrderId={setCancelConfirmOrderId}
+            setOrderToCancel={setOrderToCancel}
+            checkingStatusId={checkingStatusId}
+            onCheckOrderStatus={handleCheckOrderStatus}
+          />
+        </Suspense>
       )}
     </div>
   );

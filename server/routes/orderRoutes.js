@@ -10,6 +10,6 @@ router.post('/', optionalAuth, orderController.createOrder);
 router.patch('/:id/cancel', authenticate, orderController.cancelOrder);
 router.patch('/:id/invoice', authenticate, orderController.updateOrderInvoice);
 router.patch('/:id/complete', authenticate, requireRole('ADMIN'), orderController.completeOrder);
-router.get('/:id', orderController.getOrder);
+router.get('/:id', optionalAuth, orderController.getOrder);
 
 export default router;

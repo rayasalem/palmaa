@@ -10,6 +10,7 @@ import * as productService from './productService.js';
 import * as profitService from './profitService.js';
 import * as transactionService from './transactionService.js';
 import { createCardPayment as cybersourceCreateCardPayment } from './cybersourceClient.js';
+import logger from '../utils/logger.js';
 
 const ORDERS_TABLE = 'orders';
 const IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000;
@@ -32,7 +33,7 @@ async function updateOrderStatus(orderId, status) {
     .single();
 
   if (error) {
-    console.error('[paymentService] Update error:', error.message);
+    logger.error('paymentService Update error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };
@@ -73,7 +74,7 @@ async function decrementStockForOrder(orderId) {
     if (productId) {
       const { error } = await productService.decrementStock(productId, qty);
       if (error) {
-        console.error('[paymentService] decrementStock failed for product', productId, error.message);
+        logger.error('paymentService decrementStock failed', { productId, message: error.message });
       }
     }
   }
@@ -92,7 +93,7 @@ async function handlePaymentCallback(orderId, status, idempotencyKey) {
     await decrementStockForOrder(orderId);
     const { error: profitErr } = await profitService.recordProfitsForOrder(orderId);
     if (profitErr) {
-      console.error('[paymentService] recordProfitsForOrder error:', profitErr.message);
+      logger.error('paymentService recordProfitsForOrder error', { message: profitErr.message });
     }
     const { data: order } = await orderService.getOrderById(orderId);
     const totalAmount = (order && order.total_amount != null) ? order.total_amount : 0;
@@ -104,7 +105,7 @@ async function handlePaymentCallback(orderId, status, idempotencyKey) {
       isCash ? 'cash' : 'online',
       !!(order && order.invoice_uploaded)
     );
-    if (txErr) console.error('[paymentService] recordOrderSettlement error:', txErr.message);
+    if (txErr) logger.error('paymentService recordOrderSettlement error', { message: txErr.message });
   }
   if (idempotencyKey) {
     idempotencyCache.set(idempotencyKey, { result, at: Date.now() });
@@ -153,7 +154,7 @@ async function processCybersourceCardPayment(orderId, amount, currency, card) {
     decision = dec;
     transactionId = txId;
   } catch (err) {
-    console.error('[paymentService] Cybersource error:', err.message);
+    logger.error('paymentService Cybersource error', { message: err.message });
     decision = 'ERROR';
   }
 

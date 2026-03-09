@@ -304,8 +304,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
       } else if (isServerUnreachable) {
         friendly =
           lang === 'ar'
-            ? 'الخادم غير متصل أو الرابط غير صحيح. شغّل الباكند محلياً (مثلاً: npm run dev من مجلد server) وضبط VITE_API_URL=http://localhost:5000 في .env'
-            : 'Server not reachable or wrong API URL. Run the backend locally (e.g. npm run dev from server folder) and set VITE_API_URL=http://localhost:5000 in .env';
+            ? 'الخادم غير متصل أو الرابط غير صحيح. تحقق من الاتصال بالإنترنت أو راجع إعدادات الموقع.'
+            : 'Server not reachable or wrong address. Check your connection or site settings.';
       } else {
         friendly = msg || (lang === 'ar' ? 'خطأ في الاتصال' : 'Connection error');
       }

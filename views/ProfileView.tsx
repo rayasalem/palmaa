@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { User, Role, MerchantProfile, Product, PRODUCT_CATEGORIES } from '../types';
+import { User, Role, MerchantProfile, Product, PRODUCT_CATEGORIES, CATEGORY_EMOJI } from '../types';
 import { marketStore } from '../store';
 import { productService } from '../services/productService'; // Import Service
 import { Language, translations } from '../translations';
@@ -258,9 +258,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
                       value={productForm.category} 
                       onChange={e => setProductForm({...productForm, category: e.target.value})}
                     >
-                      <option value="" disabled>Select Category...</option>
+                      <option value="" disabled>{t.common.category}...</option>
                       {PRODUCT_CATEGORIES.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
+                        <option key={cat} value={cat}>{(CATEGORY_EMOJI[cat] || '') + ' ' + (t.categories[cat as keyof typeof t.categories] || cat)}</option>
                       ))}
                     </select>
                   </div>

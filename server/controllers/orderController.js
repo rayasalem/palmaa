@@ -1,9 +1,17 @@
 /**
- * Order controller: create order, get order by id. Validates body and uses try/catch.
- * Optional: req.auth (JWT) for customer_id; body.items for order line items.
+ * Order controller: create order, get order by id. Validates body and try/catch.
+ * GET /api/orders/:id: optionalAuth; access allowed for customer_id, merchant_id, ADMIN, or X-Order-Guest-Token (UUID v4).
+ * Response shape unchanged; guest_access_token is never returned.
  */
 
 import * as orderService from '../services/orderService.js';
+import logger from '../utils/logger.js';
+
+/** UUID v4 format (8-4-4-4-12 hex with version 4 and variant bits). */
+const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+function isUuidV4(s) {
+  return typeof s === 'string' && UUID_V4_REGEX.test(s.trim());
+}
 
 async function createOrder(req, res) {
   try {
@@ -45,12 +53,12 @@ async function createOrder(req, res) {
       payment_method: payment_method || 'COD',
     });
     if (error) {
-      console.error('[orderController] createOrder error:', error);
+      logger.error('orderController createOrder error', { message: error.message });
       return res.status(500).json({ success: false, error: error.message || 'Failed to create order' });
     }
     return res.status(201).json({ success: true, order: data });
   } catch (err) {
-    console.error('[orderController] createOrder unexpected:', err);
+    logger.error('orderController createOrder unexpected', { message: err.message });
     return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
   }
 }
@@ -58,12 +66,36 @@ async function createOrder(req, res) {
 async function getOrder(req, res) {
   try {
     const { id } = req.params;
-    if (!id) return res.status(400).json({ success: false, error: 'Order id is required' });
-    const { data, error } = await orderService.getOrderById(id);
-    if (error) return res.status(404).json({ success: false, error: error.message || 'Order not found' });
-    return res.status(200).json({ success: true, order: data });
+    if (!id || typeof id !== 'string' || id.trim().length === 0) {
+      return res.status(400).json({ success: false, error: 'Order id is required' });
+    }
+    const orderId = id.trim();
+    if (!isUuidV4(orderId)) {
+      return res.status(400).json({ success: false, error: 'Invalid order id format' });
+    }
+    const guestTokenRaw = req.get && req.get('X-Order-Guest-Token');
+    if (guestTokenRaw != null && guestTokenRaw.trim() !== '' && !isUuidV4(guestTokenRaw)) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+    const { data, error } = await orderService.getOrderById(orderId);
+    if (error || !data) return res.status(404).json({ success: false, error: 'Order not found' });
+
+    const userId = req.auth && req.auth.sub;
+    const role = req.auth && (req.auth.role || '').toUpperCase();
+    const isOwner = userId && (userId === data.customer_id || userId === data.merchant_id);
+    const isAdmin = role === 'ADMIN';
+    const guestToken = guestTokenRaw != null ? String(guestTokenRaw).trim() : '';
+    const guestTokenMatch = data.guest_access_token && guestToken &&
+      String(data.guest_access_token).toLowerCase() === guestToken.toLowerCase();
+
+    if (!isOwner && !isAdmin && !guestTokenMatch) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+
+    const { guest_access_token: _, ...orderForClient } = data;
+    return res.status(200).json({ success: true, order: orderForClient });
   } catch (err) {
-    console.error('[orderController] getOrder unexpected:', err);
+    logger.error('orderController getOrder unexpected', { message: err.message });
     return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
   }
 }
@@ -72,13 +104,16 @@ async function listMyOrders(req, res) {
   try {
     const customerId = req.auth && req.auth.sub;
     if (!customerId) return res.status(401).json({ success: false, error: 'Authentication required' });
-    const { data, error } = await orderService.getOrdersByCustomerId(customerId);
+    const limit = req.query.limit != null ? parseInt(req.query.limit, 10) : undefined;
+    const offset = req.query.offset != null ? parseInt(req.query.offset, 10) : undefined;
+    const opts = { limit: Number.isInteger(limit) ? limit : undefined, offset: Number.isInteger(offset) ? offset : undefined };
+    const { data, error } = await orderService.getOrdersByCustomerId(customerId, opts);
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to fetch orders' });
     }
     return res.status(200).json({ success: true, orders: data });
   } catch (err) {
-    console.error('[orderController] listMyOrders unexpected:', err);
+    logger.error('orderController listMyOrders unexpected', { message: err.message });
     return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
   }
 }
@@ -87,13 +122,16 @@ async function listMerchantOrders(req, res) {
   try {
     const merchantId = req.auth && req.auth.sub;
     if (!merchantId) return res.status(401).json({ success: false, error: 'Authentication required' });
-    const { data, error } = await orderService.getOrdersByMerchantId(merchantId);
+    const limit = req.query.limit != null ? parseInt(req.query.limit, 10) : undefined;
+    const offset = req.query.offset != null ? parseInt(req.query.offset, 10) : undefined;
+    const opts = { limit: Number.isInteger(limit) ? limit : undefined, offset: Number.isInteger(offset) ? offset : undefined };
+    const { data, error } = await orderService.getOrdersByMerchantId(merchantId, opts);
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to fetch orders' });
     }
     return res.status(200).json({ success: true, orders: data });
   } catch (err) {
-    console.error('[orderController] listMerchantOrders unexpected:', err);
+    logger.error('orderController listMerchantOrders unexpected', { message: err.message });
     return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
   }
 }
@@ -112,7 +150,7 @@ async function cancelOrder(req, res) {
     }
     return res.status(200).json({ success: true, order: data });
   } catch (err) {
-    console.error('[orderController] cancelOrder unexpected:', err);
+    logger.error('orderController cancelOrder unexpected:', err);
     return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
   }
 }
@@ -136,7 +174,7 @@ async function updateOrderInvoice(req, res) {
     if (error) return res.status(500).json({ success: false, error: error.message });
     return res.status(200).json({ success: true, order: updated });
   } catch (err) {
-    console.error('[orderController] updateOrderInvoice unexpected:', err);
+    logger.error('orderController updateOrderInvoice unexpected', { message: err.message });
     return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
   }
 }
@@ -149,7 +187,7 @@ async function completeOrder(req, res) {
     if (error) return res.status(400).json({ success: false, error: error.message });
     return res.status(200).json({ success: true, order: data });
   } catch (err) {
-    console.error('[orderController] completeOrder unexpected:', err);
+    logger.error('orderController completeOrder unexpected', { message: err.message });
     return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
   }
 }

@@ -5,6 +5,8 @@
  */
 
 import { supabase } from '../config/supabaseClient.js';
+import logger from '../utils/logger.js';
+import { parsePagination } from '../utils/pagination.js';
 
 const PRODUCTS_TABLE = 'products';
 
@@ -44,14 +46,17 @@ function attachMerchantNames(products, namesMap) {
   }));
 }
 
-async function getActiveProducts() {
-  const { data: products, error } = await supabase
+async function getActiveProducts(opts = {}) {
+  const { limit, offset } = parsePagination(opts);
+  let query = supabase
     .from(PRODUCTS_TABLE)
     .select('*')
     .or('status.eq.active,is_active.eq.true')
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+  const { data: products, error } = await query;
   if (error) {
-    console.error('[productService] getActiveProducts error:', error.message);
+    logger.error('productService getActiveProducts error', { message: error.message });
     return { data: [], error };
   }
   const list = products || [];
@@ -76,7 +81,7 @@ async function getProductById(id) {
     .eq('id', id)
     .single();
   if (error) {
-    console.error('[productService] getProductById error:', error.message);
+    logger.error('productService getProductById error', { message: error.message });
     return { data: null, error };
   }
   if (!data) return { data: null, error: null };
@@ -85,14 +90,16 @@ async function getProductById(id) {
   return { data: enriched, error: null };
 }
 
-async function getProductsByMerchantId(merchantId) {
+async function getProductsByMerchantId(merchantId, opts = {}) {
+  const { limit, offset } = parsePagination(opts);
   const { data, error } = await supabase
     .from(PRODUCTS_TABLE)
     .select('*')
     .eq('merchant_id', merchantId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
   if (error) {
-    console.error('[productService] getProductsByMerchantId error:', error.message);
+    logger.error('productService getProductsByMerchantId error', { message: error.message });
     return { data: [], error };
   }
   const list = data || [];
@@ -136,7 +143,7 @@ async function createProduct(merchantId, payload) {
     .select()
     .single();
   if (error) {
-    console.error('[productService] createProduct error:', error.message);
+    logger.error('productService createProduct error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };
@@ -180,7 +187,7 @@ async function updateProduct(productId, merchantId, payload) {
     .select()
     .single();
   if (error) {
-    console.error('[productService] updateProduct error:', error.message);
+    logger.error('productService updateProduct error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };
@@ -198,7 +205,7 @@ async function decrementStock(productId, quantity) {
     .eq('id', productId)
     .single();
   if (fetchErr || !product) {
-    console.error('[productService] decrementStock fetch error:', fetchErr && fetchErr.message);
+    logger.error('productService decrementStock fetch error', { message: fetchErr && fetchErr.message });
     return { error: fetchErr || { message: 'Product not found' } };
   }
   const currentStock = Number(product.stock) ?? 0;
@@ -208,7 +215,7 @@ async function decrementStock(productId, quantity) {
     .update({ stock: newStock, updated_at: new Date().toISOString() })
     .eq('id', productId);
   if (updateErr) {
-    console.error('[productService] decrementStock update error:', updateErr.message);
+    logger.error('productService decrementStock update error', { message: updateErr.message });
     return { error: updateErr };
   }
   return { error: null };
@@ -221,7 +228,7 @@ async function deleteProduct(productId, merchantId) {
     .eq('id', productId)
     .eq('merchant_id', merchantId);
   if (error) {
-    console.error('[productService] deleteProduct error:', error.message);
+    logger.error('productService deleteProduct error', { message: error.message });
     return { error };
   }
   return { error: null };

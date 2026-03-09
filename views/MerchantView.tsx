@@ -1,17 +1,20 @@
-
-import React, { useState, useEffect } from 'react';
-import { User, Product, Order, PRODUCT_CATEGORIES } from '../types';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
+import { User, Product, Order, PRODUCT_CATEGORIES, CATEGORY_EMOJI } from '../types';
 import { marketStore } from '../store';
-import { productService } from '../services/productService'; 
-import { storageService } from '../services/storageService'; // Updated import
+import { productService } from '../services/productService';
+import { storageService } from '../services/storageService';
 import { FlashLineService, cancelLogestechsShipment } from '../services/flashlineService';
 import { createShipmentApi, cancelShipmentApi, getShipmentStatusApi } from '../services/shipmentApi';
 import { fetchMerchantOrders, updateOrderInvoice } from '../services/checkoutApi';
 import { getMerchantDashboard, type MerchantDashboardResponse } from '../services/merchantDashboardService';
 import { translations, getAuthErrorMessage, type Language } from '../translations';
-import { Package, Truck, Plus, Trash2, Image as ImageIcon, Search, LayoutDashboard, DollarSign, Box, ExternalLink, XCircle, MoreHorizontal, Filter, AlertCircle, Edit, Eye, EyeOff, X, CreditCard, Receipt } from 'lucide-react';
+import { Truck, Trash2, Search, LayoutDashboard, DollarSign, Box, XCircle, Receipt } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
-import { ProductConditionBadge } from '../components/ProductConditionBadge';
+import { ConfirmModal } from '../components/ConfirmModal';
+
+const MerchantDashboardTab = lazy(() => import('./merchant/MerchantDashboardTab').then((m) => ({ default: m.MerchantDashboardTab })));
+const MerchantProductsTab = lazy(() => import('./merchant/MerchantProductsTab').then((m) => ({ default: m.MerchantProductsTab })));
+const MerchantOrdersTab = lazy(() => import('./merchant/MerchantOrdersTab').then((m) => ({ default: m.MerchantOrdersTab })));
 
 interface MerchantViewProps {
   user: User;
@@ -58,6 +61,9 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
   const [orderToInvoice, setOrderToInvoice] = useState<Order | null>(null);
   const [invoiceUrlInput, setInvoiceUrlInput] = useState('');
   const [uploadingInvoice, setUploadingInvoice] = useState(false);
+  const [productToDeactivate, setProductToDeactivate] = useState<Product | null>(null);
+  const [orderToCreateShipment, setOrderToCreateShipment] = useState<Order | null>(null);
+  const [orderToCancelShipment, setOrderToCancelShipment] = useState<Order | null>(null);
 
   useEffect(() => {
     if (user.role === 'MERCHANT') {
@@ -320,12 +326,8 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
   const handleToggleStatus = async (product: Product) => {
     const newStatus = !product.isActive;
     if (!newStatus) {
-    const msg = lang === 'ar'
-        ? `إلغاء تفعيل "${product.name || product.title || product.id}"؟ سيُخفى المنتج من المتجر.`
-        : lang === 'he'
-        ? `לבטל "${product.name || product.title || product.id}"? המוצר יוסתר מהחנות.`
-        : `Deactivate "${product.name || product.title || product.id}"? The product will be hidden from the store.`;
-    if (!window.confirm(msg)) return;
+      setProductToDeactivate(product);
+      return;
     }
     const res = await productService.update(product.id, { isActive: newStatus });
     if (res.success) {
@@ -337,8 +339,28 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
     }
   };
 
-  const createShipment = async (order: Order) => {
-    if (!window.confirm(t.common.confirmGen)) return;
+  const doDeactivateProduct = async () => {
+    const product = productToDeactivate;
+    if (!product) return;
+    setProductToDeactivate(null);
+    const res = await productService.update(product.id, { isActive: false });
+    if (res.success) {
+      setProducts(prev => prev.map(p => p.id === product.id ? { ...p, isActive: false } : p));
+      showToast(lang === 'ar' ? 'تم إلغاء تفعيل المنتج' : lang === 'he' ? 'המוצר בוטל' : 'Product Deactivated', 'success');
+    } else {
+      const errMsg = getAuthErrorMessage(res.error || '', lang) || (lang === 'ar' ? 'فشل التحديث' : lang === 'he' ? 'העדכון נכשל' : 'Update failed');
+      showToast(errMsg, 'error');
+    }
+  };
+
+  const createShipment = (order: Order) => {
+    setOrderToCreateShipment(order);
+  };
+
+  const doCreateShipment = async () => {
+    const order = orderToCreateShipment;
+    if (!order) return;
+    setOrderToCreateShipment(null);
     setLoading(true);
     try {
       const addr = order.shippingAddress;
@@ -411,10 +433,18 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
     }
   };
 
-  const handleCancelShipment = async (order: Order) => {
+  const handleCancelShipment = (order: Order) => {
     const sid = order.shipmentId || order.delivery_id;
     if (!sid) return;
-    if (!window.confirm(t.common.cancelWarning)) return;
+    setOrderToCancelShipment(order);
+  };
+
+  const doCancelShipment = async () => {
+    const order = orderToCancelShipment;
+    if (!order) return;
+    const sid = order.shipmentId || order.delivery_id;
+    setOrderToCancelShipment(null);
+    if (!sid) return;
     setLoading(true);
     try {
       const apiRes = await cancelShipmentApi(String(sid));
@@ -501,27 +531,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
     }
   };
 
-  const StatCard = ({ title, value, icon: Icon, color, trend }: any) => (
-    <div className="dashboard-stat-card flex flex-col justify-between min-h-[140px] group">
-      <div className="absolute -right-4 -top-4 p-3 opacity-[0.06] group-hover:opacity-[0.1] transition-opacity">
-        <Icon className="w-20 h-20 text-palma-navy" />
-      </div>
-      <div className="flex justify-between items-start z-10">
-        <div className={`p-2.5 rounded-xl ${color} text-white shadow-sm`}>
-          <Icon className="w-5 h-5" />
-        </div>
-        {trend && (
-          <span className="bg-emerald-50 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-emerald-100">
-            ↗ {trend}
-          </span>
-        )}
-      </div>
-      <div className="z-10">
-        <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">{title}</h3>
-        <p className="text-2xl font-black text-palma-navy tracking-tight">{value}</p>
-      </div>
-    </div>
-  );
+  const tabFallback = <div className="p-8 text-center"><div className="w-8 h-8 border-4 border-slate-200 border-t-palma-primary rounded-full animate-spin mx-auto" /></div>;
 
   return (
     <>
@@ -556,409 +566,51 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
 
       {/* Content */}
       {activeTab === 'dashboard' && (
-        <div className="space-y-6">
-          {/* التاجر: الاشتراك داخل المنصة مجاني دائماً؛ لا نعرض رسالة انتهاء اشتراك */}
-          {dashboardData && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard title={lang === 'ar' ? 'إجمالي المبيعات' : lang === 'he' ? 'סה"כ מכירות' : 'Total sales'} value={`₪${(dashboardData.stats.total_sales || 0).toLocaleString()}`} icon={DollarSign} color="bg-palma-primary" />
-              <StatCard title={t.common.commission} value={`₪${(dashboardData.stats.total_commission || 0).toLocaleString()}`} icon={Receipt} color="bg-blue-600" />
-              <StatCard title={lang === 'ar' ? 'خصم ضريبي' : lang === 'he' ? 'קנס מס' : 'Tax penalty'} value={`₪${(dashboardData.stats.total_tax_penalty || 0).toLocaleString()}`} icon={Receipt} color="bg-amber-600" />
-              <StatCard title={lang === 'ar' ? 'صافي الأرباح' : lang === 'he' ? 'רווח נקי' : 'Net profit'} value={`₪${(dashboardData.stats.net_profit || 0).toLocaleString()}`} icon={CreditCard} color="bg-emerald-600" />
-            </div>
-          )}
-          {dashboardData?.subscription && (
-            <div className="dashboard-card dashboard-card-body hover:shadow-sm transition-shadow">
-              <h3 className="text-sm font-black text-palma-navy uppercase tracking-wider mb-2">
-                {lang === 'ar'
-                  ? 'اشتراك التاجر'
-                  : lang === 'he'
-                  ? 'מנוי סוחר'
-                  : 'Merchant subscription'}
-              </h3>
-              <p className="text-sm text-slate-600">
-                {lang === 'ar'
-                  ? 'اشتراكك في المنصة مجاني دائماً، ولا توجد أي رسوم اشتراك شهرية للتاجر.'
-                  : lang === 'he'
-                  ? 'המנוי שלך בפלטפורמה חינמי לחלוטין – ללא דמי מנוי חודשיים לסוחר.'
-                  : 'Your merchant account on the platform is always free – no monthly subscription fees.'}
-              </p>
-            </div>
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-             <StatCard 
-               title={t.common.totalRevenue} 
-               value={`${orders.reduce((acc, o) => acc + (o.totalAmount || 0), 0).toLocaleString()} ₪`}
-               icon={DollarSign}
-               color="bg-palma-primary"
-               trend="12%"
-             />
-             <StatCard 
-               title={t.common.pendingOrders} 
-               value={orders.filter(o => o.status === 'PENDING').length}
-               icon={Truck}
-               color="bg-blue-600"
-             />
-             <StatCard 
-               title={t.common.totalInventory} 
-               value={products.length}
-               icon={Package}
-               color="bg-purple-600"
-             />
-          </div>
-        </div>
+        <Suspense fallback={tabFallback}>
+          <MerchantDashboardTab lang={lang} t={t} dashboardData={dashboardData} orders={orders} products={products} />
+        </Suspense>
       )}
-
       {activeTab === 'products' && (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-          {/* Add/Edit Product Form */}
-          <div className="xl:col-span-1">
-            {dashboardData && !dashboardData.subscription.is_active && !isEditing && (
-              <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 text-sm">
-                {lang === 'ar' ? 'لا يمكن إضافة منتجات جديدة حتى تجديد الاشتراك.' : lang === 'he' ? 'לא ניתן להוסיף מוצרים עד לחידוש המנוי.' : 'You cannot add new products until you renew your subscription.'}
-              </div>
-            )}
-            <div className="dashboard-card dashboard-card-body max-xl:static xl:sticky xl:top-28 transition-all">
-              <div className="flex items-center justify-between gap-4 mb-6">
-                 <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-palma-navy rounded-xl text-white shadow-lg shadow-soft">
-                      {isEditing ? <Edit className="w-5 h-5"/> : <Plus className="w-5 h-5" />}
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-black text-palma-navy leading-none">{isEditing ? (lang === 'ar' ? 'تعديل منتج' : lang === 'he' ? 'עריכת מוצר' : 'Edit Product') : t.common.addProduct}</h3>
-                        <p className="text-[10px] text-palma-muted font-bold mt-1 uppercase tracking-wider">{t.common.createListing}</p>
-                    </div>
-                 </div>
-                 {isEditing && (
-                   <button onClick={resetForm} className="text-xs text-red-500 font-bold hover:underline">{t.common.cancel}</button>
-                 )}
-              </div>
-              
-              <form onSubmit={handleProductSubmit} className="space-y-5">
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{t.common.productName} *</label>
-                  <input required className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 transition shadow-sm" placeholder="e.g. Premium Cotton Shirt" value={productForm.name} onChange={e => setProductForm({...productForm, name: e.target.value})} />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{t.common.price} *</label>
-                    <div className="relative">
-                      <input type="number" required className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 pl-10 text-sm font-bold outline-none focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 transition shadow-sm" value={productForm.price || ''} onChange={e => setProductForm({...productForm, price: parseFloat(e.target.value)})} />
-                      <span className="absolute left-4 top-3 text-slate-400 text-sm font-bold">₪</span>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{t.common.stock} *</label>
-                    <input type="number" required className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 transition shadow-sm" value={productForm.stock || ''} onChange={e => setProductForm({...productForm, stock: parseInt(e.target.value)})} />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
-                    {lang === 'ar'
-                      ? 'حالة المنتج'
-                      : lang === 'he'
-                      ? 'סטטוס המוצר'
-                      : 'Product condition'}{' '}
-                    *
-                  </label>
-                  <select
-                    required
-                    className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 transition shadow-sm appearance-none cursor-pointer"
-                    value={productForm.condition || 'new'}
-                    onChange={(e) => setProductForm({ ...productForm, condition: e.target.value })}
-                  >
-                    <option value="new">
-                      {lang === 'ar' ? 'جديد' : lang === 'he' ? 'חדש' : 'New'}
-                    </option>
-                    <option value="used_like_new">
-                      {lang === 'ar' ? 'مستعمل – كالجديد' : lang === 'he' ? 'משומש – כמו חדש' : 'Used – Like New'}
-                    </option>
-                    <option value="used_good">
-                      {lang === 'ar' ? 'مستعمل – حالة جيدة' : lang === 'he' ? 'משומש – מצב טוב' : 'Used – Good'}
-                    </option>
-                    <option value="refurbished">
-                      {lang === 'ar' ? 'مجدّد' : lang === 'he' ? 'מחודש' : 'Refurbished'}
-                    </option>
-                  </select>
-                </div>
-
-                <div>
-                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{t.common.category} *</label>
-                   <select 
-                     required 
-                     className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 transition shadow-sm appearance-none cursor-pointer" 
-                     value={productForm.category} 
-                     onChange={e => setProductForm({...productForm, category: e.target.value})}
-                   >
-                      <option value="" disabled>{t.common.category}...</option>
-                      {PRODUCT_CATEGORIES.map(cat => (
-                        <option key={cat} value={cat}>{t.categories[cat as keyof typeof t.categories] || cat}</option>
-                      ))}
-                   </select>
-                </div>
-
-                <div>
-                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{t.common.description}</label>
-                   <textarea required className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium outline-none focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 transition shadow-sm resize-none" rows={3} value={productForm.description} onChange={e => setProductForm({...productForm, description: e.target.value})} />
-                </div>
-                
-                {/* Image Upload Area – use <label> so tap opens file picker on mobile (no programmatic click()) */}
-                <div>
-                    <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
-                      {t.product.image} (Max 5) *
-                    </span>
-                    <p className="text-[10px] text-slate-400 mb-2">
-                      {lang === 'ar'
-                        ? 'مسموح حتى ٥ صور، كل صورة أقل من ٢ ميجا وبصيغة JPG أو PNG أو WebP.'
-                        : lang === 'he'
-                        ? 'ניתן להעלות עד 5 תמונות, כל תמונה עד 2MB בפורמט JPG, PNG או WebP.'
-                        : 'You can upload up to 5 images, each under 2MB in JPG, PNG, or WebP format.'}
-                    </p>
-                    <input
-                      id="merchant-product-file-upload"
-                      type="file"
-                      multiple
-                      className="sr-only"
-                      accept="image/jpeg,image/png,image/webp,image/*"
-                      onChange={e => {
-                        const files = e.target.files;
-                        if (files && files.length > 0) setUploadQueue(Array.from(files).slice(0, 5));
-                        e.target.value = '';
-                      }}
-                    />
-                    <label
-                      htmlFor="merchant-product-file-upload"
-                      className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-6 min-h-[120px] sm:min-h-0 text-center hover:bg-slate-50 hover:border-palma-primary/50 active:bg-palma-primaryLight/30 transition cursor-pointer group"
-                    >
-                       <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center mx-auto mb-2 text-palma-muted group-hover:bg-white group-hover:text-palma-primary group-hover:shadow-md transition-all">
-                         <ImageIcon className="w-5 h-5" />
-                       </div>
-                       <p className="text-[10px] font-bold text-slate-400 group-hover:text-palma-navy transition-colors">
-                         {uploadQueue.length > 0 ? `${uploadQueue.length} ${t.common.filesSelected}` : t.common.uploadHint}
-                       </p>
-                    </label>
-                    {/* Existing Images Preview */}
-                    {productForm.images && productForm.images.length > 0 && (
-                        <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
-                            {productForm.images.map((url, idx) => (
-                                <div key={idx} className="w-16 h-16 rounded-lg overflow-hidden border border-slate-200 relative group shrink-0">
-                                    <img src={url} loading="lazy" className="w-full h-full object-cover" />
-                                    <button type="button" onClick={(ev) => { ev.preventDefault(); handleRemoveImage(idx); }} className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-bl-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition touch-manipulation" aria-label={lang === 'ar' ? 'حذف الصورة' : 'Remove image'}><X className="w-3.5 h-3.5" /></button>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                <button type="submit" disabled={loading || (!isEditing && !!dashboardData && !dashboardData.subscription.is_active)} className="btn-primary w-full py-4 text-xs uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-2.5 disabled:opacity-50">
-                   {isUploading ? (
-                     <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/> {t.common.uploading}</>
-                   ) : (
-                     <>{isEditing ? t.common.save : t.common.addProduct}</>
-                   )}
-                </button>
-              </form>
-            </div>
-          </div>
-
-          {/* Product List */}
-          <div className="xl:col-span-2">
-             <div className="bg-white rounded-3xl shadow-card border border-palma-border overflow-hidden flex flex-col h-full hover:shadow-card-hover transition-shadow">
-                <div className="p-6 sm:p-8 border-b border-slate-100 flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-palma-soft rounded-lg"><Box className="w-5 h-5 text-palma-navy" /></div>
-                    <h3 className="font-bold text-palma-navy text-lg">{t.common.inventory}</h3>
-                  </div>
-                  <span className="text-[10px] font-black text-palma-primary bg-palma-primary/5 px-3 py-2 rounded-lg border border-palma-primary/10 whitespace-nowrap">{products.length} {t.common.items}</span>
-                </div>
-                
-                {loading && products.length === 0 ? (
-                    <div className="p-12 text-center">
-                        <div className="w-8 h-8 border-4 border-slate-200 border-t-palma-primary rounded-full animate-spin mx-auto"></div>
-                    </div>
-                ) : products.length === 0 ? (
-                  <div className="flex-1 flex flex-col items-center justify-center p-12 text-center opacity-60">
-                     <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                        <Package className="w-8 h-8 text-slate-300" />
-                     </div>
-                     <p className="font-bold text-palma-navy text-base mb-1">{t.common.yourInventoryEmpty}</p>
-                     <p className="text-xs text-slate-400">{t.common.addFirstProduct}</p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-slate-50 overflow-y-auto max-h-[800px] p-2">
-                    {products.map(product => (
-                      <div key={product.id} className="p-3 sm:p-4 rounded-2xl flex items-center gap-4 sm:gap-6 hover:bg-slate-50 transition-colors group">
-                          <div 
-                            className={`h-16 w-16 sm:h-20 sm:w-20 rounded-xl overflow-hidden border border-slate-100 shrink-0 relative shadow-sm cursor-pointer ${!product.isActive ? 'grayscale' : ''}`}
-                            onClick={() => onViewProduct && onViewProduct(product.id)}
-                          >
-                            <img src={product.images?.[0] || product.imageUrl || product.image_url || 'https://placehold.co/200x200?text=No+Image'} loading="lazy" className="h-full w-full object-cover" />
-                            {!product.isActive && <div className="absolute inset-0 bg-black/10 flex items-center justify-center"><EyeOff className="text-white w-6 h-6 drop-shadow-md"/></div>}
-                          </div>
-                          
-                          <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-4 gap-4 items-center">
-                            <div className="sm:col-span-2">
-                              <h4 
-                                className="font-bold text-palma-navy text-sm sm:text-base truncate mb-1 cursor-pointer hover:text-palma-primary"
-                                onClick={() => onViewProduct && onViewProduct(product.id)}
-                              >
-                                {product.name}
-                              </h4>
-                              <div className="flex flex-wrap items-center gap-2">
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">
-                                  {t.categories[product.category as keyof typeof t.categories] || product.category}
-                                </p>
-                                <ProductConditionBadge condition={product.condition || 'new'} lang={lang} />
-                              </div>
-                            </div>
-                            
-                            <div className="flex flex-col sm:items-center">
-                               <span className="text-sm sm:text-base font-black text-palma-navy">{product.price || product.price_ils} ₪</span>
-                               <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md mt-1 inline-flex ${product.stock > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
-                                 {product.stock > 0 ? `${product.stock} ${t.common.available}` : t.common.outOfStock}
-                               </span>
-                            </div>
-
-                            <div className="flex justify-end items-center gap-1 sm:gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                              {onViewProduct && (
-                                <button type="button" onClick={(e) => { e.stopPropagation(); onViewProduct(product.id); }} className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 p-2.5 sm:p-2 flex items-center justify-center text-slate-300 hover:text-palma-primary hover:bg-white rounded-xl transition shadow-sm border border-transparent hover:border-slate-100 touch-manipulation" title={lang === 'ar' ? 'عرض التفاصيل' : lang === 'he' ? 'צפה בפרטים' : 'View details'}>
-                                  <ExternalLink className="w-4 h-4 sm:w-4 sm:h-4" />
-                                </button>
-                              )}
-                              <button type="button" onClick={(e) => { e.stopPropagation(); handleToggleStatus(product); }} className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 p-2.5 sm:p-2 flex items-center justify-center text-slate-300 hover:text-palma-navy hover:bg-white rounded-xl transition shadow-sm border border-transparent hover:border-slate-100 touch-manipulation" title={product.isActive ? (lang === 'ar' ? 'إلغاء التفعيل' : lang === 'he' ? 'בטל הפעלה' : 'Deactivate') : (lang === 'ar' ? 'تفعيل' : lang === 'he' ? 'הפעל' : 'Activate')}>
-                                {product.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                              </button>
-                              <button type="button" onClick={(e) => { e.stopPropagation(); handleEditClick(product); }} className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 p-2.5 sm:p-2 flex items-center justify-center text-slate-300 hover:text-blue-500 hover:bg-white rounded-xl transition shadow-sm border border-transparent hover:border-slate-100 touch-manipulation" title={t.common.edit}>
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteProduct(product.id, product.name || product.title); }} className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 p-2.5 sm:p-2 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-white rounded-xl transition shadow-sm border border-transparent hover:border-slate-100 touch-manipulation" title={t.common.delete}>
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-             </div>
-          </div>
-        </div>
+        <Suspense fallback={tabFallback}>
+          <MerchantProductsTab
+            lang={lang}
+            t={t}
+            dashboardData={dashboardData}
+            products={products}
+            productForm={productForm}
+            setProductForm={setProductForm}
+            loading={loading}
+            isEditing={isEditing}
+            resetForm={resetForm}
+            handleProductSubmit={handleProductSubmit}
+            handleRemoveImage={handleRemoveImage}
+            uploadQueue={uploadQueue}
+            setUploadQueue={setUploadQueue}
+            isUploading={isUploading}
+            tagsInput={tagsInput}
+            setTagsInput={setTagsInput}
+            handleEditClick={handleEditClick}
+            handleToggleStatus={handleToggleStatus}
+            handleDeleteProduct={handleDeleteProduct}
+            onViewProduct={onViewProduct}
+          />
+        </Suspense>
       )}
-
-      {/* Orders Tab - remains the same */}
       {activeTab === 'orders' && (
-         <div className="bg-white rounded-3xl shadow-card border border-palma-border overflow-hidden hover:shadow-card-hover transition-shadow">
-            <div className="p-6 sm:p-8 border-b border-slate-100 flex justify-between items-center bg-white">
-               <h3 className="font-black text-palma-navy text-lg sm:text-xl">{t.common.recentOrders}</h3>
-               <button type="button" onClick={() => refreshData()} disabled={loading} className="text-[10px] font-bold text-palma-primary hover:bg-palma-primaryLight flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-palma-border transition-colors disabled:opacity-50">
-                 {loading ? (lang === 'ar' ? 'جاري التحميل...' : 'Loading...') : (lang === 'ar' ? 'تحديث الطلبات' : 'Refresh orders')}
-               </button>
-            </div>
-            <div className="px-6 sm:px-8 pt-4 pb-2">
-              <div className="bg-palma-primaryLight/40 border border-palma-primary/20 rounded-2xl p-4 text-center">
-                <p className="text-sm font-bold text-palma-navy mb-1">
-                  {lang === 'ar' ? 'يمكنك مراقبة حالة الشحن وتحديثها لكل طلب من زر «مراقبة حالة الطلب» في عمود الإجراءات.' : lang === 'he' ? 'ניתן לעקוב אחר סטטוס המשלוח ולעדכן אותו מכפתור «מעקב סטטוס» בעמודת הפעולות.' : 'You can track and update shipment status for each order using the "Track order status" button in the actions column.'}
-                </p>
-                <p className="text-[11px] text-slate-600">
-                  {lang === 'ar' ? 'بعد إنشاء الشحنة يظهر الزر لمراقبة الحالة أو إلغاء الشحن.' : 'After creating a shipment, the button appears to check status or cancel.'}
-                </p>
-              </div>
-            </div>
-            <div className="overflow-x-auto">
-              {orders.length === 0 ? (
-                  <div className="p-16 text-center">
-                    <p className="text-slate-400 font-bold text-sm mb-2">{lang === 'ar' ? 'لا توجد طلبات حتى الآن.' : 'No orders yet.'}</p>
-                    <p className="text-[11px] text-slate-400">{lang === 'ar' ? 'ستظهر هنا الطلبات المرتبطة بمتجرك فور وصولها.' : 'Orders for your store will appear here when they come in.'}</p>
-                  </div>
-              ) : (
-                  <table className="min-w-full text-left rtl:text-right whitespace-nowrap">
-                    <thead className="bg-slate-50/80">
-                        <tr>
-                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.common.orderDetails}</th>
-                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.common.customerInfo}</th>
-                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.common.amount}</th>
-                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.common.status}</th>
-                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">{lang === 'ar' ? 'الفاتورة' : 'Invoice'}</th>
-                          <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.common.actions}</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
-                        {orders.map(order => (
-                          <tr key={order.id} className="hover:bg-slate-50/50 transition-colors group">
-                              <td className="px-6 py-4">
-                                <span className="block text-xs font-bold text-palma-navy font-mono mb-0.5">{order.id}</span>
-                                <div className="text-[10px] font-medium text-slate-400">{order.date ? new Date(order.date).toLocaleDateString() : 'Just now'}</div>
-                              </td>
-                              <td className="px-6 py-4">
-                                <div className="flex items-center gap-3">
-                                   <div className="w-8 h-8 rounded-full bg-palma-soft flex items-center justify-center text-xs font-black text-palma-navy border border-slate-100">
-                                      {order.shippingAddress?.cityName.charAt(0)}
-                                    </div>
-                                   <div>
-                                      <div className="text-xs font-bold text-palma-navy">{order.shippingAddress?.cityName}</div>
-                                      <div className="text-[10px] text-slate-400 font-mono">{order.shipping_phone}</div>
-                                   </div>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-xs font-black text-emerald-600">{order.totalAmount} ₪</td>
-                              <td className="px-6 py-4">
-                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                                    ['SHIPPED', 'DELIVERED'].includes(order.status) ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 
-                                    order.status === 'CANCELLED' ? 'bg-red-50 text-red-600 border border-red-100' : 
-                                    'bg-amber-50 text-amber-600 border border-amber-100'
-                                }`}>
-                                    {order.status.toLowerCase()}
-                                </span>
-                                {order.delivery_status && (
-                                  <div className="text-[9px] font-bold text-slate-400 mt-1.5 flex items-center gap-1.5">
-                                    <Truck className="w-3 h-3 text-palma-primary" />
-                                    {FlashLineService.mapFlashlineStatus(order.delivery_status)}
-                                  </div>
-                                )}
-                              </td>
-                              <td className="px-6 py-4">
-                                {order.payment_method === 'online' ? (
-                                  order.invoice_uploaded && order.invoice_file_url ? (
-                                    <a href={order.invoice_file_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 hover:underline">
-                                      <Receipt className="w-3.5 h-3.5" /> {lang === 'ar' ? 'مرفوعة — عرض' : 'Uploaded — View'}
-                                    </a>
-                                  ) : (
-                                    <button type="button" onClick={() => { setOrderToInvoice(order); setInvoiceUrlInput(''); }} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition">
-                                      <Receipt className="w-3.5 h-3.5" /> {lang === 'ar' ? 'رفع الفاتورة' : 'Upload invoice'}
-                                    </button>
-                                  )
-                                ) : (
-                                  <span className="text-[10px] text-slate-400">—</span>
-                                )}
-                              </td>
-                              <td className="px-6 py-4">
-                                <div className="flex items-center gap-2">
-                                  {order.status === 'PENDING' && (
-                                      <button onClick={() => createShipment(order)} disabled={loading} className="bg-palma-navy text-white px-3 py-1.5 rounded-lg text-[9px] font-bold hover:bg-palma-primary transition shadow-sm flex items-center gap-1.5">
-                                        <Truck className="w-3 h-3" /> {t.common.ship}
-                                      </button>
-                                  )}
-                                  {(order.shipmentId || order.delivery_id) && order.status !== 'CANCELLED' && (
-                                    <>
-                                      <button onClick={() => handleCheckStatus(order)} disabled={loading} className="inline-flex items-center gap-1.5 px-3 py-2 text-[10px] font-bold text-palma-primary hover:bg-palma-primaryLight rounded-xl border border-palma-primary/30 bg-white shadow-sm transition" title={t.common.checkStatus}>
-                                          <Search className="w-3.5 h-3.5" />
-                                          {lang === 'ar' ? 'مراقبة حالة الطلب' : 'Track status'}
-                                      </button>
-                                      <button onClick={() => handleCancelShipment(order)} disabled={loading} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition border border-transparent hover:border-red-100 bg-white shadow-sm" title={t.common.cancelShipment}>
-                                          <XCircle className="w-3.5 h-3.5" />
-                                      </button>
-                                    </>
-                                  )}
-                                </div>
-                              </td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-              )}
-            </div>
-         </div>
+        <Suspense fallback={tabFallback}>
+          <MerchantOrdersTab
+            lang={lang}
+            t={t}
+            orders={orders}
+            loading={loading}
+            refreshData={refreshData}
+            setOrderToInvoice={setOrderToInvoice}
+            setInvoiceUrlInput={setInvoiceUrlInput}
+            createShipment={createShipment}
+            handleCheckStatus={handleCheckStatus}
+            handleCancelShipment={handleCancelShipment}
+          />
+        </Suspense>
       )}
     </div>
 
@@ -1001,6 +653,48 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
           </div>
         </div>
       )}
+
+      {/* مودال تأكيد إلغاء التفعيل — بدل نافذة المتصفح */}
+      <ConfirmModal
+        isOpen={!!productToDeactivate}
+        title={lang === 'ar' ? 'إلغاء تفعيل المنتج' : lang === 'he' ? 'ביטול הפעלת מוצר' : 'Deactivate product'}
+        message={productToDeactivate
+          ? (lang === 'ar'
+            ? `سيُخفى «${productToDeactivate.name || productToDeactivate.title || productToDeactivate.id}» من المتجر.`
+            : lang === 'he'
+            ? `"${productToDeactivate.name || productToDeactivate.title || productToDeactivate.id}" יוסתר מהחנות.`
+            : `"${productToDeactivate.name || productToDeactivate.title || productToDeactivate.id}" will be hidden from the store.`)
+          : ''}
+        confirmLabel={lang === 'ar' ? 'نعم، إلغاء التفعيل' : lang === 'he' ? 'בטל הפעלה' : 'Yes, deactivate'}
+        cancelLabel={t.common.cancel}
+        onConfirm={doDeactivateProduct}
+        onCancel={() => setProductToDeactivate(null)}
+        variant="warning"
+      />
+
+      {/* مودال تأكيد إنشاء الشحنة */}
+      <ConfirmModal
+        isOpen={!!orderToCreateShipment}
+        title={lang === 'ar' ? 'إنشاء شحنة' : lang === 'he' ? 'יצירת משלוח' : 'Create shipment'}
+        message={t.common.confirmGen}
+        confirmLabel={lang === 'ar' ? 'نعم، إنشاء' : lang === 'he' ? 'צור משלוח' : 'Yes, create'}
+        cancelLabel={t.common.cancel}
+        onConfirm={doCreateShipment}
+        onCancel={() => setOrderToCreateShipment(null)}
+        variant="primary"
+      />
+
+      {/* مودال تأكيد إلغاء الشحنة */}
+      <ConfirmModal
+        isOpen={!!orderToCancelShipment}
+        title={lang === 'ar' ? 'إلغاء الشحنة' : lang === 'he' ? 'ביטול משלוח' : 'Cancel shipment'}
+        message={t.common.cancelWarning}
+        confirmLabel={lang === 'ar' ? 'نعم، إلغاء الشحنة' : lang === 'he' ? 'בטל משלוח' : 'Yes, cancel'}
+        cancelLabel={t.common.cancel}
+        onConfirm={doCancelShipment}
+        onCancel={() => setOrderToCancelShipment(null)}
+        variant="danger"
+      />
 
       {/* Modal تأكيد حذف المنتج */}
       {productToDelete && (

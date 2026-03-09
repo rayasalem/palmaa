@@ -64,7 +64,7 @@ const ComingSoonHero: React.FC<Props> = ({ lang, onStartNow, onExploreProducts }
           <div className={`flex flex-col sm:flex-row gap-3 sm:gap-4 ${isAr ? 'sm:flex-row-reverse lg:justify-end' : ''}`}>
             <button
               onClick={onStartNow}
-              className="group inline-flex items-center justify-center gap-2 bg-palma-primary hover:bg-palma-primaryHover text-white font-bold px-6 py-3.5 sm:px-8 sm:py-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm uppercase tracking-wider shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 w-full sm:w-auto"
+              className="group inline-flex items-center justify-center gap-2 bg-palma-primary hover:bg-palma-primaryHover text-white font-bold min-h-[48px] sm:min-h-[52px] px-6 py-3.5 sm:px-8 sm:py-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm uppercase tracking-wider shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 w-full sm:w-auto"
             >
               <ArrowLeft className={`w-4 h-4 shrink-0 ${isAr ? 'rotate-180' : ''}`} />
               <span>{lang === 'ar' ? 'انضم لبالما' : lang === 'he' ? 'הצטרף לפלמה' : 'Join Palma'}</span>
@@ -73,7 +73,7 @@ const ComingSoonHero: React.FC<Props> = ({ lang, onStartNow, onExploreProducts }
               onClick={onExploreProducts}
               onMouseEnter={() => prefetchComponent('PublicCatalog')}
               onFocus={() => prefetchComponent('PublicCatalog')}
-              className="inline-flex items-center justify-center gap-2 bg-white border-2 border-slate-300 text-slate-700 font-bold px-6 py-3.5 sm:px-8 sm:py-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm uppercase tracking-wider hover:border-palma-primary hover:text-palma-primary hover:bg-palma-primaryLight/30 transition-all duration-300 w-full sm:w-auto"
+              className="inline-flex items-center justify-center gap-2 bg-white border-2 border-slate-300 text-slate-700 font-bold min-h-[48px] sm:min-h-[52px] px-6 py-3.5 sm:px-8 sm:py-4 rounded-xl sm:rounded-2xl text-xs sm:text-sm uppercase tracking-wider hover:border-palma-primary hover:text-palma-primary hover:bg-palma-primaryLight/30 transition-all duration-300 w-full sm:w-auto"
             >
               <ShoppingBag className="w-4 h-4 shrink-0" />
               <span>{isAr ? 'تصفّح المنتجات' : 'Browse products'}</span>

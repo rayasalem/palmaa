@@ -4,6 +4,7 @@
 
 import { supabase } from '../../config/supabaseClient.js';
 import { OTP_TABLE, OTP_EXPIRY_MINUTES } from '../constants.js';
+import logger from '../../utils/logger.js';
 
 /**
  * Save OTP to Supabase for given email and type. Sets expiration.
@@ -21,7 +22,7 @@ export async function saveOtp(email, code, type) {
     .select()
     .single();
   if (error) {
-    console.error('[authService] saveOtp error:', error.message);
+    logger.error('authService saveOtp error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };

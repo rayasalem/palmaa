@@ -33,7 +33,10 @@ import {
 } from './middlewares/security.js';
 import cacheMiddleware from './middlewares/cacheMiddleware.js';
 import httpsEnforce from './middlewares/httpsEnforce.js';
+import requestIdMiddleware from './middlewares/requestId.js';
 import requestLogger from './middlewares/requestLogger.js';
+import metricsMiddleware from './middlewares/metricsMiddleware.js';
+import requestTimeoutMiddleware from './middlewares/requestTimeout.js';
 import errorHandler from './middlewares/errorHandler.js';
 import sanitizeErrorResponse from './middlewares/sanitizeErrorResponse.js';
 
@@ -52,6 +55,7 @@ import followRoutes from './routes/followRoutes.js';
 import merchantRoutes from './routes/merchantRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
+import healthRoutes from './routes/healthRoutes.js';
 import cybersourceHostedRoutes from './modules/payments/cybersource/cybersource.routes.js';
 import { processRestPaymentHandler } from './modules/payments/cybersource/cybersource.rest.controller.js';
 
@@ -78,7 +82,12 @@ app.use(cookieParser(getEnv('COOKIE_SECRET')));
 app.use(express.json({ limit: '15mb' }));
 
 app.use(generalLimiter());
+app.use(requestIdMiddleware);
 app.use(requestLogger);
+app.use(metricsMiddleware);
+const requestTimeoutMs = Number(getEnv('REQUEST_TIMEOUT_MS')) || 15000;
+app.use(requestTimeoutMiddleware(requestTimeoutMs));
+logger.info('Request timeout middleware active', { timeoutMs: requestTimeoutMs });
 app.use(sanitizeErrorResponse);
 
 // API routes BEFORE static so /api/* never returns 404 when this server is hit
@@ -125,9 +134,7 @@ app.use('/api/merchant', merchantRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/chat', chatRoutes);
 
-app.get('/health', (req, res) => {
-  res.json({ ok: true, timestamp: new Date().toISOString() });
-});
+app.use('/', healthRoutes);
 
 app.get('/sandbox-pay', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'sandbox-pay.html'));

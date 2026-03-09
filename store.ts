@@ -19,7 +19,9 @@ export const paymentProcessor = {
 /**
  * MarketStore (Facade)
  * Aggregates all modular services into a single interface for backward compatibility.
- * In new components, prefer importing services directly.
+ * In new components, prefer importing services directly (authService, productService, etc.)
+ * so that API and 401 handling stay consistent. This module is not removed to avoid
+ * breaking existing callers; refactor call sites gradually if desired.
  */
 export const marketStore = {
   

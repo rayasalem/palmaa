@@ -1,22 +1,12 @@
 /**
  * User Service – backend API only (no Supabase, no mock db).
  * Register/verify via auth API; admin: GET/PATCH users via /api/admin.
+ * Uses shared api() from api/client for consistent auth and 401 handling.
  */
 
 import { User, Role, MerchantProfile, ActionResponse, UserStatus } from '../types';
 
-import { getApiBase, getAuthHeaders, setAuthToken } from '../api/client';
-
-async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${getApiBase()}${path}`, {
-    ...options,
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders(), ...(options.headers as object) },
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((data as any).error || (data as any).message || `HTTP ${res.status}`);
-  return data as T;
-}
+import { api, setAuthToken, isSameOrigin } from '../api/client';
 
 /** Optional in-memory cache for merchant profile (e.g. from future GET /merchants/:id). */
 let merchantProfileCache: Record<string, MerchantProfile> = {};
@@ -45,7 +35,7 @@ export const userService = {
       });
       if (!data.success) return { success: false, error: (data as any).error || 'Registration failed' };
       const regToken = (data as any).token;
-      if (regToken) setAuthToken(regToken);
+      if (regToken && !isSameOrigin()) setAuthToken(regToken);
       const newUser: User = {
         ...user,
         id: (data.user?.id) || '',
@@ -169,7 +159,7 @@ export const userService = {
         body: JSON.stringify({ email: email.trim(), otp: String(otp).trim() }),
       });
       const token = (data as any).token;
-      if (token) setAuthToken(token);
+      if (token && !isSameOrigin()) setAuthToken(token);
       const user = (data as any).user;
       if (!user) return { success: false, error: 'No user returned' };
       const mappedUser: User = {

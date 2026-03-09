@@ -4,6 +4,7 @@ import { User, CommissionStatus, Product, SharedProduct } from '../types';
 import { marketStore } from '../store';
 import { Language, translations, getAuthErrorMessage } from '../translations';
 import { useToast } from '../components/ToastProvider';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { upsertSharedProduct, listSharedProducts, removeSharedProduct, toggleSharedFeatured } from '../services/brokerApi';
 
 interface Props {
@@ -25,6 +26,8 @@ export const BrokerView: React.FC<Props> = ({ lang, user, onRefresh, activeTab, 
   const [marketingForm, setMarketingForm] = useState({ title: '', description: '', discountText: '' });
   const [sharedMeta, setSharedMeta] = useState<SharedProduct[]>([]);
   const [savingShare, setSavingShare] = useState(false);
+  const [removeConfirmPid, setRemoveConfirmPid] = useState<string | null>(null);
+  const [removeLoading, setRemoveLoading] = useState(false);
 
   const products = marketStore.getProducts();
 
@@ -141,15 +144,18 @@ export const BrokerView: React.FC<Props> = ({ lang, user, onRefresh, activeTab, 
   };
 
   const handleRemoveShare = async (pid: string) => {
-    if (!window.confirm(lang === 'en' ? "Remove this product from your shared products list?" : "إزالة هذا المنتج من قائمة المنتجات المشتركة الخاصة بك؟")) return;
+    setRemoveLoading(true);
     try {
       await removeSharedProduct(pid);
       setSharedMeta(prev => prev.filter(sp => sp.product_id !== pid));
       marketStore.removeSharedProduct(user.id, pid);
+      setRemoveConfirmPid(null);
       showToast(t.common.success, 'success');
       onRefresh();
     } catch {
       showToast(t.common.error, 'error');
+    } finally {
+      setRemoveLoading(false);
     }
   };
 
@@ -158,7 +164,17 @@ export const BrokerView: React.FC<Props> = ({ lang, user, onRefresh, activeTab, 
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-7xl mx-auto font-heading">
-      
+      <ConfirmModal
+        isOpen={!!removeConfirmPid}
+        title={lang === 'ar' ? 'إزالة من القائمة' : 'Remove from list'}
+        message={lang === 'ar' ? 'هل تريد إزالة هذا المنتج من قائمة المنتجات المشتركة؟' : 'Remove this product from your shared products list?'}
+        confirmLabel={lang === 'ar' ? 'إزالة' : 'Remove'}
+        cancelLabel={lang === 'ar' ? 'إلغاء' : 'Cancel'}
+        onConfirm={() => removeConfirmPid && handleRemoveShare(removeConfirmPid)}
+        onCancel={() => setRemoveConfirmPid(null)}
+        isLoading={removeLoading}
+        variant="danger"
+      />
       {/* Marketing Description Modal */}
       {marketingModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" onClick={() => setMarketingModal(null)}>
@@ -423,7 +439,7 @@ export const BrokerView: React.FC<Props> = ({ lang, user, onRefresh, activeTab, 
                           <div className="flex gap-2">
                              <button onClick={() => handleToggleFeatured(s.id)} className={`p-3 rounded-2xl transition-all ${s.is_featured ? 'bg-palma-primary text-white' : 'bg-slate-50 text-slate-300 hover:bg-slate-100'}`} title="Pin">📌</button>
                              <button onClick={() => openShareModal(p.id, s)} className="p-3 bg-slate-50 text-slate-400 hover:bg-palma-primary/10 hover:text-palma-primary rounded-2xl transition-all" title="Edit">📝</button>
-                             <button onClick={() => handleRemoveShare(p.id)} className="p-3 bg-rose-50 text-rose-300 hover:text-rose-600 rounded-2xl transition-all" title="Delete">🗑️</button>
+                             <button onClick={() => setRemoveConfirmPid(p.id)} className="p-3 bg-rose-50 text-rose-300 hover:text-rose-600 rounded-2xl transition-all" title="Delete">🗑️</button>
                           </div>
                         </div>
 

@@ -7,6 +7,7 @@
 
 import axios from 'axios';
 import { supabase } from '../config/supabaseClient.js';
+import logger from '../utils/logger.js';
 
 const ORDERS_TABLE = 'orders';
 const SHIPMENT_API_BASE = process.env.SHIPMENT_API_BASE || 'https://apisv2.logestechs.com/api';
@@ -35,7 +36,7 @@ async function getOrderById(orderId) {
     .eq('id', orderId)
     .single();
   if (error) {
-    console.error('[shipmentService] Get order error:', error.message);
+    logger.error('shipmentService Get order error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };
@@ -63,7 +64,7 @@ async function callCreateShipmentApi(body) {
     const resData = res && res.data;
     const msg = (resData && resData.message) || (typeof resData === 'string' ? resData : JSON.stringify(resData || err.message));
     safeLog('CREATE SHIPMENT ERROR', { status: res && res.status, data: resData, message: msg });
-    console.error('[shipmentService] Create shipment API error:', msg);
+    logger.error('shipmentService Create shipment API error', { message: msg });
     return { data: null, error: { message: typeof msg === 'string' ? msg : msg } };
   }
 }
@@ -89,7 +90,7 @@ async function updateOrderShipment(orderId, shipmentId, shipmentStatus) {
     .select()
     .single();
   if (error) {
-    console.error('[shipmentService] Update error:', error.message);
+    logger.error('shipmentService Update error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };

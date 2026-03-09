@@ -1,5 +1,9 @@
 # Render Blueprint: Backend (Node) service only.
 # Use this when linking the repo to Render, or set the same in Dashboard manually.
+#
+# Health: liveness = /health, readiness = /ready. healthCheckPath uses /ready so
+# traffic is only routed to instances that have passed DB (and optional deps) checks.
+# See deploy/HEALTH_PROBES.md for probe usage.
 services:
   - type: web
     name: palmaa-backend
@@ -7,6 +11,7 @@ services:
     rootDir: server
     buildCommand: npm install && npm run build
     startCommand: npm start
+    healthCheckPath: /ready
     envVars:
       - key: NODE_ENV
         value: production

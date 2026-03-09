@@ -1,11 +1,25 @@
 /**
  * Product Service – backend API only (GET/POST/PUT/DELETE /api/products).
  * No Supabase, no mock; all data from backend.
+ * Fetch guards: getAll and getByMerchantId use a short TTL cache to avoid duplicate requests.
  */
 
 import { db } from './core/storage';
 import type { Product, ActionResponse } from '../types';
 import { getApiBase, getAuthHeaders } from '../api/client';
+import { logger } from '../utils/logger';
+
+const PRODUCTS_FETCH_TTL_MS = 60_000;
+let lastGetAllAt = 0;
+let lastGetAllResult: Product[] | null = null;
+const getByMerchantCache = new Map<string, { at: number; data: Product[] }>();
+
+function invalidateProductCaches(merchantId?: string): void {
+  lastGetAllResult = null;
+  lastGetAllAt = 0;
+  if (merchantId) getByMerchantCache.delete(merchantId);
+  else getByMerchantCache.clear();
+}
 
 async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${getApiBase()}${path}`, {
@@ -45,15 +59,23 @@ function mapDbToProduct(row: any): Product {
 
 export const productService = {
   async getAll(): Promise<Product[]> {
+    const now = Date.now();
+    if (lastGetAllResult !== null && now - lastGetAllAt < PRODUCTS_FETCH_TTL_MS) {
+      db.products = lastGetAllResult;
+      return lastGetAllResult;
+    }
     try {
       const data = await api<{ success: boolean; products: any[] }>('/api/products');
       const list = (data as any).products || [];
       const mapped = list.map(mapDbToProduct);
       db.products = mapped;
       db.persist('products');
+      lastGetAllAt = now;
+      lastGetAllResult = mapped;
       return mapped;
     } catch (e) {
-      console.error('productService.getAll error', e);
+      logger.error('productService.getAll', { message: e instanceof Error ? e.message : String(e) });
+      if (lastGetAllResult !== null) return lastGetAllResult;
       return db.products;
     }
   },
@@ -72,12 +94,19 @@ export const productService = {
   },
 
   async getByMerchantId(merchantId: string): Promise<Product[]> {
+    const now = Date.now();
+    const cached = getByMerchantCache.get(merchantId);
+    if (cached && now - cached.at < PRODUCTS_FETCH_TTL_MS) return cached.data;
     try {
       const data = await api<{ success: boolean; products: any[] }>(`/api/products/merchant/${merchantId}`);
       const list = (data as any).products || [];
-      return list.map(mapDbToProduct);
+      const mapped = list.map(mapDbToProduct);
+      getByMerchantCache.set(merchantId, { at: now, data: mapped });
+      return mapped;
     } catch (e) {
-      console.error('productService.getByMerchantId error', e);
+      logger.error('productService.getByMerchantId', { message: e instanceof Error ? e.message : String(e), merchantId });
+      const fallback = getByMerchantCache.get(merchantId);
+      if (fallback) return fallback.data;
       return [];
     }
   },
@@ -114,6 +143,7 @@ export const productService = {
       if (!p) return { success: false, error: 'No product returned' };
       const product = mapDbToProduct(p);
       db.addItem('products', product);
+      invalidateProductCaches(merchantId);
       return { success: true, data: product };
     } catch (e: any) {
       return { success: false, error: e.message || 'Failed to add product' };
@@ -145,6 +175,7 @@ export const productService = {
       if (!p) return { success: false, error: 'No product returned' };
       const product = mapDbToProduct(p);
       db.updateItem('products', productId, product);
+      invalidateProductCaches(product.merchant_id || product.merchantId);
       return { success: true, data: product };
     } catch (e: any) {
       return { success: false, error: e.message || 'Failed to update product' };
@@ -153,8 +184,10 @@ export const productService = {
 
   async delete(id: string): Promise<ActionResponse<void>> {
     try {
+      const existing = db.products.find((p) => p.id === id);
       await api(`/api/products/${id}`, { method: 'DELETE' });
       db.deleteItem('products', id);
+      if (existing) invalidateProductCaches(existing.merchant_id || existing.merchantId);
       return { success: true };
     } catch (e: any) {
       return { success: false, error: e.message || 'Failed to delete product' };
@@ -169,6 +202,7 @@ export const productService = {
     sortBy?: string;
     merchantId?: string;
     categoryId?: string;
+    conditionId?: string;
   }) {
     let result = db.products.filter((p) => p.isActive !== false);
     if (filters.merchantId && filters.merchantId !== 'all') {
@@ -176,6 +210,9 @@ export const productService = {
     }
     if (filters.categoryId && filters.categoryId !== 'all') {
       result = result.filter((p) => p.category === filters.categoryId);
+    }
+    if (filters.conditionId && filters.conditionId !== 'all') {
+      result = result.filter((p) => (p.condition || 'new') === filters.conditionId);
     }
     if (filters.searchTerm) {
       const term = filters.searchTerm.toLowerCase();

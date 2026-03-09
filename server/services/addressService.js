@@ -4,6 +4,7 @@
  */
 
 import axios from 'axios';
+import logger from '../utils/logger.js';
 
 const SHIPMENT_API_BASE = process.env.SHIPMENT_API_BASE || process.env.LOGESTECHS_API_URL || '';
 const CACHE_TTL_MS = Number(process.env.ADDRESS_CACHE_TTL_MS) || 5 * 60 * 1000; // 5 min
@@ -32,7 +33,7 @@ async function fetchFromApi(path, params = {}) {
     });
     return response.data;
   } catch (err) {
-    console.error('[addressService] API error:', (err.response && err.response.data) || err.message);
+    logger.error('addressService API error', { message: (err.response && err.response.data) || err.message });
     return null;
   }
 }

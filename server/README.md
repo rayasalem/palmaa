@@ -110,7 +110,7 @@ Node.js (Express) backend with Supabase, sandbox payment, and LogesTechs shipmen
 |--------|------|---------|
 | POST | /api/orders | Create order (body: recipient_name, address, city, phone, amount, weight, items?). Optional JWT for customer_id. |
 | GET | /api/orders | List current user's orders (auth required). |
-| GET | /api/orders/:id | Get order by id (with items if order_items exists). |
+| GET | /api/orders/:id | Get order by id (with items). Access: optionalAuth; allowed if requester is customer_id, merchant_id, ADMIN, or sends header `X-Order-Guest-Token` with the order's guest token (UUID v4; returned on create for guest orders). Response shape unchanged; guest_access_token is never returned. |
 | GET | /api/products | List active products (public). |
 | GET | /api/products/merchant/:merchantId | List products by merchant (public). |
 | GET | /api/products/:id | Get product by id (public). |

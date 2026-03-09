@@ -1,9 +1,13 @@
 /**
  * Order service: create order (and optional order_items), get order by id (Supabase).
+ * Guest orders (no customer_id) get a UUID v4 guest_access_token for GET /api/orders/:id.
  */
 
+import { randomUUID } from 'crypto';
 import { supabase } from '../config/supabaseClient.js';
 import * as productService from './productService.js';
+import logger from '../utils/logger.js';
+import { parsePagination } from '../utils/pagination.js';
 
 const ORDERS_TABLE = 'orders';
 const ORDER_ITEMS_TABLE = 'order_items';
@@ -31,6 +35,7 @@ async function createOrder(params) {
   if (customer_id) orderRow.customer_id = customer_id;
   if (broker_id) orderRow.broker_id = broker_id;
   if (merchant_id) orderRow.merchant_id = merchant_id;
+  if (!customer_id) orderRow.guest_access_token = randomUUID();
 
   const { data: order, error } = await supabase
     .from(ORDERS_TABLE)
@@ -39,7 +44,7 @@ async function createOrder(params) {
     .single();
 
   if (error) {
-    console.error('[orderService] Insert error:', error.message);
+    logger.error('orderService Insert error', { message: error.message });
     return { data: null, error };
   }
 
@@ -52,7 +57,7 @@ async function createOrder(params) {
     }));
     const { error: itemsError } = await supabase.from(ORDER_ITEMS_TABLE).insert(rows);
     if (itemsError) {
-      console.error('[orderService] order_items insert error:', itemsError.message);
+      logger.error('orderService order_items insert error', { message: itemsError.message });
       return { data: order, error: itemsError };
     }
   }
@@ -75,27 +80,33 @@ async function getOrderById(orderId) {
   return { data: { ...order, items: orderItems || [] }, error: null };
 }
 
-async function getOrdersByCustomerId(customerId) {
-  const { data, error } = await supabase
+async function getOrdersByCustomerId(customerId, opts = {}) {
+  const { limit, offset } = parsePagination(opts);
+  let query = supabase
     .from(ORDERS_TABLE)
     .select('*, order_items(*)')
     .eq('customer_id', customerId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+  const { data, error } = await query;
   if (error) {
-    console.error('[orderService] getOrdersByCustomerId error:', error.message);
+    logger.error('orderService getOrdersByCustomerId error', { message: error.message });
     return { data: [], error };
   }
   return { data: data || [], error: null };
 }
 
-async function getOrdersByMerchantId(merchantId) {
-  const { data, error } = await supabase
+async function getOrdersByMerchantId(merchantId, opts = {}) {
+  const { limit, offset } = parsePagination(opts);
+  let query = supabase
     .from(ORDERS_TABLE)
     .select('*, order_items(*)')
     .eq('merchant_id', merchantId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+  const { data, error } = await query;
   if (error) {
-    console.error('[orderService] getOrdersByMerchantId error:', error.message);
+    logger.error('orderService getOrdersByMerchantId error', { message: error.message });
     return { data: [], error };
   }
   return { data: data || [], error: null };
@@ -139,7 +150,7 @@ async function updateOrderInvoice(orderId, invoiceUrl) {
     .select()
     .single();
   if (error) {
-    console.error('[orderService] updateOrderInvoice error:', error.message);
+    logger.error('orderService updateOrderInvoice error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };
@@ -157,7 +168,7 @@ async function completeOrder(orderId) {
     .select()
     .single();
   if (error) {
-    console.error('[orderService] completeOrder error:', error.message);
+    logger.error('orderService completeOrder error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };

@@ -1,19 +1,9 @@
 /**
  * Admin API – products, orders. Requires ADMIN role.
+ * Uses shared api() from api/client for consistent auth and 401 handling.
  */
 
-import { getApiBase, getAuthHeaders } from '../api/client';
-
-async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${getApiBase()}${path}`, {
-    ...options,
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders(), ...(options.headers as object) },
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((data as any).error || (data as any).message || `HTTP ${res.status}`);
-  return data as T;
-}
+import { api } from '../api/client';
 
 export async function getAdminProducts(): Promise<{ success: boolean; products: any[] }> {
   return api<{ success: boolean; products: any[] }>('/api/admin/products');

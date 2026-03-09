@@ -1,7 +1,11 @@
 /**
  * api/client.ts
  * Base HTTP client for backend API. Single source for API_BASE, credentials, and JSON handling.
- * All frontend API calls should use this module or services that use it.
+ *
+ * Auth (JWT):
+ * - Same-origin: httpOnly cookie only. credentials: 'include' sends the cookie; no JWT in storage.
+ * - Cross-origin / mobile: Bearer token from sessionStorage (backward compat: read from localStorage if present).
+ * - JWT is never written to localStorage; only sessionStorage when cross-origin so existing clients remain supported.
  */
 
 // -----------------------------------------------------------------------------
@@ -41,34 +45,60 @@ function getApiBase(): string {
 /** @deprecated Use getApiBase() so URL is resolved at request time (avoids EBADNAME). */
 const API_BASE = getApiBase();
 
-/** Key for JWT – يُحفظ في localStorage و sessionStorage لثبات الجلسة على الجوال (cross-origin). */
+/** Storage key for JWT when cross-origin. Same-origin never uses this (httpOnly cookie only). */
 const AUTH_TOKEN_KEY = 'palma_token';
 
+/**
+ * True when frontend and API share the same origin so httpOnly cookie is sent automatically.
+ * Cross-origin (e.g. Vercel frontend + Render API) or mobile: cookie may not be sent; use Bearer.
+ */
+export function isSameOrigin(): boolean {
+  if (typeof window === 'undefined') return true;
+  try {
+    const base = getApiBase();
+    const origin = window.location.origin;
+    if (!base || !origin) return false;
+    const apiOrigin = new URL(base).origin;
+    return apiOrigin === origin;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * JWT for Bearer header. Same-origin returns null (cookie is used). Cross-origin: sessionStorage then localStorage (backward compat).
+ */
 export function getAuthToken(): string | null {
   if (typeof window === 'undefined') return null;
+  if (isSameOrigin()) return null;
   try {
-    return localStorage.getItem(AUTH_TOKEN_KEY) || sessionStorage.getItem(AUTH_TOKEN_KEY);
+    return sessionStorage.getItem(AUTH_TOKEN_KEY) || localStorage.getItem(AUTH_TOKEN_KEY);
   } catch {
     return null;
   }
 }
 
+/**
+ * Store JWT only when cross-origin (for Bearer header). Same-origin: no-op (backend sets httpOnly cookie).
+ * Never writes to localStorage; sessionStorage only so token is not persisted across tabs.
+ * On clear we remove from both for backward compatibility with existing clients that may have used localStorage.
+ */
 export function setAuthToken(token: string | null): void {
   if (typeof window === 'undefined') return;
+  if (isSameOrigin()) return;
   try {
     if (token) {
-      localStorage.setItem(AUTH_TOKEN_KEY, token);
       sessionStorage.setItem(AUTH_TOKEN_KEY, token);
     } else {
-      localStorage.removeItem(AUTH_TOKEN_KEY);
       sessionStorage.removeItem(AUTH_TOKEN_KEY);
+      localStorage.removeItem(AUTH_TOKEN_KEY);
     }
   } catch {
     /* ignore */
   }
 }
 
-/** Headers to attach to authenticated API requests (for mobile / cross-origin when cookie is not sent). */
+/** Same-origin: no Authorization (cookie sent via credentials: 'include'). Cross-origin/mobile: Bearer from storage. */
 export function getAuthHeaders(): Record<string, string> {
   const t = getAuthToken();
   return t ? { Authorization: `Bearer ${t}` } : {};

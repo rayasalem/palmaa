@@ -5,11 +5,15 @@
 
 import * as adminService from '../services/adminService.js';
 import * as platformSettings from '../services/platformSettingsService.js';
+import { invalidateProductsCache } from '../middlewares/cacheMiddleware.js';
 import logger from '../utils/logger.js';
 
 async function getUsers(req, res) {
   try {
-    const { data, error } = await adminService.listUsers();
+    const limit = req.query.limit != null ? parseInt(req.query.limit, 10) : undefined;
+    const offset = req.query.offset != null ? parseInt(req.query.offset, 10) : undefined;
+    const opts = [limit, offset].some((n) => Number.isInteger(n) && n >= 0) ? { limit: limit || 100, offset: offset || 0 } : {};
+    const { data, error } = await adminService.listUsers(opts);
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to fetch users' });
     }
@@ -73,7 +77,10 @@ async function restoreUser(req, res) {
 
 async function getOrders(req, res) {
   try {
-    const { data, error } = await adminService.listOrders();
+    const limit = req.query.limit != null ? parseInt(req.query.limit, 10) : undefined;
+    const offset = req.query.offset != null ? parseInt(req.query.offset, 10) : undefined;
+    const opts = [limit, offset].some((n) => Number.isInteger(n) && n >= 0) ? { limit: limit ?? 500, offset: offset ?? 0 } : {};
+    const { data, error } = await adminService.listOrders(opts);
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to fetch orders' });
     }
@@ -86,7 +93,10 @@ async function getOrders(req, res) {
 
 async function getProducts(req, res) {
   try {
-    const { data, error } = await adminService.listProducts();
+    const limit = req.query.limit != null ? parseInt(req.query.limit, 10) : undefined;
+    const offset = req.query.offset != null ? parseInt(req.query.offset, 10) : undefined;
+    const opts = [limit, offset].some((n) => Number.isInteger(n) && n >= 0) ? { limit: limit || 100, offset: offset || 0 } : {};
+    const { data, error } = await adminService.listProducts(opts);
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to fetch products' });
     }
@@ -129,6 +139,7 @@ async function deleteProduct(req, res) {
     if (error) {
       return res.status(400).json({ success: false, error: error.message || 'Failed to delete product' });
     }
+    await invalidateProductsCache();
     return res.status(200).json({ success: true, message: 'Product deleted' });
   } catch (err) {
     logger.error('admin deleteProduct unexpected', { message: err.message });

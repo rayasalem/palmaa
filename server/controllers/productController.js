@@ -6,11 +6,15 @@
 import * as productService from '../services/productService.js';
 import * as notificationService from '../services/notificationService.js';
 import * as subscriptionService from '../services/subscriptionService.js';
+import { invalidateProductsCache } from '../middlewares/cacheMiddleware.js';
 import logger from '../utils/logger.js';
 
 async function list(req, res) {
   try {
-    const { data, error } = await productService.getActiveProducts();
+    const limit = req.query.limit != null ? parseInt(req.query.limit, 10) : undefined;
+    const offset = req.query.offset != null ? parseInt(req.query.offset, 10) : undefined;
+    const opts = { limit: Number.isInteger(limit) ? limit : undefined, offset: Number.isInteger(offset) ? offset : undefined };
+    const { data, error } = await productService.getActiveProducts(opts);
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to fetch products' });
     }
@@ -38,7 +42,10 @@ async function listByMerchant(req, res) {
   try {
     const { merchantId } = req.params;
     if (!merchantId) return res.status(400).json({ success: false, error: 'Merchant id is required' });
-    const { data, error } = await productService.getProductsByMerchantId(merchantId);
+    const limit = req.query.limit != null ? parseInt(req.query.limit, 10) : undefined;
+    const offset = req.query.offset != null ? parseInt(req.query.offset, 10) : undefined;
+    const opts = { limit: Number.isInteger(limit) ? limit : undefined, offset: Number.isInteger(offset) ? offset : undefined };
+    const { data, error } = await productService.getProductsByMerchantId(merchantId, opts);
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to fetch products' });
     }
@@ -89,6 +96,7 @@ async function create(req, res) {
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to create product' });
     }
+    await invalidateProductsCache();
     await notificationService.notifyFollowersNewProduct(merchantId, data.id);
     return res.status(201).json({ success: true, product: data });
   } catch (err) {
@@ -125,6 +133,7 @@ async function update(req, res) {
         error: error.message || 'Failed to update product',
       });
     }
+    await invalidateProductsCache();
     return res.status(200).json({ success: true, product: data });
   } catch (err) {
     logger.error('product update unexpected', { message: err.message });
@@ -142,6 +151,7 @@ async function remove(req, res) {
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to delete product' });
     }
+    await invalidateProductsCache();
     return res.status(200).json({ success: true, message: 'Product deleted' });
   } catch (err) {
     logger.error('product remove unexpected', { message: err.message });

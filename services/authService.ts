@@ -5,7 +5,7 @@
 
 import { User } from '../types';
 import type { ActionResponse } from '../types';
-import { getApiBase, setAuthToken, getAuthHeaders } from '../api/client';
+import { getApiBase, setAuthToken, getAuthHeaders, isSameOrigin } from '../api/client';
 
 function mapApiUserToUser(apiUser: any): User {
   return {
@@ -55,7 +55,7 @@ export const authService = {
       const user = mapApiUserToUser(apiUser);
       currentUser = user;
       const token = (data as any).token;
-      if (token) setAuthToken(token);
+      if (token && !isSameOrigin()) setAuthToken(token);
       return { success: true, data: { user, token: token || 'cookie' } };
     } catch (e: any) {
       return { success: false, error: e.message || 'Login failed' };

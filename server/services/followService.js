@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '../config/supabaseClient.js';
+import logger from '../utils/logger.js';
 
 const TABLE = 'follows';
 
@@ -19,7 +20,7 @@ async function follow(customerId, merchantId) {
     .single();
   if (error) {
     if (error.code === '23505') return { data: null, error: { message: 'Already following', code: 'DUPLICATE' } };
-    console.error('[followService] follow error:', error.message);
+    logger.error('followService follow error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };
@@ -32,7 +33,7 @@ async function unfollow(customerId, merchantId) {
     .eq('follower_id', customerId)
     .eq('following_id', merchantId);
   if (error) {
-    console.error('[followService] unfollow error:', error.message);
+    logger.error('followService unfollow error', { message: error.message });
     return { error };
   }
   return { error: null };
@@ -44,7 +45,7 @@ async function getFollowersCount(merchantId) {
     .select('*', { count: 'exact', head: true })
     .eq('following_id', merchantId);
   if (error) {
-    console.error('[followService] getFollowersCount error:', error.message);
+    logger.error('followService getFollowersCount error', { message: error.message });
     return { count: 0, error };
   }
   return { count: count ?? 0, error: null };

@@ -3,7 +3,11 @@
  * All secrets must be in env; never hardcode.
  */
 
-const required = [];
+const required = [
+  { key: 'SUPABASE_URL', allowEmpty: false },
+  { key: 'SUPABASE_SERVICE_KEY', allowEmpty: false },
+  { key: 'JWT_SECRET', allowEmpty: false },
+];
 
 const optionalButRecommended = [
   'SUPABASE_URL',
@@ -11,6 +15,7 @@ const optionalButRecommended = [
   'FRONTEND_URL',
   'JWT_SECRET',
   'ENCRYPTION_KEY',
+  'REDIS_URL', // for shared product cache across instances; omit to use in-memory cache
 ];
 
 function getEnv(key, defaultValue = '') {

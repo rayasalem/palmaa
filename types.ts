@@ -317,25 +317,119 @@ export interface ActionResponse<T> {
   requiresVerification?: boolean; // New: Signal UI to show verification step
 }
 
+/** إيموجي دلالي لكل تصنيف — يُعرض بجانب الاسم في الفلاتر ونموذج المنتج */
+export const CATEGORY_EMOJI: Record<string, string> = {
+  juices: '🧃',
+  soft_drinks: '🥤',
+  hot_drinks: '☕',
+  water: '💧',
+  dairy_drinks: '🥛',
+  fruits: '🍎',
+  vegetables: '🥬',
+  dairy: '🧀',
+  bakery: '🥖',
+  meat_poultry: '🍗',
+  canned_food: '🥫',
+  snacks: '🍿',
+  sweets: '🍬',
+  spices: '🌿',
+  grains: '🍚',
+  ready_meals: '🍱',
+  oils_sauces: '🫒',
+  frozen_food: '🧊',
+  phones: '📱',
+  computers: '💻',
+  electronics_accessories: '🔌',
+  home_appliances: '🔌',
+  cameras: '📷',
+  gaming: '🎮',
+  men_clothing: '👔',
+  women_clothing: '👗',
+  kids_clothing: '👶',
+  shoes: '👟',
+  bags_accessories: '👜',
+  traditional_wear: '👘',
+  furniture: '🛋️',
+  kitchen: '🍳',
+  home_decor: '🖼️',
+  garden: '🌱',
+  tools: '🔧',
+  skincare: '🧴',
+  makeup: '💄',
+  hair_care: '💇',
+  perfume: '🌸',
+  beauty: '💅',
+  fashion: '👕',
+  sports: '⚽',
+  home: '🏠',
+  food: '🍎',
+  electronics: '📱',
+  handmade: '🧵',
+  baby: '🍼',
+  pets: '🐾',
+  books: '📚',
+  automotive: '🚗',
+  toys: '🧸',
+  furnishings_textiles: '🛏️',
+  real_estate: '🏡',
+  services: '🔧',
+  other: '📦',
+};
+
 export const PRODUCT_CATEGORIES = [
-  // أساسي: نفس ما يظهر للمستخدم عند رفع المنتج أو التصفية
-  'beauty',               // تجميل وكوزمتكس
-  'fashion',              // ملابس
-  'sports',               // أدوات رياضية
-  'home',                 // أدوات منزلية
-  'food',                 // منتجات غذائية
-  'electronics',          // إلكترونيات
-  'handmade',             // المشغولات اليدوية
-  'baby',                 // مستلزمات أطفال
-  'bags_accessories',     // شنط وإكسسوارات
-  'shoes',                // أحذية
-  'furnishings_textiles', // مفروشات وأقمشة
-  'pets',                 // مستلزمات حيوانات أليفة
-  'books',                // كتب وقرطاسية
-  'automotive',           // كماليات سيارات
-  'toys',                 // ألعاب وهدايا
-  // إضافية/قديمة (تبقى للدعم الخلفي والفلاتر)
+  'juices',
+  'soft_drinks',
+  'hot_drinks',
+  'water',
+  'dairy_drinks',
+  'fruits',
+  'vegetables',
+  'dairy',
+  'bakery',
+  'meat_poultry',
+  'canned_food',
+  'snacks',
+  'sweets',
+  'spices',
+  'grains',
+  'ready_meals',
+  'oils_sauces',
+  'frozen_food',
+  'phones',
+  'computers',
+  'electronics_accessories',
+  'home_appliances',
+  'cameras',
+  'gaming',
+  'men_clothing',
+  'women_clothing',
+  'kids_clothing',
+  'shoes',
+  'bags_accessories',
+  'traditional_wear',
+  'furniture',
+  'kitchen',
+  'home_decor',
+  'garden',
+  'tools',
+  'skincare',
+  'makeup',
+  'hair_care',
+  'perfume',
+  'beauty',
+  'fashion',
+  'sports',
+  'home',
+  'food',
+  'electronics',
+  'handmade',
+  'baby',
+  'pets',
+  'books',
+  'automotive',
+  'toys',
+  'furnishings_textiles',
   'real_estate',
   'services',
-  'other'
+  'other',
 ];

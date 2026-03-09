@@ -3,19 +3,31 @@
  */
 
 import { supabase } from '../config/supabaseClient.js';
+import logger from '../utils/logger.js';
+import { parsePagination } from '../utils/pagination.js';
 
 const USERS_TABLE = 'users';
 const ORDERS_TABLE = 'orders';
 const PRODUCTS_TABLE = 'products';
 const TRANSACTIONS_TABLE = 'transactions';
 
-async function listUsers() {
-  const { data, error } = await supabase
+function applyPagination(query, opts) {
+  const { limit, offset } = parsePagination(opts, 0, 1000);
+  if (limit > 0) {
+    return query.range(offset, offset + limit - 1);
+  }
+  return query;
+}
+
+async function listUsers(opts = {}) {
+  let query = supabase
     .from(USERS_TABLE)
     .select('id, email, name, role, status, phone, created_at, updated_at, terms_accepted, terms_accepted_at, email_verified')
     .order('created_at', { ascending: false });
+  query = applyPagination(query, opts);
+  const { data, error } = await query;
   if (error) {
-    console.error('[adminService] listUsers error:', error.message);
+    logger.error('adminService listUsers error', { message: error.message });
     return { data: [], error };
   }
   const list = (data || []).map((u) => ({
@@ -44,7 +56,7 @@ async function updateUserStatus(userId, status) {
     .select()
     .single();
   if (error) {
-    console.error('[adminService] updateUserStatus error:', error.message);
+    logger.error('adminService updateUserStatus error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };
@@ -65,7 +77,7 @@ async function softDeleteUser(userId, reason) {
     .select()
     .single();
   if (error) {
-    console.error('[adminService] softDeleteUser error:', error.message);
+    logger.error('adminService softDeleteUser error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };
@@ -83,7 +95,7 @@ async function restoreUser(userId) {
     .eq('id', userId)
     .single();
   if (findError || !userRow) {
-    console.error('[adminService] restoreUser find error:', (findError && findError.message));
+    logger.error('adminService restoreUser find error', { message: findError && findError.message });
     return { data: null, error: findError || { message: 'User not found' } };
   }
   if (userRow.status !== 'DELETED') {
@@ -100,31 +112,35 @@ async function restoreUser(userId) {
     .select()
     .single();
   if (error) {
-    console.error('[adminService] restoreUser update error:', error.message);
+    logger.error('adminService restoreUser update error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };
 }
 
-async function listOrders() {
-  const { data, error } = await supabase
+async function listOrders(opts = {}) {
+  let query = supabase
     .from(ORDERS_TABLE)
     .select('*, order_items(*)')
     .order('created_at', { ascending: false });
+  query = applyPagination(query, opts);
+  const { data, error } = await query;
   if (error) {
-    console.error('[adminService] listOrders error:', error.message);
+    logger.error('adminService listOrders error', { message: error.message });
     return { data: [], error };
   }
   return { data: data || [], error: null };
 }
 
-async function listProducts() {
-  const { data: products, error } = await supabase
+async function listProducts(opts = {}) {
+  let query = supabase
     .from(PRODUCTS_TABLE)
     .select('*')
     .order('created_at', { ascending: false });
+  query = applyPagination(query, opts);
+  const { data: products, error } = await query;
   if (error) {
-    console.error('[adminService] listProducts error:', error.message);
+    logger.error('adminService listProducts error', { message: error.message });
     return { data: [], error };
   }
   const list = products || [];
@@ -176,7 +192,7 @@ async function adminUpdateProduct(productId, payload) {
     .select()
     .single();
   if (error) {
-    console.error('[adminService] adminUpdateProduct error:', error.message);
+    logger.error('adminService adminUpdateProduct error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };
@@ -188,7 +204,7 @@ async function adminDeleteProduct(productId) {
     .delete()
     .eq('id', productId);
   if (error) {
-    console.error('[adminService] adminDeleteProduct error:', error.message);
+    logger.error('adminService adminDeleteProduct error', { message: error.message });
     return { error };
   }
   return { error: null };
@@ -200,7 +216,7 @@ async function getPlatformEarnings() {
     .select('commission_amount, tax_penalty_amount, order_id, created_at')
     .eq('type', 'order_settlement');
   if (error) {
-    console.error('[adminService] getPlatformEarnings error:', error.message);
+    logger.error('adminService getPlatformEarnings error', { message: error.message });
     return { data: null, error };
   }
   const list = rows || [];

@@ -4,9 +4,31 @@ import { User, Role } from '../types';
 import Logo from './Logo';
 import { Language, translations } from '../translations';
 import { prefetchForTab } from '../prefetch';
-import { ShoppingCart, Menu, X, Globe, LogOut, LayoutDashboard, Package, ShoppingBag, Banknote, User as UserIcon, TrendingUp, BarChart, Users, Wallet, Home, History, Bell, ChevronDown, FileText } from 'lucide-react';
+import { ShoppingCart, Menu, X, Globe, LogOut, LayoutDashboard, Package, ShoppingBag, Banknote, User as UserIcon, TrendingUp, BarChart, Users, Wallet, Home, History, Bell, ChevronDown, FileText, ChevronLeft } from 'lucide-react';
 
 const LANG_LABELS: Record<Language, string> = { ar: 'العربية', en: 'English', he: 'עברית' };
+
+/** اسم الصفحة الحالية للمسار (breadcrumb) */
+function getCurrentStepLabel(activeTab: string, t: ReturnType<typeof translations.ar>, lang: Language): string {
+  const stepLabels: Record<string, string> = {
+    dashboard: t.common.dashboard,
+    products: t.common.products,
+    orders: t.common.orders,
+    earnings: t.common.earnings,
+    shop: t.nav.shop,
+    profile: t.common.profile,
+    subscription: lang === 'ar' ? 'باقة الاشتراك' : lang === 'he' ? 'חבילת מנוי' : 'Subscription',
+    promote: t.nav.market,
+    stats: t.common.stats,
+    users: t.common.users,
+    withdrawals: t.common.withdrawals,
+    home: t.nav.home,
+    notifications: t.nav.notifications,
+    orders_customer: t.nav.orders,
+    cart: t.nav.cart,
+  };
+  return stepLabels[activeTab] || activeTab;
+}
 
 interface LayoutProps {
   lang: Language;
@@ -79,20 +101,37 @@ const Layout: React.FC<LayoutProps> = ({ lang, setLang, user, onLogout, children
 
   const profileImg = user.avatarUrl || `https://ui-avatars.com/api/?name=${user.name}&background=1F5D42&color=fff&size=80`;
 
+  const homeLabel = lang === 'ar' ? 'الرئيسية' : lang === 'he' ? 'בית' : 'Home';
+  const currentStep = getCurrentStepLabel(activeTab, t, lang);
+  const firstTabId = userMenuItems[0]?.id ?? (user.role === Role.ADMIN ? 'users' : user.role === Role.CUSTOMER ? 'home' : 'dashboard');
+
   return (
     <div className="min-h-screen flex flex-col bg-[#f8f7fa] font-sans text-palma-text font-heading" dir={lang === 'en' ? 'ltr' : 'rtl'}>
-      <header className="bg-white/95 backdrop-blur-xl border-b border-palma-border sticky top-0 z-40 shadow-soft transition-all duration-300">
-        <div className="max-w-[1800px] mx-auto px-4 sm:px-8 h-16 sm:h-20 flex justify-between items-center">
-          <div className="flex items-center gap-4 sm:gap-6">
-            <div className="lg:hidden">
-              <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2.5 text-palma-navy hover:bg-slate-100 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-palma-primary/20">
-                {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </button>
+      <header className="bg-white border-b border-palma-border sticky top-0 z-40 shadow-soft">
+        <div className="max-w-[1800px] mx-auto px-4 sm:px-8">
+          {/* الصف الرئيسي: لوجو + قائمة + لغة + بروفايل */}
+          <div className="h-14 sm:h-16 flex justify-between items-center">
+            <div className="flex items-center gap-3 sm:gap-6 min-w-0">
+              <div className="lg:hidden shrink-0">
+                <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2.5 text-palma-navy hover:bg-slate-100 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-palma-primary/20" aria-label="Menu">
+                  {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                </button>
+              </div>
+              <div className="cursor-pointer flex items-center hover:opacity-90 transition-opacity shrink-0" onClick={() => onTabChange(firstTabId)}>
+                <Logo size="medium" className="scale-110 sm:scale-125 origin-center" />
+              </div>
+              {/* مسار الصفحة الحالي (breadcrumb) — واضح ومبين */}
+              <div className="hidden sm:flex items-center gap-2 text-sm font-bold text-palma-muted overflow-hidden min-w-0">
+                <ChevronLeft className="w-4 h-4 shrink-0 text-palma-primary opacity-80 rtl:rotate-180" aria-hidden />
+                <span className="truncate flex items-center gap-1.5">
+                  <button type="button" onClick={() => onTabChange(firstTabId)} className="hover:text-palma-primary transition-colors whitespace-nowrap">
+                    {homeLabel}
+                  </button>
+                  <span className="text-slate-300 shrink-0">/</span>
+                  <span className="text-palma-navy font-black truncate">{currentStep}</span>
+                </span>
+              </div>
             </div>
-            <div className="cursor-pointer flex items-center hover:opacity-90 transition-opacity" onClick={() => onTabChange('home')}>
-               <Logo size="medium" className="scale-110 sm:scale-125 origin-center" />
-            </div>
-          </div>
           <div className="flex items-center gap-2 sm:gap-4">
             {(user.role === Role.CUSTOMER || user.role === Role.MERCHANT || user.role === Role.BROKER || user.role === Role.ADMIN) && (
               <button 
@@ -164,16 +203,18 @@ const Layout: React.FC<LayoutProps> = ({ lang, setLang, user, onLogout, children
               </button>
             </div>
           </div>
+          </div>
         </div>
       </header>
 
       <div className="flex flex-1 max-w-[1800px] mx-auto w-full">
         {/* Desktop Sidebar */}
         {isProfessional && (
-          <aside className={`hidden lg:block w-72 sticky top-20 h-[calc(100vh-5rem)] overflow-y-auto py-8 pr-6 rtl:pr-0 rtl:pl-6`}>
+          <aside className={`hidden lg:block w-72 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto py-8 pr-6 rtl:pr-0 rtl:pl-6`}>
             <div className="bg-white rounded-2xl shadow-card border border-palma-border h-full flex flex-col p-4 hover:shadow-card-hover transition-shadow duration-300">
               <div className="px-3 py-3 mb-1 border-b border-palma-border/50 pb-4">
                 <h3 className="text-xs font-black text-palma-navy uppercase tracking-widest">{t.common.dashboard}</h3>
+                <p className="text-[10px] font-bold text-palma-muted mt-1.5">{lang === 'ar' ? 'أنت هنا: ' : lang === 'he' ? 'אתה כאן: ' : 'You are: '}<span className="text-palma-primary">{currentStep}</span></p>
               </div>
               <nav className="space-y-0.5 flex-1">
                 {userMenuItems.map(item => (
@@ -191,7 +232,7 @@ const Layout: React.FC<LayoutProps> = ({ lang, setLang, user, onLogout, children
                     {activeTab === item.id && (
                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-palma-primary rounded-r-full rtl:left-auto rtl:right-0 rtl:rounded-r-none rtl:rounded-l-full" />
                     )}
-                    <span className={`transition-colors duration-200 ${activeTab === item.id ? 'text-palma-primary' : 'text-slate-400 group-hover:text-palma-navy'}`}>
+                    <span className={`inline-flex items-center justify-center w-5 h-5 shrink-0 transition-colors duration-200 ${activeTab === item.id ? 'text-palma-primary' : 'text-slate-400 group-hover:text-palma-navy'}`}>
                       {getIcon(item.icon, 20)}
                     </span>
                     {item.label}
@@ -231,7 +272,7 @@ const Layout: React.FC<LayoutProps> = ({ lang, setLang, user, onLogout, children
                         activeTab === item.id ? 'bg-palma-primaryLight text-palma-primary' : 'text-palma-muted hover:bg-slate-50'
                       }`}
                     >
-                      {getIcon(item.icon)}
+                      <span className="inline-flex items-center justify-center w-5 h-5 shrink-0 text-current">{getIcon(item.icon)}</span>
                       {item.label}
                     </button>
                   ))}
@@ -265,8 +306,8 @@ const Layout: React.FC<LayoutProps> = ({ lang, setLang, user, onLogout, children
                   activeTab === item.id ? 'text-palma-primary' : 'text-slate-400'
                 }`}
               >
-                <div className={`p-2 rounded-xl transition-all duration-200 ${activeTab === item.id ? 'bg-palma-primaryLight -translate-y-0.5' : 'group-hover:bg-slate-50'}`}>
-                   {getIcon(item.icon, 22)}
+                <div className={`p-2 rounded-xl transition-all duration-200 flex items-center justify-center w-9 h-9 shrink-0 ${activeTab === item.id ? 'bg-palma-primaryLight -translate-y-0.5' : 'group-hover:bg-slate-50'}`}>
+                   <span className="inline-flex items-center justify-center text-current">{getIcon(item.icon, 22)}</span>
                 </div>
                 <span className={`text-[10px] font-semibold ${activeTab === item.id ? 'text-palma-navy' : ''}`}>{item.label}</span>
               </button>

@@ -3,6 +3,7 @@
  */
 
 import * as shipmentService from '../services/shipmentService.js';
+import logger from '../utils/logger.js';
 
 async function createShipment(req, res) {
   try {
@@ -104,7 +105,7 @@ async function createShipment(req, res) {
     console.log('[shipmentController] createShipment:', { orderId, cityId, villageId, cod: numCod, quantity: numQty });
     const { order, shipment, error } = await shipmentService.createShipment(orderId, shipmentInput);
     if (error) {
-      console.error('[shipmentController] createShipment error:', error);
+      logger.error('shipmentController createShipment error', { message: error && error.message });
       const msg = error.message || 'Failed to create shipment';
       const isDuplicate = typeof msg === 'string' && (msg.includes('موجود مسبقا') || msg.includes('already exists'));
       return res.status(isDuplicate ? 409 : 500).json({
@@ -120,7 +121,7 @@ async function createShipment(req, res) {
       message: 'Shipment created; shipment_id and shipment_status saved to order.',
     });
   } catch (err) {
-    console.error('[shipmentController] createShipment unexpected:', err);
+    logger.error('shipmentController createShipment unexpected', { message: err.message });
     return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
   }
 }
@@ -134,7 +135,7 @@ async function getStatus(req, res) {
     }
     return res.status(200).json({ success: true, status: data });
   } catch (err) {
-    console.error('[shipmentController] getStatus:', err);
+    logger.error('shipmentController getStatus', { message: err.message });
     return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
   }
 }
@@ -149,7 +150,7 @@ async function printPdf(req, res) {
     }
     return res.status(200).json({ success: true, pdf: data });
   } catch (err) {
-    console.error('[shipmentController] printPdf:', err);
+    logger.error('shipmentController printPdf', { message: err.message });
     return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
   }
 }
@@ -166,7 +167,7 @@ async function cancel(req, res) {
     }
     return res.status(200).json({ success: true, result: data });
   } catch (err) {
-    console.error('[shipmentController] cancel:', err);
+    logger.error('shipmentController cancel', { message: err.message });
     return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
   }
 }

@@ -1,0 +1,73 @@
+# Kubernetes example: Backend Deployment with liveness and readiness probes.
+# Use /health for liveness (process up) and /ready for readiness (DB + deps).
+# Traffic is only routed to pods that pass the readiness probe.
+#
+# Usage: adjust image, env, and namespace; then apply.
+#   kubectl apply -f deploy/kubernetes-backend.example.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: palma-backend
+  labels:
+    app: palma-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: palma-backend
+  template:
+    metadata:
+      labels:
+        app: palma-backend
+    spec:
+      containers:
+        - name: backend
+          image: palma-backend:latest
+          ports:
+            - containerPort: 5000
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "5000"
+            # Add SUPABASE_URL, SUPABASE_SERVICE_KEY, JWT_SECRET, etc. via Secret/ConfigMap
+          # Liveness: restart if process is unresponsive
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          # Readiness: only route traffic when DB (and optional deps) are reachable
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+# Service routes traffic only to pods that pass the readinessProbe (/ready).
+# Pods failing readiness are removed from endpoints until they pass again.
+apiVersion: v1
+kind: Service
+metadata:
+  name: palma-backend
+spec:
+  selector:
+    app: palma-backend
+  ports:
+    - port: 80
+      targetPort: 5000
+  type: ClusterIP

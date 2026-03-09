@@ -7,6 +7,7 @@
 import { supabase } from '../config/supabaseClient.js';
 import * as orderService from './orderService.js';
 import * as productService from './productService.js';
+import logger from '../utils/logger.js';
 
 const ORDER_PROFITS_TABLE = 'order_profits';
 
@@ -24,7 +25,7 @@ const MERCHANT_RATE = 0.85;       // 85% للتاجر (100% - 15%)
 async function recordProfitsForOrder(orderId) {
   const { data: order, error: orderErr } = await orderService.getOrderById(orderId);
   if (orderErr || !order) {
-    console.error('[profitService] getOrderById error:', (orderErr && orderErr.message) || 'Order not found');
+    logger.error('profitService getOrderById error', { message: (orderErr && orderErr.message) || 'Order not found' });
     return { error: orderErr || new Error('Order not found') };
   }
 
@@ -107,7 +108,7 @@ async function recordProfitsForOrder(orderId) {
     .insert(rowsToInsert);
 
   if (insertErr) {
-    console.error('[profitService] Insert error:', insertErr.message);
+    logger.error('profitService Insert error', { message: insertErr.message });
     return { error: insertErr };
   }
 
@@ -134,7 +135,7 @@ async function getProfitsByParty(partyType, partyId = null) {
 
   const { data, error } = await q.order('created_at', { ascending: false });
   if (error) {
-    console.error('[profitService] getProfitsByParty error:', error.message);
+    logger.error('profitService getProfitsByParty error', { message: error.message });
     return { data: [], error };
   }
 

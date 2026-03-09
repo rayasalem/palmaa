@@ -3,13 +3,14 @@
  */
 
 import * as addressService from '../services/addressService.js';
+import logger from '../utils/logger.js';
 
 async function getCities(req, res) {
   try {
     const cities = await addressService.getCities();
     return res.status(200).json({ success: true, data: cities });
   } catch (err) {
-    console.error('[addressController] getCities:', err);
+    logger.error('addressController getCities', { message: err.message });
     return res.status(500).json({ success: false, error: err.message || 'Failed to load cities' });
   }
 }
@@ -22,7 +23,7 @@ async function getVillages(req, res) {
     const list = Array.isArray(villages) ? villages : [];
     return res.status(200).json({ success: true, data: list });
   } catch (err) {
-    console.error('[addressController] getVillages:', err);
+    logger.error('addressController getVillages', { message: err.message });
     return res.status(500).json({ success: false, error: err.message || 'Failed to load villages' });
   }
 }

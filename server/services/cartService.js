@@ -36,23 +36,27 @@ async function getCartWithItems(userId) {
     .eq('cart_id', cart.id)
     .order('created_at', { ascending: true });
   if (itemsErr) return { data: null, error: itemsErr };
-  const itemsWithProduct = await Promise.all(
-    (items || []).map(async (item) => {
-      const { data: product } = await supabase
-        .from(PRODUCTS_TABLE)
-        .select('id, name, image_url, price_ils, condition')
-        .eq('id', item.product_id)
-        .single();
-      return {
-        id: item.id,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        price: item.price,
-        created_at: item.created_at,
-        product: product || undefined,
-      };
-    })
-  );
+  const itemList = items || [];
+  const productIds = [...new Set(itemList.map((i) => i.product_id).filter(Boolean))];
+  let productMap = {};
+  if (productIds.length > 0) {
+    const { data: products } = await supabase
+      .from(PRODUCTS_TABLE)
+      .select('id, name, image_url, price_ils, condition')
+      .in('id', productIds);
+    productMap = (products || []).reduce((acc, p) => {
+      acc[p.id] = p;
+      return acc;
+    }, {});
+  }
+  const itemsWithProduct = itemList.map((item) => ({
+    id: item.id,
+    product_id: item.product_id,
+    quantity: item.quantity,
+    price: item.price,
+    created_at: item.created_at,
+    product: productMap[item.product_id] || undefined,
+  }));
   return {
     data: {
       id: cart.id,

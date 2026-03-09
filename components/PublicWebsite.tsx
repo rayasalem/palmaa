@@ -1,9 +1,11 @@
 
-import React, { useEffect, useState } from 'react';
-import { productService } from '../services/productService'; // Import Service
+import React, { useEffect, useState, useRef } from 'react';
+import { productService } from '../services/productService';
 import { Product } from '../types';
+import { marketStore } from '../store';
 import { prefetchComponent, prefetchProductData } from '../prefetch';
 import Logo from './Logo';
+import { ProductConditionBadge } from './ProductConditionBadge';
 import { Language, translations } from '../translations';
 import ComingSoonHero from './ComingSoonHero';
 import { ShoppingBag, TrendingUp, Store, Globe, ChevronDown, Menu, X, Users, Shield, ShieldCheck, Lock, BarChart3, Server, Sparkles, Rocket, Layers, Package, UserPlus, Settings, LineChart, Facebook, Instagram, MessageCircle, MailCheck } from 'lucide-react';
@@ -36,15 +38,82 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
   const [products, setProducts] = useState<Product[]>([]);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const featuredScrollRef = useRef<HTMLDivElement>(null);
+  const [autoScrollPaused, setAutoScrollPaused] = useState(false);
+  const pausedRef = useRef(false);
+  pausedRef.current = autoScrollPaused;
 
   useEffect(() => {
     const fetchFeatured = async () => {
-      // Use productService to get real data (from cloud if connected)
       const all = await productService.getAll();
-      setProducts(all.slice(0, 4));
+      setProducts((all || []).slice(0, 24));
     };
     fetchFeatured();
   }, []);
+
+  // إعادة جلب المنتجات عند العودة للصفحة (مثلاً بعد حذف من لوحة الإدارة) لضمان عرض محدث
+  useEffect(() => {
+    const onFocus = () => {
+      productService.getAll().then((all) => setProducts((all || []).slice(0, 24)));
+    };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, []);
+
+  // كاروسيل المنتجات — تمرير تلقائي مستمر (مثل صنع بحب)، يتحرك عندما القسم ظاهر
+  useEffect(() => {
+    const el = featuredScrollRef.current;
+    if (!el || products.length < 2) return;
+
+    let rafId: number | null = null;
+    let lastTime = 0;
+    const stepPx = 1.2;
+    const targetFps = 60;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (!entry?.isIntersecting) {
+          if (rafId != null) {
+            cancelAnimationFrame(rafId);
+            rafId = null;
+          }
+          return;
+        }
+        if (rafId != null) return;
+
+        const tick = (now: number) => {
+          rafId = requestAnimationFrame(tick);
+          const container = featuredScrollRef.current;
+          if (!container || pausedRef.current) return;
+          const maxScroll = container.scrollWidth - container.clientWidth;
+          if (maxScroll <= 0) return;
+          const delta = (now - lastTime) / (1000 / targetFps);
+          lastTime = now;
+          container.scrollLeft += stepPx * Math.min(delta, 3);
+          // إعادة للبداية عند نهاية المجموعة الأولى (قائمة مكررة = تمرير لا نهائي)
+          const loopAt = container.scrollWidth / 2;
+          if (container.scrollLeft >= loopAt - 2) container.scrollLeft = 0;
+        };
+
+        lastTime = performance.now();
+        rafId = requestAnimationFrame(tick);
+      },
+      { root: null, rootMargin: '0px', threshold: 0.15 }
+    );
+
+    const startAfterLayout = () => {
+      requestAnimationFrame(() => {
+        observer.observe(el);
+      });
+    };
+    startAfterLayout();
+
+    return () => {
+      observer.disconnect();
+      if (rafId != null) cancelAnimationFrame(rafId);
+    };
+  }, [products.length]);
 
   const scrollToSection = (id: string) => {
     setMobileMenuOpen(false);
@@ -53,18 +122,18 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
   };
 
   const navSections = [
-    { id: 'hero', ar: 'الرئيسية', en: 'Home', he: 'בית' },
-    { id: 'features', ar: 'المزايا', en: 'Features', he: 'תכונות' },
-    { id: 'products', ar: 'المنتجات', en: 'Products', he: 'מוצרים' },
-    { id: 'faq', ar: 'الأسئلة الشائعة', en: 'FAQ', he: 'שאלות נפוצות' },
-    { id: 'contact', ar: 'تواصل', en: 'Contact', he: 'צור קשר' },
+    { id: 'hero', ar: 'الرئيسية', en: 'Home', he: 'בית', scroll: true },
+    { id: 'features', ar: 'المزايا', en: 'Features', he: 'תכונות', scroll: true },
+    { id: 'products', ar: 'التسوق', en: 'Shop', he: 'חנות', scroll: false }, // يفتح صفحة الكتالوج لرؤية كل المنتجات
+    { id: 'faq', ar: 'الأسئلة الشائعة', en: 'FAQ', he: 'שאלות נפוצות', scroll: true },
+    { id: 'contact', ar: 'تواصل', en: 'Contact', he: 'צור קשר', scroll: true },
   ];
 
   return (
-    <div className="bg-palma-soft font-sans text-palma-text overflow-x-hidden min-h-screen flex flex-col" dir={lang === 'en' ? 'ltr' : 'rtl'}>
+    <div className="bg-palma-soft font-sans text-palma-text overflow-x-hidden min-h-screen flex flex-col touch-target-min max-w-[100vw]" dir={lang === 'en' ? 'ltr' : 'rtl'}>
       
       {/* Navbar - Fixed; on mobile: hamburger + logo, menu opens with logo inside */}
-      <nav className="fixed top-0 left-0 right-0 w-full bg-white/95 backdrop-blur-xl z-[100] border-b border-palma-border shadow-soft h-14 sm:h-16 transition-all duration-300 font-heading">
+      <nav className="fixed top-0 left-0 right-0 w-full bg-white/95 backdrop-blur-xl z-[100] border-b border-palma-border shadow-soft h-14 sm:h-16 transition-all duration-300 font-heading touch-target-min" style={{ paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}>
          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between gap-4">
             {/* اللوجو + روابط السكشنات — محاذاة واحدة */}
             <div className="flex items-center gap-2 sm:gap-3 lg:gap-5 min-w-0">
@@ -85,7 +154,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                   <button
                     key={s.id}
                     type="button"
-                    onClick={() => scrollToSection(s.id)}
+                    onClick={() => (s.scroll !== false ? scrollToSection(s.id) : onExploreProducts())}
                     className="px-2.5 py-2 text-[11px] font-bold text-palma-navy hover:text-palma-primary transition-colors rounded-lg hover:bg-palma-primaryLight/50"
                   >
                     {lang === 'ar' ? s.ar : lang === 'he' ? s.he : s.en}
@@ -134,7 +203,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                      <button
                        key={s.id}
                        type="button"
-                       onClick={() => scrollToSection(s.id)}
+                       onClick={() => { (s.scroll !== false ? scrollToSection(s.id) : onExploreProducts()); setMobileMenuOpen(false); }}
                        className="w-full py-3.5 text-sm font-semibold text-palma-navy hover:bg-palma-primaryLight rounded-xl transition-colors text-center"
                      >
                        {lang === 'ar' ? s.ar : lang === 'he' ? s.he : s.en}
@@ -422,55 +491,88 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
           </div>
         </section>
 
-        {/* 6. المنتجات المميزة */}
-        <section id="products" className="section-bg-6 py-24 sm:py-32">
+        {/* 6. المنتجات المميزة — كاروسيل تمرير أفقي */}
+        <section id="products" className="section-bg-6 py-24 sm:py-32 overflow-hidden">
           <div className="max-w-7xl mx-auto px-6">
-            <div className="heading-block mb-20">
+            <div className="heading-block mb-6">
               <h2 className="heading-block-title heading-block-title-creative font-heading text-4xl lg:text-5xl">
                 {t.common.featured}
               </h2>
               <div className="w-16 h-1.5 bg-palma-primary mx-auto rounded-full my-2" aria-hidden />
               <p className="heading-block-sub">{t.common.featuredSub}</p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {products.map(p => {
-                // Determine images
-                const mainImage = p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/400x400?text=No+Image';
-                const secondImage = p.images?.[1];
-
-                return (
-                  <div key={p.id} className="card card-hover-lift rounded-2xl p-4 transition-all duration-300 group">
-                    <div className="aspect-square rounded-[1.5rem] overflow-hidden bg-slate-50 mb-5 relative">
-                      <img 
-                        src={mainImage}
-                        loading="lazy"
-                        className={`w-full h-full object-cover transition-all duration-700 ${secondImage ? 'group-hover:opacity-0' : 'group-hover:scale-110'}`} 
-                        alt={p.name} 
-                      />
-                      {secondImage && (
-                        <img 
-                          src={secondImage}
-                          loading="lazy"
-                          className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-all duration-700 group-hover:scale-110" 
-                          alt={`${p.name} alternate`} 
-                        />
-                      )}
-                      
-                      <div className={`absolute top-4 ${lang === 'en' ? 'right-4' : 'left-4'} bg-white/90 backdrop-blur px-3 py-1.5 rounded-xl text-xs font-black shadow-lg text-palma-navy`}>
-                        ₪{p.price || p.price_ils}
+            <p className="text-center text-xs font-semibold text-palma-muted mb-6">
+              {lang === 'ar' ? 'التمرير تلقائي — أو اسحبي للتصفح' : lang === 'he' ? 'גלילה אוטומטית — או גרור' : 'Auto-scrolling — or drag to browse'}
+            </p>
+            <div className="relative w-full overflow-hidden">
+              <div
+                className="absolute left-0 top-0 bottom-4 w-24 sm:w-32 z-10 pointer-events-none"
+                style={{ background: 'linear-gradient(to right, #f1f5f9 0%, transparent 100%)' }}
+                aria-hidden
+              />
+              <div
+                className="absolute right-0 top-0 bottom-4 w-24 sm:w-32 z-10 pointer-events-none"
+                style={{ background: 'linear-gradient(to left, #f1f5f9 0%, transparent 100%)' }}
+                aria-hidden
+              />
+              <div
+                ref={featuredScrollRef}
+                onMouseEnter={() => setAutoScrollPaused(true)}
+                onMouseLeave={() => setAutoScrollPaused(false)}
+                className="flex gap-6 overflow-x-auto overflow-y-hidden pb-4 pt-2 scrollbar-hide w-full"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', direction: 'ltr', scrollBehavior: 'auto', WebkitOverflowScrolling: 'touch' }}
+                role="region"
+                aria-label={lang === 'ar' ? 'المنتجات المميزة' : 'Featured products'}
+              >
+                {/* عرض نسختين من القائمة لتمرير لا نهائي سلس */}
+                {[...products, ...products].map((p, index) => {
+                  const mainImage = p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/400x400?text=No+Image';
+                  const mName = p.merchantName || marketStore.getMerchantNameByUserId(p.merchant_id || p.merchantId || '');
+                  const shortDesc = p.shortDescription || (p.description || '').slice(0, 50) || mName;
+                  const stock = p.stock ?? 0;
+                  return (
+                    <div
+                      key={`${p.id}-${index}`}
+                      onClick={() => onViewProduct && onViewProduct(p.id)}
+                      onMouseEnter={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}
+                      className="flex-shrink-0 w-[280px] sm:w-[300px] snap-center bg-white rounded-2xl border border-palma-border shadow-card hover:shadow-card-hover transition-all duration-300 group cursor-pointer overflow-hidden"
+                    >
+                      <div className="aspect-square overflow-hidden bg-slate-50 relative">
+                        <img src={mainImage} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={p.name} />
+                        <div className="absolute top-3 left-3 bg-palma-primary text-white px-3 py-1.5 rounded-lg text-sm font-black shadow-lg">
+                          ₪{p.price ?? p.price_ils ?? 0}
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <h4 className="font-black text-palma-navy text-base mb-1 group-hover:text-palma-primary transition-colors line-clamp-2">{p.name}</h4>
+                        <p className="text-xs text-slate-500 mb-2 line-clamp-1">{shortDesc}</p>
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          {stock > 0 && (
+                            <span className="text-[10px] font-bold text-slate-600">
+                              {lang === 'ar' ? `متوفر: ${stock}` : lang === 'he' ? `במלאי: ${stock}` : `Available: ${stock}`}
+                            </span>
+                          )}
+                          <ProductConditionBadge condition={p.condition} lang={lang} className="shrink-0" />
+                        </div>
+                        <p className="text-[10px] font-bold text-slate-400">{mName}</p>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); onViewProduct && onViewProduct(p.id); }}
+                          className="mt-3 w-full py-2.5 bg-palma-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-palma-primaryHover transition-colors"
+                        >
+                          {t.common.details}
+                        </button>
                       </div>
                     </div>
-                    <div className="px-2 pb-2">
-                      <p className="text-[9px] font-bold text-palma-primary uppercase tracking-widest mb-2 bg-palma-primaryLight px-2 py-1 rounded-lg w-fit">{p.category}</p>
-                      <h4 className="font-bold text-palma-navy mb-6 text-lg tracking-tight truncate">{p.name}</h4>
-                      <button onClick={() => onViewProduct && onViewProduct(p.id)} onMouseEnter={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }} onFocus={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }} className="btn-primary w-full py-3.5 text-[10px] uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200">
-                        {t.common.details}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
+            {products.length === 0 && (
+              <div className="text-center py-12 text-slate-400 font-medium">
+                {lang === 'ar' ? 'لا توجد منتجات مميزة حالياً' : 'No featured products yet'}
+              </div>
+            )}
           </div>
         </section>
         {/* Testimonials */}

@@ -9,6 +9,7 @@
  */
 
 import nodemailer from 'nodemailer';
+import logger from '../utils/logger.js';
 
 const RESEND_API = 'https://api.resend.com/emails';
 
@@ -20,7 +21,7 @@ async function sendViaResend(to, subject, text, html) {
   const from = (process.env.RESEND_FROM || defaultFrom).trim();
   const recipients = Array.isArray(to) ? to.filter(Boolean) : [to].filter(Boolean);
   if (!recipients.length) {
-    console.error('[emailService] Resend send error: no recipients provided');
+    logger.error('emailService Resend send error: no recipients provided');
     return { success: false, error: { message: 'No recipients provided' } };
   }
   try {
@@ -41,13 +42,13 @@ async function sendViaResend(to, subject, text, html) {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      console.error('[emailService] Resend API error:', res.status, data);
+      logger.error('emailService Resend API error', { status: res.status, data });
       return { success: false, error: { message: (data && data.message) || `Resend ${res.status}` } };
     }
     console.log('[emailService] Resend sent to', to, subject);
     return { success: true };
   } catch (err) {
-    console.error('[emailService] Resend fetch error:', err.message);
+    logger.error('emailService Resend fetch error', { message: err.message });
     return { success: false, error: err };
   }
 }
@@ -83,7 +84,7 @@ function getTransporter() {
 async function sendEmail(to, subject, text, html) {
   const recipients = Array.isArray(to) ? to.filter(Boolean) : [to].filter(Boolean);
   if (!recipients.length) {
-    console.error('[emailService] sendEmail error: no recipients provided');
+    logger.error('emailService sendEmail error: no recipients provided');
     return { success: false, error: { message: 'No recipients provided' } };
   }
 
@@ -97,7 +98,7 @@ async function sendEmail(to, subject, text, html) {
 
   const transporter = getTransporter();
   if (!transporter) {
-    console.error('[emailService] Email not configured. Set RESEND_API_KEY (Resend → API Keys) in .env or Render Environment.');
+    logger.warn('emailService Email not configured. Set RESEND_API_KEY (Resend → API Keys) in .env or Render Environment.');
     return { success: false, error: { message: 'Email not configured' } };
   }
 
@@ -131,12 +132,12 @@ async function sendEmail(to, subject, text, html) {
           console.log('[emailService] SMTP sent successfully via port 587 to', recipients.join(', '));
           return { success: true };
         } catch (err2) {
-          console.error('[emailService] SMTP port 587 also failed:', err2.code || err2.message, err2.message);
+          logger.error('emailService SMTP port 587 also failed', { code: err2.code || err2.message, message: err2.message });
           return { success: false, error: err2 };
         }
       }
     }
-    console.error('[emailService] SMTP error:', code || err.message, err.message);
+    logger.error('emailService SMTP error', { code: code || err.message, message: err.message });
     return { success: false, error: err };
   }
 }

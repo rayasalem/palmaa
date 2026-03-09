@@ -1,0 +1,34 @@
+# Palma Marketplace – CD: deploy to staging (on push to develop or manual)
+name: CD Staging
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Build frontend
+        run: npm ci && npm run build
+        env:
+          VITE_API_URL: ${{ vars.STAGING_API_URL }}
+          VITE_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
+
+      - name: Build backend (server)
+        run: npm ci --prefix server
+
+      - name: Deploy to staging (placeholder)
+        run: |
+          echo "Staging deploy: upload build artifacts or push Docker image."
+          echo "Configure this step to your provider (Render, Railway, Docker registry, etc.)."

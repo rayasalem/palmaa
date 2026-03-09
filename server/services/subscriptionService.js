@@ -6,6 +6,7 @@
  */
 
 import { supabase } from '../config/supabaseClient.js';
+import logger from '../utils/logger.js';
 
 const USERS_TABLE = 'users';
 
@@ -23,7 +24,7 @@ async function getSubscription(userId) {
     .eq('id', userId)
     .single();
   if (error) {
-    console.error('[subscriptionService] getSubscription error:', error.message);
+    logger.error('subscriptionService getSubscription error', { message: error.message });
     return { data: null, error };
   }
   const sub = {
@@ -67,7 +68,7 @@ async function setFreeTrial(userId) {
     .select('subscription_type, subscription_start_date, subscription_end_date, subscription_status')
     .single();
   if (error) {
-    console.error('[subscriptionService] setFreeTrial error:', error.message);
+    logger.error('subscriptionService setFreeTrial error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };
@@ -147,7 +148,7 @@ async function renewSubscription(userId, endDate, type = 'paid') {
     .select('subscription_type, subscription_start_date, subscription_end_date, subscription_status')
     .single();
   if (error) {
-    console.error('[subscriptionService] renewSubscription error:', error.message);
+    logger.error('subscriptionService renewSubscription error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };
@@ -162,7 +163,7 @@ async function markExpired(userId) {
     .update({ subscription_status: 'expired', updated_at: new Date().toISOString() })
     .eq('id', userId);
   if (error) {
-    console.error('[subscriptionService] markExpired error:', error.message);
+    logger.error('subscriptionService markExpired error', { message: error.message });
     return { error };
   }
   return { error: null };

@@ -6,6 +6,7 @@
 import { supabase } from '../../config/supabaseClient.js';
 import { USERS_TABLE } from '../constants.js';
 import { hashPassword } from './hashPassword.js';
+import logger from '../../utils/logger.js';
 
 /**
  * Update user password in Supabase by email.
@@ -24,7 +25,7 @@ export async function updatePassword(email, newPassword) {
     .select()
     .single();
   if (error) {
-    console.error('[authService] updatePassword error:', error.message);
+    logger.error('authService updatePassword error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };

@@ -7,6 +7,7 @@ import { supabase } from '../config/supabaseClient.js';
 import * as orderService from './orderService.js';
 import * as productService from './productService.js';
 import * as platformSettings from './platformSettingsService.js';
+import logger from '../utils/logger.js';
 
 const TRANSACTIONS_TABLE = 'transactions';
 
@@ -77,7 +78,7 @@ async function recordOrderSettlement(orderId, totalAmount, paymentMethod, invoic
     .select()
     .single();
   if (error) {
-    console.error('[transactionService] recordOrderSettlement error:', error.message);
+    logger.error('transactionService recordOrderSettlement error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };
@@ -111,7 +112,7 @@ async function recordPaymentAttempt(orderId, amount, currency, status, gatewayTr
     .select()
     .single();
   if (error) {
-    console.error('[transactionService] recordPaymentAttempt error:', error.message);
+    logger.error('transactionService recordPaymentAttempt error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };
@@ -128,7 +129,7 @@ async function getMerchantStats(merchantId) {
     .eq('type', 'order_settlement')
     .order('created_at', { ascending: false });
   if (error) {
-    console.error('[transactionService] getMerchantStats error:', error.message);
+    logger.error('transactionService getMerchantStats error', { message: error.message });
     return { data: null, error };
   }
   const list = rows || [];

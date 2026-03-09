@@ -7,6 +7,7 @@ import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import { supabase } from '../config/supabaseClient.js';
 import * as emailService from './emailService.js';
+import logger from '../utils/logger.js';
 
 const USERS_TABLE = 'users';
 const OTP_TABLE = 'otp_codes';
@@ -38,7 +39,7 @@ async function saveOtp(email, code, type) {
     .select()
     .single();
   if (error) {
-    console.error('[authService] saveOtp error:', error.message);
+    logger.error('authService saveOtp error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };
@@ -107,7 +108,7 @@ async function updatePassword(email, newPassword) {
     .select()
     .single();
   if (error) {
-    console.error('[authService] updatePassword error:', error.message);
+    logger.error('authService updatePassword error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };
@@ -180,7 +181,7 @@ async function registerUser(params) {
   }
   const { data: user, error: insertError } = result;
   if (insertError) {
-    console.error('[authService] registerUser insert error:', insertError.message);
+    logger.error('authService registerUser insert error', { message: insertError.message });
     return { user: null, error: insertError };
   }
   // بعد إنشاء المستخدم بنجاح، نرسل كود التحقق بالبريد (لا نفشل التسجيل لو فشلت الرسالة)
@@ -288,7 +289,7 @@ async function setEmailVerified(email) {
     .select()
     .single();
   if (error) {
-    console.error('[authService] setEmailVerified error:', error.message);
+    logger.error('authService setEmailVerified error', { message: error.message });
     return { data: null, error };
   }
   return { data, error: null };
@@ -482,7 +483,7 @@ async function getUserById(userId) {
     .eq('id', userId)
     .single();
   if (error) {
-    console.error('[authService] getUserById error:', error.message);
+    logger.error('authService getUserById error', { message: error.message });
     return { data: null, error };
   }
   if (!data) return { data: null, error: null };
