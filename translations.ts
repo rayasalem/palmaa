@@ -1,5 +1,3 @@
-
-
 export type Language = 'ar' | 'en' | 'he';
 
 const ar = {
@@ -188,7 +186,7 @@ const ar = {
     pendingOnly: 'قيد المراجعة فقط',
     approvedOnly: 'معتمد فقط',
     pending: 'قيد المراجعة',
-    approved: 'معتمد'
+    approved: 'معتمد',
   },
   categories: {
     juices: 'عصائر',
@@ -320,7 +318,7 @@ const ar = {
     customer: 'زبون',
     merchant: 'تاجر',
     broker: 'وسيط',
-    admin: 'مدير'
+    admin: 'مدير',
   },
   nav: {
     home: 'الرئيسية',
@@ -405,7 +403,8 @@ const ar = {
     reject: 'رفض',
   },
   footer: {
-    about: 'بالما هي سوق فلسطيني رقمي نحو الاسواق المحلية والعالمية تجمع بين التجار، الزبائن، والمسوقين في بيئة آمنة ومتكاملة.',
+    about:
+      'بالما هي سوق فلسطيني رقمي نحو الاسواق المحلية والعالمية تجمع بين التجار، الزبائن، والمسوقين في بيئة آمنة ومتكاملة.',
     links: 'روابط سريعة',
     privacy: 'سياسة الخصوصية',
     terms: 'شروط الاستخدام',
@@ -427,19 +426,19 @@ const ar = {
     aboutTitle: 'من هي بالما؟',
     aboutSubtitle: 'منصة تربط بين الشركات والعملاء في مكان واحد.',
     features: {
-        merchantTitle: 'تمكين التجار',
-        merchantDesc: 'أدوات متطورة، خدمات لوجستية من FlashLine، وقاعدة زبائن واسعة لتنمية أعمالك.',
-        brokerTitle: 'فرص للوسطاء',
-        brokerDesc: 'حول تأثيرك الاجتماعي إلى دخل. روج للمنتجات الموثوقة وتتبع أرباحك لحظة بلحظة.',
-        customerTitle: 'تسوق مميز',
-        customerDesc: 'اكتشف أفضل العلامات التجارية المحلية مع ضمان سرعة التوصيل والدفع الآمن.'
-    }
+      merchantTitle: 'تمكين التجار',
+      merchantDesc: 'أدوات متطورة، خدمات لوجستية من FlashLine، وقاعدة زبائن واسعة لتنمية أعمالك.',
+      brokerTitle: 'فرص للوسطاء',
+      brokerDesc: 'حول تأثيرك الاجتماعي إلى دخل. روج للمنتجات الموثوقة وتتبع أرباحك لحظة بلحظة.',
+      customerTitle: 'تسوق مميز',
+      customerDesc: 'اكتشف أفضل العلامات التجارية المحلية مع ضمان سرعة التوصيل والدفع الآمن.',
+    },
   },
   hero: {
     registerNow: 'ابدأ الآن',
     join: 'سجل كتاجر الآن',
-    explore: 'تصفح المنتجات'
-  }
+    explore: 'تصفح المنتجات',
+  },
 };
 
 const en = {
@@ -589,7 +588,7 @@ const en = {
     pendingOnly: 'Pending Only',
     approvedOnly: 'Approved Only',
     pending: 'Pending',
-    approved: 'Approved'
+    approved: 'Approved',
   },
   categories: {
     electronics: 'Electronics',
@@ -609,14 +608,14 @@ const en = {
     bags_accessories: 'Bags & Accessories',
     shoes: 'Shoes',
     furnishings_textiles: 'Furnishings & Textiles',
-    other: 'Other'
+    other: 'Other',
   },
   roles: {
     ...ar.roles,
     customer: 'Customer',
     merchant: 'Merchant',
     broker: 'Broker',
-    admin: 'Admin'
+    admin: 'Admin',
   },
   nav: {
     ...ar.nav,
@@ -634,7 +633,7 @@ const en = {
     notifications: 'Notifications',
   },
   comingSoon: {
-    earlyAccess: 'Palestine\'s Premier Marketplace',
+    earlyAccess: "Palestine's Premier Marketplace",
     headline: 'The Largest Integrated E-commerce Store in Palestine',
     subheadline: 'Building a robust ecosystem for merchants, brokers, and customers in one place.',
     days: 'Days',
@@ -650,13 +649,15 @@ const en = {
     aboutTitle: 'Why Choose Palma?',
     aboutSubtitle: 'A revolutionary platform connecting the Palestinian market like never before.',
     features: {
-        merchantTitle: 'Empowering Merchants',
-        merchantDesc: 'Access advanced tools, FlashLine logistics, and a nationwide customer base to scale your business effortlessly.',
-        brokerTitle: 'Opportunity for Brokers',
-        brokerDesc: 'Turn your social influence into income. Promote verified products and track your commissions in real-time.',
-        customerTitle: 'Premium Shopping',
-        customerDesc: 'Discover top-rated local brands with guaranteed delivery speeds and secure payment options.'
-    }
+      merchantTitle: 'Empowering Merchants',
+      merchantDesc:
+        'Access advanced tools, FlashLine logistics, and a nationwide customer base to scale your business effortlessly.',
+      brokerTitle: 'Opportunity for Brokers',
+      brokerDesc:
+        'Turn your social influence into income. Promote verified products and track your commissions in real-time.',
+      customerTitle: 'Premium Shopping',
+      customerDesc: 'Discover top-rated local brands with guaranteed delivery speeds and secure payment options.',
+    },
   },
   auth: {
     ...ar.auth,
@@ -664,7 +665,8 @@ const en = {
     accountRejectedTitle: 'Request Rejected',
     accountPendingMsg: 'Site management is currently reviewing your details.',
     accountRejectedMsg: 'Your professional request was rejected based on current guidelines.',
-    reviewTime: 'Standard review cycle is 24-48 business hours. You will receive an automated notification once approved.',
+    reviewTime:
+      'Standard review cycle is 24-48 business hours. You will receive an automated notification once approved.',
     accountId: 'Account ID',
     forgotPassword: 'Forgot Password',
     enterCodeSent: 'Enter the 6-digit code sent to your email',
@@ -687,14 +689,15 @@ const en = {
   hero: {
     registerNow: 'Register Now',
     join: 'Register as Merchant',
-    explore: 'Explore Products'
+    explore: 'Explore Products',
   },
   footer: {
-    about: 'Palma is a leading Palestinian e-commerce platform connecting merchants, customers, and marketers in a secure and integrated environment.',
+    about:
+      'Palma is a leading Palestinian e-commerce platform connecting merchants, customers, and marketers in a secure and integrated environment.',
     links: 'Quick Links',
     privacy: 'Privacy Policy',
     terms: 'Terms of Use',
-  }
+  },
 };
 
 /** Hebrew (עברית) – RTL. كل النصوص بالعبرية حتى لا يبقى شيء بالإنجليزي. */
@@ -1177,7 +1180,12 @@ export function getAuthErrorMessage(error: string | undefined, lang: Language): 
     if (lang === 'he') return 'לא נמצא חשבון עם אימייל זה';
     return error;
   }
-  if (e.includes('reset failed') || e.includes('invalid or expired') || e.includes('invalid otp') || e.includes('expired code')) {
+  if (
+    e.includes('reset failed') ||
+    e.includes('invalid or expired') ||
+    e.includes('invalid otp') ||
+    e.includes('expired code')
+  ) {
     if (lang === 'ar') return 'فشل استعادة كلمة المرور. تحقق من الرمز أو جرّب مرة أخرى.';
     if (lang === 'he') return 'איפוס הסיסמה נכשל. בדוק את הקוד או נסה שוב.';
     return error;

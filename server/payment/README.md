@@ -25,13 +25,13 @@ Then start the server as usual. The module is mounted at `/api/payment` (same as
 
 ## Environment
 
-| Variable | Description |
-|----------|-------------|
-| ARABIC_BANK_API_URL | Gateway base URL (e.g. `https://api.arabicbank.example/v1`) |
-| ARABIC_BANK_MERCHANT_ID | Merchant ID |
-| ARABIC_BANK_SECRET_KEY | Secret for webhook signature verification |
-| SUPABASE_URL / SUPABASE_SERVICE_KEY | Used to read/update orders |
-| ORDERS_TABLE | Optional; default `orders` |
+| Variable                            | Description                                                 |
+| ----------------------------------- | ----------------------------------------------------------- |
+| ARABIC_BANK_API_URL                 | Gateway base URL (e.g. `https://api.arabicbank.example/v1`) |
+| ARABIC_BANK_MERCHANT_ID             | Merchant ID                                                 |
+| ARABIC_BANK_SECRET_KEY              | Secret for webhook signature verification                   |
+| SUPABASE_URL / SUPABASE_SERVICE_KEY | Used to read/update orders                                  |
+| ORDERS_TABLE                        | Optional; default `orders`                                  |
 
 ## Order table
 

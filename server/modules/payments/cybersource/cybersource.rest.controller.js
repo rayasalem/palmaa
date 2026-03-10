@@ -116,9 +116,7 @@ async function processRestPaymentHandler(req, res) {
     });
   } catch (err) {
     logger.error('[cybersource-rest-process] unexpected error', { message: err.message });
-    return res
-      .status(500)
-      .json({ success: false, error: err.message || 'Unexpected Cybersource REST error' });
+    return res.status(500).json({ success: false, error: err.message || 'Unexpected Cybersource REST error' });
   }
 }
 
@@ -129,9 +127,7 @@ async function processRestPaymentHandler(req, res) {
  */
 async function testRestPaymentHandler(req, res) {
   if (isProd) {
-    return res
-      .status(403)
-      .json({ success: false, error: 'Cybersource REST test endpoint is disabled in production.' });
+    return res.status(403).json({ success: false, error: 'Cybersource REST test endpoint is disabled in production.' });
   }
 
   const amount = Number(req.body?.amount) || 59.5;
@@ -178,11 +174,8 @@ async function testRestPaymentHandler(req, res) {
     });
   } catch (err) {
     logger.error('[cybersource-rest-test] unexpected error', { message: err.message });
-    return res
-      .status(500)
-      .json({ success: false, error: err.message || 'Unexpected Cybersource REST error' });
+    return res.status(500).json({ success: false, error: err.message || 'Unexpected Cybersource REST error' });
   }
 }
 
 export { processRestPaymentHandler, testRestPaymentHandler };
-

@@ -27,11 +27,7 @@ async function follow(customerId, merchantId) {
 }
 
 async function unfollow(customerId, merchantId) {
-  const { error } = await supabase
-    .from(TABLE)
-    .delete()
-    .eq('follower_id', customerId)
-    .eq('following_id', merchantId);
+  const { error } = await supabase.from(TABLE).delete().eq('follower_id', customerId).eq('following_id', merchantId);
   if (error) {
     logger.error('followService unfollow error', { message: error.message });
     return { error };

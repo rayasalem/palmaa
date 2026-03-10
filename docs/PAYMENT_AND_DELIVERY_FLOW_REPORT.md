@@ -54,6 +54,7 @@ redirectForm.submit();
 - **الخدمة:** `server/modules/payments/cybersource/cybersource.service.js` → `createHostedSession(orderId, amount)`
 
 ما يحدث:
+
 - بناء حقول موقّعة (HMAC-SHA256) حسب توثيق Cybersource:  
   `access_key`, `profile_id`, `transaction_uuid`, `signed_date_time`, `transaction_type`, `reference_number` (= orderId), `amount`, `currency`, `locale`, `signed_field_names`, `signature`.
 - **لا تُرسل بيانات البطاقة من سيرفرنا**؛ المستخدم يُدخلها في صفحة Cybersource.
@@ -63,9 +64,16 @@ redirectForm.submit();
 ```javascript
 // cybersource.service.js – الحقول الموقّعة المرسلة
 const REQUIRED_SIGNED_FIELDS = [
-  'access_key', 'amount', 'currency', 'locale', 'profile_id',
-  'reference_number', 'signed_date_time', 'signed_field_names',
-  'transaction_type', 'transaction_uuid',
+  'access_key',
+  'amount',
+  'currency',
+  'locale',
+  'profile_id',
+  'reference_number',
+  'signed_date_time',
+  'signed_field_names',
+  'transaction_type',
+  'transaction_uuid',
 ];
 return { actionUrl: cfg.hostedPayUrl, fields: { ...fields, signature } };
 ```
@@ -86,6 +94,7 @@ return { actionUrl: cfg.hostedPayUrl, fields: { ...fields, signature } };
   **المنطق:** `server/modules/payments/cybersource/cybersource.service.js` → `handleNotification(payload)`
 
 الخطوات:
+
 1. التحقق من التوقيع (HMAC) باستخدام `verifySignature(payload, cfg.secretKey)`.
 2. استخراج `decision` (ACCEPT = نجاح، غير ذلك = فشل) و`orderId` من `req_reference_number` أو `reference_number`.
 3. استدعاء `paymentService.handlePaymentCallback(orderId, 'success', idempotencyKey)` عند ACCEPT، أو `'failed'` عند غير ذلك.
@@ -143,19 +152,19 @@ async function handlePaymentCallback(orderId, status, idempotencyKey) {
 
 ### 1.5 ملخص الملفات المسؤولة عن الدفع
 
-| الملف | الدور |
-|-------|--------|
-| `views/CheckoutPage.tsx` | جمع بيانات الشحن والتحقق من البطاقة، إنشاء الطلب، طلب جلسة Hosted ثم التحويل لـ Cybersource |
-| `services/checkoutApi.ts` | `createOrder`, `createCybersourceHostedSession`, `createShipment`, عناوين المدن/القرى |
-| `server/controllers/orderController.js` | `createOrder` – التحقق من الجسم واستدعاء orderService |
-| `server/services/orderService.js` | إنشاء سجل في `orders` و`order_items`، حالة أولية PENDING |
-| `server/modules/payments/cybersource/cybersource.routes.js` | ربط `POST /hosted-session`, `POST /notify` |
-| `server/modules/payments/cybersource/cybersource.controller.js` | `createHostedSessionHandler`, `notificationHandler` |
-| `server/modules/payments/cybersource/cybersource.service.js` | إنشاء جلسة Hosted، معالجة الإشعار والتحقق من التوقيع واستدعاء handlePaymentCallback |
-| `server/modules/payments/cybersource/cybersource.signature.js` | توقيع HMAC-SHA256 والتحقق منه |
-| `server/services/paymentService.js` | `updateOrderStatus`, `handlePaymentCallback`, خصم المخزون، تسوية الطلب عند الدفع |
-| `server/services/transactionService.js` | `recordOrderSettlement`, `recordPaymentAttempt` |
-| جدول `orders` | تخزين `status` (PENDING → paid/failed)، `payment_method` |
+| الملف                                                           | الدور                                                                                       |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `views/CheckoutPage.tsx`                                        | جمع بيانات الشحن والتحقق من البطاقة، إنشاء الطلب، طلب جلسة Hosted ثم التحويل لـ Cybersource |
+| `services/checkoutApi.ts`                                       | `createOrder`, `createCybersourceHostedSession`, `createShipment`, عناوين المدن/القرى       |
+| `server/controllers/orderController.js`                         | `createOrder` – التحقق من الجسم واستدعاء orderService                                       |
+| `server/services/orderService.js`                               | إنشاء سجل في `orders` و`order_items`، حالة أولية PENDING                                    |
+| `server/modules/payments/cybersource/cybersource.routes.js`     | ربط `POST /hosted-session`, `POST /notify`                                                  |
+| `server/modules/payments/cybersource/cybersource.controller.js` | `createHostedSessionHandler`, `notificationHandler`                                         |
+| `server/modules/payments/cybersource/cybersource.service.js`    | إنشاء جلسة Hosted، معالجة الإشعار والتحقق من التوقيع واستدعاء handlePaymentCallback         |
+| `server/modules/payments/cybersource/cybersource.signature.js`  | توقيع HMAC-SHA256 والتحقق منه                                                               |
+| `server/services/paymentService.js`                             | `updateOrderStatus`, `handlePaymentCallback`, خصم المخزون، تسوية الطلب عند الدفع            |
+| `server/services/transactionService.js`                         | `recordOrderSettlement`, `recordPaymentAttempt`                                             |
+| جدول `orders`                                                   | تخزين `status` (PENDING → paid/failed)، `payment_method`                                    |
 
 ---
 
@@ -179,10 +188,27 @@ async function handlePaymentCallback(orderId, status, idempotencyKey) {
 ```tsx
 // CheckoutPage.tsx ~230–259
 const shipmentPayload = {
-  orderId, addressLine1, addressLine2, cityId, cityName, villageId, villageName,
-  recipient_name, phone, weight, cod, notes, invoiceNumber,
-  senderName, senderPhone, receiverName, receiverPhone, quantity, description,
-  serviceType: 'STANDARD', shipmentType: 'COD',
+  orderId,
+  addressLine1,
+  addressLine2,
+  cityId,
+  cityName,
+  villageId,
+  villageName,
+  recipient_name,
+  phone,
+  weight,
+  cod,
+  notes,
+  invoiceNumber,
+  senderName,
+  senderPhone,
+  receiverName,
+  receiverPhone,
+  quantity,
+  description,
+  serviceType: 'STANDARD',
+  shipmentType: 'COD',
 };
 window.localStorage.setItem(`checkout-shipment-${orderId}`, JSON.stringify(shipmentPayload));
 ```
@@ -229,6 +255,7 @@ useEffect(() => {
 - **الخدمة:** `server/services/shipmentService.js` → `createShipment(orderId, shipmentInput)`
 
 الخطوات داخل `shipmentService.createShipment`:
+
 1. التحقق من وجود الطلب وعدم وجود `delivery_id` مسبقاً.
 2. إنشاء جسم الطلب لـ LogesTechs حسب `buildShipmentPayload` (مدينة، قرية، عنوان، مرسل، مستقبل، وزن، COD، نوع الخدمة، إلخ).
 3. استدعاء LogesTechs: `POST ${SHIPMENT_API_BASE}/ship/request/by-email` مع `company-id` وبيانات الحزمة.
@@ -272,15 +299,15 @@ async function updateOrderShipment(orderId, shipmentId, shipmentStatus) {
 
 ### 2.5 ملخص الملفات المسؤولة عن التوصيل
 
-| الملف | الدور |
-|-------|--------|
-| `views/CheckoutPage.tsx` | جمع مدينة، قرية، عنوان، هاتف، وزن، COD، وحفظها في localStorage مع orderId |
-| `views/CheckoutReturnPage.tsx` | بعد العودة من الدفع: استطلاع حالة الطلب ثم استدعاء createShipment وقراءة localStorage |
-| `services/checkoutApi.ts` | `createShipment`, `getCities`, `getVillages` |
-| `server/controllers/shipmentController.js` | التحقق من الجسم واستدعاء shipmentService.createShipment، getStatus، printPdf، cancel |
-| `server/services/shipmentService.js` | buildShipmentPayload، callCreateShipmentApi (LogesTechs)، updateOrderShipment، getPackageStatus، printAwb، cancelShipment |
-| `server/services/addressService.js` | توفير المدن والقرى لـ /api/addresses |
-| جدول `orders` | تخزين `delivery_id`, `delivery_status`, وعند التسليم `completed_at`, `status` |
+| الملف                                      | الدور                                                                                                                     |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `views/CheckoutPage.tsx`                   | جمع مدينة، قرية، عنوان، هاتف، وزن، COD، وحفظها في localStorage مع orderId                                                 |
+| `views/CheckoutReturnPage.tsx`             | بعد العودة من الدفع: استطلاع حالة الطلب ثم استدعاء createShipment وقراءة localStorage                                     |
+| `services/checkoutApi.ts`                  | `createShipment`, `getCities`, `getVillages`                                                                              |
+| `server/controllers/shipmentController.js` | التحقق من الجسم واستدعاء shipmentService.createShipment، getStatus، printPdf، cancel                                      |
+| `server/services/shipmentService.js`       | buildShipmentPayload، callCreateShipmentApi (LogesTechs)، updateOrderShipment، getPackageStatus، printAwb، cancelShipment |
+| `server/services/addressService.js`        | توفير المدن والقرى لـ /api/addresses                                                                                      |
+| جدول `orders`                              | تخزين `delivery_id`, `delivery_status`, وعند التسليم `completed_at`, `status`                                             |
 
 ---
 
@@ -322,14 +349,14 @@ if (step === 'payment_failed') {
 
 ### 3.3 خلاصة الربط
 
-| الحدث | التأثير على الطلب | التأثير على التوصيل |
-|-------|-------------------|----------------------|
+| الحدث                          | التأثير على الطلب                                 | التأثير على التوصيل                                                                                |
+| ------------------------------ | ------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | نجاح الدفع (إشعار Cybersource) | `orders.status = 'paid'`، خصم مخزون، تسوية، أرباح | المستخدم يُوجّه لصفحة العودة؛ عند ظهور paid تُنشأ الشحنة وتُحدَّث `delivery_id` و`delivery_status` |
-| فشل الدفع | `orders.status = 'failed'` | لا يُنشأ أي شحن؛ صفحة العودة تعرض فشل الدفع |
-| إنشاء الشحنة | — | تحديث `orders.delivery_id`, `orders.delivery_status` (وعند delivered: `status = 'completed'`) |
+| فشل الدفع                      | `orders.status = 'failed'`                        | لا يُنشأ أي شحن؛ صفحة العودة تعرض فشل الدفع                                                        |
+| إنشاء الشحنة                   | —                                                 | تحديث `orders.delivery_id`, `orders.delivery_status` (وعند delivered: `status = 'completed'`)      |
 
 **ملاحظة:** عنوان العودة من Cybersource (return URL) يُضبط في Business Center لـ Secure Acceptance بحيث يعيد المستخدم إلى الموقع مع `orderId` و`payment=success` أو `payment=failed`. التطبيق يعتمد على معلمة `payment` لاختيار عرض "جاري التأكيد" أو "فشل الدفع"، وعلى استطلاع حالة الطلب للتأكد من `paid` قبل إنشاء الشحنة.
 
 ---
 
-*تم إعداد التقرير بناءً على فحص المشروع وتتبع مسارات الدفع والتوصيل في الكود.*
+_تم إعداد التقرير بناءً على فحص المشروع وتتبع مسارات الدفع والتوصيل في الكود._

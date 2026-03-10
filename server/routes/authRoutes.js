@@ -3,35 +3,67 @@
  */
 
 import express from 'express';
+import { getEnv, isProduction } from '../config/env.js';
 import * as authController from '../controllers/authController.js';
 import { authLimiter } from '../middlewares/security.js';
 import { authenticate } from '../middlewares/authMiddleware.js';
+import { validate } from '../middlewares/validate.js';
+import { auth as authSchemas } from '../validation/schemas.js';
+import mfaRoutes from './mfaRoutes.js';
 
 const router = express.Router();
 // للتأكد أن الطلبات تصل الباكند (لو ظهر 404 معناه السيرفر مش Node)
 router.get('/ping', (req, res) => res.json({ ok: true, api: 'auth', message: 'Backend is Node.js' }));
-// يوضح أي مفتاح Supabase يقرأه الباكند (service_role مطلوب لتسجيل الدخول)
+// يوضح أي مفتاح Supabase يقرأه الباكند. في الإنتاج معطّل إلا إذا ALLOW_AUTH_CHECK_KEY=true (لا تعرّض نوع المفتاح).
 router.get('/check-key', (req, res) => {
+  if (isProduction() && getEnv('ALLOW_AUTH_CHECK_KEY', 'false') !== 'true') {
+    return res.status(404).json({ error: 'Not found' });
+  }
   const key = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   let keyType = 'missing';
   if (key) {
     try {
       const payload = JSON.parse(Buffer.from(key.split('.')[1], 'base64').toString());
-      keyType = payload.role === 'service_role' ? 'service_role' : payload.role === 'anon' ? 'anon' : (payload.role || 'unknown');
+      keyType =
+        payload.role === 'service_role' ? 'service_role' : payload.role === 'anon' ? 'anon' : payload.role || 'unknown';
     } catch (_) {
       keyType = 'invalid';
     }
   }
-  res.json({ keyType, ok: keyType === 'service_role', message: keyType === 'service_role' ? 'المفتاح صحيح' : keyType === 'anon' ? 'غيّر إلى مفتاح service_role في Render' : 'ضبط SUPABASE_SERVICE_KEY في Render' });
+  res.json({
+    keyType,
+    ok: keyType === 'service_role',
+    message:
+      keyType === 'service_role'
+        ? 'المفتاح صحيح'
+        : keyType === 'anon'
+          ? 'غيّر إلى مفتاح service_role في Render'
+          : 'ضبط SUPABASE_SERVICE_KEY في Render',
+  });
 });
 router.use(authLimiter());
-router.post('/login', authController.login);
+router.post('/login', validate(authSchemas.login, 'body', 'auth.login'), authController.login);
 router.post('/logout', authController.logout);
+router.post('/logout-all', authenticate, authController.logoutAll);
 router.get('/me', authenticate, authController.getMe);
-router.post('/register', authController.registerUser);
-router.post('/verify-email', authController.verifyEmail);
-router.post('/forgot-password', authController.forgotPassword);
-router.post('/reset-password', authController.resetPassword);
-router.post('/resend-verification', authController.resendVerification);
+router.post('/register', validate(authSchemas.register, 'body', 'auth.register'), authController.registerUser);
+router.post('/verify-email', validate(authSchemas.verifyEmail, 'body', 'auth.verifyEmail'), authController.verifyEmail);
+router.post(
+  '/forgot-password',
+  validate(authSchemas.forgotPassword, 'body', 'auth.forgotPassword'),
+  authController.forgotPassword
+);
+router.post(
+  '/reset-password',
+  validate(authSchemas.resetPassword, 'body', 'auth.resetPassword'),
+  authController.resetPassword
+);
+router.post(
+  '/resend-verification',
+  validate(authSchemas.resendVerification, 'body', 'auth.resendVerification'),
+  authController.resendVerification
+);
+
+router.use('/mfa', mfaRoutes);
 
 export default router;

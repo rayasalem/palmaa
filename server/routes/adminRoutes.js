@@ -1,26 +1,48 @@
 /**
- * Admin routes: list users, update user status, list orders.
- * All require authenticate + ADMIN role.
+ * Admin routes: list users, update user status, list orders, products, platform.
+ * All require authenticate + ADMIN role. Central Joi validation on body/query.
  */
 
 import express from 'express';
 import * as adminController from '../controllers/adminController.js';
 import { authenticate, requireRole } from '../middlewares/authMiddleware.js';
+import { validate } from '../middlewares/validate.js';
+import { admin as adminSchemas } from '../validation/schemas.js';
 
 const router = express.Router();
 router.use(authenticate);
 router.use(requireRole('ADMIN'));
 
-router.get('/users', adminController.getUsers);
-router.patch('/users/:id/status', adminController.updateUserStatus);
-router.post('/users/:id/delete', adminController.softDeleteUser);
+router.get('/users', validate(adminSchemas.listUsers, 'query', 'admin.listUsers'), adminController.getUsers);
+router.patch(
+  '/users/:id/status',
+  validate(adminSchemas.updateUserStatus, 'body', 'admin.updateUserStatus'),
+  adminController.updateUserStatus
+);
+router.post(
+  '/users/:id/delete',
+  validate(adminSchemas.softDeleteUser, 'body', 'admin.softDeleteUser'),
+  adminController.softDeleteUser
+);
 router.post('/users/:id/restore', adminController.restoreUser);
-router.get('/orders', adminController.getOrders);
-router.get('/products', adminController.getProducts);
-router.put('/products/:id', adminController.updateProduct);
+router.get('/orders', validate(adminSchemas.listOrders, 'query', 'admin.listOrders'), adminController.getOrders);
+router.get(
+  '/products',
+  validate(adminSchemas.listProducts, 'query', 'admin.listProducts'),
+  adminController.getProducts
+);
+router.put(
+  '/products/:id',
+  validate(adminSchemas.updateProduct, 'body', 'admin.updateProduct'),
+  adminController.updateProduct
+);
 router.delete('/products/:id', adminController.deleteProduct);
 router.get('/settings', adminController.getSettings);
-router.patch('/settings', adminController.updateSettings);
+router.patch(
+  '/settings',
+  validate(adminSchemas.updateSettings, 'body', 'admin.updateSettings'),
+  adminController.updateSettings
+);
 router.get('/platform-earnings', adminController.getPlatformEarnings);
 
 export default router;

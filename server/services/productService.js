@@ -17,10 +17,7 @@ async function getMerchantNamesMap(merchantIds) {
   if (!merchantIds || merchantIds.length === 0) return {};
   const ids = [...new Set(merchantIds.filter(Boolean))];
   const map = {};
-  const { data: users, error: uErr } = await supabase
-    .from('users')
-    .select('id, name, company_name')
-    .in('id', ids);
+  const { data: users, error: uErr } = await supabase.from('users').select('id, name, company_name').in('id', ids);
   if (!uErr && users) {
     for (const u of users) {
       map[u.id] = u.company_name || u.name || 'Merchant';
@@ -42,18 +39,41 @@ function attachMerchantNames(products, namesMap) {
   if (!products || !namesMap) return products;
   return products.map((p) => ({
     ...p,
-    merchant_name: p.merchant_id ? (namesMap[p.merchant_id] || null) : null,
+    merchant_name: p.merchant_id ? namesMap[p.merchant_id] || null : null,
   }));
 }
 
+/** Escape for safe use in Supabase ilike: % _ \ and single quote. */
+function escapeForLike(s) {
+  if (typeof s !== 'string') return '';
+  return s.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_').replace(/'/g, "''");
+}
+
+/**
+ * Catalog list: pagination (default 24, max 100), optional search (q) and category filter.
+ * Uses parsePagination with catalog defaults; filters applied server-side.
+ */
 async function getActiveProducts(opts = {}) {
-  const { limit, offset } = parsePagination(opts);
+  const { limit, offset } = parsePagination(opts, 24, 100);
+  const q = typeof opts.q === 'string' ? opts.q.trim() : '';
+  const category = typeof opts.category === 'string' ? opts.category.trim() : '';
+
   let query = supabase
     .from(PRODUCTS_TABLE)
     .select('*')
     .or('status.eq.active,is_active.eq.true')
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
+    .order('created_at', { ascending: false });
+
+  if (category) {
+    query = query.eq('category', category);
+  }
+  if (q && q.length > 0) {
+    const escaped = escapeForLike(q);
+    const pattern = `%${escaped}%`;
+    query = query.or(`name.ilike.'${pattern}',title.ilike.'${pattern}',description.ilike.'${pattern}'`);
+  }
+
+  query = query.range(offset, offset + limit - 1);
   const { data: products, error } = await query;
   if (error) {
     logger.error('productService getActiveProducts error', { message: error.message });
@@ -62,11 +82,7 @@ async function getActiveProducts(opts = {}) {
   const list = products || [];
   const merchantIds = [...new Set(list.map((p) => p.merchant_id).filter(Boolean))];
   if (merchantIds.length === 0) return { data: list, error: null };
-  const { data: suspended } = await supabase
-    .from('users')
-    .select('id')
-    .in('id', merchantIds)
-    .eq('status', 'SUSPENDED');
+  const { data: suspended } = await supabase.from('users').select('id').in('id', merchantIds).eq('status', 'SUSPENDED');
   const suspendedSet = new Set((suspended || []).map((u) => u.id));
   const filtered = list.filter((p) => !suspendedSet.has(p.merchant_id));
   const namesMap = await getMerchantNamesMap(filtered.map((p) => p.merchant_id));
@@ -75,11 +91,7 @@ async function getActiveProducts(opts = {}) {
 }
 
 async function getProductById(id) {
-  const { data, error } = await supabase
-    .from(PRODUCTS_TABLE)
-    .select('*')
-    .eq('id', id)
-    .single();
+  const { data, error } = await supabase.from(PRODUCTS_TABLE).select('*').eq('id', id).single();
   if (error) {
     logger.error('productService getProductById error', { message: error.message });
     return { data: null, error };
@@ -113,7 +125,8 @@ async function createProduct(merchantId, payload) {
   const price = Number(payload.price ?? payload.price_ils) || 0;
   const stock = Number(payload.stock) || 0;
   const isActive = payload.isActive !== undefined ? payload.isActive : true;
-  const images = (payload.images && payload.images.length) ? payload.images : (payload.image_url ? [payload.image_url] : []);
+  const images =
+    payload.images && payload.images.length ? payload.images : payload.image_url ? [payload.image_url] : [];
   const condition = payload.condition || 'new';
   const row = {
     merchant_id: merchantId,
@@ -137,11 +150,7 @@ async function createProduct(merchantId, payload) {
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
-  const { data, error } = await supabase
-    .from(PRODUCTS_TABLE)
-    .insert(row)
-    .select()
-    .single();
+  const { data, error } = await supabase.from(PRODUCTS_TABLE).insert(row).select().single();
   if (error) {
     logger.error('productService createProduct error', { message: error.message });
     return { data: null, error };
@@ -222,11 +231,7 @@ async function decrementStock(productId, quantity) {
 }
 
 async function deleteProduct(productId, merchantId) {
-  const { error } = await supabase
-    .from(PRODUCTS_TABLE)
-    .delete()
-    .eq('id', productId)
-    .eq('merchant_id', merchantId);
+  const { error } = await supabase.from(PRODUCTS_TABLE).delete().eq('id', productId).eq('merchant_id', merchantId);
   if (error) {
     logger.error('productService deleteProduct error', { message: error.message });
     return { error };

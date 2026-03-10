@@ -9,7 +9,7 @@ import logger from '../utils/logger.js';
 
 async function addComment(req, res) {
   try {
-    const userId = (req.auth && req.auth.sub);
+    const userId = req.auth && req.auth.sub;
     const { id: productId } = req.params;
     const { content } = req.body || {};
     if (!userId) return res.status(401).json({ success: false, error: 'Authentication required' });
@@ -25,7 +25,7 @@ async function addComment(req, res) {
     if (error) return res.status(500).json({ success: false, error: error.message || 'Failed to add comment' });
 
     const { data: product } = await productService.getProductById(productId);
-    if ((product && product.merchant_id)) {
+    if (product && product.merchant_id) {
       await notificationService.notifyMerchantComment(product.merchant_id, productId);
     }
     await notificationService.notifyAdminComment(productId);

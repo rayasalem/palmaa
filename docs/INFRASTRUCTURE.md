@@ -2,14 +2,14 @@
 
 ## Folders and files
 
-| Path | Purpose |
-|------|---------|
-| `config/` | Env examples for development, staging, production |
-| `deploy/` | Nginx configs (reverse proxy, frontend), Prometheus config |
-| `docker-compose.yml` | Full stack: frontend, backend, postgres, redis, nginx |
-| `Dockerfile.frontend` | Multi-stage frontend build; serve with Nginx |
-| `server/Dockerfile` | Backend image (Node, server only) |
-| `.github/workflows/` | CI (build, audit), CD staging, CD production |
+| Path                  | Purpose                                                    |
+| --------------------- | ---------------------------------------------------------- |
+| `config/`             | Env examples for development, staging, production          |
+| `deploy/`             | Nginx configs (reverse proxy, frontend), Prometheus config |
+| `docker-compose.yml`  | Full stack: frontend, backend, postgres, redis, nginx      |
+| `Dockerfile.frontend` | Multi-stage frontend build; serve with Nginx               |
+| `server/Dockerfile`   | Backend image (Node, server only)                          |
+| `.github/workflows/`  | CI (build, audit), CD staging, CD production               |
 
 ## Running with Docker
 

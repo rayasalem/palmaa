@@ -4,12 +4,12 @@ Palma is a comprehensive marketplace solution built with React and TypeScript, d
 
 ## Features
 
-- **Multi-Role System**: 
+- **Multi-Role System**:
   - **Customers**: Browse, Search, Filter, Cart, Checkout, Reviews.
   - **Merchants**: Dashboard, Product Management, Order Fulfillment, FlashLine Shipping Integration.
   - **Brokers**: Market Overview, Sales Analytics, Commission Tracking.
   - **Admins**: User Approval, System Oversight.
-- **Mock Integration**: 
+- **Mock Integration**:
   - Simulated Supabase backend via LocalStorage (Fallback).
   - Simulated Cloudinary Image Uploads.
   - Simulated FlashLine Shipping API.
@@ -45,9 +45,10 @@ To enable the full backend features with Supabase:
 5.  Click **Run**.
 
 This script will:
-*   Create all necessary tables (`users`, `products`, `orders`, etc.).
-*   Disable Row Level Security (RLS) for easy development access.
-*   Populate the database with realistic mock data for all roles.
+
+- Create all necessary tables (`users`, `products`, `orders`, etc.).
+- Disable Row Level Security (RLS) for easy development access.
+- Populate the database with realistic mock data for all roles.
 
 ## Environment Variables
 
@@ -58,6 +59,7 @@ cp .env.example .env
 ```
 
 Required keys for full functionality:
+
 ```env
 VITE_SUPABASE_URL=your_project_url
 VITE_SUPABASE_ANON_KEY=your_anon_key

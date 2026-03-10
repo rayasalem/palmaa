@@ -8,33 +8,29 @@ import 'dotenv/config';
 
 // Log uncaught errors so Render/PM2 show the real cause of exit 1
 process.on('uncaughtException', (err) => {
-  const msg = (err && err.message) ? err.message : err;
+  const msg = err && err.message ? err.message : err;
   console.error('[FATAL] uncaughtException:', msg);
   if (err && err.stack) console.error(err.stack);
   process.exit(1);
 });
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason, _promise) => {
   console.error('[FATAL] unhandledRejection:', reason);
   process.exit(1);
 });
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import cors from 'cors';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 
 import { validateEnv, getEnv, isProduction } from './config/env.js';
 import { corsMiddleware } from './middlewares/corsMiddleware.js';
-import {
-  helmetMiddleware,
-  generalLimiter,
-  paymentLimiter,
-} from './middlewares/security.js';
+import { helmetMiddleware, generalLimiter, paymentLimiter, cartLimiter } from './middlewares/security.js';
 import cacheMiddleware from './middlewares/cacheMiddleware.js';
 import httpsEnforce from './middlewares/httpsEnforce.js';
 import requestIdMiddleware from './middlewares/requestId.js';
 import requestLogger from './middlewares/requestLogger.js';
+import csrfHeaderMiddleware from './middlewares/csrfHeaderMiddleware.js';
 import metricsMiddleware from './middlewares/metricsMiddleware.js';
 import requestTimeoutMiddleware from './middlewares/requestTimeout.js';
 import errorHandler from './middlewares/errorHandler.js';
@@ -69,20 +65,25 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = Number(getEnv('PORT')) || 5000;
 
-// CORS first: manual headers + OPTIONS 204 so preflight always gets Access-Control-* (fixes Render/Vercel)
+// CORS: only explicitly allowed origins (corsMiddleware). Do not use origin: true to avoid allowing arbitrary origins with credentials.
 app.use(corsMiddleware(getEnv('FRONTEND_URL')));
-app.use(cors({ origin: true, credentials: true }));
 
 app.disable('x-powered-by');
+// Trust first proxy (e.g. load balancer) so req.ip and rate limiting use client IP
+if (isProduction()) app.set('trust proxy', 1);
 app.use(helmetMiddleware());
 if (isProduction()) app.use(httpsEnforce);
 app.use(compression());
 app.use(cookieParser(getEnv('COOKIE_SECRET')));
 // Allow larger payloads for product create/update (e.g. images as URLs or base64)
 app.use(express.json({ limit: '15mb' }));
+app.use(csrfHeaderMiddleware);
 
-app.use(generalLimiter());
+// requestId before limiters so 429 logs include requestId
 app.use(requestIdMiddleware);
+// Health and metrics before general limiter so load balancer and Prometheus always reach them
+app.use('/', healthRoutes);
+app.use(generalLimiter());
 app.use(requestLogger);
 app.use(metricsMiddleware);
 const requestTimeoutMs = Number(getEnv('REQUEST_TIMEOUT_MS')) || 15000;
@@ -92,10 +93,8 @@ app.use(sanitizeErrorResponse);
 
 // API routes BEFORE static so /api/* never returns 404 when this server is hit
 // Cybersource REST process – أول مسار لضمان عدم 404 (برودكشن)
-app.post(
-  '/api/payments/cybersource/rest/process',
-  paymentLimiter(),
-  (req, res, next) => processRestPaymentHandler(req, res).catch(next)
+app.post('/api/payments/cybersource/rest/process', paymentLimiter(), (req, res, next) =>
+  processRestPaymentHandler(req, res).catch(next)
 );
 logger.info('Cybersource route registered: POST /api/payments/cybersource/rest/process');
 app.use('/api/orders', orderRoutes);
@@ -105,9 +104,7 @@ const paymentRouter = express.Router();
 paymentRouter.use(paymentLimiter());
 paymentRouter.use(paymentRoutes);
 try {
-  const { default: arabicBankPaymentRoutes } = await import(
-    './payment/dist/index.js'
-  );
+  const { default: arabicBankPaymentRoutes } = await import('./payment/dist/index.js');
   paymentRouter.use(arabicBankPaymentRoutes);
   logger.info('Arabic Bank payment routes mounted');
 } catch (e) {
@@ -125,7 +122,7 @@ app.use('/api/payments', paymentsApiRouter);
 app.use('/api/shipment', shipmentRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/addresses', addressRoutes);
-app.use('/api/cart', cartRoutes);
+app.use('/api/cart', cartLimiter(), cartRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/broker', brokerRoutes);
 app.use('/api/shared-products', sharedProductsRoutes);
@@ -133,8 +130,6 @@ app.use('/api/follow', followRoutes);
 app.use('/api/merchant', merchantRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/chat', chatRoutes);
-
-app.use('/', healthRoutes);
 
 app.get('/sandbox-pay', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'sandbox-pay.html'));

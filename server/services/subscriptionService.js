@@ -28,10 +28,10 @@ async function getSubscription(userId) {
     return { data: null, error };
   }
   const sub = {
-    subscription_type: (data && data.subscription_type != null) ? data.subscription_type : 'free',
-    subscription_start_date: (data && data.subscription_start_date != null) ? data.subscription_start_date : null,
-    subscription_end_date: (data && data.subscription_end_date != null) ? data.subscription_end_date : null,
-    subscription_status: (data && data.subscription_status != null) ? data.subscription_status : 'active',
+    subscription_type: data && data.subscription_type != null ? data.subscription_type : 'free',
+    subscription_start_date: data && data.subscription_start_date != null ? data.subscription_start_date : null,
+    subscription_end_date: data && data.subscription_end_date != null ? data.subscription_end_date : null,
+    subscription_status: data && data.subscription_status != null ? data.subscription_status : 'active',
   };
   return { data: sub, error: null };
 }

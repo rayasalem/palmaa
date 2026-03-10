@@ -97,15 +97,13 @@ async function addItem(userId, productId, quantity) {
       .eq('id', existingItem.id);
     if (updateErr) return { data: null, error: updateErr };
   } else {
-    const { error: insertErr } = await supabase
-      .from(CART_ITEMS_TABLE)
-      .insert({
-        cart_id: cart.id,
-        product_id: productId,
-        quantity: qty,
-        price,
-        created_at: now,
-      });
+    const { error: insertErr } = await supabase.from(CART_ITEMS_TABLE).insert({
+      cart_id: cart.id,
+      product_id: productId,
+      quantity: qty,
+      price,
+      created_at: now,
+    });
     if (insertErr) return { data: null, error: insertErr };
   }
   await supabase.from(CARTS_TABLE).update({ updated_at: now }).eq('id', cart.id);
@@ -126,10 +124,7 @@ async function updateItem(userId, productId, quantity) {
   if (qty <= 0) {
     await supabase.from(CART_ITEMS_TABLE).delete().eq('id', item.id);
   } else {
-    const { error: updateErr } = await supabase
-      .from(CART_ITEMS_TABLE)
-      .update({ quantity: qty })
-      .eq('id', item.id);
+    const { error: updateErr } = await supabase.from(CART_ITEMS_TABLE).update({ quantity: qty }).eq('id', item.id);
     if (updateErr) return { data: null, error: updateErr };
   }
   const now = new Date().toISOString();
@@ -163,11 +158,4 @@ async function clearCart(userId) {
   return getCartWithItems(userId);
 }
 
-export {
-  getOrCreateCart,
-  getCartWithItems,
-  addItem,
-  updateItem,
-  removeItem,
-  clearCart,
-};
+export { getOrCreateCart, getCartWithItems, addItem, updateItem, removeItem, clearCart };

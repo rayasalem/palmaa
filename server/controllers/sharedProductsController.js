@@ -6,7 +6,7 @@ import * as sharedProductsService from '../services/sharedProductsService.js';
 
 async function listByBrokerId(req, res) {
   try {
-    const brokerId = (req.query && req.query.broker_id);
+    const brokerId = req.query && req.query.broker_id;
     if (!brokerId) {
       return res.status(400).json({ success: false, error: 'broker_id is required' });
     }

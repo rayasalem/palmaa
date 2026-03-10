@@ -73,7 +73,9 @@ export async function login(req: Request, res: Response): Promise<void> {
     }
     const { user, error } = await authService.login(email.trim().toLowerCase(), password);
     if (error || !user) {
-      res.status(401).json({ success: false, error: (error as { message?: string })?.message || 'Invalid credentials' });
+      res
+        .status(401)
+        .json({ success: false, error: (error as { message?: string })?.message || 'Invalid credentials' });
       return;
     }
     if (!user.is_email_verified) {
@@ -169,7 +171,9 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
     res.status(201).json({
       success: true,
       message: 'Check your email for OTP to verify your account.',
-      user: user ? { id: user.id, email: user.email, role: user.role, is_email_verified: user.is_email_verified } : null,
+      user: user
+        ? { id: user.id, email: user.email, role: user.role, is_email_verified: user.is_email_verified }
+        : null,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal server error';
@@ -196,18 +200,35 @@ export async function verifyEmail(req: Request, res: Response): Promise<void> {
     logger.info('verifyEmail', { email: email.trim().toLowerCase() });
     const verifyResult = await authService.verifyOtp(email, String(otp).trim(), 'email_verification', true);
     if (!verifyResult.success) {
-      res.status(400).json({ success: false, error: (verifyResult.error as { message?: string })?.message || 'Invalid or expired OTP' });
+      res.status(400).json({
+        success: false,
+        error: (verifyResult.error as { message?: string })?.message || 'Invalid or expired OTP',
+      });
       return;
     }
     const { data: user, error } = await authService.setEmailVerified(email);
     if (error) {
-      res.status(500).json({ success: false, error: (error as { message?: string }).message || 'Failed to update verification status' });
+      res.status(500).json({
+        success: false,
+        error: (error as { message?: string }).message || 'Failed to update verification status',
+      });
       return;
     }
     res.status(200).json({
       success: true,
       message: 'Email verified successfully.',
-      user: user ? { id: user.id, email: user.email, name: user.name, role: user.role, is_email_verified: user.is_email_verified, status: user.status, created_at: user.created_at, phone: user.phone } : null,
+      user: user
+        ? {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            is_email_verified: user.is_email_verified,
+            status: user.status,
+            created_at: user.created_at,
+            phone: user.phone,
+          }
+        : null,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal server error';
@@ -230,7 +251,9 @@ export async function forgotPassword(req: Request, res: Response): Promise<void>
     logger.info('forgotPassword', { email: email.trim().toLowerCase() });
     const result = await authService.forgotPassword(email);
     if (!result.success) {
-      res.status(400).json({ success: false, error: (result.error as { message?: string })?.message || 'Request failed' });
+      res
+        .status(400)
+        .json({ success: false, error: (result.error as { message?: string })?.message || 'Request failed' });
       return;
     }
     res.status(200).json({
@@ -266,12 +289,17 @@ export async function resetPassword(req: Request, res: Response): Promise<void> 
     logger.info('resetPassword', { email: email.trim().toLowerCase() });
     const verifyResult = await authService.verifyOtp(email, String(otp).trim(), 'password_reset', true);
     if (!verifyResult.success) {
-      res.status(400).json({ success: false, error: (verifyResult.error as { message?: string })?.message || 'Invalid or expired OTP' });
+      res.status(400).json({
+        success: false,
+        error: (verifyResult.error as { message?: string })?.message || 'Invalid or expired OTP',
+      });
       return;
     }
     const { error } = await authService.updatePassword(email, newPassword);
     if (error) {
-      res.status(500).json({ success: false, error: (error as { message?: string }).message || 'Failed to update password' });
+      res
+        .status(500)
+        .json({ success: false, error: (error as { message?: string }).message || 'Failed to update password' });
       return;
     }
     res.status(200).json({ success: true, message: 'Password reset successfully.' });
@@ -295,7 +323,9 @@ export async function resendVerification(req: Request, res: Response): Promise<v
     }
     const result = await authService.resendVerification(email);
     if (!result.success) {
-      res.status(400).json({ success: false, error: (result.error as { message?: string })?.message || 'Request failed' });
+      res
+        .status(400)
+        .json({ success: false, error: (result.error as { message?: string })?.message || 'Request failed' });
       return;
     }
     res.status(200).json({ success: true, message: 'Verification code sent.' });

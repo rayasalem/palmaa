@@ -1,4 +1,3 @@
-
 import { env } from '../config/env';
 import { palestineVillages, City, Village } from '../data/palestine-villages';
 import { ActionResponse, ShipmentBody, FlashlineShipmentResponse, Order, User } from '../types';
@@ -11,7 +10,7 @@ const safeParseJson = async (response: Response) => {
   try {
     return JSON.parse(text);
   } catch (e) {
-    return { error: "Non-JSON response", raw: text.substring(0, 100) };
+    return { error: 'Non-JSON response', raw: text.substring(0, 100) };
   }
 };
 
@@ -20,8 +19,8 @@ const safeParseJson = async (response: Response) => {
  */
 export const validateShipmentPayload = (body: ShipmentBody): { valid: boolean; error?: string } => {
   const { pkg, destinationAddress } = body;
-  if (!pkg.receiverPhone || pkg.receiverPhone.length < 9) return { valid: false, error: "Invalid receiver phone" };
-  if (!destinationAddress.cityId || !destinationAddress.villageId) return { valid: false, error: "Incomplete address" };
+  if (!pkg.receiverPhone || pkg.receiverPhone.length < 9) return { valid: false, error: 'Invalid receiver phone' };
+  if (!destinationAddress.cityId || !destinationAddress.villageId) return { valid: false, error: 'Incomplete address' };
   return { valid: true };
 };
 
@@ -37,7 +36,7 @@ export const prepareShipmentPayload = (params: {
   merchant: any;
 }): ShipmentBody => {
   return {
-    pkgUnitType: "METRIC",
+    pkgUnitType: 'METRIC',
     pkg: {
       cod: params.customer.type === 'COD' ? params.price : 0,
       notes: `${params.customer.notes || ''} | Palma Ref: ${params.orderId}`,
@@ -50,22 +49,22 @@ export const prepareShipmentPayload = (params: {
       quantity: 1,
       description: `${params.productName}`,
       shipmentType: params.customer.type,
-      serviceType: "STANDARD"
+      serviceType: 'STANDARD',
     },
     destinationAddress: {
       addressLine1: params.customer.address,
-      addressLine2: "", 
+      addressLine2: '',
       cityId: params.customer.cityId,
       villageId: params.customer.villageId,
-      regionId: params.customer.regionId
+      regionId: params.customer.regionId,
     },
     originAddress: {
       addressLine1: params.merchant.address,
-      addressLine2: "",
+      addressLine2: '',
       cityId: params.merchant.cityId,
       villageId: params.merchant.villageId,
-      regionId: params.merchant.regionId
-    }
+      regionId: params.merchant.regionId,
+    },
   };
 };
 
@@ -88,12 +87,12 @@ export const createShipment = async (shipmentData: ShipmentBody): Promise<Flashl
       expectedDeliveryDate: new Date(Date.now() + 259200000).toISOString(),
       cost: 15,
       status: 'READY_FOR_PICKUP',
-      payload: shipmentData
+      payload: shipmentData,
     };
   }
-  
+
   // Real API Logic placeholder
-  return { success: false, error: "Real API disabled in config" };
+  return { success: false, error: 'Real API disabled in config' };
 };
 
 export const getShipmentStatus = async (shipmentId: string): Promise<string | null> => {
@@ -102,26 +101,30 @@ export const getShipmentStatus = async (shipmentId: string): Promise<string | nu
 };
 
 export const mapFlashlineStatus = (status: string | undefined): string => {
-  if (!status) return "قيد المعالجة";
+  if (!status) return 'قيد المعالجة';
   const statusMap: Record<string, string> = {
-    "READY_FOR_PICKUP": "جاهز للاستلام",
-    "IN_TRANSIT": "قيد التوصيل",
-    "CANCELLED": "ملغاة",
-    "DELIVERED": "تم التسليم",
+    READY_FOR_PICKUP: 'جاهز للاستلام',
+    IN_TRANSIT: 'قيد التوصيل',
+    CANCELLED: 'ملغاة',
+    DELIVERED: 'تم التسليم',
   };
   return statusMap[status] || status;
 };
 
-export const cancelLogestechsShipment = async (shipmentId: string | number, email: string, password: string): Promise<ActionResponse<any>> => {
+export const cancelLogestechsShipment = async (
+  shipmentId: string | number,
+  email: string,
+  password: string
+): Promise<ActionResponse<any>> => {
   if (env.FEATURES.USE_MOCK_DATA) {
-    return { success: true, data: { message: "Simulated cancellation", id: shipmentId } };
+    return { success: true, data: { message: 'Simulated cancellation', id: shipmentId } };
   }
-  return { success: false, error: "Real cancellation API not configured" };
+  return { success: false, error: 'Real cancellation API not configured' };
 };
 
 export const automateShipmentCreation = async (order: Order, merchant: User): Promise<FlashlineShipmentResponse> => {
   const address = order.shippingAddress;
-  if (!address) return { success: false, error: "Missing shipping address" };
+  if (!address) return { success: false, error: 'Missing shipping address' };
 
   const shipmentBody = prepareShipmentPayload({
     orderId: order.id,
@@ -129,14 +132,14 @@ export const automateShipmentCreation = async (order: Order, merchant: User): Pr
     category: 'General',
     price: order.totalAmount || 0,
     customer: {
-      name: order.shipping_name || address.phone, 
+      name: order.shipping_name || address.phone,
       email: 'customer@example.com',
       phone: address.phone,
       address: address.addressDetails,
       cityId: address.cityId,
       villageId: address.villageId || 101,
       regionId: address.regionId || 1,
-      type: 'COD'
+      type: 'COD',
     },
     merchant: {
       name: merchant.name,
@@ -145,8 +148,8 @@ export const automateShipmentCreation = async (order: Order, merchant: User): Pr
       address: merchant.city || 'Ramallah',
       cityId: 1,
       villageId: 101,
-      regionId: 1
-    }
+      regionId: 1,
+    },
   });
 
   const result = await createShipment(shipmentBody);
@@ -160,17 +163,17 @@ export const getInternalCities = (): City[] => palestineVillages;
 export const getInternalVillages = (cityId: number | string): Village[] => {
   const id = typeof cityId === 'number' ? cityId : parseInt(String(cityId), 10);
   if (Number.isNaN(id)) return [];
-  const city = palestineVillages.find(c => c.id === id);
+  const city = palestineVillages.find((c) => c.id === id);
   return city ? city.villages : [];
 };
 export const resolveLocationName = (id: number, type: 'city' | 'village', lang: 'ar' | 'en' | 'he' = 'ar'): string => {
   const useEn = lang !== 'ar';
   if (type === 'city') {
-    const city = palestineVillages.find(c => c.id === id);
+    const city = palestineVillages.find((c) => c.id === id);
     return city ? (useEn ? city.nameEn : city.nameAr) : '';
   } else {
     for (const city of palestineVillages) {
-      const village = city.villages.find(v => v.id === id);
+      const village = city.villages.find((v) => v.id === id);
       if (village) return useEn ? village.nameEn : village.nameAr;
     }
     return '';
@@ -182,14 +185,14 @@ export const getShipmentLabels = async (shipmentId: string): Promise<string[]> =
 };
 
 export const FlashLineService = {
-    createShipment,
-    getShipmentStatus,
-    mapFlashlineStatus,
-    prepareShipmentPayload,
-    automateShipmentCreation,
-    getInternalCities,
-    getInternalVillages,
-    cancelLogestechsShipment,
-    resolveLocationName,
-    getShipmentLabels
+  createShipment,
+  getShipmentStatus,
+  mapFlashlineStatus,
+  prepareShipmentPayload,
+  automateShipmentCreation,
+  getInternalCities,
+  getInternalVillages,
+  cancelLogestechsShipment,
+  resolveLocationName,
+  getShipmentLabels,
 };

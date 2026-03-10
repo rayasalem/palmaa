@@ -1,0 +1,191 @@
+{
+  "audit": {
+    "type": "read-only",
+    "scope": [
+      "code_cleanliness",
+      "file_line_metrics",
+      "validation_security",
+      "performance_scalability",
+      "observability"
+    ],
+    "no_production_changes": true
+  },
+  "code_cleanliness": {
+    "unused_imports_variables_dead_code": {
+      "status": "not_automated",
+      "recommendation": "Run ESLint with no-unused-vars and optional eslint-plugin-unused-imports"
+    },
+    "large_files_over_500_lines": {
+      "backend": [
+        {
+          "file": "server/services/authService.js",
+          "lines": 523,
+          "suggestion": "Split registration/OTP, login/getUser, password reset, auth-utils"
+        },
+        {
+          "file": "server/controllers/authController.js",
+          "lines": 371,
+          "suggestion": "Extract MFA handlers and getMe or group by domain"
+        },
+        {
+          "file": "server/services/shipmentService.js",
+          "lines": 305,
+          "suggestion": "Split create/status vs print/cancel vs external API adapter"
+        }
+      ],
+      "frontend": [
+        {
+          "file": "views/AdminView.tsx",
+          "lines": 1001,
+          "suggestion": "Split into lazy tabs per views/admin/README.md"
+        },
+        { "file": "translations.ts", "lines": 1240, "suggestion": "Split by domain or locale" },
+        { "file": "components/PublicWebsite.tsx", "lines": 828, "suggestion": "Extract hero, features, categories" },
+        { "file": "App.tsx", "lines": 786, "suggestion": "Extract route config and layout" },
+        { "file": "views/CustomerView.tsx", "lines": 724, "suggestion": "Extract context and helpers" },
+        { "file": "views/MerchantView.tsx", "lines": 693, "suggestion": "Same as CustomerView" },
+        { "file": "components/Auth.tsx", "lines": 590, "suggestion": "Split login, register, forgot-password" },
+        { "file": "views/CheckoutPage.tsx", "lines": 580, "suggestion": "Steps as separate components" }
+      ]
+    },
+    "formatting_naming": {
+      "status": "consistent",
+      "notes": "Backend ESM camelCase; frontend PascalCase components, camelCase hooks; no single codified doc"
+    },
+    "duplicated_logic": {
+      "centralized": ["parsePagination", "Joi schemas (common)", "createRateLimitHandler", "api client"],
+      "status": "green"
+    }
+  },
+  "file_line_metrics": {
+    "backend_largest": [
+      { "file": "server/services/authService.js", "lines": 523 },
+      { "file": "server/controllers/authController.js", "lines": 371 },
+      { "file": "server/services/shipmentService.js", "lines": 305 },
+      { "file": "server/services/productService.js", "lines": 256 },
+      { "file": "server/modules/payments/cybersource/cybersource.rest.service.js", "lines": 220 }
+    ],
+    "frontend_largest": [
+      { "file": "translations.ts", "lines": 1240 },
+      { "file": "views/AdminView.tsx", "lines": 1001 },
+      { "file": "components/PublicWebsite.tsx", "lines": 828 },
+      { "file": "App.tsx", "lines": 786 },
+      { "file": "views/CustomerView.tsx", "lines": 724 }
+    ],
+    "over_500_lines_backend": 3,
+    "over_500_lines_frontend": 18
+  },
+  "validation_security": {
+    "joi_coverage": {
+      "full": ["auth", "orders", "cart", "products", "mfa", "admin"],
+      "partial_or_none": [
+        "address",
+        "shipment",
+        "payment",
+        "notification",
+        "follow",
+        "chat",
+        "broker",
+        "merchant",
+        "shared_products"
+      ]
+    },
+    "redis_backed_rate_limiters": {
+      "applied": [
+        "generalLimiter",
+        "authLimiter",
+        "paymentLimiter",
+        "cartLimiter",
+        "productListLimiter",
+        "productByIdLimiter",
+        "commentLimiter"
+      ],
+      "status": "green"
+    },
+    "auth_check_key": {
+      "production": "404 unless ALLOW_AUTH_CHECK_KEY=true",
+      "ip_allowlist": "not_implemented",
+      "status": "green"
+    },
+    "cors": {
+      "origin_true_used": false,
+      "notes": "Only corsMiddleware(FRONTEND_URL)"
+    },
+    "same_site_cookie": {
+      "production": "none",
+      "dev": "lax",
+      "status": "green"
+    }
+  },
+  "performance_scalability": {
+    "n_plus_one": { "found": false, "status": "green" },
+    "caching": {
+      "redis": "cacheMiddleware(600) on product routes",
+      "in_memory_fallback": true,
+      "status": "green"
+    },
+    "lazy_loading": {
+      "routes": true,
+      "customer_merchant_tabs": true,
+      "admin_tabs": false,
+      "status": "yellow"
+    }
+  },
+  "observability": {
+    "prometheus_metrics": {
+      "request_count": true,
+      "latency_histogram": true,
+      "errors": true,
+      "validation_failures": true,
+      "rate_limit_hits": true,
+      "mfa_failures": true,
+      "process_memory": true,
+      "process_cpu": true,
+      "status": "green"
+    },
+    "logging": {
+      "sanitizeForLog": true,
+      "requestId": true,
+      "masked_ip": true,
+      "status": "green"
+    },
+    "dashboards_alerts": {
+      "documented": true,
+      "deployed_in_repo": false,
+      "status": "yellow"
+    }
+  },
+  "summary_dashboard": {
+    "file_sizes": {
+      "backend_over_500": 3,
+      "frontend_over_500": 18,
+      "largest_backend": "server/services/authService.js (523)",
+      "largest_frontend": "translations.ts (1240)"
+    },
+    "route_validation_coverage": "Auth, orders, cart, products, MFA, admin have Joi; address, shipment, payment, notification, follow, chat, broker, merchant, shared_products lack full Joi",
+    "rate_limiter_coverage": "All critical limiters applied and Redis-backed",
+    "security_gaps": [
+      "Joi not applied to payment/shipment/chat/address/follow/broker body or query",
+      "/auth/check-key has no IP allowlist (optional)"
+    ],
+    "performance_bottlenecks": [
+      "AdminView.tsx single large component (1001 lines)",
+      "authService/authController large (split suggested)"
+    ]
+  },
+  "status_per_category": {
+    "code_cleanliness": "yellow",
+    "file_line_metrics": "yellow",
+    "validation_security": "yellow",
+    "performance_scalability": "green",
+    "observability": "green"
+  },
+  "next_incremental_improvements": [
+    "Split AdminView into lazy-loaded tab components",
+    "Add Joi validation for payment, shipment, address, chat, broker, notification, follow where applicable",
+    "Split authService and authController into smaller modules",
+    "Run ESLint with unused-vars; add Prettier/ESLint to CI",
+    "Deploy Grafana dashboards and Alertmanager rules from SLO_AND_ALERTS.md",
+    "Split translations.ts by domain or locale"
+  ]
+}

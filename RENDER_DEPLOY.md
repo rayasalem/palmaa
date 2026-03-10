@@ -20,11 +20,11 @@
 
 في مشروع الـ **Web Service** على Render → **Settings**:
 
-| الإعداد | القيمة |
-|--------|--------|
-| **Root Directory** | `server` |
-| **Build Command** | `npm install && npm run build` |
-| **Start Command** | `npm start` |
+| الإعداد            | القيمة                         |
+| ------------------ | ------------------------------ |
+| **Root Directory** | `server`                       |
+| **Build Command**  | `npm install && npm run build` |
+| **Start Command**  | `npm start`                    |
 
 احفظ ثم **Manual Deploy**.
 
@@ -34,11 +34,11 @@
 
 إذا أردت ترك **Root Directory** فارغاً (جذر المستودع):
 
-| الإعداد | القيمة |
-|--------|--------|
-| **Root Directory** | _(اتركه فارغاً)_ |
-| **Build Command** | `npm run build:server` |
-| **Start Command** | `npm run start:server` |
+| الإعداد            | القيمة                 |
+| ------------------ | ---------------------- |
+| **Root Directory** | _(اتركه فارغاً)_       |
+| **Build Command**  | `npm run build:server` |
+| **Start Command**  | `npm run start:server` |
 
 هذا يستخدم السكربتات المضافة في `package.json` في الجذر (تثبيت وتشغيل من مجلد `server`).
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { User, Role } from '../types';
 import { userService } from '../services/userService';
@@ -15,7 +14,13 @@ interface RegisterBrokerProps {
 }
 
 const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLogin }) => {
-  const lang: Language = (typeof document !== 'undefined' && (document.documentElement.lang === 'ar' || document.documentElement.lang === 'en' || document.documentElement.lang === 'he')) ? document.documentElement.lang as Language : 'ar';
+  const lang: Language =
+    typeof document !== 'undefined' &&
+    (document.documentElement.lang === 'ar' ||
+      document.documentElement.lang === 'en' ||
+      document.documentElement.lang === 'he')
+      ? (document.documentElement.lang as Language)
+      : 'ar';
   const t = translations[lang];
   const { showToast } = useToast();
 
@@ -34,8 +39,11 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
   const [selectedVillageId, setSelectedVillageId] = useState<number | undefined>(undefined);
   const [selectedRegionId, setSelectedRegionId] = useState<number | undefined>(undefined);
   const [cityName, setCityName] = useState('');
-  
-  const availableVillages = useMemo(() => selectedCityId ? getInternalVillages(selectedCityId) : [], [selectedCityId]);
+
+  const availableVillages = useMemo(
+    () => (selectedCityId ? getInternalVillages(selectedCityId) : []),
+    [selectedCityId]
+  );
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -48,7 +56,7 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
 
   const handleCityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const cityId = parseInt(e.target.value);
-    const city = cities.find(c => c.id === cityId);
+    const city = cities.find((c) => c.id === cityId);
     if (city) {
       setSelectedCityId(cityId);
       setSelectedRegionId(city.regionId);
@@ -69,10 +77,22 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     // Strict validation
-    if (!formData.name || !formData.email || !formData.password || !formData.phone || !selectedCityId || !selectedVillageId) {
-      const msg = lang === 'ar' ? 'جميع الحقول الأساسية (*) مطلوبة' : lang === 'he' ? 'כל השדות המסומנים (*) חובה' : 'All mandatory fields (*) are required';
+    if (
+      !formData.name ||
+      !formData.email ||
+      !formData.password ||
+      !formData.phone ||
+      !selectedCityId ||
+      !selectedVillageId
+    ) {
+      const msg =
+        lang === 'ar'
+          ? 'جميع الحقول الأساسية (*) مطلوبة'
+          : lang === 'he'
+            ? 'כל השדות המסומנים (*) חובה'
+            : 'All mandatory fields (*) are required';
       setError(msg);
       showToast(msg, 'warning');
       setLoading(false);
@@ -84,7 +104,7 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
       name: formData.name,
       email: formData.email,
       phone: formData.phone,
-      city: cityName, 
+      city: cityName,
       companyName: formData.company_name,
       role: Role.BROKER,
       status: 'PENDING',
@@ -95,7 +115,7 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
     const result = await userService.register(newUser, formData.password, {
       city_id: selectedCityId,
       village_id: selectedVillageId,
-      region_id: selectedRegionId
+      region_id: selectedRegionId,
     });
 
     if (result.success && result.data) {
@@ -112,117 +132,143 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
   // لم نعد نعرض خطوة VERIFY؛ نعرض نموذج التسجيل فقط
 
   return (
-    <div className="min-h-screen py-12 px-4 bg-slate-50 flex items-center justify-center" dir={lang === 'en' ? 'ltr' : 'rtl'}>
+    <div
+      className="min-h-screen py-12 px-4 bg-slate-50 flex items-center justify-center"
+      dir={lang === 'en' ? 'ltr' : 'rtl'}
+    >
       <div className="max-w-md w-full bg-white rounded-[2rem] shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
-        
-            <div className="bg-palma-primary p-10 text-center text-white">
-              <div className="flex justify-center mb-6">
-                <Logo size="medium" theme="dark" showText={false} />
-              </div>
-              <h1 className="font-heading text-2xl font-black tracking-tight">{t.auth.joinBroker}</h1>
-              <p className="heading-block-sub text-white/80 mt-2">{t.auth.brokerVerification}</p>
+        <div className="bg-palma-primary p-10 text-center text-white">
+          <div className="flex justify-center mb-6">
+            <Logo size="medium" theme="dark" showText={false} />
+          </div>
+          <h1 className="font-heading text-2xl font-black tracking-tight">{t.auth.joinBroker}</h1>
+          <p className="heading-block-sub text-white/80 mt-2">
+            {lang === 'ar'
+              ? 'اشترك كوسيط واحصل على ٦ أشهر مجانية، ثم يمكنك الانتقال لاحقاً إلى خطة مدفوعة.'
+              : lang === 'he'
+                ? 'הצטרף כברוקר וקבל 6 חודשי ניסיון בחינם, לאחר מכן ניתן לעבור למסלול בתשלום.'
+                : 'Join as a broker and get 6 months free, then optionally move to a paid plan.'}
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className={`p-10 space-y-5 ${lang === 'en' ? 'text-left' : 'text-right'}`}>
+          {error && (
+            <div className="p-4 bg-red-50 text-red-600 text-[10px] font-black rounded-2xl text-center uppercase">
+              {error}
             </div>
+          )}
 
-            <form onSubmit={handleSubmit} className={`p-10 space-y-5 ${lang === 'en' ? 'text-left' : 'text-right'}`}>
-              {error && <div className="p-4 bg-red-50 text-red-600 text-[10px] font-black rounded-2xl text-center uppercase">{error}</div>}
+          <div className="space-y-1">
+            <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.name} *</label>
+            <input
+              required
+              name="name"
+              className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none"
+              defaultValue={formData.name}
+              onChange={handleChange}
+            />
+          </div>
 
-              <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.name} *</label>
-                <input
-                  required
-                  name="name"
-                  className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none"
-                  defaultValue={formData.name}
-                  onChange={handleChange}
-                />
-              </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.phone} *</label>
+            <input
+              required
+              name="phone"
+              className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none"
+              defaultValue={formData.phone}
+              onChange={handleChange}
+            />
+          </div>
 
-              <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.phone} *</label>
-                <input
-                  required
-                  name="phone"
-                  className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none"
-                  defaultValue={formData.phone}
-                  onChange={handleChange}
-                />
-              </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.city} *</label>
+              <select
+                required
+                className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none appearance-none"
+                onChange={handleCityChange}
+                value={selectedCityId || ''}
+              >
+                <option value="">{lang === 'ar' ? 'اختر...' : lang === 'he' ? 'בחר...' : 'Select...'}</option>
+                {cities.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {lang === 'en' ? c.nameEn : c.nameAr}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-black uppercase text-slate-500">
+                {lang === 'ar' ? 'المنطقة' : lang === 'he' ? 'אזור' : 'Area'} *
+              </label>
+              <select
+                required
+                disabled={!selectedCityId}
+                className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none disabled:opacity-50 appearance-none"
+                onChange={handleVillageChange}
+                value={selectedVillageId || ''}
+              >
+                <option value="">{lang === 'ar' ? 'اختر...' : lang === 'he' ? 'בחר...' : 'Select...'}</option>
+                {availableVillages.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {lang === 'en' ? v.nameEn : v.nameAr}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.city} *</label>
-                  <select 
-                    required 
-                    className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none appearance-none"
-                    onChange={handleCityChange}
-                    value={selectedCityId || ''}
-                  >
-                    <option value="">{lang === 'ar' ? 'اختر...' : lang === 'he' ? 'בחר...' : 'Select...'}</option>
-                    {cities.map(c => (
-                      <option key={c.id} value={c.id}>{lang === 'en' ? c.nameEn : c.nameAr}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase text-slate-500">{lang === 'ar' ? 'المنطقة' : lang === 'he' ? 'אזור' : 'Area'} *</label>
-                  <select 
-                    required 
-                    disabled={!selectedCityId}
-                    className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none disabled:opacity-50 appearance-none"
-                    onChange={handleVillageChange}
-                    value={selectedVillageId || ''}
-                  >
-                    <option value="">{lang === 'ar' ? 'اختر...' : lang === 'he' ? 'בחר...' : 'Select...'}</option>
-                    {availableVillages.map(v => (
-                      <option key={v.id} value={v.id}>{lang === 'en' ? v.nameEn : v.nameAr}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.companyName}</label>
+            <input
+              name="company_name"
+              className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none"
+              defaultValue={formData.company_name}
+              onChange={handleChange}
+            />
+          </div>
 
-              <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.companyName}</label>
-                <input
-                  name="company_name"
-                  className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none"
-                  defaultValue={formData.company_name}
-                  onChange={handleChange}
-                />
-              </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.email} *</label>
+            <input
+              required
+              type="email"
+              name="email"
+              className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none"
+              defaultValue={formData.email}
+              onChange={handleChange}
+            />
+          </div>
 
-              <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.email} *</label>
-                <input
-                  required
-                  type="email"
-                  name="email"
-                  className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none"
-                  defaultValue={formData.email}
-                  onChange={handleChange}
-                />
-              </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.password} *</label>
+            <input
+              required
+              type="password"
+              name="password"
+              className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none"
+              defaultValue={formData.password}
+              onChange={handleChange}
+            />
+          </div>
 
-              <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.password} *</label>
-                <input
-                  required
-                  type="password"
-                  name="password"
-                  className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none"
-                  defaultValue={formData.password}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="pt-4 flex flex-col items-center space-y-4">
-                <button type="submit" disabled={loading} className="w-full py-5 bg-palma-primary text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-soft hover:brightness-110 transition-all active:scale-95 disabled:opacity-50">
-                  {loading ? t.common.loading : t.nav.register}
-                </button>
-                <button type="button" onClick={onBackToLogin} className="text-[10px] font-black uppercase text-slate-400 hover:text-palma-primary">
-                  {t.common.back}
-                </button>
-              </div>
-            </form>
+          <div className="pt-4 flex flex-col items-center space-y-4">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-5 bg-palma-primary text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-soft hover:brightness-110 transition-all active:scale-95 disabled:opacity-50"
+            >
+              {loading ? t.common.loading : t.nav.register}
+            </button>
+            <button
+              type="button"
+              onClick={onBackToLogin}
+              className="text-[10px] font-black uppercase text-slate-400 hover:text-palma-primary"
+            >
+              {t.common.back}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

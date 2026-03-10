@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 
@@ -31,11 +30,14 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
-  const showToast = useCallback((message: string, type: ToastType = 'success') => {
-    const id = Math.random().toString(36).substring(2, 9);
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => removeToast(id), 4000);
-  }, [removeToast]);
+  const showToast = useCallback(
+    (message: string, type: ToastType = 'success') => {
+      const id = Math.random().toString(36).substring(2, 9);
+      setToasts((prev) => [...prev, { id, message, type }]);
+      setTimeout(() => removeToast(id), 4000);
+    },
+    [removeToast]
+  );
 
   return (
     <ToastContext.Provider value={{ showToast }}>
@@ -58,7 +60,10 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               {toast.type === 'info' && <Info className="w-5 h-5" />}
             </span>
             <p className="text-[11px] font-black uppercase tracking-widest flex-1 leading-relaxed">{toast.message}</p>
-            <button onClick={() => removeToast(toast.id)} className="p-1 hover:bg-white/20 rounded-lg transition-colors">
+            <button
+              onClick={() => removeToast(toast.id)}
+              className="p-1 hover:bg-white/20 rounded-lg transition-colors"
+            >
               <X className="w-4 h-4" />
             </button>
           </div>

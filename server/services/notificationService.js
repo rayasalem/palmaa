@@ -22,11 +22,7 @@ async function create(userId, type, referenceId, message = null) {
     created_at: new Date().toISOString(),
   };
   if (message != null) row.message = String(message);
-  const { data, error } = await supabase
-    .from(TABLE)
-    .insert(row)
-    .select()
-    .single();
+  const { data, error } = await supabase.from(TABLE).insert(row).select().single();
   if (error) {
     logger.error('notificationService create error', { message: error.message });
     return { data: null, error };
@@ -84,10 +80,7 @@ async function notifyMerchantComment(merchantId, productId) {
 
 /** Notify all admin users when someone comments on any product. (Batch insert.) */
 async function notifyAdminComment(productId) {
-  const { data: admins, error: fetchError } = await supabase
-    .from('users')
-    .select('id')
-    .eq('role', 'ADMIN');
+  const { data: admins, error: fetchError } = await supabase.from('users').select('id').eq('role', 'ADMIN');
   if (fetchError || !(admins && admins.length)) return { created: 0, error: fetchError };
   const now = new Date().toISOString();
   const rows = admins.map((a) => ({
@@ -123,7 +116,9 @@ async function notifyBrokersSharedProductComment(productId) {
   }));
   const { error: insertError } = await supabase.from(TABLE).insert(rows);
   if (insertError) {
-    logger.error('notificationService notifyBrokersSharedProductComment insert error', { message: insertError.message });
+    logger.error('notificationService notifyBrokersSharedProductComment insert error', {
+      message: insertError.message,
+    });
     return { created: 0, error: insertError };
   }
   return { created: rows.length, error: null };
@@ -132,11 +127,7 @@ async function notifyBrokersSharedProductComment(productId) {
 async function listByUserId(userId, options = {}) {
   const { unreadOnly = false } = options;
   const { limit, offset } = parsePagination(options);
-  let q = supabase
-    .from(TABLE)
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
+  let q = supabase.from(TABLE).select('*').eq('user_id', userId).order('created_at', { ascending: false });
   if (unreadOnly) q = q.eq('is_read', false);
   q = q.range(offset, offset + limit - 1);
   const { data, error } = await q;

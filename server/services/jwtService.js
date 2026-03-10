@@ -22,14 +22,22 @@ if (getEnv('NODE_ENV') === 'production') {
   }
 }
 const EXPIRES_IN = getEnv('JWT_EXPIRES_IN') || '7d';
+const EXPIRES_IN_ADMIN = getEnv('JWT_EXPIRES_IN_ADMIN') || '1d';
 const COOKIE_NAME = getEnv('JWT_COOKIE_NAME') || 'palma_token';
 
+/**
+ * Sign a JWT. Include ver (token_version) when provided for session invalidation (logout-all).
+ * High-privilege role ADMIN uses shorter expiry (JWT_EXPIRES_IN_ADMIN, default 1d) when set.
+ * @param {object} payload - sub, email, role, and optionally ver (number)
+ */
 export function sign(payload) {
-  return jwt.sign(
-    { ...payload, iat: Math.floor(Date.now() / 1000) },
-    SECRET,
-    { expiresIn: EXPIRES_IN }
-  );
+  const claims = { ...payload, iat: Math.floor(Date.now() / 1000) };
+  if (payload.ver != null && typeof payload.ver === 'number') {
+    claims.ver = payload.ver;
+  }
+  const role = (payload.role || '').toUpperCase();
+  const expiresIn = role === 'ADMIN' ? EXPIRES_IN_ADMIN : EXPIRES_IN;
+  return jwt.sign(claims, SECRET, { expiresIn });
 }
 
 export function verify(token) {
@@ -38,6 +46,13 @@ export function verify(token) {
   } catch (err) {
     return { payload: null, error: err };
   }
+}
+
+/** Short-lived token for MFA challenge (only used with POST /api/auth/mfa/verify). */
+export function signMfaChallenge(userId) {
+  return jwt.sign({ sub: userId, purpose: 'mfa_challenge', iat: Math.floor(Date.now() / 1000) }, SECRET, {
+    expiresIn: '5m',
+  });
 }
 
 export function getCookieName() {

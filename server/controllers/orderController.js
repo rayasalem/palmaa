@@ -85,7 +85,9 @@ async function getOrder(req, res) {
     const isOwner = userId && (userId === data.customer_id || userId === data.merchant_id);
     const isAdmin = role === 'ADMIN';
     const guestToken = guestTokenRaw != null ? String(guestTokenRaw).trim() : '';
-    const guestTokenMatch = data.guest_access_token && guestToken &&
+    const guestTokenMatch =
+      data.guest_access_token &&
+      guestToken &&
       String(data.guest_access_token).toLowerCase() === guestToken.toLowerCase();
 
     if (!isOwner && !isAdmin && !guestTokenMatch) {
@@ -106,7 +108,10 @@ async function listMyOrders(req, res) {
     if (!customerId) return res.status(401).json({ success: false, error: 'Authentication required' });
     const limit = req.query.limit != null ? parseInt(req.query.limit, 10) : undefined;
     const offset = req.query.offset != null ? parseInt(req.query.offset, 10) : undefined;
-    const opts = { limit: Number.isInteger(limit) ? limit : undefined, offset: Number.isInteger(offset) ? offset : undefined };
+    const opts = {
+      limit: Number.isInteger(limit) ? limit : undefined,
+      offset: Number.isInteger(offset) ? offset : undefined,
+    };
     const { data, error } = await orderService.getOrdersByCustomerId(customerId, opts);
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to fetch orders' });
@@ -124,7 +129,10 @@ async function listMerchantOrders(req, res) {
     if (!merchantId) return res.status(401).json({ success: false, error: 'Authentication required' });
     const limit = req.query.limit != null ? parseInt(req.query.limit, 10) : undefined;
     const offset = req.query.offset != null ? parseInt(req.query.offset, 10) : undefined;
-    const opts = { limit: Number.isInteger(limit) ? limit : undefined, offset: Number.isInteger(offset) ? offset : undefined };
+    const opts = {
+      limit: Number.isInteger(limit) ? limit : undefined,
+      offset: Number.isInteger(offset) ? offset : undefined,
+    };
     const { data, error } = await orderService.getOrdersByMerchantId(merchantId, opts);
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to fetch orders' });

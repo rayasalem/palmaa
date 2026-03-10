@@ -8,19 +8,20 @@
 
 تعريف المكونات الكسولة في **App.tsx** (السطور 21–27):
 
-| # | الاسم | المصدر (Chunk) | متى يُعرض | دوره في المشروع |
-|---|------|----------------|-----------|------------------|
-| 1 | **PublicWebsite** | `./components/PublicWebsite` | `!user` و `publicState === 'LANDING'` (أي hash فارغ أو غير معروف للضيف) | الصفحة الرئيسية للموقع: هيرو، ميزات، إحصائيات، منتجات مميزة، دعوة للتسجيل وتصفح المنتجات. |
-| 2 | **PublicCatalog** | `./components/PublicCatalog` | `!user` و `publicState === 'CATALOG'` (مثلاً `#/catalog`) | كتالوج المنتجات للضيف: بحث، فلترة، ترتيب، شبكة منتجات مع إمكانية الدخول لتفاصيل المنتج. |
-| 3 | **PublicProductDetails** | `./views/PublicProductDetails` | (أ) ضيف: `publicState === 'PRODUCT_DETAILS'` و `selectedProductId` (مثلاً `#/product/:id`). (ب) مسجّل: `currentView === 'product_details'` و `selectedProductId` | صفحة تفاصيل منتج واحدة: صور، سعر، وصف، تقييمات، تعليقات، إضافة للسلة. |
-| 4 | **ProfileView** | `./views/ProfileView` | مسجّل دخول و `currentView === 'profile'` (مثلاً `#/profile`) | الملف الشخصي: بيانات المستخدم، مدينة/قرية، (للتاجر) منتجاتي، تعديل الملف. |
-| 5 | **CustomerView** | `./views/CustomerView` | مسجّل و (CUSTOMER مع أي من home/shop/cart/orders) أو (MERCHANT/ADMIN/BROKER مع `currentView === 'shop'` أو `'cart'`) | واجهة الزبون: متجر، سلة، طلبات، دفع، شحن؛ وللتاجر/أدمن/وسيط: تبويبا Shop و Cart فقط. |
-| 6 | **MerchantView** | `./views/MerchantView` | مسجّل و `user.role === 'MERCHANT'` و `currentView` ليس shop أو cart (مثلاً dashboard, products, orders, earnings) | لوحة التاجر: إحصائيات، منتجات، طلبات، أرباح، إعدادات اشتراك. |
-| 7 | **AdminView** | `./views/AdminView` | مسجّل و `user.role === 'ADMIN'` و `currentView` ليس shop أو cart (مثلاً users, products, orders, treasury, platform) | لوحة الأدمن: مستخدمين، منتجات، طلبات، سحوبات، إعدادات المنصة وأرباح العمولة. |
+| #   | الاسم                    | المصدر (Chunk)                 | متى يُعرض                                                                                                                                                        | دوره في المشروع                                                                           |
+| --- | ------------------------ | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| 1   | **PublicWebsite**        | `./components/PublicWebsite`   | `!user` و `publicState === 'LANDING'` (أي hash فارغ أو غير معروف للضيف)                                                                                          | الصفحة الرئيسية للموقع: هيرو، ميزات، إحصائيات، منتجات مميزة، دعوة للتسجيل وتصفح المنتجات. |
+| 2   | **PublicCatalog**        | `./components/PublicCatalog`   | `!user` و `publicState === 'CATALOG'` (مثلاً `#/catalog`)                                                                                                        | كتالوج المنتجات للضيف: بحث، فلترة، ترتيب، شبكة منتجات مع إمكانية الدخول لتفاصيل المنتج.   |
+| 3   | **PublicProductDetails** | `./views/PublicProductDetails` | (أ) ضيف: `publicState === 'PRODUCT_DETAILS'` و `selectedProductId` (مثلاً `#/product/:id`). (ب) مسجّل: `currentView === 'product_details'` و `selectedProductId` | صفحة تفاصيل منتج واحدة: صور، سعر، وصف، تقييمات، تعليقات، إضافة للسلة.                     |
+| 4   | **ProfileView**          | `./views/ProfileView`          | مسجّل دخول و `currentView === 'profile'` (مثلاً `#/profile`)                                                                                                     | الملف الشخصي: بيانات المستخدم، مدينة/قرية، (للتاجر) منتجاتي، تعديل الملف.                 |
+| 5   | **CustomerView**         | `./views/CustomerView`         | مسجّل و (CUSTOMER مع أي من home/shop/cart/orders) أو (MERCHANT/ADMIN/BROKER مع `currentView === 'shop'` أو `'cart'`)                                             | واجهة الزبون: متجر، سلة، طلبات، دفع، شحن؛ وللتاجر/أدمن/وسيط: تبويبا Shop و Cart فقط.      |
+| 6   | **MerchantView**         | `./views/MerchantView`         | مسجّل و `user.role === 'MERCHANT'` و `currentView` ليس shop أو cart (مثلاً dashboard, products, orders, earnings)                                                | لوحة التاجر: إحصائيات، منتجات، طلبات، أرباح، إعدادات اشتراك.                              |
+| 7   | **AdminView**            | `./views/AdminView`            | مسجّل و `user.role === 'ADMIN'` و `currentView` ليس shop أو cart (مثلاً users, products, orders, treasury, platform)                                             | لوحة الأدمن: مستخدمين، منتجات، طلبات، سحوبات، إعدادات المنصة وأرباح العمولة.              |
 
 **ملاحظة:** لا يوجد مكون كسول لـ BrokerView أو PublicProfileView أو PublicBrokerPage أو Auth أو CheckoutPage أو MerchantTermsView أو VerifyEmail أو PendingReview؛ هذه تُستورد بشكل عادي (static import).
 
 **تعريفات Lazy في App.tsx (السطور 21–27):**
+
 - `PublicWebsite` ← `lazy(() => import('./components/PublicWebsite'))`
 - `PublicCatalog` ← `lazy(() => import('./components/PublicCatalog'))`
 - `CustomerView` ← `lazy(() => import('./views/CustomerView').then(m => ({ default: m.CustomerView })))`
@@ -35,52 +36,52 @@
 
 ## 2. جدول: مكون كسول ↔ المسار/الـ View ↔ متى يُعرض ↔ فرصة Prefetch
 
-| المكون الكسول | المسار (Hash) أو الـ View | متى يُعرض | فرصة تحسين (prefetch عند hover/focus) |
-|----------------|---------------------------|-----------|----------------------------------------|
-| PublicWebsite | `#/` أو LANDING | ضيف، عند الدخول أو الرجوع للرئيسية | عند hover على زر "الرجوع" من الكتالوج (في PublicCatalog). |
-| PublicCatalog | `#/catalog` أو CATALOG | ضيف، بعد الضغط على "تصفّح المنتجات" أو من الرابط | عند hover على "تصفّح المنتجات" في الهيرو (ComingSoonHero). |
-| PublicProductDetails | `#/product/:id` أو `currentView === 'product_details'` | ضيف أو مسجّل عند فتح تفاصيل منتج | عند hover على أي بطاقة/رابط منتج (PublicWebsite، PublicCatalog، CustomerView، MerchantView، AdminView، إلخ). |
-| ProfileView | `#/profile` أو `currentView === 'profile'` | مسجّل، من القائمة الجانبية أو زر الملف | عند hover على تبويب "الملف" أو زر صورة المستخدم في الـ Layout. |
-| CustomerView | `#/home`, `#/shop`, `#/cart`, `#/orders` أو currentView المناسب | CUSTOMER: كل التبويبات؛ MERCHANT/ADMIN/BROKER: فقط shop و cart | عند hover على التبويبات (Home, Shop, Cart, Orders) أو أيقونة السلة في الـ Layout. |
-| MerchantView | `#/dashboard`, `#/products`, `#/orders`, `#/earnings` (للتاجر) | MERCHANT عندما لا يكون view = shop أو cart | عند hover على تبويبات لوحة التاجر في الـ Layout. |
-| AdminView | `#/admin`, `#/users`, `#/products`, `#/orders`, `#/withdrawals`, `#/platform` (للأدمن) | ADMIN عندما لا يكون view = shop أو cart | عند hover على تبويبات لوحة الأدمن في الـ Layout. |
+| المكون الكسول        | المسار (Hash) أو الـ View                                                              | متى يُعرض                                                      | فرصة تحسين (prefetch عند hover/focus)                                                                        |
+| -------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| PublicWebsite        | `#/` أو LANDING                                                                        | ضيف، عند الدخول أو الرجوع للرئيسية                             | عند hover على زر "الرجوع" من الكتالوج (في PublicCatalog).                                                    |
+| PublicCatalog        | `#/catalog` أو CATALOG                                                                 | ضيف، بعد الضغط على "تصفّح المنتجات" أو من الرابط               | عند hover على "تصفّح المنتجات" في الهيرو (ComingSoonHero).                                                   |
+| PublicProductDetails | `#/product/:id` أو `currentView === 'product_details'`                                 | ضيف أو مسجّل عند فتح تفاصيل منتج                               | عند hover على أي بطاقة/رابط منتج (PublicWebsite، PublicCatalog، CustomerView، MerchantView، AdminView، إلخ). |
+| ProfileView          | `#/profile` أو `currentView === 'profile'`                                             | مسجّل، من القائمة الجانبية أو زر الملف                         | عند hover على تبويب "الملف" أو زر صورة المستخدم في الـ Layout.                                               |
+| CustomerView         | `#/home`, `#/shop`, `#/cart`, `#/orders` أو currentView المناسب                        | CUSTOMER: كل التبويبات؛ MERCHANT/ADMIN/BROKER: فقط shop و cart | عند hover على التبويبات (Home, Shop, Cart, Orders) أو أيقونة السلة في الـ Layout.                            |
+| MerchantView         | `#/dashboard`, `#/products`, `#/orders`, `#/earnings` (للتاجر)                         | MERCHANT عندما لا يكون view = shop أو cart                     | عند hover على تبويبات لوحة التاجر في الـ Layout.                                                             |
+| AdminView            | `#/admin`, `#/users`, `#/products`, `#/orders`, `#/withdrawals`, `#/platform` (للأدمن) | ADMIN عندما لا يكون view = shop أو cart                        | عند hover على تبويبات لوحة الأدمن في الـ Layout.                                                             |
 
 ---
 
 ## 3. كل رابط أو زر يؤدي إلى مكون كسول
 
-| مكان الرابط/الزر في الواجهة | المكون الكسول الذي يُفتح عند الضغط | فرصة تحسين الأداء (prefetch بدون تغيير كود) |
-|-----------------------------|-------------------------------------|---------------------------------------------|
-| **ComingSoonHero** (ضيف): زر "تصفّح المنتجات" / Browse products | PublicCatalog | تحميل مسبق لـ chunk الـ PublicCatalog عند hover/focus على الزر. |
-| **PublicWebsite** (ضيف): زر "التفاصيل" أو اسم المنتج على البطاقات المميزة | PublicProductDetails | تحميل مسبق لـ PublicProductDetails + طلب بيانات المنتج (مثلاً fetchById) عند hover. |
-| **PublicCatalog** (ضيف): زر الرجوع أو الشعار | PublicWebsite | تحميل مسبق لـ PublicWebsite عند hover على الرجوع. |
-| **PublicCatalog** (ضيف): النقر على بطاقة منتج في الشبكة | PublicProductDetails | تحميل مسبق لـ PublicProductDetails + بيانات المنتج عند hover على البطاقة. |
-| **Layout** (مسجّل): تبويب "الملف" (Profile) في الشريط الجانبي | ProfileView | تحميل مسبق لـ ProfileView عند hover على التبويب. |
-| **Layout** (مسجّل): زر صورة المستخدم في الهيدر (يفتح الملف) | ProfileView | نفس التحميل المسبق عند hover على الزر. |
-| **Layout** (زبون): تبويبات Home, Shop, Cart, Orders | CustomerView | تحميل مسبق لـ CustomerView عند hover على أي من هذه التبويبات. |
-| **Layout** (زبون/أدمن): أيقونة السلة (تفتح Cart أو Shop حسب الدور) | CustomerView | تحميل مسبق لـ CustomerView عند hover على أيقونة السلة. |
-| **Layout** (تاجر): تبويبات Dashboard, Products, Orders, Earnings | MerchantView | تحميل مسبق لـ MerchantView عند hover. |
-| **Layout** (تاجر): تبويبا Shop و Cart | CustomerView | تحميل مسبق لـ CustomerView عند hover. |
-| **Layout** (أدمن): تبويبات Users, Products, Orders, Withdrawals, Platform | AdminView | تحميل مسبق لـ AdminView عند hover. |
-| **Layout** (أدمن): تبويبا Shop و Cart | CustomerView | تحميل مسبق لـ CustomerView عند hover. |
-| **Layout** (وسيط): تبويبا Shop و Cart | CustomerView | تحميل مسبق لـ CustomerView عند hover. |
-| **CustomerView** (مسجّل): بطاقة منتج في المتجر (ShopProductCard) | PublicProductDetails | تحميل مسبق لـ PublicProductDetails + بيانات المنتج عند hover على البطاقة. |
-| **MerchantView / AdminView / NotificationsView**: رابط "عرض المنتج" أو فتح تفاصيل منتج | PublicProductDetails | تحميل مسبق لـ PublicProductDetails + بيانات المنتج عند hover على الرابط. |
+| مكان الرابط/الزر في الواجهة                                                            | المكون الكسول الذي يُفتح عند الضغط | فرصة تحسين الأداء (prefetch بدون تغيير كود)                                         |
+| -------------------------------------------------------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------- |
+| **ComingSoonHero** (ضيف): زر "تصفّح المنتجات" / Browse products                        | PublicCatalog                      | تحميل مسبق لـ chunk الـ PublicCatalog عند hover/focus على الزر.                     |
+| **PublicWebsite** (ضيف): زر "التفاصيل" أو اسم المنتج على البطاقات المميزة              | PublicProductDetails               | تحميل مسبق لـ PublicProductDetails + طلب بيانات المنتج (مثلاً fetchById) عند hover. |
+| **PublicCatalog** (ضيف): زر الرجوع أو الشعار                                           | PublicWebsite                      | تحميل مسبق لـ PublicWebsite عند hover على الرجوع.                                   |
+| **PublicCatalog** (ضيف): النقر على بطاقة منتج في الشبكة                                | PublicProductDetails               | تحميل مسبق لـ PublicProductDetails + بيانات المنتج عند hover على البطاقة.           |
+| **Layout** (مسجّل): تبويب "الملف" (Profile) في الشريط الجانبي                          | ProfileView                        | تحميل مسبق لـ ProfileView عند hover على التبويب.                                    |
+| **Layout** (مسجّل): زر صورة المستخدم في الهيدر (يفتح الملف)                            | ProfileView                        | نفس التحميل المسبق عند hover على الزر.                                              |
+| **Layout** (زبون): تبويبات Home, Shop, Cart, Orders                                    | CustomerView                       | تحميل مسبق لـ CustomerView عند hover على أي من هذه التبويبات.                       |
+| **Layout** (زبون/أدمن): أيقونة السلة (تفتح Cart أو Shop حسب الدور)                     | CustomerView                       | تحميل مسبق لـ CustomerView عند hover على أيقونة السلة.                              |
+| **Layout** (تاجر): تبويبات Dashboard, Products, Orders, Earnings                       | MerchantView                       | تحميل مسبق لـ MerchantView عند hover.                                               |
+| **Layout** (تاجر): تبويبا Shop و Cart                                                  | CustomerView                       | تحميل مسبق لـ CustomerView عند hover.                                               |
+| **Layout** (أدمن): تبويبات Users, Products, Orders, Withdrawals, Platform              | AdminView                          | تحميل مسبق لـ AdminView عند hover.                                                  |
+| **Layout** (أدمن): تبويبا Shop و Cart                                                  | CustomerView                       | تحميل مسبق لـ CustomerView عند hover.                                               |
+| **Layout** (وسيط): تبويبا Shop و Cart                                                  | CustomerView                       | تحميل مسبق لـ CustomerView عند hover.                                               |
+| **CustomerView** (مسجّل): بطاقة منتج في المتجر (ShopProductCard)                       | PublicProductDetails               | تحميل مسبق لـ PublicProductDetails + بيانات المنتج عند hover على البطاقة.           |
+| **MerchantView / AdminView / NotificationsView**: رابط "عرض المنتج" أو فتح تفاصيل منتج | PublicProductDetails               | تحميل مسبق لـ PublicProductDetails + بيانات المنتج عند hover على الرابط.            |
 
 ---
 
 ## 4. جدول: رابط/زر ↔ مكون كسول ↔ API محتملة ↔ شرح موجز
 
-| الرابط/الزر | المكون الكسول | API محتملة للـ prefetch | شرح موجز |
-|-------------|----------------|-------------------------|-----------|
-| "تصفّح المنتجات" (ضيف) | PublicCatalog | — | تحميل chunk الكتالوج مسبقًا يسرّع أول دخول لصفحة المنتجات. |
-| بطاقة/رابط منتج (ضيف أو مسجّل) | PublicProductDetails | `productService.fetchById(productId)` | تحميل chunk التفاصيل + طلب المنتج يقلل زمن ظهور الصفحة عند الضغط. |
-| زر الرجوع من الكتالوج | PublicWebsite | — | تسريع العودة للصفحة الرئيسية. |
-| تبويب Profile / زر الملف | ProfileView | — | تسريع فتح الملف الشخصي. |
-| تبويبات Shop, Cart, Orders, Home (زبون) | CustomerView | بعد تسجيل الدخول: `fetchMyOrders()` | تسريع فتح الطلبات عند أول ضغط على Orders. |
-| تبويبات لوحة التاجر | MerchantView | بعد تسجيل الدخول: `productService.getByMerchantId(user.id)` | تسريع ظهور منتجات التاجر ولوحته. |
-| تبويبات لوحة الأدمن | AdminView | بعد تسجيل الدخول: `userService.getAll()`, `getAdminProducts()`, `getAdminOrders()`, `getAdminSettings()`, `getAdminPlatformEarnings()` | تسريع تبويبات المستخدمين، المنتجات، الطلبات، الإعدادات والأرباح. |
-| أيقونة السلة | CustomerView | — | تسريع فتح السلة/المتجر. |
+| الرابط/الزر                             | المكون الكسول        | API محتملة للـ prefetch                                                                                                                | شرح موجز                                                          |
+| --------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| "تصفّح المنتجات" (ضيف)                  | PublicCatalog        | —                                                                                                                                      | تحميل chunk الكتالوج مسبقًا يسرّع أول دخول لصفحة المنتجات.        |
+| بطاقة/رابط منتج (ضيف أو مسجّل)          | PublicProductDetails | `productService.fetchById(productId)`                                                                                                  | تحميل chunk التفاصيل + طلب المنتج يقلل زمن ظهور الصفحة عند الضغط. |
+| زر الرجوع من الكتالوج                   | PublicWebsite        | —                                                                                                                                      | تسريع العودة للصفحة الرئيسية.                                     |
+| تبويب Profile / زر الملف                | ProfileView          | —                                                                                                                                      | تسريع فتح الملف الشخصي.                                           |
+| تبويبات Shop, Cart, Orders, Home (زبون) | CustomerView         | بعد تسجيل الدخول: `fetchMyOrders()`                                                                                                    | تسريع فتح الطلبات عند أول ضغط على Orders.                         |
+| تبويبات لوحة التاجر                     | MerchantView         | بعد تسجيل الدخول: `productService.getByMerchantId(user.id)`                                                                            | تسريع ظهور منتجات التاجر ولوحته.                                  |
+| تبويبات لوحة الأدمن                     | AdminView            | بعد تسجيل الدخول: `userService.getAll()`, `getAdminProducts()`, `getAdminOrders()`, `getAdminSettings()`, `getAdminPlatformEarnings()` | تسريع تبويبات المستخدمين، المنتجات، الطلبات، الإعدادات والأرباح.  |
+| أيقونة السلة                            | CustomerView         | —                                                                                                                                      | تسريع فتح السلة/المتجر.                                           |
 
 ---
 
@@ -88,73 +89,73 @@
 
 ### 5.1 App.tsx
 
-| الاستدعاء | المكان | متى ولماذا | فرصة Prefetch (بدون تغيير كود) |
-|----------|--------|------------|----------------------------------|
-| `authService.getMe()` | initApp (useEffect مرة واحدة) | عند تحميل التطبيق لاستعادة الجلسة من الخادم | — (يُجرى مرة واحدة عند البدء). |
-| `productService.getAll()` | initApp | بعد التحقق من المستخدم؛ لتعبئة المنتجات للمتجر والكتالوج | — (يُجرى مرة واحدة؛ يمكن لاحقًا prefetch إضافي بعد تسجيل الدخول إذا رُغب). |
-| `cartApi.addCartItem(...)` | useEffect عند دمج سلة الضيف بعد تسجيل الدخول | عند وجود user وسلة ضيف غير فارغة لدمجها في سلة المسجّل | — (مرتبط بحدث تسجيل الدخول فقط). |
+| الاستدعاء                  | المكان                                       | متى ولماذا                                               | فرصة Prefetch (بدون تغيير كود)                                             |
+| -------------------------- | -------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `authService.getMe()`      | initApp (useEffect مرة واحدة)                | عند تحميل التطبيق لاستعادة الجلسة من الخادم              | — (يُجرى مرة واحدة عند البدء).                                             |
+| `productService.getAll()`  | initApp                                      | بعد التحقق من المستخدم؛ لتعبئة المنتجات للمتجر والكتالوج | — (يُجرى مرة واحدة؛ يمكن لاحقًا prefetch إضافي بعد تسجيل الدخول إذا رُغب). |
+| `cartApi.addCartItem(...)` | useEffect عند دمج سلة الضيف بعد تسجيل الدخول | عند وجود user وسلة ضيف غير فارغة لدمجها في سلة المسجّل   | — (مرتبط بحدث تسجيل الدخول فقط).                                           |
 
 ### 5.2 useCart (hooks/useCart.ts)
 
-| الاستدعاء | المكان | متى ولماذا | فرصة Prefetch |
-|----------|--------|------------|----------------|
-| `cartApi.getCart()` | refetch ثم useEffect عند تغيير userId | عند وجود مستخدم مسجّل لتحميل سلته من الـ API | السلة تُحمّل تلقائيًا عند تعيين user في App؛ لا حاجة prefetch منفصل عادة. |
-| `cartApi.addCartItem`, `updateCartItem`, `removeCartItem`, `clearCart` | عند إجراءات المستخدم (إضافة، تعديل كمية، حذف، تفريغ) | استجابة لأحداث المستخدم | — |
+| الاستدعاء                                                              | المكان                                               | متى ولماذا                                   | فرصة Prefetch                                                             |
+| ---------------------------------------------------------------------- | ---------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------- |
+| `cartApi.getCart()`                                                    | refetch ثم useEffect عند تغيير userId                | عند وجود مستخدم مسجّل لتحميل سلته من الـ API | السلة تُحمّل تلقائيًا عند تعيين user في App؛ لا حاجة prefetch منفصل عادة. |
+| `cartApi.addCartItem`, `updateCartItem`, `removeCartItem`, `clearCart` | عند إجراءات المستخدم (إضافة، تعديل كمية، حذف، تفريغ) | استجابة لأحداث المستخدم                      | —                                                                         |
 
 ### 5.3 CustomerView
 
-| الاستدعاء | المكان | متى ولماذا | فرصة Prefetch |
-|----------|--------|------------|----------------|
-| `productService.getAll()` | useEffect مرة واحدة عند mount | لملء قائمة المنتجات في المتجر | يمكن بعد تسجيل الدخول (للزبون/تاجر) استدعاء getAll في الخلفية إن لم يكن قد نُفّذ في initApp. |
+| الاستدعاء                       | المكان                                 | متى ولماذا                                           | فرصة Prefetch                                                                                          |
+| ------------------------------- | -------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `productService.getAll()`       | useEffect مرة واحدة عند mount          | لملء قائمة المنتجات في المتجر                        | يمكن بعد تسجيل الدخول (للزبون/تاجر) استدعاء getAll في الخلفية إن لم يكن قد نُفّذ في initApp.           |
 | `fetchMyOrders()` (checkoutApi) | useEffect عند `activeTab === 'orders'` | عند فتح تبويب الطلبات لجلب طلبات المستخدم من الـ API | **prefetch بعد تسجيل الدخول للزبون:** استدعاء fetchMyOrders() في الخلفية لتسريع أول فتح لتبويب Orders. |
 
 ### 5.4 AdminView
 
-| الاستدعاء | المكان | متى ولماذا | فرصة Prefetch |
-|----------|--------|------------|----------------|
-| `userService.getAll()` | refreshData في useEffect عند mount | عند فتح لوحة الأدمن (تبويب Users) لملء قائمة المستخدمين | **prefetch بعد تسجيل الدخول للأدمن:** استدعاء getAll() في الخلفية. |
-| `marketStore.getWithdrawals()` | نفس refreshData | قراءة السحوبات من الـ store (تزامني) | — |
-| `getAdminProducts()` | useEffect عند `activeTab === 'products'` | عند فتح تبويب المنتجات في الأدمن | **prefetch بعد تسجيل الدخول للأدمن:** استدعاء getAdminProducts() في الخلفية. |
-| `getAdminOrders()` | useEffect عند `activeTab === 'orders'` | عند فتح تبويب الطلبات في الأدمن | **prefetch بعد تسجيل الدخول للأدمن:** استدعاء getAdminOrders() في الخلفية. |
-| `getAdminSettings()` و `getAdminPlatformEarnings()` | loadPlatform عند `activeTab === 'platform'` | عند فتح تبويب المنصة/الإعدادات | **prefetch بعد تسجيل الدخول للأدمن:** استدعاء الاثنين في الخلفية. |
-| `userService.updateUserStatus`, `softDeleteUser`, `restoreUser` | عند أحداث (موافقة/رفض/حذف/استرجاع) | استجابة لأفعال الأدمن | — |
+| الاستدعاء                                                       | المكان                                      | متى ولماذا                                              | فرصة Prefetch                                                                |
+| --------------------------------------------------------------- | ------------------------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `userService.getAll()`                                          | refreshData في useEffect عند mount          | عند فتح لوحة الأدمن (تبويب Users) لملء قائمة المستخدمين | **prefetch بعد تسجيل الدخول للأدمن:** استدعاء getAll() في الخلفية.           |
+| `marketStore.getWithdrawals()`                                  | نفس refreshData                             | قراءة السحوبات من الـ store (تزامني)                    | —                                                                            |
+| `getAdminProducts()`                                            | useEffect عند `activeTab === 'products'`    | عند فتح تبويب المنتجات في الأدمن                        | **prefetch بعد تسجيل الدخول للأدمن:** استدعاء getAdminProducts() في الخلفية. |
+| `getAdminOrders()`                                              | useEffect عند `activeTab === 'orders'`      | عند فتح تبويب الطلبات في الأدمن                         | **prefetch بعد تسجيل الدخول للأدمن:** استدعاء getAdminOrders() في الخلفية.   |
+| `getAdminSettings()` و `getAdminPlatformEarnings()`             | loadPlatform عند `activeTab === 'platform'` | عند فتح تبويب المنصة/الإعدادات                          | **prefetch بعد تسجيل الدخول للأدمن:** استدعاء الاثنين في الخلفية.            |
+| `userService.updateUserStatus`, `softDeleteUser`, `restoreUser` | عند أحداث (موافقة/رفض/حذف/استرجاع)          | استجابة لأفعال الأدمن                                   | —                                                                            |
 
 ### 5.5 MerchantView
 
-| الاستدعاء | المكان | متى ولماذا | فرصة Prefetch |
-|----------|--------|------------|----------------|
-| `productService.getByMerchantId(user.id)` | useEffect عند mount | لملء منتجات التاجر في لوحته | **prefetch بعد تسجيل الدخول للتاجر:** استدعاء getByMerchantId(user.id) في الخلفية لتسريع أول فتح للوحة أو تبويب المنتجات. |
-| `productService.add`, `update`, `delete`, `update(..., { isActive })` | عند أحداث (إضافة/تعديل/حذف/تفعيل منتج) | استجابة لأفعال التاجر | — |
+| الاستدعاء                                                             | المكان                                 | متى ولماذا                  | فرصة Prefetch                                                                                                             |
+| --------------------------------------------------------------------- | -------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `productService.getByMerchantId(user.id)`                             | useEffect عند mount                    | لملء منتجات التاجر في لوحته | **prefetch بعد تسجيل الدخول للتاجر:** استدعاء getByMerchantId(user.id) في الخلفية لتسريع أول فتح للوحة أو تبويب المنتجات. |
+| `productService.add`, `update`, `delete`, `update(..., { isActive })` | عند أحداث (إضافة/تعديل/حذف/تفعيل منتج) | استجابة لأفعال التاجر       | —                                                                                                                         |
 
 ### 5.6 ProfileView
 
-| الاستدعاء | المكان | متى ولماذا | فرصة Prefetch |
-|----------|--------|------------|----------------|
+| الاستدعاء                                 | المكان                       | متى ولماذا                                 | فرصة Prefetch                                                  |
+| ----------------------------------------- | ---------------------------- | ------------------------------------------ | -------------------------------------------------------------- |
 | `productService.getByMerchantId(user.id)` | useEffect عند mount (للتاجر) | عند فتح الملف الشخصي للتاجر لعرض "منتجاتي" | يُغطى بنفس prefetch التاجر (getByMerchantId بعد تسجيل الدخول). |
-| `userService.confirmEmailManually` | عند حدث تأكيد البريد | عند طلب التأكيد اليدوي | — |
+| `userService.confirmEmailManually`        | عند حدث تأكيد البريد         | عند طلب التأكيد اليدوي                     | —                                                              |
 
 ### 5.7 PublicProductDetails
 
-| الاستدعاء | المكان | متى ولماذا | فرصة Prefetch |
-|----------|--------|------------|----------------|
+| الاستدعاء                             | المكان                       | متى ولماذا                                                                 | فرصة Prefetch                                                                                            |
+| ------------------------------------- | ---------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | `productService.fetchById(productId)` | useEffect عند وجود productId | عند فتح صفحة التفاصيل لجلب بيانات المنتج من الـ API إن لم تكن في الـ store | **prefetch عند hover على رابط منتج:** استدعاء fetchById(productId) في الخلفية لتجهيز البيانات قبل الضغط. |
 
 ### 5.8 PublicProfileView
 
-| الاستدعاء | المكان | متى ولماذا | فرصة Prefetch |
-|----------|--------|------------|----------------|
+| الاستدعاء                                   | المكان                | متى ولماذا                    | فرصة Prefetch                                                 |
+| ------------------------------------------- | --------------------- | ----------------------------- | ------------------------------------------------------------- |
 | `productService.getByMerchantId(profileId)` | عند تحميل الملف العام | لعرض منتجات صاحب الملف (تاجر) | يمكن prefetch عند hover على رابط ملف تاجر إن وُجد في الواجهة. |
 
 ### 5.9 PublicWebsite و PublicCatalog
 
-| الاستدعاء | المكان | متى ولماذا | فرصة Prefetch |
-|----------|--------|------------|----------------|
+| الاستدعاء                 | المكان                             | متى ولماذا                                                              | فرصة Prefetch                                  |
+| ------------------------- | ---------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------- |
 | `productService.getAll()` | useEffect عند mount (كلا المكونين) | لملء المنتجات المميزة (PublicWebsite) أو قائمة الكتالوج (PublicCatalog) | تم بالفعل في initApp؛ قد يُعاد عند فتح الصفحة. |
 
 ### 5.10 مكونات التسجيل والمصادقة (Auth, RegisterMerchant, RegisterBroker, RegisterCustomer, VerifyEmail)
 
-| الاستدعاء | المكان | متى ولماذا | فرصة Prefetch |
-|----------|--------|------------|----------------|
+| الاستدعاء                                                                            | المكان            | متى ولماذا                                     | فرصة Prefetch                        |
+| ------------------------------------------------------------------------------------ | ----------------- | ---------------------------------------------- | ------------------------------------ |
 | `userService.register`, `verifyEmail`, `resendVerificationCode`, `authService.login` | عند أحداث النماذج | تسجيل، تأكيد بريد، إعادة إرسال رمز، تسجيل دخول | — (مرتبطة بأحداث المستخدم المباشرة). |
 
 ---
@@ -189,14 +190,14 @@
 
 ### 9.1 تحسينات مقترحة (منطقيًا فقط)
 
-| # | التحسين | الوصف | الفائدة المتوقعة |
-|---|---------|--------|-------------------|
-| 1 | **Prefetch الـ chunk عند hover/focus** | لكل رابط أو زر يفتح مكونًا كسولًا، تشغيل نفس `import(...)` عند onMouseEnter/onFocus (في طبقة prefetch منفصلة أو في المكون الحالي دون تغيير الـ props). | تقليل زمن تحميل الـ chunk عند الضغط؛ تحسين TTI و First Paint للصفحة المستهدفة. |
-| 2 | **Prefetch بيانات الطلبات للزبون** | بعد تسجيل الدخول، إذا كان الدور CUSTOMER، استدعاء `fetchMyOrders()` مرة واحدة في الخلفية (بدون كتابة النتيجة في state التطبيق؛ أو تخزينها في cache للاستخدام لاحقًا إن وُجدت آلية). | تسريع أول فتح لتبويب الطلبات بعد تسجيل الدخول. |
-| 3 | **Prefetch منتجات التاجر** | بعد تسجيل الدخول للتاجر، استدعاء `productService.getByMerchantId(user.id)` في الخلفية. | تسريع MerchantView و ProfileView عند أول فتح. |
-| 4 | **Prefetch بيانات الأدمن** | بعد تسجيل الدخول للأدمن، استدعاء `userService.getAll()` و (اختياري) `getAdminProducts()`, `getAdminOrders()`, `getAdminSettings()`, `getAdminPlatformEarnings()` في الخلفية. | تسريع تبويبات لوحة الأدمن عند أول فتح. |
-| 5 | **Prefetch بيانات المنتج عند hover على رابط منتج** | عند hover على أي بطاقة أو رابط منتج، استدعاء `productService.fetchById(productId)` في الخلفية. | تقليل زمن ظهور صفحة تفاصيل المنتج أو جعلها فورية إن وُجدت آلية cache. |
-| 6 | **الإبقاء على PageLoader** | الاستمرار في استخدام fallback خفيف (spinner + نص) لجميع الحدود (Suspense boundaries) للمكونات الكسولة. | تجربة انتظار موحدة وقصيرة عند عدم prefetch أو عند اتصال بطيء. |
+| #   | التحسين                                            | الوصف                                                                                                                                                                               | الفائدة المتوقعة                                                               |
+| --- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| 1   | **Prefetch الـ chunk عند hover/focus**             | لكل رابط أو زر يفتح مكونًا كسولًا، تشغيل نفس `import(...)` عند onMouseEnter/onFocus (في طبقة prefetch منفصلة أو في المكون الحالي دون تغيير الـ props).                              | تقليل زمن تحميل الـ chunk عند الضغط؛ تحسين TTI و First Paint للصفحة المستهدفة. |
+| 2   | **Prefetch بيانات الطلبات للزبون**                 | بعد تسجيل الدخول، إذا كان الدور CUSTOMER، استدعاء `fetchMyOrders()` مرة واحدة في الخلفية (بدون كتابة النتيجة في state التطبيق؛ أو تخزينها في cache للاستخدام لاحقًا إن وُجدت آلية). | تسريع أول فتح لتبويب الطلبات بعد تسجيل الدخول.                                 |
+| 3   | **Prefetch منتجات التاجر**                         | بعد تسجيل الدخول للتاجر، استدعاء `productService.getByMerchantId(user.id)` في الخلفية.                                                                                              | تسريع MerchantView و ProfileView عند أول فتح.                                  |
+| 4   | **Prefetch بيانات الأدمن**                         | بعد تسجيل الدخول للأدمن، استدعاء `userService.getAll()` و (اختياري) `getAdminProducts()`, `getAdminOrders()`, `getAdminSettings()`, `getAdminPlatformEarnings()` في الخلفية.        | تسريع تبويبات لوحة الأدمن عند أول فتح.                                         |
+| 5   | **Prefetch بيانات المنتج عند hover على رابط منتج** | عند hover على أي بطاقة أو رابط منتج، استدعاء `productService.fetchById(productId)` في الخلفية.                                                                                      | تقليل زمن ظهور صفحة تفاصيل المنتج أو جعلها فورية إن وُجدت آلية cache.          |
+| 6   | **الإبقاء على PageLoader**                         | الاستمرار في استخدام fallback خفيف (spinner + نص) لجميع الحدود (Suspense boundaries) للمكونات الكسولة.                                                                              | تجربة انتظار موحدة وقصيرة عند عدم prefetch أو عند اتصال بطيء.                  |
 
 ### 9.2 ملخص الفوائد
 
@@ -206,4 +207,4 @@
 
 ---
 
-*هذا التقرير تحليلي فقط؛ لم يُجرَ أي تعديل على الكود أو المسارات أو الحالة أو الـ props أو المنطق.*
+_هذا التقرير تحليلي فقط؛ لم يُجرَ أي تعديل على الكود أو المسارات أو الحالة أو الـ props أو المنطق._

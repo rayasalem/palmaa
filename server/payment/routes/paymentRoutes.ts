@@ -10,12 +10,7 @@ import * as paymentController from '../controllers/paymentController.js';
 
 const router = express.Router();
 
-router.post(
-  '/create-session',
-  express.json(),
-  validateCreateSession,
-  paymentController.createSession
-);
+router.post('/create-session', express.json(), validateCreateSession, paymentController.createSession);
 
 router.post(
   '/webhook',

@@ -22,15 +22,13 @@ export const NavigationPage = {
   visitProfile: () => cy.visit('/#/profile'),
 
   /** Generic helper to get all clickable controls on current page. */
-  getAllClickable: () =>
-    cy.get('button, a[href], [role="button"], input[type="submit"], input[type="button"]'),
+  getAllClickable: () => cy.get('button, a[href], [role="button"], input[type="submit"], input[type="button"]'),
 
   /**
    * Back-style buttons: Arabic/English/Hebrew variants.
    * Examples: العودة، رجوع، Back, Go Back, Back to shop, Back to Edit.
    */
-  getBackButtons: () =>
-    cy.contains('button', /العودة|رجوع|Back to shop|Back to Edit|Go Back|Back/),
+  getBackButtons: () => cy.contains('button', /العودة|رجوع|Back to shop|Back to Edit|Go Back|Back/),
 
   /** Click the first safe button (skipping destructive labels like Delete/حذف) */
   clickSafely: ($el: JQuery<HTMLElement>) => {
@@ -52,4 +50,3 @@ export const NavigationPage = {
     cy.wrap($el).scrollIntoView().click({ force: true });
   },
 };
-

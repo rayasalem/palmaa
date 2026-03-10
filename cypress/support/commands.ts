@@ -75,15 +75,20 @@ Cypress.Commands.add('loginAsAdmin', (email?: string, password?: string) => {
 
 Cypress.Commands.add('logout', () => {
   // Open user menu (desktop: click on avatar/menu; adjust selector to match Layout)
-  cy.get('header').within(() => {
-    cy.get('button').contains(/تسجيل الخروج|Log out|התנתק/).first().click({ force: true });
-  }).then(() => {
-    // If dropdown: click logout item
-    cy.get('body').then(($body) => {
-      const logoutBtn = $body.find('button:contains("تسجيل الخروج"), button:contains("Log out"), [role="menuitem"]');
-      if (logoutBtn.length) logoutBtn.first().click();
+  cy.get('header')
+    .within(() => {
+      cy.get('button')
+        .contains(/تسجيل الخروج|Log out|התנתק/)
+        .first()
+        .click({ force: true });
+    })
+    .then(() => {
+      // If dropdown: click logout item
+      cy.get('body').then(($body) => {
+        const logoutBtn = $body.find('button:contains("تسجيل الخروج"), button:contains("Log out"), [role="menuitem"]');
+        if (logoutBtn.length) logoutBtn.first().click();
+      });
     });
-  });
   cy.url().should('match', /#\/$|#\/login|#\/catalog/);
 });
 
@@ -97,9 +102,15 @@ Cypress.Commands.add('stubLogin', (options: { success?: boolean; statusCode?: nu
   const apiBase = Cypress.config('baseUrl').replace(/\/$/, '');
   cy.intercept('POST', '**/api/auth/login', {
     statusCode,
-    body: body ?? (success
-      ? { success: true, user: { id: 'stub-user', email: 'stub@test.com', name: 'Stub User', role: 'CUSTOMER', status: 'ACTIVE' }, token: 'stub-token' }
-      : { success: false, error: 'Invalid credentials' }),
+    body:
+      body ??
+      (success
+        ? {
+            success: true,
+            user: { id: 'stub-user', email: 'stub@test.com', name: 'Stub User', role: 'CUSTOMER', status: 'ACTIVE' },
+            token: 'stub-token',
+          }
+        : { success: false, error: 'Invalid credentials' }),
   }).as('loginRequest');
 });
 

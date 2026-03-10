@@ -1,4 +1,3 @@
-
 /**
  * Application Configuration
  * Centralizes all environment variables and static config values.
@@ -51,5 +50,5 @@ export const env = {
     NAME: 'Palma Marketplace',
     VERSION: '1.0.0',
     CURRENCY: 'ILS',
-  }
+  },
 };

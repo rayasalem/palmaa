@@ -47,12 +47,16 @@ function validateEnv() {
     const jwtSecret = getEnv('JWT_SECRET') || getEnv('JWT_SECRET_KEY');
     if (!jwtSecret) {
       // eslint-disable-next-line no-console
-      console.warn('WARNING: JWT_SECRET not set – tokens are signed with a fallback secret. Configure JWT_SECRET in the server environment.');
+      console.warn(
+        'WARNING: JWT_SECRET not set – tokens are signed with a fallback secret. Configure JWT_SECRET in the server environment.'
+      );
     }
     const supabaseServiceKey = getEnv('SUPABASE_SERVICE_KEY');
     if (supabaseServiceKey) {
       // eslint-disable-next-line no-console
-      console.warn('WARNING: Check SUPABASE_SERVICE_KEY security – ensure it is stored only in server environment variables, not in source control.');
+      console.warn(
+        'WARNING: Check SUPABASE_SERVICE_KEY security – ensure it is stored only in server environment variables, not in source control.'
+      );
     }
   }
 }

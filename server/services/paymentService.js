@@ -53,7 +53,10 @@ function buildSandboxPaymentUrl(orderId, amount, returnUrl) {
 async function createPayment(orderId, amount, returnUrl) {
   const updateResult = await updateOrderStatus(orderId, 'payment_processing');
   if (updateResult.error) return { paymentUrl: null, error: updateResult.error };
-  await supabase.from(ORDERS_TABLE).update({ payment_method: 'online', updated_at: new Date().toISOString() }).eq('id', orderId);
+  await supabase
+    .from(ORDERS_TABLE)
+    .update({ payment_method: 'online', updated_at: new Date().toISOString() })
+    .eq('id', orderId);
   const baseUrl = (process.env.SANDBOX_PAYMENT_URL || '').trim();
   const isPlaceholder = !baseUrl || baseUrl.includes(PLACEHOLDER_BANK_HOST);
   if (isPlaceholder) {
@@ -96,7 +99,7 @@ async function handlePaymentCallback(orderId, status, idempotencyKey) {
       logger.error('paymentService recordProfitsForOrder error', { message: profitErr.message });
     }
     const { data: order } = await orderService.getOrderById(orderId);
-    const totalAmount = (order && order.total_amount != null) ? order.total_amount : 0;
+    const totalAmount = order && order.total_amount != null ? order.total_amount : 0;
     const paymentMethod = ((order && order.payment_method) || 'online').toLowerCase();
     const isCash = paymentMethod === 'cod' || paymentMethod === 'cash';
     const { error: txErr } = await transactionService.recordOrderSettlement(
@@ -172,7 +175,10 @@ async function processCybersourceCardPayment(orderId, amount, currency, card) {
 
   if (upperDecision === 'AUTHORIZED') {
     // الدفع بالبطاقة = إلكتروني: حدّث الطلب لاحتساب العمولة والغرامة الضريبية (16% عند عدم رفع الفاتورة)
-    await supabase.from(ORDERS_TABLE).update({ payment_method: 'online', updated_at: new Date().toISOString() }).eq('id', orderId);
+    await supabase
+      .from(ORDERS_TABLE)
+      .update({ payment_method: 'online', updated_at: new Date().toISOString() })
+      .eq('id', orderId);
     // Reuse existing callback logic (idempotent) to update order status, stock, profits, settlement
     const idempotencyKey = transactionId ? `cybersource:${transactionId}` : undefined;
     const { error } = await handlePaymentCallback(orderId, 'success', idempotencyKey);

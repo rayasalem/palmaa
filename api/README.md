@@ -3,6 +3,7 @@
 ## Purpose
 
 The `api/` folder provides the **base HTTP client** for all backend requests. It centralizes:
+
 - API base URL (from env or default)
 - Credentials (`include` for cookies)
 - JSON Content-Type
@@ -15,6 +16,7 @@ All services (`authService`, `cartApi`, `checkoutApi`, etc.) should use `api/cli
 ## Functions
 
 ### `api<T>(path, options)`
+
 - **Role**: Performs authenticated JSON request to backend. Single entry point for API calls.
 - **Params**:
   - `path`: Relative path (e.g. `/api/auth/login`) or absolute URL.
@@ -24,17 +26,21 @@ All services (`authService`, `cartApi`, `checkoutApi`, etc.) should use `api/cli
 - **Key logic**: Uses `credentials: 'include'` so JWT cookie is sent; expects JSON response.
 
 ### `buildUrl(path)`
+
 - **Role**: Builds full URL. If path starts with `http`, returns as-is; otherwise prepends `API_BASE`.
 - **Params**: `path` – relative or absolute path.
 - **Returns**: Full URL string.
 
 ### `mergeHeaders(options)`
+
 - **Role**: Merges default headers (Content-Type, credentials) with caller options. Caller headers override defaults.
 
 ### `parseJson(res)`
+
 - **Role**: Parses response body as JSON. Returns `{}` on parse failure (avoids unhandled rejection).
 
 ### `getErrorMessage(data, status)`
+
 - **Role**: Extracts user-facing error message from response body. Tries `error`, then `message`, then `HTTP {status}`.
 
 ---

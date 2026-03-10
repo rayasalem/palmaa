@@ -13,7 +13,7 @@ const ORDERS_TABLE = 'orders';
 const ORDER_ITEMS_TABLE = 'order_items';
 
 async function createOrder(params) {
-  const { recipient_name, address, city, phone, amount, weight, customer_id, broker_id, items, payment_method } = params;
+  const { recipient_name, address, phone, amount, customer_id, broker_id, items, payment_method } = params;
   const now = new Date().toISOString();
   let merchant_id = null;
   if (items && Array.isArray(items) && items.length > 0) {
@@ -37,11 +37,7 @@ async function createOrder(params) {
   if (merchant_id) orderRow.merchant_id = merchant_id;
   if (!customer_id) orderRow.guest_access_token = randomUUID();
 
-  const { data: order, error } = await supabase
-    .from(ORDERS_TABLE)
-    .insert(orderRow)
-    .select()
-    .single();
+  const { data: order, error } = await supabase.from(ORDERS_TABLE).insert(orderRow).select().single();
 
   if (error) {
     logger.error('orderService Insert error', { message: error.message });
@@ -65,18 +61,11 @@ async function createOrder(params) {
 }
 
 async function getOrderById(orderId) {
-  const { data: order, error } = await supabase
-    .from(ORDERS_TABLE)
-    .select('*')
-    .eq('id', orderId)
-    .single();
+  const { data: order, error } = await supabase.from(ORDERS_TABLE).select('*').eq('id', orderId).single();
   if (error || !order) {
     return { data: null, error: error || { message: 'Order not found' } };
   }
-  const { data: orderItems } = await supabase
-    .from(ORDER_ITEMS_TABLE)
-    .select('*')
-    .eq('order_id', orderId);
+  const { data: orderItems } = await supabase.from(ORDER_ITEMS_TABLE).select('*').eq('order_id', orderId);
   return { data: { ...order, items: orderItems || [] }, error: null };
 }
 
@@ -174,4 +163,14 @@ async function completeOrder(orderId) {
   return { data, error: null };
 }
 
-export { createOrder, getOrderById, getOrdersByCustomerId, getOrdersByMerchantId, cancelOrder, updateOrderInvoice, completeOrder, ORDERS_TABLE, ORDER_ITEMS_TABLE };
+export {
+  createOrder,
+  getOrderById,
+  getOrdersByCustomerId,
+  getOrdersByMerchantId,
+  cancelOrder,
+  updateOrderInvoice,
+  completeOrder,
+  ORDERS_TABLE,
+  ORDER_ITEMS_TABLE,
+};

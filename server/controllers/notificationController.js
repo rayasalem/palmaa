@@ -7,12 +7,16 @@ import logger from '../utils/logger.js';
 
 async function list(req, res) {
   try {
-    const userId = (req.auth && req.auth.sub);
+    const userId = req.auth && req.auth.sub;
     if (!userId) return res.status(401).json({ success: false, error: 'Authentication required' });
     const unreadOnly = req.query.unread === 'true';
     const limit = req.query.limit != null ? parseInt(req.query.limit, 10) : undefined;
     const offset = req.query.offset != null ? parseInt(req.query.offset, 10) : undefined;
-    const opts = { unreadOnly, limit: Number.isInteger(limit) ? limit : undefined, offset: Number.isInteger(offset) ? offset : undefined };
+    const opts = {
+      unreadOnly,
+      limit: Number.isInteger(limit) ? limit : undefined,
+      offset: Number.isInteger(offset) ? offset : undefined,
+    };
     const { data, error } = await notificationService.listByUserId(userId, opts);
     if (error) return res.status(500).json({ success: false, error: error.message });
     return res.status(200).json({ success: true, notifications: data });
@@ -24,7 +28,7 @@ async function list(req, res) {
 
 async function markRead(req, res) {
   try {
-    const userId = (req.auth && req.auth.sub);
+    const userId = req.auth && req.auth.sub;
     const { id } = req.params;
     if (!userId) return res.status(401).json({ success: false, error: 'Authentication required' });
     if (!id) return res.status(400).json({ success: false, error: 'Notification id is required' });

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { User, Role } from '../types';
 import { userService } from '../services/userService';
@@ -16,12 +15,14 @@ interface RegisterMerchantProps {
   onOpenTerms?: () => void;
 }
 
-const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
-  onRegister,
-  onBackToLogin,
-  onOpenTerms,
-}) => {
-  const lang: 'ar' | 'en' | 'he' = (typeof document !== 'undefined' && (document.documentElement.lang === 'ar' || document.documentElement.lang === 'en' || document.documentElement.lang === 'he')) ? document.documentElement.lang : 'ar';
+const RegisterMerchant: React.FC<RegisterMerchantProps> = ({ onRegister, onBackToLogin, onOpenTerms }) => {
+  const lang: 'ar' | 'en' | 'he' =
+    typeof document !== 'undefined' &&
+    (document.documentElement.lang === 'ar' ||
+      document.documentElement.lang === 'en' ||
+      document.documentElement.lang === 'he')
+      ? document.documentElement.lang
+      : 'ar';
   const { showToast } = useToast();
   const [step, setStep] = useState<'FORM' | 'VERIFY'>('FORM');
   const t = translations[lang];
@@ -51,7 +52,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
 
   const availableVillages = useMemo(
     () => (selectedCityId ? getInternalVillages(selectedCityId) : []),
-    [selectedCityId],
+    [selectedCityId]
   );
 
   const [error, setError] = useState('');
@@ -67,9 +68,9 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
           lang === 'ar'
             ? 'تم تأكيد الحساب بنجاح. جاري تسجيل الدخول...'
             : lang === 'he'
-            ? 'החשבון אומת בהצלחה. מתחבר...'
-            : 'Account verified successfully. Logging you in...',
-          'success',
+              ? 'החשבון אומת בהצלחה. מתחבר...'
+              : 'Account verified successfully. Logging you in...',
+          'success'
         );
         const loginResult = await authService.login(formData.email, formData.password);
         if (loginResult.success && loginResult.data) {
@@ -94,7 +95,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
   const handleCityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const raw = e.target.value;
     const cityId = raw === '' ? NaN : parseInt(raw, 10);
-    const city = cities.find(c => c.id === cityId);
+    const city = cities.find((c) => c.id === cityId);
     if (city && !Number.isNaN(cityId)) {
       setSelectedCityId(cityId);
       setSelectedRegionId(city.regionId);
@@ -121,10 +122,10 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
       const path = `merchant_logos/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
       const url = await storageService.uploadFile(file, 'profiles', path);
 
-      setFormData(prev => ({ ...prev, logo_url: url }));
+      setFormData((prev) => ({ ...prev, logo_url: url }));
       showToast(
         lang === 'ar' ? 'تم رفع الشعار بنجاح' : lang === 'he' ? 'הלוגו הועלה בהצלחה' : 'Logo uploaded successfully',
-        'success',
+        'success'
       );
     } catch (err) {
       const msg = lang === 'ar' ? 'فشل رفع الصورة' : lang === 'he' ? 'העלאת התמונה נכשלה' : 'Failed to upload image';
@@ -168,7 +169,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
     setLoading(true);
     setError('');
 
-    const cityObj = cities.find(c => c.id === selectedCityId);
+    const cityObj = cities.find((c) => c.id === selectedCityId);
     const cityName = cityObj ? (lang === 'en' ? cityObj.nameEn : cityObj.nameAr) : '';
 
     const newUser: User = {
@@ -229,16 +230,11 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
             <Logo size="medium" />
           </div>
           <h1 className="heading-block-title font-heading text-palma-navy">{t.auth.joinMerchant}</h1>
-          <p className="heading-block-sub">
-            {t.auth.merchantSubtitle}
-          </p>
+          <p className="heading-block-sub">{t.auth.merchantSubtitle}</p>
         </div>
 
         {step === 'FORM' ? (
-          <form
-            onSubmit={handleSubmit}
-            className={`space-y-6 ${lang === 'en' ? 'text-left' : 'text-right'}`}
-          >
+          <form onSubmit={handleSubmit} className={`space-y-6 ${lang === 'en' ? 'text-left' : 'text-right'}`}>
             {error && (
               <div className="p-4 bg-red-50 text-red-600 text-[10px] font-black rounded-2xl text-center uppercase">
                 {error}
@@ -247,9 +243,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
 
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-slate-500">
-                  {t.auth.businessName} *
-                </label>
+                <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.businessName} *</label>
                 <input
                   required
                   name="business_name"
@@ -259,9 +253,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-slate-500">
-                  {t.auth.ownerName} *
-                </label>
+                <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.ownerName} *</label>
                 <input
                   required
                   name="owner_name"
@@ -272,58 +264,8 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
               </div>
             </div>
 
-            {/* Subscription plan selection – UI only, backend keeps merchant subscription free */}
-            <div className="space-y-3">
-              <p className="text-[10px] font-black uppercase text-slate-500">
-                {lang === 'ar'
-                  ? 'خطة الاشتراك (واجهة فقط – اشتراك التاجر مجاني دائماً)'
-                  : 'Subscription plan (UI only – merchant stays on a free plan)'}
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setSelectedPlan('free')}
-                  className={`w-full text-left rounded-2xl border px-4 py-3 text-xs font-medium transition-all ${
-                    selectedPlan === 'free'
-                      ? 'border-palma-primary bg-palma-primaryLight text-palma-navy shadow-sm'
-                      : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-palma-primary/70'
-                  }`}
-                >
-                  <span className="block font-black text-[11px] uppercase tracking-widest mb-1">
-                    {lang === 'ar' ? 'الخطة المجانية' : 'Free plan'}
-                  </span>
-                  <span className="block text-[11px]">
-                    {lang === 'ar'
-                      ? 'اشتراك مجاني للتاجر داخل المنصة، مع إمكانية إضافة باقات مدفوعة لاحقاً.'
-                      : 'Free subscription for merchants inside the platform, with optional paid tiers in the future.'}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedPlan('paid')}
-                  className={`w-full text-left rounded-2xl border px-4 py-3 text-xs font-medium transition-all ${
-                    selectedPlan === 'paid'
-                      ? 'border-palma-primary bg-white text-palma-navy shadow-sm'
-                      : 'border-slate-200 bg-slate-50 text-slate-500'
-                  }`}
-                  disabled
-                >
-                  <span className="block font-black text-[11px] uppercase tracking-widest mb-1">
-                    {lang === 'ar' ? 'الخطة المدفوعة (قريباً)' : 'Paid plan (coming soon)'}
-                  </span>
-                  <span className="block text-[11px]">
-                    {lang === 'ar'
-                      ? 'مزايا إضافية وظهور أعلى في نتائج البحث – قريباً.'
-                      : 'Extra benefits and higher visibility in search – coming soon.'}
-                  </span>
-                </button>
-              </div>
-            </div>
-
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-slate-500">
-                {t.auth.storeLogo}
-              </label>
+              <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.storeLogo}</label>
               <div
                 onClick={() => !isUploading && fileInputRef.current?.click()}
                 className={`relative flex items-center justify-center border-2 border-dashed border-slate-200 rounded-[2rem] p-4 bg-slate-50 transition-all cursor-pointer min-h-[140px] ${
@@ -344,9 +286,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
                       className="w-24 h-24 rounded-2xl object-cover shadow-md mb-2"
                       alt="Logo preview"
                     />
-                    <span className="text-[9px] font-black uppercase text-slate-400">
-                      {t.auth.clickToChange}
-                    </span>
+                    <span className="text-[9px] font-black uppercase text-slate-400">{t.auth.clickToChange}</span>
                   </div>
                 ) : (
                   <div className="text-center">
@@ -360,9 +300,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-slate-500">
-                {t.auth.email} *
-              </label>
+              <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.email} *</label>
               <input
                 required
                 type="email"
@@ -375,9 +313,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
 
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-slate-500">
-                  {t.auth.phone} *
-                </label>
+                <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.phone} *</label>
                 <input
                   required
                   name="phone"
@@ -388,9 +324,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-slate-500">
-                  {t.auth.city} *
-                </label>
+                <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.city} *</label>
                 <select
                   required
                   className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none appearance-none"
@@ -400,7 +334,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
                   <option value="">
                     {lang === 'ar' ? 'اختر المدينة...' : lang === 'he' ? 'בחר עיר...' : 'Select City...'}
                   </option>
-                  {cities.map(c => (
+                  {cities.map((c) => (
                     <option key={c.id} value={String(c.id)}>
                       {lang === 'en' ? c.nameEn : c.nameAr}
                     </option>
@@ -423,7 +357,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
                 <option value="">
                   {lang === 'ar' ? 'اختر المنطقة...' : lang === 'he' ? 'בחר אזור...' : 'Select Area...'}
                 </option>
-                {availableVillages.map(v => (
+                {availableVillages.map((v) => (
                   <option key={v.id} value={String(v.id)}>
                     {lang === 'en' ? v.nameEn : v.nameAr}
                   </option>
@@ -432,9 +366,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-slate-500">
-                {t.auth.password} *
-              </label>
+              <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.password} *</label>
               <input
                 required
                 type="password"
@@ -474,24 +406,22 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
                 {lang === 'ar'
                   ? `أدخل رمز التحقق المكوّن من 6 أرقام الذي أُرسل إلى ${formData.email}`
                   : lang === 'he'
-                  ? `הזן את קוד האימות בן 6 ספרות שנשלח אל ${formData.email}`
-                  : `Enter the 6-digit verification code sent to ${formData.email}`}
+                    ? `הזן את קוד האימות בן 6 ספרות שנשלח אל ${formData.email}`
+                    : `Enter the 6-digit verification code sent to ${formData.email}`}
               </p>
               {emailNotSent && (
                 <p className="mt-3 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 inline-block">
                   {lang === 'ar'
                     ? 'إرسال البريد غير مهيأ في هذه البيئة. يمكنك استخدام الكود الظاهر هنا مباشرة.'
                     : lang === 'he'
-                    ? 'שליחת האימייל אינה מוגדרת בסביבה זו. ניתן להשתמש בקוד שמופיע כאן ישירות.'
-                    : 'Email sending is not configured in this environment. You can use the code shown here directly.'}
+                      ? 'שליחת האימייל אינה מוגדרת בסביבה זו. ניתן להשתמש בקוד שמופיע כאן ישירות.'
+                      : 'Email sending is not configured in this environment. You can use the code shown here directly.'}
                 </p>
               )}
             </div>
 
             {error && (
-              <div className="p-3 bg-red-50 text-red-600 text-[11px] font-bold rounded-2xl text-center">
-                {error}
-              </div>
+              <div className="p-3 bg-red-50 text-red-600 text-[11px] font-bold rounded-2xl text-center">{error}</div>
             )}
 
             <form onSubmit={handleVerify} className="space-y-4 max-w-xs mx-auto">
@@ -500,7 +430,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
                 inputMode="numeric"
                 maxLength={6}
                 value={verificationCode}
-                onChange={e => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 className="w-full p-4 text-center text-2xl font-black tracking-[0.5em] rounded-2xl border-2 border-slate-200 focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 outline-none"
                 placeholder="000000"
               />
@@ -509,7 +439,13 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
                 disabled={loading || verificationCode.length !== 6}
                 className="w-full py-4 bg-palma-primary text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl disabled:opacity-50 hover:bg-emerald-800 transition-all flex items-center justify-center gap-2"
               >
-                {loading ? t.common.loading : lang === 'ar' ? 'تأكيد وبدء الاستخدام' : lang === 'he' ? 'אימות והתחלה' : 'Verify & Start'}
+                {loading
+                  ? t.common.loading
+                  : lang === 'ar'
+                    ? 'تأكيد وبدء الاستخدام'
+                    : lang === 'he'
+                      ? 'אימות והתחלה'
+                      : 'Verify & Start'}
                 {!loading && <CheckCircle className="w-4 h-4" />}
               </button>
             </form>
@@ -528,9 +464,9 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
                         lang === 'ar'
                           ? 'تم إرسال رمز جديد إلى بريدك.'
                           : lang === 'he'
-                          ? 'נשלח קוד חדש לאימייל שלך.'
-                          : 'A new code was sent to your email.',
-                        'success',
+                            ? 'נשלח קוד חדש לאימייל שלך.'
+                            : 'A new code was sent to your email.',
+                        'success'
                       );
                     } else {
                       const errMsg = getAuthErrorMessage(res.error || 'Error', lang);
@@ -555,7 +491,11 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({
                 }}
                 className="flex-1 py-3 text-[11px] font-bold rounded-2xl text-slate-400 hover:text-palma-primary"
               >
-                {lang === 'ar' ? 'العودة لتعديل البيانات' : lang === 'he' ? 'חזרה לעריכת פרטים' : 'Back to edit details'}
+                {lang === 'ar'
+                  ? 'العودة لتعديل البيانات'
+                  : lang === 'he'
+                    ? 'חזרה לעריכת פרטים'
+                    : 'Back to edit details'}
               </button>
             </div>
           </div>

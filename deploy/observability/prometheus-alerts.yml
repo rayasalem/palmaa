@@ -1,0 +1,52 @@
+# Prometheus alerting rules for Palma Marketplace.
+# Use with Prometheus alertmanagers or Grafana Alerting.
+# Ref: docs/SLO_AND_ALERTS.md
+
+groups:
+  - name: palma-slo
+    interval: 30s
+    rules:
+      - alert: HighErrorRate
+        expr: sum(rate(palma_http_errors_total[5m])) / sum(rate(palma_http_requests_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Palma error rate above 5%"
+          description: "Error rate (4xx/5xx) is above 5%. Check logs and routes."
+
+      - alert: HighLatencyP95
+        expr: histogram_quantile(0.95, sum(rate(palma_http_request_duration_seconds_bucket[5m])) by (le)) > 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Palma p95 latency above 3s"
+          description: "95th percentile request duration exceeds 3 seconds."
+
+      - alert: LowAvailability
+        expr: sum(rate(palma_http_requests_total{status=~"2.."}[5m])) / sum(rate(palma_http_requests_total[5m])) < 0.99
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Palma availability below 99%"
+          description: "Proportion of 2xx responses is below 99%. Check /health and /ready."
+
+      - alert: HighRateLimitHits
+        expr: increase(palma_http_rate_limit_hits_total[15m]) > 100
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High rate limit (429) hits"
+          description: "More than 100 rate limit hits in 15 minutes. Review if under attack or limits too tight."
+
+      - alert: HighMemoryRSS
+        expr: palma_process_resident_memory_bytes > 1.5e9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Palma process RSS above 1.5 GB"
+          description: "Resident memory exceeds 1.5 GB. Check for memory leaks or scale resources."

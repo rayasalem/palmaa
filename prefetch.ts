@@ -18,12 +18,7 @@ import type { User } from './types';
 import { productService } from './services/productService';
 import { userService } from './services/userService';
 import { fetchMyOrders } from './services/checkoutApi';
-import {
-  getAdminProducts,
-  getAdminOrders,
-  getAdminSettings,
-  getAdminPlatformEarnings,
-} from './services/adminApi';
+import { getAdminProducts, getAdminOrders, getAdminSettings, getAdminPlatformEarnings } from './services/adminApi';
 
 /** Chunk names used by App.tsx lazy() — same import paths so browser caches the chunk */
 const CHUNKS: Record<string, () => Promise<unknown>> = {

@@ -1,8 +1,10 @@
 /**
  * JWT auth and RBAC. Attach user to req.auth (payload sub = userId, role).
+ * When JWT contains ver claim, it is checked against DB token_version (logout-all invalidation).
  */
 
 import { verify, getCookieName } from '../services/jwtService.js';
+import { getTokenVersion } from '../services/authService.js';
 import logger from '../utils/logger.js';
 
 function getTokenFromRequest(req) {
@@ -24,6 +26,20 @@ export function authenticate(req, res, next) {
     return res.status(401).json({ success: false, error: 'Invalid or expired token' });
   }
   req.auth = payload;
+  if (payload.ver != null && payload.sub) {
+    return getTokenVersion(payload.sub)
+      .then((dbVer) => {
+        if (Number(payload.ver) < Number(dbVer)) {
+          logger.info('authMiddleware token revoked (logout-all)', { userId: payload.sub });
+          return res.status(401).json({ success: false, error: 'Session invalidated. Please log in again.' });
+        }
+        next();
+      })
+      .catch((err) => {
+        logger.error('authMiddleware getTokenVersion', { message: err && err.message });
+        next();
+      });
+  }
   next();
 }
 

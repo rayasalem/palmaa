@@ -18,7 +18,10 @@ const LOG_SHIPMENT_REQUESTS = process.env.LOG_SHIPMENT_REQUESTS === 'true' || pr
 
 function safeLog(label, obj) {
   if (!LOG_SHIPMENT_REQUESTS) return;
-  const sanitized = obj && typeof obj === 'object' ? JSON.parse(JSON.stringify(obj, (k, v) => (k === 'password' ? '[REDACTED]' : v))) : obj;
+  const sanitized =
+    obj && typeof obj === 'object'
+      ? JSON.parse(JSON.stringify(obj, (k, v) => (k === 'password' ? '[REDACTED]' : v)))
+      : obj;
   console.log(`[shipmentService] ${label}:`, JSON.stringify(sanitized, null, 2));
 }
 
@@ -30,11 +33,7 @@ function getAuth() {
 }
 
 async function getOrderById(orderId) {
-  const { data, error } = await supabase
-    .from(ORDERS_TABLE)
-    .select('*')
-    .eq('id', orderId)
-    .single();
+  const { data, error } = await supabase.from(ORDERS_TABLE).select('*').eq('id', orderId).single();
   if (error) {
     logger.error('shipmentService Get order error', { message: error.message });
     return { data: null, error };
@@ -62,7 +61,8 @@ async function callCreateShipmentApi(body) {
   } catch (err) {
     const res = err.response;
     const resData = res && res.data;
-    const msg = (resData && resData.message) || (typeof resData === 'string' ? resData : JSON.stringify(resData || err.message));
+    const msg =
+      (resData && resData.message) || (typeof resData === 'string' ? resData : JSON.stringify(resData || err.message));
     safeLog('CREATE SHIPMENT ERROR', { status: res && res.status, data: resData, message: msg });
     logger.error('shipmentService Create shipment API error', { message: msg });
     return { data: null, error: { message: typeof msg === 'string' ? msg : msg } };
@@ -83,12 +83,7 @@ async function updateOrderShipment(orderId, shipmentId, shipmentStatus) {
     updatePayload.delivery_confirmed_at = now;
     updatePayload.status = 'completed';
   }
-  const { data, error } = await supabase
-    .from(ORDERS_TABLE)
-    .update(updatePayload)
-    .eq('id', orderId)
-    .select()
-    .single();
+  const { data, error } = await supabase.from(ORDERS_TABLE).update(updatePayload).eq('id', orderId).select().single();
   if (error) {
     logger.error('shipmentService Update error', { message: error.message });
     return { data: null, error };
@@ -130,7 +125,9 @@ function buildShipmentPayload(order, shipmentInput) {
   const originRegionId = Number(merged.originRegionId || process.env.SENDER_REGION_ID) || destRegionId;
 
   const originAddress = {
-    addressLine1: String(merged.originAddressLine1 || process.env.SENDER_ADDRESS_LINE1 || merged.addressLine1 || '').trim(),
+    addressLine1: String(
+      merged.originAddressLine1 || process.env.SENDER_ADDRESS_LINE1 || merged.addressLine1 || ''
+    ).trim(),
     addressLine2: String(merged.originAddressLine2 || process.env.SENDER_ADDRESS_LINE2 || '').trim() || undefined,
     cityId: originCityId,
     regionId: originRegionId,
@@ -147,7 +144,9 @@ function buildShipmentPayload(order, shipmentInput) {
     notes: String(merged.notes || '').trim() || undefined,
     invoiceNumber: `${String(merged.invoiceNumber || merged.id || (order && order.id) || 'ORD').trim()}-${Date.now()}`,
     senderName,
-    businessSenderName: String(merged.businessSenderName || process.env.SENDER_BUSINESS_NAME || 'Palma Marketplace').trim(),
+    businessSenderName: String(
+      merged.businessSenderName || process.env.SENDER_BUSINESS_NAME || 'Palma Marketplace'
+    ).trim(),
     senderPhone,
     receiverName,
     receiverPhone,
@@ -228,7 +227,7 @@ async function createShipment(orderId, shipmentInput) {
 
   const res = apiResult.data || {};
   const shipmentId = res.id ?? res.shipment_id ?? res.shipmentId ?? null;
-  const shipmentStatus = res.status ?? res.barcode ? 'created' : 'created';
+  const shipmentStatus = (res.status ?? res.barcode) ? 'created' : 'created';
 
   const updateResult = await updateOrderShipment(orderId, String(shipmentId), shipmentStatus);
   if (updateResult.error) {
@@ -281,7 +280,10 @@ async function printAwb(shipmentIds) {
         timeout: 15000,
       }
     );
-    safeLog('PRINT PDF RESPONSE', { status: response.status, dataKeys: response.data ? Object.keys(response.data) : [] });
+    safeLog('PRINT PDF RESPONSE', {
+      status: response.status,
+      dataKeys: response.data ? Object.keys(response.data) : [],
+    });
     return { data: response.data, error: null };
   } catch (err) {
     const errRes = err.response;
@@ -321,12 +323,4 @@ async function cancelShipment(shipmentId) {
   }
 }
 
-export {
-  getOrderById,
-  updateOrderShipment,
-  createShipment,
-  getPackageStatus,
-  printAwb,
-  cancelShipment,
-  ORDERS_TABLE,
-};
+export { getOrderById, updateOrderShipment, createShipment, getPackageStatus, printAwb, cancelShipment, ORDERS_TABLE };

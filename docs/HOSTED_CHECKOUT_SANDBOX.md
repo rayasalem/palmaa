@@ -39,14 +39,14 @@ Per [Required Signed Fields](https://developer.cybersource.com/docs/cybs/en-us/s
 
 In `server/.env`:
 
-| Variable | Description |
-|----------|-------------|
-| `CYBS_PROFILE_ID` | From Business Center → Secure Acceptance Settings → Profile |
-| `CYBS_ACCESS_KEY` | From Security Keys (Create Key) |
-| `CYBS_SECRET_KEY` | From Security Keys (same key) |
-| `CYBS_HOSTED_PAY_URL` | `https://testsecureacceptance.cybersource.com/pay` (test) |
-| `CYBS_LOCALE` | e.g. `ar-xn` |
-| `CYBS_CURRENCY` | e.g. `USD` |
+| Variable              | Description                                                 |
+| --------------------- | ----------------------------------------------------------- |
+| `CYBS_PROFILE_ID`     | From Business Center → Secure Acceptance Settings → Profile |
+| `CYBS_ACCESS_KEY`     | From Security Keys (Create Key)                             |
+| `CYBS_SECRET_KEY`     | From Security Keys (same key)                               |
+| `CYBS_HOSTED_PAY_URL` | `https://testsecureacceptance.cybersource.com/pay` (test)   |
+| `CYBS_LOCALE`         | e.g. `ar-xn`                                                |
+| `CYBS_CURRENCY`       | e.g. `USD`                                                  |
 
 **Do not set:** `outlet_id`, `terminal_id`, or any processor-specific vars. Not required by official Hosted Checkout spec; sending them can trigger Reason Code 150 on some processors.
 
@@ -66,14 +66,14 @@ In `server/.env`:
 
 ## Failure Scenarios and Handling
 
-| Scenario | Cause | Handling |
-|----------|--------|----------|
-| **400 Bad Request** | Invalid/missing required field, wrong signature, or profile mismatch | Check request has all required fields; verify `signed_field_names` order matches string-to-sign; confirm Profile ID, Access Key, Secret Key and that profile is activated. |
-| **101** | Missing required data (e.g. `bill_to_address_country`) | If profile requires billing country, add it to the payload or enable/configure in profile so Hosted form collects it. |
-| **150** | Processor/config or service fee / outlet–terminal expectation | Do not send outlet/terminal; use Sandbox profile without processor-specific requirements; disable service fee for the profile if applicable. |
-| **Invalid signature** | Secret key mismatch or wrong field order | Ensure Secret Key matches Business Center; use exact `signed_field_names` order when building string-to-sign; HMAC-SHA256 with UTF-8. |
-| **Redirect / notification not received** | Customer Response URL or Merchant POST URL wrong | Set in profile: Customer Response URL (redirect after payment); Merchant POST URL = `https://<your-backend>/api/payments/cybersource/notify`. |
-| **Profile not active** | Profile not promoted/activated | In Business Center, activate the profile (e.g. “Promote Profile” / Activate). |
+| Scenario                                 | Cause                                                                | Handling                                                                                                                                                                   |
+| ---------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **400 Bad Request**                      | Invalid/missing required field, wrong signature, or profile mismatch | Check request has all required fields; verify `signed_field_names` order matches string-to-sign; confirm Profile ID, Access Key, Secret Key and that profile is activated. |
+| **101**                                  | Missing required data (e.g. `bill_to_address_country`)               | If profile requires billing country, add it to the payload or enable/configure in profile so Hosted form collects it.                                                      |
+| **150**                                  | Processor/config or service fee / outlet–terminal expectation        | Do not send outlet/terminal; use Sandbox profile without processor-specific requirements; disable service fee for the profile if applicable.                               |
+| **Invalid signature**                    | Secret key mismatch or wrong field order                             | Ensure Secret Key matches Business Center; use exact `signed_field_names` order when building string-to-sign; HMAC-SHA256 with UTF-8.                                      |
+| **Redirect / notification not received** | Customer Response URL or Merchant POST URL wrong                     | Set in profile: Customer Response URL (redirect after payment); Merchant POST URL = `https://<your-backend>/api/payments/cybersource/notify`.                              |
+| **Profile not active**                   | Profile not promoted/activated                                       | In Business Center, activate the profile (e.g. “Promote Profile” / Activate).                                                                                              |
 
 ---
 
@@ -81,7 +81,7 @@ In `server/.env`:
 
 Use only official test card numbers from:
 
-- [Testing Guide (v1)](https://developer.cybersource.com/hello-world/testing-guide-v1.html)  
+- [Testing Guide (v1)](https://developer.cybersource.com/hello-world/testing-guide-v1.html)
 - [Testing Guide](https://developer.cybersource.com/hello-world/testing-guide.html)
 
 Example (Sandbox): Visa `4111111111111111`, expiry any future date, CVV any 3 digits.

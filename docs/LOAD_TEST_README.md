@@ -10,17 +10,17 @@
 
 ## Endpoints to Test
 
-| Endpoint | Auth | Notes |
-|----------|------|--------|
-| GET /health | No | Liveness |
-| GET /ready | No | Readiness + DB |
-| GET /api/products | No* | *May be cached; product list |
-| GET /api/orders | Yes | List customer orders |
-| GET /api/cart | Yes | Cart with items |
-| GET /api/admin/users | Admin | Paginated |
-| GET /api/admin/orders | Admin | Paginated |
-| GET /api/admin/products | Admin | Paginated |
-| GET /api/notifications | Yes | Notifications list |
+| Endpoint                | Auth  | Notes                         |
+| ----------------------- | ----- | ----------------------------- |
+| GET /health             | No    | Liveness                      |
+| GET /ready              | No    | Readiness + DB                |
+| GET /api/products       | No\*  | \*May be cached; product list |
+| GET /api/orders         | Yes   | List customer orders          |
+| GET /api/cart           | Yes   | Cart with items               |
+| GET /api/admin/users    | Admin | Paginated                     |
+| GET /api/admin/orders   | Admin | Paginated                     |
+| GET /api/admin/products | Admin | Paginated                     |
+| GET /api/notifications  | Yes   | Notifications list            |
 
 ## Using the Script (Node)
 

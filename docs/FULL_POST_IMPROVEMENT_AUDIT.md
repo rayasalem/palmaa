@@ -8,53 +8,53 @@
 
 ## Summary Table
 
-| Module/Endpoint | Check Performed | Status | Notes |
-|-----------------|-----------------|--------|--------|
-| **1. Code quality / clean architecture** | | | |
-| Folder structure (server) | config, controllers, middlewares, routes, services, auth, utils, modules | **Pass** | Clear separation: routes → controllers → services; shared middlewares and config. |
-| Folder structure (frontend) | views, components, services, hooks, api, store | **Pass** | views/ with customer/ subfolder for CustomerView tabs; services and api separated. |
-| Duplication – pagination logic | parsePagination / applyPagination in multiple services | **Warn** | orderService, productService, notificationService, adminService each define local pagination helpers; same pattern, could be shared util. |
-| Naming & modularity | Controllers vs services | **Pass** | Controllers handle HTTP; services handle DB/business logic. Naming consistent. |
-| Separation of concerns | Routes → controller → service | **Pass** | No business logic in routes; controllers thin. |
-| Large components – CustomerView | Refactored into tabs | **Pass** | CustomerShopTab, CustomerCartTab, CustomerOrdersTab in views/customer/; CustomerShared for shared UI. |
-| Large components – MerchantView | Single file, no lazy tabs | **Warn** | Single ~1100-line component; dashboard/products/orders tabs inline. Safe refactor: extract tabs + lazy load like CustomerView. |
-| Large components – AdminView | Single file, no lazy tabs | **Warn** | Single ~1000+ line component; UserRow/ProductRow memoized but tabs inline. Safe refactor: extract Admin*Tab components + lazy load. |
-| **2. API verification** | | | |
-| GET /api/orders/:id | Response shape, optionalAuth, access control | **Pass** | Returns `{ success, order }`; guest_access_token stripped; optionalAuth; owner/admin/guest-token check. |
-| GET /api/orders (listMyOrders) | limit/offset, response shape | **Pass** | Optional limit/offset; response `{ success, orders }` unchanged. |
-| GET /api/products | limit/offset, response shape | **Pass** | Optional limit/offset; response `{ success, products }` unchanged. |
-| GET /api/products/merchant/:id | limit/offset, response shape | **Pass** | Same pattern; `{ success, products }`. |
-| GET /api/admin/orders | limit/offset, default 500, response shape | **Pass** | Optional limit/offset; when provided default limit 500; response `{ success, orders }` unchanged. |
-| GET /api/admin/users | limit/offset, response shape | **Pass** | `{ success, users }` unchanged. |
-| GET /api/admin/products | limit/offset, response shape | **Pass** | `{ success, products }` unchanged. |
-| GET /api/notifications | limit/offset, response shape | **Pass** | `{ success, notifications }` unchanged. |
-| Pagination behavior | No params vs with params | **Pass** | When no limit/offset: admin orders/users/products use {} (all or default per controller); products/orders/notifications use safe defaults in service. Backward compatible. |
-| **3. Performance & scalability** | | | |
-| cartService.getCartWithItems | N+1 query check | **Pass** | Single batch query for products by id list; productMap; no per-item DB round trip. |
-| orderService (backend) | N+1 in list flows | **Pass** | getOrdersByCustomerId / getOrdersByMerchantId use single query with range; no N+1. |
-| productService (backend) getActiveProducts | Batch merchant names | **Pass** | getMerchantNamesMap batch; attachMerchantNames; no N+1. |
-| adminService.listProducts | Batch merchant lookup | **Pass** | Single products query + batch users for merchant names. |
-| Cache – backend products | Redis + invalidateProductsCache | **Pass** | cacheMiddleware(600) on product routes; Redis when REDIS_URL set; invalidateProductsCache() on create/update/delete. |
-| Cache – frontend productService | TTL 60s getAll / getByMerchantId | **Pass** | lastGetAllAt/lastGetAllResult; getByMerchantCache Map; duplicate fetches avoided within TTL. |
-| Global request timeout | Middleware registered, 503 on timeout | **Pass** | requestTimeoutMiddleware(15s) after metrics; clears on res finish/close; 503 + JSON body when timeout fires. |
-| **4. Frontend verification** | | | |
-| CustomerView tabs | Lazy-loaded | **Pass** | CustomerShopTab, CustomerCartTab, CustomerOrdersTab via React.lazy; Suspense with t.common.loading fallback. |
-| MerchantView tabs | Lazy-loaded | **Fail** | No React.lazy; single component with inline dashboard/products/orders. |
-| AdminView tabs | Lazy-loaded | **Fail** | No React.lazy; single component with inline users/products/orders/treasury/platform. |
-| Duplicate fetches – CustomerView | productsFetchedRef guard | **Pass** | productsFetchedRef prevents duplicate getAll() on mount. |
-| Duplicate fetches – frontend productService | TTL cache | **Pass** | 60s TTL reduces duplicate getAll/getByMerchantId calls. |
-| UI behavior – CustomerView | Same props, state in parent | **Pass** | Tab components receive same props/handlers; modals and ConfirmModal in parent; no change to flows. |
-| **5. Logging & observability** | | | |
-| requestId | Set per request, x-request-id header | **Pass** | requestIdMiddleware sets req.id; res.setHeader('x-request-id', req.id). |
-| requestLogger | requestId, userId, orderId, productId in meta | **Pass** | getRouteIds(req); meta includes requestId, optional userId, orderId, productId (no PII). |
-| errorHandler | requestId, userId, orderId, productId in meta | **Pass** | getRouteIds imported; meta extended with orderId/productId when applicable. |
-| Error handling consistency | Controllers use logger.error | **Pass** | orderController, productController, adminController, notificationController use logger.error('tag', { message }). |
-| GET /health | Liveness | **Pass** | Returns `{ ok: true, timestamp }`; no DB. |
-| GET /ready | Readiness + DB check | **Pass** | Checks Supabase users select limit 1; returns ready, checks; 503 if DB fail. |
-| GET /metrics | Prometheus + Cache-Control | **Pass** | text/plain; Cache-Control no-store; getPrometheusText() with requests_total, errors_total, duration histogram. |
-| **6. Environment & configuration** | | | |
-| validateEnv at startup | Required vars checked | **Pass** | validateEnv() called before app listen; required: SUPABASE_URL, SUPABASE_SERVICE_KEY, JWT_SECRET. |
-| Fail-fast on missing env | Throw and exit | **Pass** | Throws Error with message; uncaughtException handler logs and process.exit(1). |
+| Module/Endpoint                             | Check Performed                                                          | Status   | Notes                                                                                                                                                                      |
+| ------------------------------------------- | ------------------------------------------------------------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1. Code quality / clean architecture**    |                                                                          |          |                                                                                                                                                                            |
+| Folder structure (server)                   | config, controllers, middlewares, routes, services, auth, utils, modules | **Pass** | Clear separation: routes → controllers → services; shared middlewares and config.                                                                                          |
+| Folder structure (frontend)                 | views, components, services, hooks, api, store                           | **Pass** | views/ with customer/ subfolder for CustomerView tabs; services and api separated.                                                                                         |
+| Duplication – pagination logic              | parsePagination / applyPagination in multiple services                   | **Warn** | orderService, productService, notificationService, adminService each define local pagination helpers; same pattern, could be shared util.                                  |
+| Naming & modularity                         | Controllers vs services                                                  | **Pass** | Controllers handle HTTP; services handle DB/business logic. Naming consistent.                                                                                             |
+| Separation of concerns                      | Routes → controller → service                                            | **Pass** | No business logic in routes; controllers thin.                                                                                                                             |
+| Large components – CustomerView             | Refactored into tabs                                                     | **Pass** | CustomerShopTab, CustomerCartTab, CustomerOrdersTab in views/customer/; CustomerShared for shared UI.                                                                      |
+| Large components – MerchantView             | Single file, no lazy tabs                                                | **Warn** | Single ~1100-line component; dashboard/products/orders tabs inline. Safe refactor: extract tabs + lazy load like CustomerView.                                             |
+| Large components – AdminView                | Single file, no lazy tabs                                                | **Warn** | Single ~1000+ line component; UserRow/ProductRow memoized but tabs inline. Safe refactor: extract Admin\*Tab components + lazy load.                                       |
+| **2. API verification**                     |                                                                          |          |                                                                                                                                                                            |
+| GET /api/orders/:id                         | Response shape, optionalAuth, access control                             | **Pass** | Returns `{ success, order }`; guest_access_token stripped; optionalAuth; owner/admin/guest-token check.                                                                    |
+| GET /api/orders (listMyOrders)              | limit/offset, response shape                                             | **Pass** | Optional limit/offset; response `{ success, orders }` unchanged.                                                                                                           |
+| GET /api/products                           | limit/offset, response shape                                             | **Pass** | Optional limit/offset; response `{ success, products }` unchanged.                                                                                                         |
+| GET /api/products/merchant/:id              | limit/offset, response shape                                             | **Pass** | Same pattern; `{ success, products }`.                                                                                                                                     |
+| GET /api/admin/orders                       | limit/offset, default 500, response shape                                | **Pass** | Optional limit/offset; when provided default limit 500; response `{ success, orders }` unchanged.                                                                          |
+| GET /api/admin/users                        | limit/offset, response shape                                             | **Pass** | `{ success, users }` unchanged.                                                                                                                                            |
+| GET /api/admin/products                     | limit/offset, response shape                                             | **Pass** | `{ success, products }` unchanged.                                                                                                                                         |
+| GET /api/notifications                      | limit/offset, response shape                                             | **Pass** | `{ success, notifications }` unchanged.                                                                                                                                    |
+| Pagination behavior                         | No params vs with params                                                 | **Pass** | When no limit/offset: admin orders/users/products use {} (all or default per controller); products/orders/notifications use safe defaults in service. Backward compatible. |
+| **3. Performance & scalability**            |                                                                          |          |                                                                                                                                                                            |
+| cartService.getCartWithItems                | N+1 query check                                                          | **Pass** | Single batch query for products by id list; productMap; no per-item DB round trip.                                                                                         |
+| orderService (backend)                      | N+1 in list flows                                                        | **Pass** | getOrdersByCustomerId / getOrdersByMerchantId use single query with range; no N+1.                                                                                         |
+| productService (backend) getActiveProducts  | Batch merchant names                                                     | **Pass** | getMerchantNamesMap batch; attachMerchantNames; no N+1.                                                                                                                    |
+| adminService.listProducts                   | Batch merchant lookup                                                    | **Pass** | Single products query + batch users for merchant names.                                                                                                                    |
+| Cache – backend products                    | Redis + invalidateProductsCache                                          | **Pass** | cacheMiddleware(600) on product routes; Redis when REDIS_URL set; invalidateProductsCache() on create/update/delete.                                                       |
+| Cache – frontend productService             | TTL 60s getAll / getByMerchantId                                         | **Pass** | lastGetAllAt/lastGetAllResult; getByMerchantCache Map; duplicate fetches avoided within TTL.                                                                               |
+| Global request timeout                      | Middleware registered, 503 on timeout                                    | **Pass** | requestTimeoutMiddleware(15s) after metrics; clears on res finish/close; 503 + JSON body when timeout fires.                                                               |
+| **4. Frontend verification**                |                                                                          |          |                                                                                                                                                                            |
+| CustomerView tabs                           | Lazy-loaded                                                              | **Pass** | CustomerShopTab, CustomerCartTab, CustomerOrdersTab via React.lazy; Suspense with t.common.loading fallback.                                                               |
+| MerchantView tabs                           | Lazy-loaded                                                              | **Fail** | No React.lazy; single component with inline dashboard/products/orders.                                                                                                     |
+| AdminView tabs                              | Lazy-loaded                                                              | **Fail** | No React.lazy; single component with inline users/products/orders/treasury/platform.                                                                                       |
+| Duplicate fetches – CustomerView            | productsFetchedRef guard                                                 | **Pass** | productsFetchedRef prevents duplicate getAll() on mount.                                                                                                                   |
+| Duplicate fetches – frontend productService | TTL cache                                                                | **Pass** | 60s TTL reduces duplicate getAll/getByMerchantId calls.                                                                                                                    |
+| UI behavior – CustomerView                  | Same props, state in parent                                              | **Pass** | Tab components receive same props/handlers; modals and ConfirmModal in parent; no change to flows.                                                                         |
+| **5. Logging & observability**              |                                                                          |          |                                                                                                                                                                            |
+| requestId                                   | Set per request, x-request-id header                                     | **Pass** | requestIdMiddleware sets req.id; res.setHeader('x-request-id', req.id).                                                                                                    |
+| requestLogger                               | requestId, userId, orderId, productId in meta                            | **Pass** | getRouteIds(req); meta includes requestId, optional userId, orderId, productId (no PII).                                                                                   |
+| errorHandler                                | requestId, userId, orderId, productId in meta                            | **Pass** | getRouteIds imported; meta extended with orderId/productId when applicable.                                                                                                |
+| Error handling consistency                  | Controllers use logger.error                                             | **Pass** | orderController, productController, adminController, notificationController use logger.error('tag', { message }).                                                          |
+| GET /health                                 | Liveness                                                                 | **Pass** | Returns `{ ok: true, timestamp }`; no DB.                                                                                                                                  |
+| GET /ready                                  | Readiness + DB check                                                     | **Pass** | Checks Supabase users select limit 1; returns ready, checks; 503 if DB fail.                                                                                               |
+| GET /metrics                                | Prometheus + Cache-Control                                               | **Pass** | text/plain; Cache-Control no-store; getPrometheusText() with requests_total, errors_total, duration histogram.                                                             |
+| **6. Environment & configuration**          |                                                                          |          |                                                                                                                                                                            |
+| validateEnv at startup                      | Required vars checked                                                    | **Pass** | validateEnv() called before app listen; required: SUPABASE_URL, SUPABASE_SERVICE_KEY, JWT_SECRET.                                                                          |
+| Fail-fast on missing env                    | Throw and exit                                                           | **Pass** | Throws Error with message; uncaughtException handler logs and process.exit(1).                                                                                             |
 
 ---
 
@@ -78,7 +78,7 @@
 
 - **CustomerView:** Already split into CustomerShopTab, CustomerCartTab, CustomerOrdersTab with lazy loading and CustomerShared; state and handlers stay in parent. **No further change required for audit.**
 - **MerchantView:** One large file (~1100 lines) with dashboard, products, and orders tabs rendered inline. Recommendation: extract MerchantDashboardTab, MerchantProductsTab, MerchantOrdersTab and load with React.lazy + Suspense (same pattern as CustomerView) to improve initial load and consistency.
-- **AdminView:** One large file (1000+ lines) with users, products, orders, treasury, platform tabs inline; UserRow and ProductRow already memoized. Recommendation: extract tab content into Admin*Tab components and lazy load.
+- **AdminView:** One large file (1000+ lines) with users, products, orders, treasury, platform tabs inline; UserRow and ProductRow already memoized. Recommendation: extract tab content into Admin\*Tab components and lazy load.
 
 ---
 
@@ -160,9 +160,9 @@
 
 1. **Pagination helper:** Add `server/utils/pagination.js` (e.g. parsePagination(opts, defaults)) and use it in order, product, notification, and admin services to remove duplication and standardize caps.
 2. **MerchantView / AdminView:** Extract tab content into separate components and load with React.lazy + Suspense (mirror CustomerView) to improve bundle splitting and consistency.
-3. **Latency and load:** Add automated or manual load tests (or APM) for GET /api/products, GET /api/orders, GET /api/cart, and GET /api/admin/* to establish baseline latency and verify behavior under load.
+3. **Latency and load:** Add automated or manual load tests (or APM) for GET /api/products, GET /api/orders, GET /api/cart, and GET /api/admin/\* to establish baseline latency and verify behavior under load.
 4. **Logger in frontend productService:** Replace remaining console.error in frontend productService.getAll/getByMerchantId with a shared logger or leave as-is if frontend has no logger; document decision.
 
 ---
 
-*This audit was performed by static analysis only; no production data or endpoints were modified.*
+_This audit was performed by static analysis only; no production data or endpoints were modified._

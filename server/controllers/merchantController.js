@@ -46,13 +46,15 @@ async function getPublicProfile(req, res) {
         companyName: user.company_name,
         isApproved: user.is_approved,
       },
-      merchantProfile: merchantProfile ? {
-        business_name: merchantProfile.business_name,
-        business_description: merchantProfile.business_description,
-        logo_url: merchantProfile.logo_url,
-        city: merchantProfile.city,
-        phone: merchantProfile.phone,
-      } : null,
+      merchantProfile: merchantProfile
+        ? {
+            business_name: merchantProfile.business_name,
+            business_description: merchantProfile.business_description,
+            logo_url: merchantProfile.logo_url,
+            city: merchantProfile.city,
+            phone: merchantProfile.phone,
+          }
+        : null,
     });
   } catch (err) {
     logger.error('getPublicProfile unexpected', { message: err.message });

@@ -1,9 +1,12 @@
 /**
  * Admin controller: users list, update user status, orders list, platform settings & earnings.
- * All routes require ADMIN role.
+ * All routes require ADMIN role. Uses scoped admin services (admin/*).
  */
 
-import * as adminService from '../services/adminService.js';
+import * as adminUsersService from '../services/admin/adminUsersService.js';
+import * as adminOrdersService from '../services/admin/adminOrdersService.js';
+import * as adminProductsService from '../services/admin/adminProductsService.js';
+import * as adminPlatformService from '../services/admin/adminPlatformService.js';
 import * as platformSettings from '../services/platformSettingsService.js';
 import { invalidateProductsCache } from '../middlewares/cacheMiddleware.js';
 import logger from '../utils/logger.js';
@@ -12,8 +15,10 @@ async function getUsers(req, res) {
   try {
     const limit = req.query.limit != null ? parseInt(req.query.limit, 10) : undefined;
     const offset = req.query.offset != null ? parseInt(req.query.offset, 10) : undefined;
-    const opts = [limit, offset].some((n) => Number.isInteger(n) && n >= 0) ? { limit: limit || 100, offset: offset || 0 } : {};
-    const { data, error } = await adminService.listUsers(opts);
+    const opts = [limit, offset].some((n) => Number.isInteger(n) && n >= 0)
+      ? { limit: limit || 100, offset: offset || 0 }
+      : {};
+    const { data, error } = await adminUsersService.listUsers(opts);
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to fetch users' });
     }
@@ -30,7 +35,7 @@ async function updateUserStatus(req, res) {
     const { status } = req.body || {};
     if (!id) return res.status(400).json({ success: false, error: 'User id is required' });
     if (!status) return res.status(400).json({ success: false, error: 'status is required' });
-    const { data, error } = await adminService.updateUserStatus(id, status);
+    const { data, error } = await adminUsersService.updateUserStatus(id, status);
     if (error) {
       return res.status(400).json({ success: false, error: error.message || 'Failed to update status' });
     }
@@ -49,7 +54,7 @@ async function softDeleteUser(req, res) {
     if (!reason || typeof reason !== 'string' || !reason.trim()) {
       return res.status(400).json({ success: false, error: 'Deletion reason is required' });
     }
-    const { data, error } = await adminService.softDeleteUser(id, reason.trim());
+    const { data, error } = await adminUsersService.softDeleteUser(id, reason.trim());
     if (error) {
       return res.status(400).json({ success: false, error: error.message || 'Failed to delete user' });
     }
@@ -64,7 +69,7 @@ async function restoreUser(req, res) {
   try {
     const { id } = req.params;
     if (!id) return res.status(400).json({ success: false, error: 'User id is required' });
-    const { data, error } = await adminService.restoreUser(id);
+    const { data, error } = await adminUsersService.restoreUser(id);
     if (error) {
       return res.status(400).json({ success: false, error: error.message || 'Failed to restore user' });
     }
@@ -79,8 +84,10 @@ async function getOrders(req, res) {
   try {
     const limit = req.query.limit != null ? parseInt(req.query.limit, 10) : undefined;
     const offset = req.query.offset != null ? parseInt(req.query.offset, 10) : undefined;
-    const opts = [limit, offset].some((n) => Number.isInteger(n) && n >= 0) ? { limit: limit ?? 500, offset: offset ?? 0 } : {};
-    const { data, error } = await adminService.listOrders(opts);
+    const opts = [limit, offset].some((n) => Number.isInteger(n) && n >= 0)
+      ? { limit: limit ?? 500, offset: offset ?? 0 }
+      : {};
+    const { data, error } = await adminOrdersService.listOrders(opts);
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to fetch orders' });
     }
@@ -95,8 +102,10 @@ async function getProducts(req, res) {
   try {
     const limit = req.query.limit != null ? parseInt(req.query.limit, 10) : undefined;
     const offset = req.query.offset != null ? parseInt(req.query.offset, 10) : undefined;
-    const opts = [limit, offset].some((n) => Number.isInteger(n) && n >= 0) ? { limit: limit || 100, offset: offset || 0 } : {};
-    const { data, error } = await adminService.listProducts(opts);
+    const opts = [limit, offset].some((n) => Number.isInteger(n) && n >= 0)
+      ? { limit: limit || 100, offset: offset || 0 }
+      : {};
+    const { data, error } = await adminProductsService.listProducts(opts);
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to fetch products' });
     }
@@ -112,7 +121,7 @@ async function updateProduct(req, res) {
     const { id } = req.params;
     const body = req.body || {};
     if (!id) return res.status(400).json({ success: false, error: 'Product id is required' });
-    const { data, error } = await adminService.adminUpdateProduct(id, {
+    const { data, error } = await adminProductsService.adminUpdateProduct(id, {
       name: body.name ?? body.title,
       description: body.description,
       price: body.price ?? body.price_ils,
@@ -135,7 +144,7 @@ async function deleteProduct(req, res) {
   try {
     const { id } = req.params;
     if (!id) return res.status(400).json({ success: false, error: 'Product id is required' });
-    const { error } = await adminService.adminDeleteProduct(id);
+    const { error } = await adminProductsService.adminDeleteProduct(id);
     if (error) {
       return res.status(400).json({ success: false, error: error.message || 'Failed to delete product' });
     }
@@ -185,7 +194,7 @@ async function updateSettings(req, res) {
 
 async function getPlatformEarnings(req, res) {
   try {
-    const { data, error } = await adminService.getPlatformEarnings();
+    const { data, error } = await adminPlatformService.getPlatformEarnings();
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to fetch earnings' });
     }

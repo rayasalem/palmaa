@@ -6,15 +6,15 @@ This document describes the **multi-user design**, **database schema**, **folder
 
 ## 1. Multi-User Capabilities
 
-| Capability | Description | Storage |
-|------------|-------------|---------|
-| **Cart per user** | Each logged-in user has a cart; items persist in DB and sync across devices. | `carts`, `cart_items` |
-| **Purchases** | Each user places orders independently; orders already have `customer_id`. | `orders`, `order_items` |
-| **Likes** | User-product likes; one like per (user, product). | `product_likes` |
-| **Comments** | User-product comments; list per product. | `product_comments` |
-| **Ratings** | Aggregate rating per product (e.g. from reviews). | `reviews` (or product.rating) |
-| **Admin flows** | Admin approves/rejects users; admin/merchant can message about products. | `users.status`, `admin_product_messages` |
-| **Notifications** | User gets notified (e.g. new like, comment, order). | `notifications` |
+| Capability        | Description                                                                  | Storage                                  |
+| ----------------- | ---------------------------------------------------------------------------- | ---------------------------------------- |
+| **Cart per user** | Each logged-in user has a cart; items persist in DB and sync across devices. | `carts`, `cart_items`                    |
+| **Purchases**     | Each user places orders independently; orders already have `customer_id`.    | `orders`, `order_items`                  |
+| **Likes**         | User-product likes; one like per (user, product).                            | `product_likes`                          |
+| **Comments**      | User-product comments; list per product.                                     | `product_comments`                       |
+| **Ratings**       | Aggregate rating per product (e.g. from reviews).                            | `reviews` (or product.rating)            |
+| **Admin flows**   | Admin approves/rejects users; admin/merchant can message about products.     | `users.status`, `admin_product_messages` |
+| **Notifications** | User gets notified (e.g. new like, comment, order).                          | `notifications`                          |
 
 ---
 
@@ -74,7 +74,7 @@ This document describes the **multi-user design**, **database schema**, **folder
 └── content/              # Static copy
 ```
 
-- **Cart**: `services/cartApi.ts` (getCart, addItem, updateQuantity, removeItem, clearCart).  
+- **Cart**: `services/cartApi.ts` (getCart, addItem, updateQuantity, removeItem, clearCart).
 - **Hook**: `hooks/useCart.ts` – fetches cart on mount when user is set, exposes add/update/remove/clear and local state.
 
 ### 3.2 Backend (Node.js + TypeScript)

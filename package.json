@@ -4,6 +4,12 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "lint": "eslint server --ext .js --ignore-pattern node_modules --ignore-pattern server/node_modules --ignore-pattern dist",
+    "lint:report": "npm run lint -- -o docs/lint-report.txt 2>&1 || true",
+    "format": "prettier --write \"**/*.{js,ts,tsx,json,css,md}\" --ignore-path .prettierignore",
+    "format:check": "prettier --check \"**/*.{js,ts,tsx,json,css,md}\" --ignore-path .prettierignore",
+    "report:large-files": "node scripts/report-large-files.cjs",
+    "db:migrate": "npx supabase db push",
     "dev": "vite",
     "build": "node node_modules/vite/bin/vite.js build",
     "bulid": "npm run build",
@@ -19,25 +25,28 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.7",
-    "serve": "^14.2.1",
     "dotenv": "^17.3.1",
     "lucide-react": "^0.344.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "recharts": "^2.12.2",
+    "serve": "^14.2.1",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "cypress": "^13.6.0",
     "@types/react": "^18.2.64",
     "@types/react-dom": "^18.2.21",
     "@types/uuid": "^9.0.8",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.18",
+    "concurrently": "^8.2.2",
+    "cypress": "^13.6.0",
+    "eslint": "^8.57.1",
+    "eslint-plugin-unused-imports": "^4.4.1",
     "postcss": "^8.4.35",
+    "prettier": "^3.8.1",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.2.2",
-    "vite": "^5.1.4",
-    "concurrently": "^8.2.2"
+    "vite": "^5.1.4"
   }
 }

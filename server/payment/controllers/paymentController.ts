@@ -58,7 +58,8 @@ export async function webhook(req: Request, res: Response): Promise<void> {
       const { data: orderWithItems } = await mainOrderService.getOrderById(payload.orderId);
       const items = orderWithItems?.items ?? [];
       for (const it of items) {
-        const productId = (it as { product_id?: string; productId?: string }).product_id ?? (it as { productId?: string }).productId;
+        const productId =
+          (it as { product_id?: string; productId?: string }).product_id ?? (it as { productId?: string }).productId;
         const qty = Number((it as { quantity?: number }).quantity) || 1;
         if (productId) {
           await productService.decrementStock(productId, qty);

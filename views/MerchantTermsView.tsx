@@ -30,15 +30,15 @@ export const MerchantTermsView: React.FC<MerchantTermsViewProps> = ({ lang, onBa
           {lang === 'ar' ? 'رجوع' : 'Back'}
         </button>
 
-        <h1 className="font-heading text-2xl font-black text-palma-navy mb-8">
-          {terms.title}
-        </h1>
+        <h1 className="font-heading text-2xl font-black text-palma-navy mb-8">{terms.title}</h1>
 
         <div className="space-y-6 sm:space-y-8">
           {terms.sections.map((section, idx) => (
             <section key={idx} className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm">
               <h2 className="text-base sm:text-lg font-bold text-slate-800 mb-3 sm:mb-4">
-                {isRtl ? `${String(section.number).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[+d])}. ${section.title}` : `${section.number}. ${section.title}`}
+                {isRtl
+                  ? `${String(section.number).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[+d])}. ${section.title}`
+                  : `${section.number}. ${section.title}`}
               </h2>
               <ul className="space-y-2 list-disc list-inside text-slate-600 text-sm">
                 {section.items.map((item, i) => (

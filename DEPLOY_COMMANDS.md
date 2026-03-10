@@ -133,6 +133,7 @@ git push
 على جهازك (أو أي مكان تشغّل فيه المشروع)، شغّل الأوامر مع تعيين **رابط الباكند** قبل البناء حتى تُضمَّن في الملفات:
 
 **Windows (PowerShell):**
+
 ```powershell
 cd "c:\Users\ٍSsS-73\Downloads\palma-marketplace (10)"
 $env:VITE_API_URL="https://palmaa.onrender.com"
@@ -140,18 +141,21 @@ npm run build
 ```
 
 **أو إذا الباكند على رابط آخر (مثل palma-api):**
+
 ```powershell
 $env:VITE_API_URL="https://palma-api.onrender.com"
 npm run build
 ```
 
 **Windows (CMD):**
+
 ```cmd
 set VITE_API_URL=https://palmaa.onrender.com
 npm run build
 ```
 
 **Mac/Linux:**
+
 ```bash
 cd /path/to/palma-marketplace
 VITE_API_URL=https://palmaa.onrender.com npm run build
@@ -171,6 +175,7 @@ VITE_API_URL=https://palmaa.onrender.com npm run build
 ### 3. ربط الباكند بالواجهة (CORS)
 
 في **Render** → مشروع الباكند → **Environment**:
+
 - ضبط **`FRONTEND_URL`** = رابط موقعك على cPanel (مثل `https://yourdomain.com` أو `https://www.yourdomain.com`).
 
 بدون هذا قد يرفض الباكند طلبات القادمة من دومين cPanel.

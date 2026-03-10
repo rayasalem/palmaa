@@ -11,10 +11,10 @@ import logger from '../utils/logger.js';
 
 const ORDER_PROFITS_TABLE = 'order_profits';
 
-const STORE_RATE = 0.15;           // 15% للمتجر عند البيع المباشر
+const STORE_RATE = 0.15; // 15% للمتجر عند البيع المباشر
 const STORE_RATE_WITH_BROKER = 0.12; // 12% للمتجر عند البيع عبر الوسيط
-const BROKER_RATE = 0.03;         // 3% للوسيط من قيمة القطعة
-const MERCHANT_RATE = 0.85;       // 85% للتاجر (100% - 15%)
+const BROKER_RATE = 0.03; // 3% للوسيط من قيمة القطعة
+const MERCHANT_RATE = 0.85; // 85% للتاجر (100% - 15%)
 
 /**
  * Record profits for a paid order: merchant, store, and optionally broker.
@@ -39,11 +39,7 @@ async function recordProfitsForOrder(orderId) {
   const hasBroker = !!brokerId;
   const storeRate = hasBroker ? STORE_RATE_WITH_BROKER : STORE_RATE;
 
-  const { data: existing } = await supabase
-    .from(ORDER_PROFITS_TABLE)
-    .select('id')
-    .eq('order_id', orderId)
-    .limit(1);
+  const { data: existing } = await supabase.from(ORDER_PROFITS_TABLE).select('id').eq('order_id', orderId).limit(1);
   if (existing && existing.length > 0) {
     console.log('[profitService] Profits already recorded for order:', orderId);
     return { error: null };
@@ -103,9 +99,7 @@ async function recordProfitsForOrder(orderId) {
     return { error: null };
   }
 
-  const { error: insertErr } = await supabase
-    .from(ORDER_PROFITS_TABLE)
-    .insert(rowsToInsert);
+  const { error: insertErr } = await supabase.from(ORDER_PROFITS_TABLE).insert(rowsToInsert);
 
   if (insertErr) {
     logger.error('profitService Insert error', { message: insertErr.message });
@@ -122,10 +116,7 @@ async function recordProfitsForOrder(orderId) {
  * @param {string} [partyId] - user id for merchant/broker; omit for store total
  */
 async function getProfitsByParty(partyType, partyId = null) {
-  let q = supabase
-    .from(ORDER_PROFITS_TABLE)
-    .select('order_id, amount_ils, created_at')
-    .eq('party_type', partyType);
+  let q = supabase.from(ORDER_PROFITS_TABLE).select('order_id, amount_ils, created_at').eq('party_type', partyType);
 
   if (partyId != null) {
     q = q.eq('party_id', partyId);

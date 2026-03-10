@@ -8,12 +8,27 @@ import * as followController from '../controllers/followController.js';
 import * as merchantController from '../controllers/merchantController.js';
 import { authenticate, optionalAuth } from '../middlewares/authMiddleware.js';
 import { requireRole } from '../middlewares/authMiddleware.js';
+import { validate } from '../middlewares/validate.js';
+import { merchant as merchantSchemas } from '../validation/schemas.js';
 
 const router = express.Router();
 
 router.get('/dashboard', authenticate, requireRole('MERCHANT'), merchantController.getDashboard);
-router.get('/:id/followers-count', followController.getFollowersCount);
-router.get('/:id/following', optionalAuth, followController.getIsFollowing);
-router.get('/:id', merchantController.getPublicProfile);
+router.get(
+  '/:id/followers-count',
+  validate(merchantSchemas.idParam, 'params', 'merchant.followersCount'),
+  followController.getFollowersCount
+);
+router.get(
+  '/:id/following',
+  validate(merchantSchemas.idParam, 'params', 'merchant.following'),
+  optionalAuth,
+  followController.getIsFollowing
+);
+router.get(
+  '/:id',
+  validate(merchantSchemas.idParam, 'params', 'merchant.publicProfile'),
+  merchantController.getPublicProfile
+);
 
 export default router;

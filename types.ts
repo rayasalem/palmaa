@@ -1,9 +1,8 @@
-
 export enum Role {
   CUSTOMER = 'CUSTOMER',
   MERCHANT = 'MERCHANT',
   BROKER = 'BROKER',
-  ADMIN = 'ADMIN'
+  ADMIN = 'ADMIN',
 }
 
 export type UserRole = 'CUSTOMER' | 'MERCHANT' | 'BROKER' | 'ADMIN';
@@ -68,12 +67,12 @@ export interface Product {
   discount?: number;
   imageUrl?: string; // Legacy
   image_url?: string; // New
-  images?: string[]; 
+  images?: string[];
   category: string;
   stock: number;
   sku?: string;
-  weight?: number; 
-  dimensions?: string; 
+  weight?: number;
+  dimensions?: string;
   tags?: string[];
   rating?: number;
   reviewCount?: number;
@@ -150,12 +149,12 @@ export enum OrderStatus {
   SHIPPED = 'SHIPPED',
   DELIVERED = 'DELIVERED',
   COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED'
+  CANCELLED = 'CANCELLED',
 }
 
 export enum PaymentMethod {
   COD = 'COD',
-  CREDIT_CARD = 'CREDIT_CARD'
+  CREDIT_CARD = 'CREDIT_CARD',
 }
 
 export interface Address {
@@ -306,7 +305,7 @@ export interface FlashlineShipmentResponse {
   error?: string;
   payload?: any;
   message?: string;
-  trackingNumber?: string; 
+  trackingNumber?: string;
 }
 
 export interface ActionResponse<T> {

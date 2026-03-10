@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import { userService } from '../services/userService';
@@ -14,7 +13,13 @@ interface RegisterCustomerProps {
 }
 
 const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackToLogin }) => {
-  const lang: Language = (typeof document !== 'undefined' && (document.documentElement.lang === 'ar' || document.documentElement.lang === 'en' || document.documentElement.lang === 'he')) ? document.documentElement.lang as Language : 'ar';
+  const lang: Language =
+    typeof document !== 'undefined' &&
+    (document.documentElement.lang === 'ar' ||
+      document.documentElement.lang === 'en' ||
+      document.documentElement.lang === 'he')
+      ? (document.documentElement.lang as Language)
+      : 'ar';
   const t = translations[lang];
   const { showToast } = useToast();
   const isRtl = lang !== 'en';
@@ -29,9 +34,9 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
     email: '',
     phone: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -44,7 +49,7 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     // Validation
     if (!formData.name || !formData.email || !formData.password || !formData.phone) {
       const msg = lang === 'ar' ? 'جميع الحقول مطلوبة' : lang === 'he' ? 'כל השדות חובה' : 'All fields are required';
@@ -55,7 +60,8 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
     }
 
     if (formData.password !== formData.confirmPassword) {
-      const msg = lang === 'ar' ? 'كلمات المرور غير متطابقة' : lang === 'he' ? 'הסיסמאות אינן תואמות' : 'Passwords do not match';
+      const msg =
+        lang === 'ar' ? 'كلمات المرور غير متطابقة' : lang === 'he' ? 'הסיסמאות אינן תואמות' : 'Passwords do not match';
       setError(msg);
       showToast(msg, 'error');
       setLoading(false);
@@ -80,8 +86,8 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
         lang === 'ar'
           ? 'تم إنشاء حساب الزبون بنجاح. تم إرسال رمز تحقق إلى بريدك الإلكتروني – يرجى إدخال الكود لتفعيل الحساب.'
           : lang === 'he'
-          ? 'חשבון הלקוח נוצר בהצלחה. נשלח קוד אימות לאימייל שלך – הזן את הקוד כדי להפעיל את החשבון.'
-          : 'Customer account created successfully. A verification code was sent to your email – please enter the code to activate your account.';
+            ? 'חשבון הלקוח נוצר בהצלחה. נשלח קוד אימות לאימייל שלך – הזן את הקוד כדי להפעיל את החשבון.'
+            : 'Customer account created successfully. A verification code was sent to your email – please enter the code to activate your account.';
       showToast(msg, 'success');
       setStep('VERIFY');
       setVerificationCode('');
@@ -134,24 +140,20 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
 
   return (
     <div className="min-h-screen flex bg-white font-sans text-slate-900" dir={isRtl ? 'rtl' : 'ltr'}>
-      
       {/* Left Side: Form */}
       <div className="w-full lg:w-1/2 flex flex-col justify-center p-8 sm:p-16 lg:p-24 relative z-10">
         <div className="max-w-md w-full mx-auto space-y-10 animate-in slide-in-from-bottom-8 duration-700">
-          
           {step === 'FORM' ? (
             <>
               {/* Header */}
               <div className="heading-block heading-block-lg space-y-3 text-left">
                 <div className="inline-block mb-4" onClick={onBackToLogin}>
-                   <Logo size="small" />
+                  <Logo size="small" />
                 </div>
                 <h1 className="heading-block-title font-heading text-3xl">
                   {lang === 'en' ? 'Create Account' : 'إنشاء حساب جديد'}
                 </h1>
-                <p className="heading-block-sub">
-                  {t.auth.customerSubtitle}
-                </p>
+                <p className="heading-block-sub">{t.auth.customerSubtitle}</p>
               </div>
 
               {/* Error Message */}
@@ -260,9 +262,9 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
                 </div>
 
                 <div className="pt-6 space-y-6">
-                  <button 
-                    type="submit" 
-                    disabled={loading} 
+                  <button
+                    type="submit"
+                    disabled={loading}
                     className="w-full py-5 bg-palma-primary text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-soft hover:bg-emerald-800 hover:scale-[1.01] transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 group"
                   >
                     {loading ? (
@@ -270,14 +272,18 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
                     ) : (
                       <>
                         {lang === 'en' ? 'Sign Up Now' : 'تسجيل الحساب'}
-                        {isRtl ? <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> : <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
+                        {isRtl ? (
+                          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                        ) : (
+                          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        )}
                       </>
                     )}
                   </button>
 
-                  <button 
-                    type="button" 
-                    onClick={onBackToLogin} 
+                  <button
+                    type="button"
+                    onClick={onBackToLogin}
                     className="w-full text-center text-xs font-bold text-slate-400 hover:text-palma-navy transition-colors uppercase tracking-wider"
                   >
                     {t.common.back}
@@ -288,44 +294,62 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
           ) : (
             /* VERIFICATION STEP */
             <div className="text-center animate-in fade-in zoom-in duration-500">
-               <div className="w-20 h-20 bg-palma-primaryLight text-palma-primary rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Mail className="w-8 h-8" />
-               </div>
-               <h2 className="font-heading text-2xl font-black text-palma-navy mb-2">{lang === 'en' ? 'Verify Email' : 'تحقق من البريد الإلكتروني'}</h2>
-               <p className="text-slate-500 text-sm mb-2">{lang === 'en' ? `We sent a code to ${formData.email}` : `أرسلنا رمزاً إلى ${formData.email}`}</p>
-               {emailNotSent && (
-                 <p className="mb-4 px-4 py-2 bg-amber-50 text-amber-800 text-sm rounded-xl border border-amber-200">
-                   {lang === 'en' ? 'Email sending is not configured. Use the code below to verify.' : 'إرسال البريد غير مُعد. استخدم الرمز أدناه للتحقق.'}
-                 </p>
-               )}
-               <form onSubmit={handleVerify} className="space-y-6 max-w-xs mx-auto">
-                  <input 
-                    autoFocus
-                    required
-                    type="text" 
-                    maxLength={6}
-                    className="w-full p-5 text-center text-2xl font-black tracking-[0.5em] rounded-2xl border-2 border-slate-200 focus:border-palma-primary outline-none transition-all placeholder:text-slate-200"
-                    value={verificationCode}
-                    onChange={e => setVerificationCode(e.target.value.replace(/[^0-9]/g, ''))}
-                    placeholder="000000"
-                  />
-                  
-                  {error && <p className="text-red-500 text-xs font-bold">{error}</p>}
+              <div className="w-20 h-20 bg-palma-primaryLight text-palma-primary rounded-full flex items-center justify-center mx-auto mb-6">
+                <Mail className="w-8 h-8" />
+              </div>
+              <h2 className="font-heading text-2xl font-black text-palma-navy mb-2">
+                {lang === 'en' ? 'Verify Email' : 'تحقق من البريد الإلكتروني'}
+              </h2>
+              <p className="text-slate-500 text-sm mb-2">
+                {lang === 'en' ? `We sent a code to ${formData.email}` : `أرسلنا رمزاً إلى ${formData.email}`}
+              </p>
+              {emailNotSent && (
+                <p className="mb-4 px-4 py-2 bg-amber-50 text-amber-800 text-sm rounded-xl border border-amber-200">
+                  {lang === 'en'
+                    ? 'Email sending is not configured. Use the code below to verify.'
+                    : 'إرسال البريد غير مُعد. استخدم الرمز أدناه للتحقق.'}
+                </p>
+              )}
+              <form onSubmit={handleVerify} className="space-y-6 max-w-xs mx-auto">
+                <input
+                  autoFocus
+                  required
+                  type="text"
+                  maxLength={6}
+                  className="w-full p-5 text-center text-2xl font-black tracking-[0.5em] rounded-2xl border-2 border-slate-200 focus:border-palma-primary outline-none transition-all placeholder:text-slate-200"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="000000"
+                />
 
-                  <div className="flex flex-col gap-3">
-                    <button type="submit" disabled={loading || verificationCode.length < 6} className="w-full py-4 bg-palma-primary text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl disabled:opacity-50 hover:bg-emerald-800 transition-all">
-                       {loading ? t.common.loading : (lang === 'en' ? 'Verify & Login' : 'تأكيد ودخول')}
-                    </button>
-                    
-                    <button type="button" onClick={handleResend} disabled={loading} className="w-full py-3 bg-white text-slate-400 border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all">
-                       {lang === 'en' ? 'Resend Code' : 'إعادة إرسال الرمز'}
-                    </button>
-                  </div>
-               </form>
+                {error && <p className="text-red-500 text-xs font-bold">{error}</p>}
 
-               <button onClick={() => setStep('FORM')} className="mt-8 text-xs font-bold text-slate-400 hover:text-palma-navy flex items-center justify-center gap-2 mx-auto">
-                 <RefreshCcw className="w-3 h-3" /> {lang === 'en' ? 'Change Email' : 'تغيير البريد'}
-               </button>
+                <div className="flex flex-col gap-3">
+                  <button
+                    type="submit"
+                    disabled={loading || verificationCode.length < 6}
+                    className="w-full py-4 bg-palma-primary text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl disabled:opacity-50 hover:bg-emerald-800 transition-all"
+                  >
+                    {loading ? t.common.loading : lang === 'en' ? 'Verify & Login' : 'تأكيد ودخول'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleResend}
+                    disabled={loading}
+                    className="w-full py-3 bg-white text-slate-400 border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all"
+                  >
+                    {lang === 'en' ? 'Resend Code' : 'إعادة إرسال الرمز'}
+                  </button>
+                </div>
+              </form>
+
+              <button
+                onClick={() => setStep('FORM')}
+                className="mt-8 text-xs font-bold text-slate-400 hover:text-palma-navy flex items-center justify-center gap-2 mx-auto"
+              >
+                <RefreshCcw className="w-3 h-3" /> {lang === 'en' ? 'Change Email' : 'تغيير البريد'}
+              </button>
             </div>
           )}
         </div>
@@ -334,28 +358,27 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
       {/* Right Side: Visual (Desktop Only) */}
       <div className="hidden lg:block lg:w-1/2 relative overflow-hidden bg-palma-navy">
         <div className="absolute inset-0 bg-gradient-to-br from-palma-navy via-palma-navy to-palma-primary opacity-90 z-10" />
-        <img 
-          src="https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070&auto=format&fit=crop" 
+        <img
+          src="https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070&auto=format&fit=crop"
           className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-50 z-0"
           alt="Shopping Lifestyle"
         />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 text-center text-white space-y-8 max-w-lg">
-           <div className="w-24 h-24 bg-white/10 backdrop-blur-md rounded-[2rem] flex items-center justify-center mx-auto border border-white/20 shadow-2xl">
-              <span className="text-5xl">✨</span>
-           </div>
-           <div>
-             <h2 className="text-5xl font-black tracking-tighter mb-4 leading-tight">
-               {lang === 'en' ? 'Join the Exclusive Marketplace' : 'انضم إلى السوق الحصري'}
-             </h2>
-             <p className="text-white/70 text-sm font-medium leading-relaxed">
-               {lang === 'en' 
-                 ? 'Access thousands of premium products from top-rated local merchants.' 
-                 : 'تمتع بالوصول إلى آلاف المنتجات المميزة من أفضل التجار المحليين.'}
-             </p>
-           </div>
+          <div className="w-24 h-24 bg-white/10 backdrop-blur-md rounded-[2rem] flex items-center justify-center mx-auto border border-white/20 shadow-2xl">
+            <span className="text-5xl">✨</span>
+          </div>
+          <div>
+            <h2 className="text-5xl font-black tracking-tighter mb-4 leading-tight">
+              {lang === 'en' ? 'Join the Exclusive Marketplace' : 'انضم إلى السوق الحصري'}
+            </h2>
+            <p className="text-white/70 text-sm font-medium leading-relaxed">
+              {lang === 'en'
+                ? 'Access thousands of premium products from top-rated local merchants.'
+                : 'تمتع بالوصول إلى آلاف المنتجات المميزة من أفضل التجار المحليين.'}
+            </p>
+          </div>
         </div>
       </div>
-
     </div>
   );
 };

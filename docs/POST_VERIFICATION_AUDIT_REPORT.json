@@ -1,0 +1,256 @@
+{
+  "audit": {
+    "type": "post-refactor-verification",
+    "scope": ["code_cleanliness", "file_metrics", "validation_security", "performance_scalability", "observability"],
+    "no_production_changes": true,
+    "generated": "2025-03-10"
+  },
+  "1_code_cleanliness": {
+    "status": "yellow",
+    "eslint": {
+      "command": "eslint server --ext .js --rule no-unused-vars:error --rule no-empty:error",
+      "result": "18 problems (11 errors, 7 warnings)",
+      "errors": [
+        {
+          "file": "server/config/supabaseClient.js",
+          "line": 26,
+          "rule": "no-empty",
+          "message": "Empty block statement"
+        },
+        {
+          "file": "server/controllers/authController.js",
+          "line": 338,
+          "rule": "no-unused-vars",
+          "message": "'data' is assigned but never used"
+        },
+        {
+          "file": "server/controllers/orderController.js",
+          "line": 95,
+          "rule": "no-unused-vars",
+          "message": "'_' is assigned but never used"
+        },
+        {
+          "file": "server/middlewares/errorHandler.js",
+          "line": 11,
+          "rule": "no-unused-vars",
+          "message": "'next' is defined but never used"
+        },
+        {
+          "file": "server/routes/followRoutes.js",
+          "line": 7,
+          "rule": "no-unused-vars",
+          "message": "'optionalAuth' is defined but never used"
+        },
+        {
+          "file": "server/security/sanitize.js",
+          "line": 7,
+          "rule": "no-useless-escape",
+          "message": "Unnecessary escape character"
+        },
+        {
+          "file": "server/server.js",
+          "line": 16,
+          "rule": "no-unused-vars",
+          "message": "'promise' is defined but never used"
+        },
+        {
+          "file": "server/services/auth/login.js",
+          "line": 120,
+          "rule": "no-unused-vars",
+          "message": "'_p' is assigned but never used"
+        },
+        {
+          "file": "server/services/auth/registration.js",
+          "line": 55,
+          "rule": "no-unused-vars",
+          "message": "'msg' is assigned but never used"
+        },
+        {
+          "file": "server/services/orderService.js",
+          "line": 16,
+          "rule": "no-unused-vars",
+          "message": "'city', 'weight' are assigned but never used"
+        }
+      ],
+      "fixable": "0 errors, 1 warning potentially fixable with --fix"
+    },
+    "prettier": {
+      "command": "prettier --check server/**/*.js views/**/*.tsx components/**/*.tsx",
+      "result": "multiple [warn] — formatting inconsistencies in ~55+ files",
+      "status": "yellow",
+      "recommendation": "Run `npx prettier --write .` to fix; add to CI"
+    },
+    "dead_code_unused": {
+      "unused_imports": ["optionalAuth in followRoutes.js"],
+      "unused_variables": [
+        "data in authController.js",
+        "next in errorHandler.js",
+        "promise in server.js",
+        "msg in registration.js",
+        "city/weight in orderService.js"
+      ],
+      "empty_blocks": ["supabaseClient.js catch block"]
+    }
+  },
+  "2_file_metrics": {
+    "status": "yellow",
+    "backend": {
+      "file_count": 111,
+      "total_lines": 9188,
+      "over_500_lines": 0,
+      "largest_files": [],
+      "note": "authService split completed; no backend files >500 lines"
+    },
+    "frontend": {
+      "file_count": 66,
+      "total_lines": 14047,
+      "over_500_lines": 9,
+      "largest_files": [
+        { "file": "views/AdminView.tsx", "lines": 1047 },
+        { "file": "components/PublicWebsite.tsx", "lines": 863 },
+        { "file": "views/CustomerView.tsx", "lines": 775 },
+        { "file": "views/MerchantView.tsx", "lines": 734 },
+        { "file": "components/Auth.tsx", "lines": 618 },
+        { "file": "views/CheckoutPage.tsx", "lines": 596 },
+        { "file": "components/RegisterMerchant.tsx", "lines": 569 },
+        { "file": "views/BrokerView.tsx", "lines": 559 },
+        { "file": "views/PublicProductDetails.tsx", "lines": 508 }
+      ]
+    },
+    "largest_file": "views/AdminView.tsx (1047 lines)"
+  },
+  "3_validation_security": {
+    "status": "yellow",
+    "joi_coverage": {
+      "full_coverage": ["auth", "orders", "cart", "products", "mfa", "admin"],
+      "partial_coverage": [
+        { "route": "payment", "status": "full", "endpoints": ["create", "callback", "cybersourceCharge"] },
+        { "route": "shipment", "status": "full", "endpoints": ["create", "getStatus", "printPdf"] },
+        { "route": "address", "status": "partial", "note": "getVillages query only; cities has no query" },
+        { "route": "chat", "status": "full", "note": "POST body validated" },
+        {
+          "route": "broker",
+          "status": "partial",
+          "note": "upsertSharedProduct validated; DELETE/PATCH featured lack params validation"
+        },
+        { "route": "notification", "status": "full", "note": "listQuery validated" }
+      ],
+      "missing_coverage": [
+        {
+          "route": "follow",
+          "endpoints": ["POST /:merchantId", "DELETE /:merchantId"],
+          "missing": "path param :merchantId"
+        },
+        {
+          "route": "merchant",
+          "endpoints": ["GET /:id", "GET /:id/followers-count", "GET /:id/following"],
+          "missing": "path param :id"
+        },
+        { "route": "shared-products", "endpoints": ["GET /"], "missing": "query param brokerId" },
+        { "route": "products", "endpoints": ["GET /merchant/:merchantId"], "missing": "path param :merchantId" }
+      ]
+    },
+    "rate_limiters": {
+      "redis_backed": [
+        "generalLimiter",
+        "authLimiter",
+        "paymentLimiter",
+        "cartLimiter",
+        "productListLimiter",
+        "productByIdLimiter"
+      ],
+      "in_memory_only": ["commentLimiter"],
+      "status": "yellow",
+      "gap": "commentLimiter does not use getStore(); not Redis-backed across instances"
+    },
+    "auth_check_key": {
+      "production": "404 unless ALLOW_AUTH_CHECK_KEY=true",
+      "ip_allowlist": "not implemented",
+      "status": "green"
+    },
+    "cors": {
+      "origin_true_used": false,
+      "notes": "corsMiddleware(FRONTEND_URL) with explicit allowed origins",
+      "status": "green"
+    },
+    "same_site_cookie": {
+      "production": "none (cross-origin Vercel↔Render)",
+      "dev": "lax",
+      "status": "green"
+    }
+  },
+  "4_performance_scalability": {
+    "status": "green",
+    "n_plus_one": {
+      "found": false,
+      "status": "green"
+    },
+    "caching": {
+      "redis": "cacheMiddleware(600) on /api/products",
+      "in_memory_fallback": true,
+      "status": "green"
+    },
+    "lazy_loading": {
+      "routes": true,
+      "customer_tabs": true,
+      "merchant_tabs": true,
+      "admin_tabs": false,
+      "status": "yellow",
+      "note": "AdminView.tsx is single large component (1047 lines) with inline tabs; not lazy-loaded"
+    }
+  },
+  "5_observability": {
+    "status": "green",
+    "prometheus_metrics": {
+      "request_count": true,
+      "latency_histogram": true,
+      "errors": true,
+      "validation_failures": true,
+      "rate_limit_hits": true,
+      "mfa_failures": true,
+      "process_memory": true,
+      "process_cpu": true,
+      "status": "green"
+    },
+    "logging": {
+      "sanitizeForLog": true,
+      "requestId": true,
+      "masked_ip": true,
+      "status": "green"
+    },
+    "dashboards_alerts": {
+      "documented": true,
+      "in_repo": false,
+      "status": "yellow",
+      "note": "SLO_AND_ALERTS.md and OBSERVABILITY_COVERAGE_SUMMARY.md exist; Grafana dashboards and Alertmanager rules not deployed"
+    }
+  },
+  "summary_dashboard": {
+    "status_per_category": {
+      "code_cleanliness": "yellow",
+      "file_metrics": "yellow",
+      "validation_security": "yellow",
+      "performance_scalability": "green",
+      "observability": "green"
+    },
+    "red_areas": [],
+    "yellow_areas": [
+      "ESLint: 11 errors, 7 warnings (unused vars, empty blocks)",
+      "Prettier: ~55+ files need formatting",
+      "9 frontend files >500 lines (AdminView 1047, PublicWebsite 863, etc.)",
+      "commentLimiter not Redis-backed",
+      "Follow, Merchant, Shared-products routes lack Joi for path/query params",
+      "AdminView single large component, no lazy tabs",
+      "Grafana dashboards and Alertmanager rules not deployed"
+    ],
+    "route_validation_coverage": "Auth, orders, cart, products, MFA, admin, payment, shipment, address, chat, broker, notification have Joi. Follow, merchant, shared-products, product listByMerchant lack path/query validation.",
+    "next_incremental_improvements": [
+      "Fix ESLint errors: prefix unused vars with _, remove optionalAuth from followRoutes",
+      "Run Prettier --write and add to CI",
+      "Add Joi validation for Follow (merchantId), Merchant (id), Shared-products (brokerId query)",
+      "Add getStore() to commentLimiter for Redis-backed multi-instance rate limiting",
+      "Split AdminView into lazy-loaded tab components per views/admin/README.md",
+      "Deploy Grafana dashboards and Alertmanager rules from SLO_AND_ALERTS.md"
+    ]
+  }
+}

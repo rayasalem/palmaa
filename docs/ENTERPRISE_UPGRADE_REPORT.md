@@ -10,12 +10,12 @@
 
 ### 1.1 Overview
 
-| Layer | Technology | Assessment |
-|-------|------------|------------|
-| **Frontend** | React, Vite, TypeScript, Tailwind | Component-based; lazy-loaded views; shared `api` client; translations in single module. |
-| **Backend** | Node.js, Express, Supabase (PostgreSQL) | REST API; JWT auth; role-based routes; in-memory cache for product list. |
-| **Data** | Supabase (Postgres) | Single DB; no read replicas; RLS/Service key used from server. |
-| **DevOps** | Docker, GitHub Actions | Health/ready endpoints; no request correlation or metrics in code. |
+| Layer        | Technology                              | Assessment                                                                              |
+| ------------ | --------------------------------------- | --------------------------------------------------------------------------------------- |
+| **Frontend** | React, Vite, TypeScript, Tailwind       | Component-based; lazy-loaded views; shared `api` client; translations in single module. |
+| **Backend**  | Node.js, Express, Supabase (PostgreSQL) | REST API; JWT auth; role-based routes; in-memory cache for product list.                |
+| **Data**     | Supabase (Postgres)                     | Single DB; no read replicas; RLS/Service key used from server.                          |
+| **DevOps**   | Docker, GitHub Actions                  | Health/ready endpoints; no request correlation or metrics in code.                      |
 
 ### 1.2 Clean Architecture & Modularity
 
@@ -36,15 +36,15 @@
 
 ## 2. Risk Analysis (What Could Break Under Load)
 
-| Risk | Trigger | Impact | Mitigation Status |
-|------|--------|--------|-------------------|
-| **Cart endpoint latency** | Many items per cart × concurrent users | N+1 → 1+N DB round-trips; timeouts under load | **Fixed:** batch product fetch in `getCartWithItems` |
-| **Admin list timeouts** | 10k+ users/orders/products | Unbounded queries; slow response or OOM | **Fixed:** optional `?limit=&offset=` with cap 1000; no params = unchanged behavior |
-| **Stale product list** | Multiple backend instances | Cache invalidated only on instance that handled write | Documented; suggest Redis later |
-| **Startup with bad config** | Missing SUPABASE_* or JWT_SECRET | Silent failures or weak auth | **Fixed:** required env validation; fail fast at startup |
-| **Untraceable errors** | Production incidents | Logs without request correlation | **Fixed:** request ID middleware; logged in request + error handler + cache |
-| **DB connection / long queries** | Slow DB or huge result sets | Held connections; backlog | Suggested: query/response timeouts; indexes |
-| **Payment gateway down** | Cybersource unreachable | Failed checkouts; no circuit breaker | Suggested: circuit breaker; document /ready behavior |
+| Risk                             | Trigger                                | Impact                                                | Mitigation Status                                                                   |
+| -------------------------------- | -------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| **Cart endpoint latency**        | Many items per cart × concurrent users | N+1 → 1+N DB round-trips; timeouts under load         | **Fixed:** batch product fetch in `getCartWithItems`                                |
+| **Admin list timeouts**          | 10k+ users/orders/products             | Unbounded queries; slow response or OOM               | **Fixed:** optional `?limit=&offset=` with cap 1000; no params = unchanged behavior |
+| **Stale product list**           | Multiple backend instances             | Cache invalidated only on instance that handled write | Documented; suggest Redis later                                                     |
+| **Startup with bad config**      | Missing SUPABASE\_\* or JWT_SECRET     | Silent failures or weak auth                          | **Fixed:** required env validation; fail fast at startup                            |
+| **Untraceable errors**           | Production incidents                   | Logs without request correlation                      | **Fixed:** request ID middleware; logged in request + error handler + cache         |
+| **DB connection / long queries** | Slow DB or huge result sets            | Held connections; backlog                             | Suggested: query/response timeouts; indexes                                         |
+| **Payment gateway down**         | Cybersource unreachable                | Failed checkouts; no circuit breaker                  | Suggested: circuit breaker; document /ready behavior                                |
 
 ---
 
@@ -102,58 +102,58 @@ These are **not** applied automatically because they may require product/ops dec
 
 ### 4.1 Backend
 
-| Suggestion | Reason | Risk |
-|------------|--------|------|
-| **Response timeout middleware** (e.g. 30s) | Prevents hung connections from holding resources. | Long-running exports or reports could hit 30s; may need per-route timeout or higher value. |
-| **Query timeout** (Supabase / client) | Stops runaway queries from blocking the process. | Need to confirm Supabase client supports timeout and that all queries still complete in normal conditions. |
-| **Default limit on GET /api/products** (e.g. 500) | Public product list is cached but on cache miss could return a very large payload. | Frontend or integrations might assume “all products”; add limit only with coordination or optional `?limit=`. |
-| **Redis (or similar) for product cache** | Multi-instance cache coherence; invalidation on product write. | New dependency; deployment and key design; keep API and response shape identical. |
-| **/metrics endpoint** (e.g. request count, latency buckets) | Observability for Prometheus/Grafana. | No impact on existing API; add when monitoring stack is ready. |
+| Suggestion                                                  | Reason                                                                             | Risk                                                                                                          |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| **Response timeout middleware** (e.g. 30s)                  | Prevents hung connections from holding resources.                                  | Long-running exports or reports could hit 30s; may need per-route timeout or higher value.                    |
+| **Query timeout** (Supabase / client)                       | Stops runaway queries from blocking the process.                                   | Need to confirm Supabase client supports timeout and that all queries still complete in normal conditions.    |
+| **Default limit on GET /api/products** (e.g. 500)           | Public product list is cached but on cache miss could return a very large payload. | Frontend or integrations might assume “all products”; add limit only with coordination or optional `?limit=`. |
+| **Redis (or similar) for product cache**                    | Multi-instance cache coherence; invalidation on product write.                     | New dependency; deployment and key design; keep API and response shape identical.                             |
+| **/metrics endpoint** (e.g. request count, latency buckets) | Observability for Prometheus/Grafana.                                              | No impact on existing API; add when monitoring stack is ready.                                                |
 
 ### 4.2 Frontend
 
-| Suggestion | Reason | Risk |
-|------------|--------|------|
+| Suggestion                               | Reason                                                                           | Risk                                                                                   |
+| ---------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | **“Products loaded at” / refetch guard** | Avoid duplicate `getAll()` from App, CustomerView, PublicWebsite, PublicCatalog. | Stale list if products change elsewhere; use short TTL (e.g. 60s) or explicit refresh. |
-| **AdminView: cache products in state** | Refetch only on Refresh or after create/update/delete. | Same as above; ensure Refresh button or invalidation after mutations. |
-| **Debounce PublicCatalog filter** | Reduce full refetch on every filter change. | Slight delay before results update; acceptable for UX. |
-| **Lazy-load translations by locale** | Smaller initial bundle. | Same keys and behavior; ensure locale is available before render. |
+| **AdminView: cache products in state**   | Refetch only on Refresh or after create/update/delete.                           | Same as above; ensure Refresh button or invalidation after mutations.                  |
+| **Debounce PublicCatalog filter**        | Reduce full refetch on every filter change.                                      | Slight delay before results update; acceptable for UX.                                 |
+| **Lazy-load translations by locale**     | Smaller initial bundle.                                                          | Same keys and behavior; ensure locale is available before render.                      |
 
 ### 4.3 Database
 
-| Suggestion | Reason | Risk |
-|------------|--------|------|
-| **Indexes** (see table below) | Faster filters and sorts at scale. | No query or API change; create via Supabase SQL. |
-| **Pagination for notifications** | Table can grow per user. | Add optional limit/offset to notification list endpoint; keep default behavior. |
+| Suggestion                       | Reason                             | Risk                                                                            |
+| -------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------- |
+| **Indexes** (see table below)    | Faster filters and sorts at scale. | No query or API change; create via Supabase SQL.                                |
+| **Pagination for notifications** | Table can grow per user.           | Add optional limit/offset to notification list endpoint; keep default behavior. |
 
 **Recommended indexes (apply in Supabase SQL editor):**
 
-| Table | Index | Purpose |
-|-------|--------|---------|
-| users | (status), (email) | Filter by status; lookup by email. |
-| products | (merchant_id), (status) or (is_active, status) | List by merchant; filter active. |
-| orders | (customer_id), (merchant_id), (created_at DESC) | List by customer/merchant; sort by date. |
-| order_items | (order_id) | Join with orders. |
-| cart_items | (cart_id), (cart_id, product_id) | Cart lookup; upsert by cart+product. |
-| carts | (user_id) UNIQUE | getOrCreateCart. |
+| Table       | Index                                           | Purpose                                  |
+| ----------- | ----------------------------------------------- | ---------------------------------------- |
+| users       | (status), (email)                               | Filter by status; lookup by email.       |
+| products    | (merchant_id), (status) or (is_active, status)  | List by merchant; filter active.         |
+| orders      | (customer_id), (merchant_id), (created_at DESC) | List by customer/merchant; sort by date. |
+| order_items | (order_id)                                      | Join with orders.                        |
+| cart_items  | (cart_id), (cart_id, product_id)                | Cart lookup; upsert by cart+product.     |
+| carts       | (user_id) UNIQUE                                | getOrCreateCart.                         |
 
 ### 4.4 Configuration
 
-| Suggestion | Reason | Risk |
-|------------|--------|------|
-| **Health check payment** | If payment is critical, include gateway check in `/ready`. | Already optional via env; enable only when desired. |
-| **Circuit breaker for Cybersource** | Fail fast when gateway is down; return 503. | Requires threshold and recovery policy; no change to success-path API. |
+| Suggestion                          | Reason                                                     | Risk                                                                   |
+| ----------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------- |
+| **Health check payment**            | If payment is critical, include gateway check in `/ready`. | Already optional via env; enable only when desired.                    |
+| **Circuit breaker for Cybersource** | Fail fast when gateway is down; return 503.                | Requires threshold and recovery policy; no change to success-path API. |
 
 ---
 
 ## 5. Performance Fixes Summary
 
-| Fix | Location | Effect |
-|-----|----------|--------|
-| **Cart N+1 → single batch query** | `cartService.getCartWithItems` | 1 + N round-trips → 2 round-trips (cart+items, then products by ids). Same response. |
-| **Optional admin pagination** | `adminService` + `adminController` | Clients can request `?limit=100&offset=0` to avoid unbounded lists; existing clients unchanged. |
-| **Request ID in logs** | requestLogger, errorHandler, cacheMiddleware | No performance change; improves debuggability and correlation. |
-| **Env validation** | env.js | Fail fast at startup; avoids running with missing config. |
+| Fix                               | Location                                     | Effect                                                                                          |
+| --------------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| **Cart N+1 → single batch query** | `cartService.getCartWithItems`               | 1 + N round-trips → 2 round-trips (cart+items, then products by ids). Same response.            |
+| **Optional admin pagination**     | `adminService` + `adminController`           | Clients can request `?limit=100&offset=0` to avoid unbounded lists; existing clients unchanged. |
+| **Request ID in logs**            | requestLogger, errorHandler, cacheMiddleware | No performance change; improves debuggability and correlation.                                  |
+| **Env validation**                | env.js                                       | Fail fast at startup; avoids running with missing config.                                       |
 
 ---
 
@@ -184,15 +184,15 @@ These are **not** applied automatically because they may require product/ops dec
 
 ## 7. Final Production Readiness Score
 
-| Area | Before (approx.) | After (approx.) | Notes |
-|------|-------------------|-----------------|--------|
-| **Code quality / structure** | 7/10 | 7.5/10 | Clear layers; some duplication and heavy views remain. |
-| **Performance** | 6/10 | 8/10 | Cart N+1 fixed; admin pagination optional; indexes still suggested. |
-| **Scalability** | 5/10 | 7/10 | Safe for 10k users with pagination; multi-instance cache still local. |
-| **Reliability** | 6/10 | 8/10 | Request ID; fail-fast env; health/ready in place. |
-| **Observability** | 5/10 | 7/10 | Log correlation in place; no metrics yet. |
-| **Security** | 7/10 | 7/10 | No change; existing practices retained. |
-| **Configuration** | 5/10 | 8/10 | Required env enforced at startup. |
+| Area                         | Before (approx.) | After (approx.) | Notes                                                                 |
+| ---------------------------- | ---------------- | --------------- | --------------------------------------------------------------------- |
+| **Code quality / structure** | 7/10             | 7.5/10          | Clear layers; some duplication and heavy views remain.                |
+| **Performance**              | 6/10             | 8/10            | Cart N+1 fixed; admin pagination optional; indexes still suggested.   |
+| **Scalability**              | 5/10             | 7/10            | Safe for 10k users with pagination; multi-instance cache still local. |
+| **Reliability**              | 6/10             | 8/10            | Request ID; fail-fast env; health/ready in place.                     |
+| **Observability**            | 5/10             | 7/10            | Log correlation in place; no metrics yet.                             |
+| **Security**                 | 7/10             | 7/10            | No change; existing practices retained.                               |
+| **Configuration**            | 5/10             | 8/10            | Required env enforced at startup.                                     |
 
 **Overall production readiness: 7.5 / 10** (up from ~6/10).
 

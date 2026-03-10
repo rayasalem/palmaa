@@ -25,13 +25,8 @@ async function upsert(brokerId, productId, data) {
     is_featured: data.is_featured ?? false,
   };
 
-  if ((existing && existing.id)) {
-    const { data: updated, error } = await supabase
-      .from(TABLE)
-      .update(row)
-      .eq('id', existing.id)
-      .select()
-      .single();
+  if (existing && existing.id) {
+    const { data: updated, error } = await supabase.from(TABLE).update(row).eq('id', existing.id).select().single();
     if (error) {
       logger.error('sharedProductsService update error', { message: error.message });
       return { data: null, error };
@@ -70,11 +65,7 @@ async function listByBrokerId(brokerId) {
 }
 
 async function remove(brokerId, productId) {
-  const { error } = await supabase
-    .from(TABLE)
-    .delete()
-    .eq('broker_id', brokerId)
-    .eq('product_id', productId);
+  const { error } = await supabase.from(TABLE).delete().eq('broker_id', brokerId).eq('product_id', productId);
   if (error) {
     logger.error('sharedProductsService remove error', { message: error.message });
     return { error };

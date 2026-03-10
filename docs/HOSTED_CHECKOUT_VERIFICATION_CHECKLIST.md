@@ -11,9 +11,11 @@
   - `access_key`, `amount`, `currency`, `locale`, `profile_id`, `reference_number`, `signed_date_time`, `signed_field_names`, `transaction_type`, `transaction_uuid`, `signature`
 
 **كيف تتأكد:** بعد تنفيذ "متابعة للدفع" مرة، راجع لوج السيرفر. يجب أن ترى سطراً مثل:
+
 ```text
 [cybersource-hosted] session created orderId=... fields_sent=[access_key, amount, currency, locale, profile_id, reference_number, signature, signed_date_time, signed_field_names, transaction_type, transaction_uuid]
 ```
+
 إذا ظهر في القائمة أي من: `merchant_category_code`, `usd_outlet_id`, `usd_terminal_id` فالمشكلة من الكود. في تطبيقنا الحالي لا نرسلها.
 
 ---
@@ -22,14 +24,14 @@
 
 في `server/.env` تأكد من:
 
-| المتغير | مطلوب لـ Hosted Checkout | ملاحظات |
-|--------|---------------------------|---------|
-| `CYBS_PROFILE_ID` | نعم | من Business Center → Secure Acceptance → Profile ID (بدون مسافات) |
-| `CYBS_ACCESS_KEY` | نعم | من نفس البروفايل (بدون مسافات) |
-| `CYBS_SECRET_KEY` | نعم | Shared Secret من البروفايل |
-| `CYBS_HOSTED_PAY_URL` | اختياري | إن لم يُضبط يُستخدم: `https://testsecureacceptance.cybersource.com/pay` |
-| `CYBS_LOCALE` | اختياري | افتراضي `ar-xn` |
-| `CYBS_CURRENCY` | اختياري | افتراضي `USD` |
+| المتغير               | مطلوب لـ Hosted Checkout | ملاحظات                                                                 |
+| --------------------- | ------------------------ | ----------------------------------------------------------------------- |
+| `CYBS_PROFILE_ID`     | نعم                      | من Business Center → Secure Acceptance → Profile ID (بدون مسافات)       |
+| `CYBS_ACCESS_KEY`     | نعم                      | من نفس البروفايل (بدون مسافات)                                          |
+| `CYBS_SECRET_KEY`     | نعم                      | Shared Secret من البروفايل                                              |
+| `CYBS_HOSTED_PAY_URL` | اختياري                  | إن لم يُضبط يُستخدم: `https://testsecureacceptance.cybersource.com/pay` |
+| `CYBS_LOCALE`         | اختياري                  | افتراضي `ar-xn`                                                         |
+| `CYBS_CURRENCY`       | اختياري                  | افتراضي `USD`                                                           |
 
 - [ ] لا أخطاء إملاء في أسماء المتغيرات.
 - [ ] القيم من **بيئة الاختبار (Sandbox)** وليس Production.
@@ -68,9 +70,9 @@
 
 ## ملخص
 
-| ماذا نتحقق منه | أين |
-|----------------|-----|
+| ماذا نتحقق منه                                                 | أين                                 |
+| -------------------------------------------------------------- | ----------------------------------- |
 | الحقول المرسلة لا تتضمن outlet/terminal/merchant_category_code | لوج السيرفر بعد ضغطة "متابعة للدفع" |
-| صحة وقيم CYBS_* | `server/.env` |
-| تطابق البروفايل والشهادات | Business Center (Test) ↔ .env |
-| حل 150 من جهة المعالج/البروفايل | developer@cybersource.com |
+| صحة وقيم CYBS\_\*                                              | `server/.env`                       |
+| تطابق البروفايل والشهادات                                      | Business Center (Test) ↔ .env       |
+| حل 150 من جهة المعالج/البروفايل                                | developer@cybersource.com           |

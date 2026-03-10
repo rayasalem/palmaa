@@ -10,24 +10,24 @@
 
 ### 1.1 Unnecessary Re-Renders & Memoization
 
-| Finding | Location | Risk | Safe Fix |
-|--------|----------|------|----------|
-| Inline handlers in list `.map()` create new function refs every render | MerchantView ~818–871: `onClick={() => handleToggleStatus(product)}`, `handleEditClick(product)` | Medium – list re-renders on any parent state change | Pass stable `useCallback` with product id: `handleToggleStatus(id)`; wrap list item in `React.memo` |
-| Same pattern | CustomerView: `filteredShopProducts.map` with inline `onMouseEnter` prefetch | Low – prefetch is cheap | Keep as-is or wrap in `useCallback` with product id |
-| Same pattern | AdminView orders/withdrawals `.map`; BrokerView products/sharedMeta; ProfileView groupedProducts | Low–Medium | Use stable callbacks and memoized row components where missing |
-| `marketStore.getProducts().length` in useEffect deps | ProfileView ~82 | Medium – store reference can change; may refetch too often | Depend on a stable “products version” or explicit ref; or remove from deps and refetch only on user.id/role |
-| No memo on some list parents | CustomerView order list, AdminView order table | Low | Wrap row subcomponents in `React.memo`; ensure callbacks are `useCallback` |
+| Finding                                                                | Location                                                                                         | Risk                                                       | Safe Fix                                                                                                    |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Inline handlers in list `.map()` create new function refs every render | MerchantView ~818–871: `onClick={() => handleToggleStatus(product)}`, `handleEditClick(product)` | Medium – list re-renders on any parent state change        | Pass stable `useCallback` with product id: `handleToggleStatus(id)`; wrap list item in `React.memo`         |
+| Same pattern                                                           | CustomerView: `filteredShopProducts.map` with inline `onMouseEnter` prefetch                     | Low – prefetch is cheap                                    | Keep as-is or wrap in `useCallback` with product id                                                         |
+| Same pattern                                                           | AdminView orders/withdrawals `.map`; BrokerView products/sharedMeta; ProfileView groupedProducts | Low–Medium                                                 | Use stable callbacks and memoized row components where missing                                              |
+| `marketStore.getProducts().length` in useEffect deps                   | ProfileView ~82                                                                                  | Medium – store reference can change; may refetch too often | Depend on a stable “products version” or explicit ref; or remove from deps and refetch only on user.id/role |
+| No memo on some list parents                                           | CustomerView order list, AdminView order table                                                   | Low                                                        | Wrap row subcomponents in `React.memo`; ensure callbacks are `useCallback`                                  |
 
 **Already in place:** CustomerView uses `React.memo` on ShippingInputGroup, ShopProductCard, CartItemRow, CategoryPill; AdminView on UserRow, ProductRow; useMemo for filtered lists and totals; useCallback for cart/category handlers.
 
 ### 1.2 Heavy Components
 
-| Component | Approx. Lines | Observation |
-|-----------|----------------|-------------|
-| CustomerView | ~1,340 | Single file: shop, cart, orders, checkout form, modals. High re-render surface. |
-| MerchantView | ~1,110 | Products list + form, orders, shipments, invoices in one tree. |
-| AdminView | ~1,047 | Users, products, orders, withdrawals, platform in one file. |
-| translations.ts | ~1,250 | Single module; no lazy load by locale – increases main bundle. |
+| Component       | Approx. Lines | Observation                                                                     |
+| --------------- | ------------- | ------------------------------------------------------------------------------- |
+| CustomerView    | ~1,340        | Single file: shop, cart, orders, checkout form, modals. High re-render surface. |
+| MerchantView    | ~1,110        | Products list + form, orders, shipments, invoices in one tree.                  |
+| AdminView       | ~1,047        | Users, products, orders, withdrawals, platform in one file.                     |
+| translations.ts | ~1,250        | Single module; no lazy load by locale – increases main bundle.                  |
 
 **Safe improvement:** Extract tabs/sections into subcomponents (e.g. ShopTab, CartTab, CheckoutForm) with same props/state; no logic change.
 
@@ -40,13 +40,14 @@
 
 ### 1.4 Duplicate / Inefficient API Requests
 
-| Pattern | Where | Impact |
-|---------|--------|--------|
+| Pattern                     | Where                                                                                        | Impact                                                                          |
+| --------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | **productService.getAll()** | App initApp, CustomerView mount, PublicWebsite mount + focus, PublicCatalog on filter change | Multiple calls for same data; no “load once per session” or shared cache guard. |
-| **getAdminProducts()** | AdminView when `activeTab === 'products'` | Every tab switch refetches; no in-session cache. |
-| **PublicCatalog** | `useEffect([fetchAndFilterProducts])` – fetchAndFilterProducts depends on all filter state | Every filter/sort change triggers full `getAll()`; no debounce. |
+| **getAdminProducts()**      | AdminView when `activeTab === 'products'`                                                    | Every tab switch refetches; no in-session cache.                                |
+| **PublicCatalog**           | `useEffect([fetchAndFilterProducts])` – fetchAndFilterProducts depends on all filter state   | Every filter/sort change triggers full `getAll()`; no debounce.                 |
 
 **Safe improvements:**
+
 - Frontend: Add a short-lived “products loaded at” timestamp or flag in App/store; CustomerView and PublicWebsite skip getAll if recent (e.g. &lt; 60s). No API change.
 - AdminView: Cache products in state after first load; refetch only on explicit “Refresh” or after create/update/delete. No API change.
 - PublicCatalog: Debounce filter changes (e.g. 300ms) before calling fetchAndFilterProducts; or use existing in-memory product list and filter client-side when data is already loaded. No API change.
@@ -68,12 +69,12 @@ Order is appropriate: CORS → helmet → compression → cookieParser → json 
 
 ### 2.2 Slow Endpoints & N+1
 
-| Endpoint / Code | Issue | Safe Fix |
-|-----------------|--------|----------|
+| Endpoint / Code                                  | Issue                                                                                            | Safe Fix                                                                                                                                         |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **GET /api/cart** (cartService.getCartWithItems) | N+1: for each cart item, one Supabase query to load product. 10 items = 1 + 10 = 11 round-trips. | Single query: load all cart items, collect product_ids, then `products.select().in('id', productIds)` once; join in memory. Same response shape. |
-| **GET /api/admin/products** | No limit; full table scan as products grow. | Add optional `?limit=100&offset=0`; default limit 100. Backward compatible if client does not send params (return first 100). |
-| **GET /api/admin/orders**, **listUsers** | No limit. | Same: optional pagination with defaults; keep existing behavior when no query params. |
-| **GET /api/products** (getActiveProducts) | No limit. | Optional limit (e.g. 500) or pagination; cache already limits repeated DB hit. |
+| **GET /api/admin/products**                      | No limit; full table scan as products grow.                                                      | Add optional `?limit=100&offset=0`; default limit 100. Backward compatible if client does not send params (return first 100).                    |
+| **GET /api/admin/orders**, **listUsers**         | No limit.                                                                                        | Same: optional pagination with defaults; keep existing behavior when no query params.                                                            |
+| **GET /api/products** (getActiveProducts)        | No limit.                                                                                        | Optional limit (e.g. 500) or pagination; cache already limits repeated DB hit.                                                                   |
 
 ### 2.3 Supabase Usage Patterns
 
@@ -101,14 +102,14 @@ Order is appropriate: CORS → helmet → compression → cookieParser → json 
 
 Suggested indexes (create via Supabase SQL; no code change to queries):
 
-| Table | Index | Reason |
-|-------|--------|--------|
-| users | (status), (email) | Filter by status (e.g. PENDING); lookup by email. |
-| products | (merchant_id), (status) or (is_active, status) | List by merchant; filter active. |
-| orders | (customer_id), (merchant_id), (created_at desc) | List by customer/merchant; sort by date. |
-| order_items | (order_id) | Join orders with items. |
-| cart_items | (cart_id), (cart_id, product_id) | Cart lookup; upsert by cart+product. |
-| carts | (user_id) unique | getOrCreateCart. |
+| Table       | Index                                           | Reason                                            |
+| ----------- | ----------------------------------------------- | ------------------------------------------------- |
+| users       | (status), (email)                               | Filter by status (e.g. PENDING); lookup by email. |
+| products    | (merchant_id), (status) or (is_active, status)  | List by merchant; filter active.                  |
+| orders      | (customer_id), (merchant_id), (created_at desc) | List by customer/merchant; sort by date.          |
+| order_items | (order_id)                                      | Join orders with items.                           |
+| cart_items  | (cart_id), (cart_id, product_id)                | Cart lookup; upsert by cart+product.              |
+| carts       | (user_id) unique                                | getOrCreateCart.                                  |
 
 ### 3.3 Tables That May Grow Large
 
@@ -191,22 +192,22 @@ Suggested indexes (create via Supabase SQL; no code change to queries):
 
 ## 7. Failure Scenarios & Mitigations
 
-| Scenario | Current Behavior | Mitigation (Non-Breaking) |
-|----------|------------------|----------------------------|
-| **Database slowdown** | Queries block; request backlog; timeouts possible. | Add query timeouts in Supabase client if supported; add response timeout middleware (e.g. 30s) and return 503; scale DB or add read replicas. |
-| **API timeout** | Client may hang or fail after long wait. | Frontend: set AbortController timeout on fetch (e.g. 25s); show “Request timed out” and retry option. Backend: timeout middleware. |
-| **Payment gateway failure** | Cybersource down or slow. | Return 503 or 502 from payment route; frontend shows “Payment temporarily unavailable”; retry button. Add circuit breaker in backend for payment calls (optional). |
-| **High traffic spike** | Rate limit (200/15min general) may reject; DB and single process may saturate. | Increase rate limit or make it configurable; scale horizontally (multiple instances); add Redis for product cache and session if needed; DB connection pool tuning. |
+| Scenario                    | Current Behavior                                                               | Mitigation (Non-Breaking)                                                                                                                                           |
+| --------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Database slowdown**       | Queries block; request backlog; timeouts possible.                             | Add query timeouts in Supabase client if supported; add response timeout middleware (e.g. 30s) and return 503; scale DB or add read replicas.                       |
+| **API timeout**             | Client may hang or fail after long wait.                                       | Frontend: set AbortController timeout on fetch (e.g. 25s); show “Request timed out” and retry option. Backend: timeout middleware.                                  |
+| **Payment gateway failure** | Cybersource down or slow.                                                      | Return 503 or 502 from payment route; frontend shows “Payment temporarily unavailable”; retry button. Add circuit breaker in backend for payment calls (optional).  |
+| **High traffic spike**      | Rate limit (200/15min general) may reject; DB and single process may saturate. | Increase rate limit or make it configurable; scale horizontally (multiple instances); add Redis for product cache and session if needed; DB connection pool tuning. |
 
 ---
 
 ## 8. Scaling Simulation
 
-| Users (approx.) | Expected Behavior | Where It May Fail |
-|------------------|-------------------|--------------------|
-| **1,000** | Current design can handle. Product list cached; cart N+1 noticeable but small (e.g. 5 items = 6 queries). | Few hot spots. |
-| **10,000** | List endpoints (admin users, orders, products) return more rows – slower response and more memory. Cart N+1 and unbounded lists become visible. | Admin list endpoints; GET /api/products if cache miss; cart with many items. |
-| **100,000** | Unbounded lists and N+1 cart can cause timeouts and high DB load. Single NodeCache per instance; no horizontal cache coherence. | DB CPU and connections; list endpoint response size; cart endpoint; cache incoherence across instances. |
+| Users (approx.) | Expected Behavior                                                                                                                               | Where It May Fail                                                                                       |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| **1,000**       | Current design can handle. Product list cached; cart N+1 noticeable but small (e.g. 5 items = 6 queries).                                       | Few hot spots.                                                                                          |
+| **10,000**      | List endpoints (admin users, orders, products) return more rows – slower response and more memory. Cart N+1 and unbounded lists become visible. | Admin list endpoints; GET /api/products if cache miss; cart with many items.                            |
+| **100,000**     | Unbounded lists and N+1 cart can cause timeouts and high DB load. Single NodeCache per instance; no horizontal cache coherence.                 | DB CPU and connections; list endpoint response size; cart endpoint; cache incoherence across instances. |
 
 **Summary:** System will start showing strain at **~10k users** on list and cart endpoints; at **~100k** users, list pagination, cart N+1 fix, indexes, and distributed cache become necessary to avoid failures.
 
@@ -219,7 +220,7 @@ Suggested indexes (create via Supabase SQL; no code change to queries):
 3. **Duplicate product getAll()** – Multiple components call productService.getAll() on mount or focus without shared “recently loaded” guard; redundant network and DB. Fix: centralize load or short TTL “products fresh” flag.
 4. **In-memory product cache with multiple instances** – Invalidation only on the instance that handled the write; other instances serve stale list up to TTL. Fix: document; later add Redis (or similar) and invalidate globally.
 5. **No request correlation ID** – Hard to trace a request across logs and services. Fix: add req.id in middleware and log it everywhere.
-6. **Env validation not enforced** – required list empty; app can start without SUPABASE_* or JWT_SECRET. Fix: add required vars and validateEnv() so process exits early with clear message.
+6. **Env validation not enforced** – required list empty; app can start without SUPABASE\_\* or JWT_SECRET. Fix: add required vars and validateEnv() so process exits early with clear message.
 7. **Translations in main bundle** – Large single module; all locales loaded. Fix: lazy-load per locale to reduce initial bundle.
 8. **Heavy views re-render on any state change** – CustomerView, MerchantView, AdminView are single large components; any state update can re-render large trees. Fix: split into subcomponents and memoize where appropriate.
 9. **Payment gateway not in /ready** – Optional; if payment is critical, readiness should reflect it. Fix: document; optionally enable HEALTH_CHECK_PAYMENT and fail ready when gateway unreachable.
@@ -233,39 +234,39 @@ Suggested indexes (create via Supabase SQL; no code change to queries):
 
 ### Phase A – Quick Wins (Weeks 1–2)
 
-| # | Action | Breaking? |
-|---|--------|-----------|
-| A1 | Add request ID middleware and log req.id in requestLogger and errorHandler | No |
-| A2 | Env: add required list (e.g. SUPABASE_URL, SUPABASE_SERVICE_KEY, JWT_SECRET); validateEnv() at startup | No (only fails if missing) |
-| A3 | Backend: fix cart N+1 – batch product fetch in getCartWithItems; same response shape | No |
-| A4 | Backend: add optional `?limit=&offset=` to admin list endpoints with default limit 100 | No (clients that don’t send params get first 100) |
+| #   | Action                                                                                                 | Breaking?                                         |
+| --- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| A1  | Add request ID middleware and log req.id in requestLogger and errorHandler                             | No                                                |
+| A2  | Env: add required list (e.g. SUPABASE_URL, SUPABASE_SERVICE_KEY, JWT_SECRET); validateEnv() at startup | No (only fails if missing)                        |
+| A3  | Backend: fix cart N+1 – batch product fetch in getCartWithItems; same response shape                   | No                                                |
+| A4  | Backend: add optional `?limit=&offset=` to admin list endpoints with default limit 100                 | No (clients that don’t send params get first 100) |
 
 ### Phase B – Frontend & Caching (Weeks 2–4)
 
-| # | Action | Breaking? |
-|---|--------|-----------|
-| B1 | Reduce duplicate getAll: “products loaded at” in App or store; CustomerView/PublicWebsite skip getAll if &lt; 60s | No |
-| B2 | AdminView: cache products in state; refetch only on Refresh or after create/update/delete | No |
-| B3 | PublicCatalog: debounce filter-driven fetch or filter client-side when products already loaded | No |
-| B4 | Lazy-load translations by locale (e.g. import(`./translations.${lang}.ts`)); same keys | No |
+| #   | Action                                                                                                            | Breaking? |
+| --- | ----------------------------------------------------------------------------------------------------------------- | --------- |
+| B1  | Reduce duplicate getAll: “products loaded at” in App or store; CustomerView/PublicWebsite skip getAll if &lt; 60s | No        |
+| B2  | AdminView: cache products in state; refetch only on Refresh or after create/update/delete                         | No        |
+| B3  | PublicCatalog: debounce filter-driven fetch or filter client-side when products already loaded                    | No        |
+| B4  | Lazy-load translations by locale (e.g. import(`./translations.${lang}.ts`)); same keys                            | No        |
 
 ### Phase C – Database & Backend (Weeks 4–6)
 
-| # | Action | Breaking? |
-|---|--------|-----------|
-| C1 | Add recommended indexes (users, products, orders, order_items, cart_items, carts) via Supabase SQL | No |
-| C2 | getActiveProducts and product list: add default .limit(500) or .range(0,499); document | No |
-| C3 | Add response timeout middleware (e.g. 30s) and return 503 on timeout | No |
-| C4 | Document multi-instance cache behavior; optionally shorten product cache TTL when scaling out | No |
+| #   | Action                                                                                             | Breaking? |
+| --- | -------------------------------------------------------------------------------------------------- | --------- |
+| C1  | Add recommended indexes (users, products, orders, order_items, cart_items, carts) via Supabase SQL | No        |
+| C2  | getActiveProducts and product list: add default .limit(500) or .range(0,499); document             | No        |
+| C3  | Add response timeout middleware (e.g. 30s) and return 503 on timeout                               | No        |
+| C4  | Document multi-instance cache behavior; optionally shorten product cache TTL when scaling out      | No        |
 
 ### Phase D – Observability & Hardening (Weeks 6–8)
 
-| # | Action | Breaking? |
-|---|--------|-----------|
-| D1 | Add /metrics endpoint (request count, latency) or integrate Prometheus | No |
-| D2 | Frontend: AbortController timeout (e.g. 25s) for API calls; show timeout message and retry | No |
-| D3 | Optional: Redis for product cache; invalidate on product write; same API | No |
-| D4 | Memoize MerchantView product row and pass stable callbacks; optional same for other list views | No |
+| #   | Action                                                                                         | Breaking? |
+| --- | ---------------------------------------------------------------------------------------------- | --------- |
+| D1  | Add /metrics endpoint (request count, latency) or integrate Prometheus                         | No        |
+| D2  | Frontend: AbortController timeout (e.g. 25s) for API calls; show timeout message and retry     | No        |
+| D3  | Optional: Redis for product cache; invalidate on product write; same API                       | No        |
+| D4  | Memoize MerchantView product row and pass stable callbacks; optional same for other list views | No        |
 
 ### Phase E – Optional (Later)
 

@@ -5,7 +5,7 @@
 
 function get(key: string): string {
   const v = process.env[key];
-  return (v != null && String(v).trim() !== '') ? v.trim() : '';
+  return v != null && String(v).trim() !== '' ? v.trim() : '';
 }
 
 export function getArabicBankConfig(): {
@@ -22,5 +22,5 @@ export function getArabicBankConfig(): {
 
 export const ordersTable = ((): string => {
   const v = process.env.ORDERS_TABLE;
-  return (v != null && String(v).trim() !== '') ? v.trim() : 'orders';
+  return v != null && String(v).trim() !== '' ? v.trim() : 'orders';
 })();

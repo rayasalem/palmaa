@@ -37,12 +37,8 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6" role="alert">
           <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200 shadow-lg p-8 text-center">
-            <p className="text-slate-600 font-medium mb-4">
-              حدث خطأ غير متوقع. يرجى تحديث الصفحة والمحاولة مرة أخرى.
-            </p>
-            <p className="text-slate-400 text-sm mb-6">
-              Something went wrong. Please refresh the page and try again.
-            </p>
+            <p className="text-slate-600 font-medium mb-4">حدث خطأ غير متوقع. يرجى تحديث الصفحة والمحاولة مرة أخرى.</p>
+            <p className="text-slate-400 text-sm mb-6">Something went wrong. Please refresh the page and try again.</p>
             <button
               type="button"
               onClick={() => window.location.reload()}

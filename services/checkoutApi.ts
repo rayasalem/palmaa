@@ -105,7 +105,10 @@ export async function cancelOrder(orderId: string): Promise<{ success: boolean; 
 }
 
 /** رفع رابط الفاتورة الضريبية للطلب (للتاجر بعد الدفع). */
-export async function updateOrderInvoice(orderId: string, invoiceUrl: string): Promise<{ success: boolean; order?: Order }> {
+export async function updateOrderInvoice(
+  orderId: string,
+  invoiceUrl: string
+): Promise<{ success: boolean; order?: Order }> {
   return request<{ success: boolean; order?: Order }>(`/api/orders/${orderId}/invoice`, {
     method: 'PATCH',
     body: JSON.stringify({ invoiceUrl: invoiceUrl.trim() }),
@@ -144,9 +147,7 @@ export interface CybersourceChargeBody {
   cardholderName: string;
 }
 
-export async function createCybersourceCharge(
-  body: CybersourceChargeBody
-): Promise<{
+export async function createCybersourceCharge(body: CybersourceChargeBody): Promise<{
   success: boolean;
   orderId?: string;
   amount?: number;
@@ -243,9 +244,7 @@ export async function getVillages(params: {
   if (params.search) query.set('search', params.search);
   if (params.cityId) query.set('cityId', params.cityId);
   const qs = query.toString();
-  return request<{ success: boolean; data: Village[] }>(
-    `/api/addresses/villages${qs ? `?${qs}` : ''}`
-  );
+  return request<{ success: boolean; data: Village[] }>(`/api/addresses/villages${qs ? `?${qs}` : ''}`);
 }
 
 export function printAWB(shipmentIds: string[]) {

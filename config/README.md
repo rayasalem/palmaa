@@ -2,11 +2,11 @@
 
 Environments: **development**, **staging**, **production**.
 
-| Environment | Purpose | How it runs |
-|-------------|---------|-------------|
+| Environment     | Purpose                           | How it runs                                                                                          |
+| --------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | **development** | Local dev; hot reload, debug logs | `npm run dev` (frontend) + `npm run start:server` (backend). Use `.env` from root and `server/.env`. |
-| **staging** | Pre-production; mirrors prod | Docker Compose or cloud (e.g. Render). Uses `config/env.staging.example` (copy to env vars). |
-| **production** | Live site | Docker/Kubernetes or PaaS. Env from secrets manager; no `.env` in repo. |
+| **staging**     | Pre-production; mirrors prod      | Docker Compose or cloud (e.g. Render). Uses `config/env.staging.example` (copy to env vars).         |
+| **production**  | Live site                         | Docker/Kubernetes or PaaS. Env from secrets manager; no `.env` in repo.                              |
 
 ## Setup
 

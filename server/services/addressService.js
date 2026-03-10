@@ -54,28 +54,28 @@ const FALLBACK_CITIES = [
 
 /** Fallback villages by cityId when API is not configured or fails. */
 const FALLBACK_VILLAGES_BY_CITY = {
-  '1': [
+  1: [
     { id: '101', name: 'مركز المدينة', nameAr: 'مركز المدينة', nameEn: 'City Center', cityId: '1' },
     { id: '102', name: 'البيرة', nameAr: 'البيرة', nameEn: 'Al-Bireh', cityId: '1' },
     { id: '103', name: 'بيتونيا', nameAr: 'بيتونيا', nameEn: 'Bitunia', cityId: '1' },
     { id: '104', name: 'بيرزيت', nameAr: 'بيرزيت', nameEn: 'Birzeit', cityId: '1' },
   ],
-  '2': [
+  2: [
     { id: '201', name: 'مركز المدينة', nameAr: 'مركز المدينة', nameEn: 'City Center', cityId: '2' },
     { id: '202', name: 'رفيديا', nameAr: 'رفيديا', nameEn: 'Rafidia', cityId: '2' },
     { id: '203', name: 'بلاطة', nameAr: 'بلاطة', nameEn: 'Balata', cityId: '2' },
   ],
-  '3': [
+  3: [
     { id: '301', name: 'مركز المدينة', nameAr: 'مركز المدينة', nameEn: 'City Center', cityId: '3' },
     { id: '302', name: 'دورا', nameAr: 'دورا', nameEn: 'Dura', cityId: '3' },
   ],
-  '4': [{ id: '401', name: 'مركز المدينة', nameAr: 'مركز المدينة', nameEn: 'City Center', cityId: '4' }],
-  '5': [{ id: '501', name: 'مركز المدينة', nameAr: 'مركز المدينة', nameEn: 'City Center', cityId: '5' }],
-  '6': [{ id: '601', name: 'مركز المدينة', nameAr: 'مركز المدينة', nameEn: 'City Center', cityId: '6' }],
-  '7': [{ id: '701', name: 'مركز المدينة', nameAr: 'مركز المدينة', nameEn: 'City Center', cityId: '7' }],
-  '8': [{ id: '801', name: 'مركز المدينة', nameAr: 'مركز المدينة', nameEn: 'City Center', cityId: '8' }],
-  '9': [{ id: '901', name: 'مركز المدينة', nameAr: 'مركز المدينة', nameEn: 'City Center', cityId: '9' }],
-  '10': [{ id: '1001', name: 'مركز المدينة', nameAr: 'مركز المدينة', nameEn: 'City Center', cityId: '10' }],
+  4: [{ id: '401', name: 'مركز المدينة', nameAr: 'مركز المدينة', nameEn: 'City Center', cityId: '4' }],
+  5: [{ id: '501', name: 'مركز المدينة', nameAr: 'مركز المدينة', nameEn: 'City Center', cityId: '5' }],
+  6: [{ id: '601', name: 'مركز المدينة', nameAr: 'مركز المدينة', nameEn: 'City Center', cityId: '6' }],
+  7: [{ id: '701', name: 'مركز المدينة', nameAr: 'مركز المدينة', nameEn: 'City Center', cityId: '7' }],
+  8: [{ id: '801', name: 'مركز المدينة', nameAr: 'مركز المدينة', nameEn: 'City Center', cityId: '8' }],
+  9: [{ id: '901', name: 'مركز المدينة', nameAr: 'مركز المدينة', nameEn: 'City Center', cityId: '9' }],
+  10: [{ id: '1001', name: 'مركز المدينة', nameAr: 'مركز المدينة', nameEn: 'City Center', cityId: '10' }],
 };
 
 /**
@@ -121,7 +121,7 @@ async function getVillages(search, cityId) {
     return list;
   }
   const raw = await fetchFromApi('addresses/villages', { search: search || '', cityId: cityId || '' });
-  let list = Array.isArray(raw) ? raw : (raw && raw.data) ? raw.data : [];
+  let list = Array.isArray(raw) ? raw : raw && raw.data ? raw.data : [];
   if (cityId) {
     list = list.filter((v) => String(v.cityId || v.city_id) === String(cityId));
   }

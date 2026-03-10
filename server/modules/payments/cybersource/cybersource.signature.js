@@ -63,4 +63,3 @@ function verifySignature(fields, secretKey) {
 }
 
 export { signFields, verifySignature, buildStringToSign };
-

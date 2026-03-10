@@ -11,9 +11,12 @@ import logger from '../utils/logger.js';
 
 async function list(req, res) {
   try {
-    const limit = req.query.limit != null ? parseInt(req.query.limit, 10) : undefined;
-    const offset = req.query.offset != null ? parseInt(req.query.offset, 10) : undefined;
-    const opts = { limit: Number.isInteger(limit) ? limit : undefined, offset: Number.isInteger(offset) ? offset : undefined };
+    const opts = {
+      limit: req.query.limit,
+      offset: req.query.offset,
+      q: req.query.q,
+      category: req.query.category,
+    };
     const { data, error } = await productService.getActiveProducts(opts);
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to fetch products' });
@@ -44,7 +47,10 @@ async function listByMerchant(req, res) {
     if (!merchantId) return res.status(400).json({ success: false, error: 'Merchant id is required' });
     const limit = req.query.limit != null ? parseInt(req.query.limit, 10) : undefined;
     const offset = req.query.offset != null ? parseInt(req.query.offset, 10) : undefined;
-    const opts = { limit: Number.isInteger(limit) ? limit : undefined, offset: Number.isInteger(offset) ? offset : undefined };
+    const opts = {
+      limit: Number.isInteger(limit) ? limit : undefined,
+      offset: Number.isInteger(offset) ? offset : undefined,
+    };
     const { data, error } = await productService.getProductsByMerchantId(merchantId, opts);
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to fetch products' });
@@ -62,9 +68,10 @@ async function create(req, res) {
     if (!merchantId) return res.status(401).json({ success: false, error: 'Authentication required' });
     const { allowed, reason } = await subscriptionService.canAddProducts(merchantId);
     if (!allowed) {
-      const msg = reason === 'MERCHANT_SUSPENDED'
-        ? 'Your store has been suspended. Contact support.'
-        : 'Subscription expired. Please renew to add new products.';
+      const msg =
+        reason === 'MERCHANT_SUSPENDED'
+          ? 'Your store has been suspended. Contact support.'
+          : 'Subscription expired. Please renew to add new products.';
       return res.status(403).json({ success: false, error: msg, code: reason });
     }
     const body = req.body || {};
@@ -125,10 +132,10 @@ async function update(req, res) {
       weight: body.weight,
       dimensions: body.dimensions,
       tags: body.tags,
-    condition: body.condition,
+      condition: body.condition,
     });
     if (error) {
-      return res.status((error.message && error.message.includes('0 rows')) ? 404 : 500).json({
+      return res.status(error.message && error.message.includes('0 rows') ? 404 : 500).json({
         success: false,
         error: error.message || 'Failed to update product',
       });

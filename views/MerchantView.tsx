@@ -12,9 +12,15 @@ import { Truck, Trash2, Search, LayoutDashboard, DollarSign, Box, XCircle, Recei
 import { useToast } from '../components/ToastProvider';
 import { ConfirmModal } from '../components/ConfirmModal';
 
-const MerchantDashboardTab = lazy(() => import('./merchant/MerchantDashboardTab').then((m) => ({ default: m.MerchantDashboardTab })));
-const MerchantProductsTab = lazy(() => import('./merchant/MerchantProductsTab').then((m) => ({ default: m.MerchantProductsTab })));
-const MerchantOrdersTab = lazy(() => import('./merchant/MerchantOrdersTab').then((m) => ({ default: m.MerchantOrdersTab })));
+const MerchantDashboardTab = lazy(() =>
+  import('./merchant/MerchantDashboardTab').then((m) => ({ default: m.MerchantDashboardTab }))
+);
+const MerchantProductsTab = lazy(() =>
+  import('./merchant/MerchantProductsTab').then((m) => ({ default: m.MerchantProductsTab }))
+);
+const MerchantOrdersTab = lazy(() =>
+  import('./merchant/MerchantOrdersTab').then((m) => ({ default: m.MerchantOrdersTab }))
+);
 
 interface MerchantViewProps {
   user: User;
@@ -24,7 +30,13 @@ interface MerchantViewProps {
 }
 
 export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewProduct, onViewProfile }) => {
-  const lang: Language = (typeof document !== 'undefined' && (document.documentElement.lang === 'ar' || document.documentElement.lang === 'en' || document.documentElement.lang === 'he')) ? document.documentElement.lang as Language : 'ar';
+  const lang: Language =
+    typeof document !== 'undefined' &&
+    (document.documentElement.lang === 'ar' ||
+      document.documentElement.lang === 'en' ||
+      document.documentElement.lang === 'he')
+      ? (document.documentElement.lang as Language)
+      : 'ar';
   const t = translations[lang];
   const { showToast } = useToast();
 
@@ -67,7 +79,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
 
   useEffect(() => {
     if (user.role === 'MERCHANT') {
-        refreshData();
+      refreshData();
     }
   }, [user.id, view]);
 
@@ -114,11 +126,11 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
           }));
           setOrders(mapped);
         } else {
-          const fallback = marketStore.getOrders().filter(o => o.merchantId === user.id || o.merchant_id === user.id);
+          const fallback = marketStore.getOrders().filter((o) => o.merchantId === user.id || o.merchant_id === user.id);
           setOrders(fallback);
         }
       } catch (_) {
-        const fallback = marketStore.getOrders().filter(o => o.merchantId === user.id || o.merchant_id === user.id);
+        const fallback = marketStore.getOrders().filter((o) => o.merchantId === user.id || o.merchant_id === user.id);
         setOrders(fallback);
       }
 
@@ -164,7 +176,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
       // Ensure numeric values
       price: product.price || product.price_ils,
       // Ensure images array exists
-      images: product.images && product.images.length > 0 ? product.images : (product.imageUrl ? [product.imageUrl] : []),
+      images: product.images && product.images.length > 0 ? product.images : product.imageUrl ? [product.imageUrl] : [],
       condition: product.condition || 'new',
     });
     setTagsInput(product.tags ? product.tags.join(', ') : '');
@@ -175,10 +187,10 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
   };
 
   const handleRemoveImage = (index: number) => {
-    setProductForm(prev => {
-        const newImages = [...(prev.images || [])];
-        newImages.splice(index, 1);
-        return { ...prev, images: newImages };
+    setProductForm((prev) => {
+      const newImages = [...(prev.images || [])];
+      newImages.splice(index, 1);
+      return { ...prev, images: newImages };
     });
   };
 
@@ -189,7 +201,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
 
     try {
       let uploadedUrls: string[] = [...(productForm.images || [])];
-      
+
       // Upload new files if any using Storage Service
       if (uploadQueue.length > 0) {
         for (const file of uploadQueue) {
@@ -206,22 +218,30 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                   lang === 'ar'
                     ? 'حجم الصورة كبير جداً (الحد الأقصى 2MB). سيتم حفظ المنتج بدون هذه الصورة، الرجاء اختيار صورة أخرى أصغر لاحقاً.'
                     : lang === 'he'
-                    ? 'התמונה גדולה מדי (מקסימום 2MB). המוצר יישמר בלי התמונה; נא לבחור תמונה קטנה יותר.'
-                    : 'Image too large (max 2MB). The product will be saved without this image; please choose a smaller one later.';
+                      ? 'התמונה גדולה מדי (מקסימום 2MB). המוצר יישמר בלי התמונה; נא לבחור תמונה קטנה יותר.'
+                      : 'Image too large (max 2MB). The product will be saved without this image; please choose a smaller one later.';
               } else if (msg.includes('Invalid format')) {
                 msg =
                   lang === 'ar'
                     ? 'صيغة الصورة غير مدعومة. سيتم حفظ المنتج بدون هذه الصورة، الرجاء استخدام JPG أو PNG أو WebP.'
                     : lang === 'he'
-                    ? 'פורמט תמונה לא נתמך. נא להשתמש ב-JPG, PNG או WebP.'
-                    : 'Invalid image format. The product will be saved without this image; please use JPG, PNG, or WebP.';
+                      ? 'פורמט תמונה לא נתמך. נא להשתמש ב-JPG, PNG או WebP.'
+                      : 'Invalid image format. The product will be saved without this image; please use JPG, PNG, or WebP.';
               }
             }
-            showToast(msg || (lang === 'ar' ? 'تعذر رفع الصورة، سيتم حفظ المنتج بدونها.' : lang === 'he' ? 'ההעלאה נכשלה; המוצר יישמר בלי תמונה.' : 'Failed to upload image; product will be saved without it.'), 'error');
+            showToast(
+              msg ||
+                (lang === 'ar'
+                  ? 'تعذر رفع الصورة، سيتم حفظ المنتج بدونها.'
+                  : lang === 'he'
+                    ? 'ההעלאה נכשלה; המוצר יישמר בלי תמונה.'
+                    : 'Failed to upload image; product will be saved without it.'),
+              'error'
+            );
           }
         }
       }
-      
+
       // إذا لم تُقبل أي صورة، نستخدم صورة افتراضية ولا نمنع حفظ المنتج
       if (uploadedUrls.length === 0) {
         const placeholder = 'https://placehold.co/600x600?text=No+Image';
@@ -230,14 +250,17 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
           lang === 'ar'
             ? 'لم يتم قبول أي صورة، سيتم حفظ المنتج بدون صورة حقيقية. يمكنك تعديل الصورة لاحقاً من لوحة المنتجات.'
             : lang === 'he'
-            ? 'לא התקבלה תמונה. המוצר יישמר עם תמונת placeholder; ניתן לעדכן מאוחר יותר.'
-            : 'No image was accepted. The product will be saved with a placeholder image; you can update it later.',
+              ? 'לא התקבלה תמונה. המוצר יישמר עם תמונת placeholder; ניתן לעדכן מאוחר יותר.'
+              : 'No image was accepted. The product will be saved with a placeholder image; you can update it later.',
           'info'
         );
       }
 
-      const tags = tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
-      
+      const tags = tagsInput
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter((tag) => tag !== '');
+
       const payload = {
         ...productForm,
         tags,
@@ -279,15 +302,15 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
             lang === 'ar'
               ? 'حجم الصورة كبير جداً (الحد الأقصى 2MB). الرجاء اختيار صورة أخرى أصغر.'
               : lang === 'he'
-              ? 'התמונה גדולה מדי (מקסימום 2MB). נא לבחור תמונה קטנה יותר.'
-              : 'Image too large (max 2MB). Please choose a smaller image.';
+                ? 'התמונה גדולה מדי (מקסימום 2MB). נא לבחור תמונה קטנה יותר.'
+                : 'Image too large (max 2MB). Please choose a smaller image.';
         } else if (msg.includes('Invalid format')) {
           msg =
             lang === 'ar'
               ? 'صيغة الصورة غير مدعومة. الرجاء استخدام صورة بصيغة JPG أو PNG أو WebP.'
               : lang === 'he'
-              ? 'פורמט לא נתמך. נא להשתמש ב-JPG, PNG או WebP.'
-              : 'Invalid image format. Please use JPG, PNG, or WebP.';
+                ? 'פורמט לא נתמך. נא להשתמש ב-JPG, PNG או WebP.'
+                : 'Invalid image format. Please use JPG, PNG, or WebP.';
         } else {
           msg = getAuthErrorMessage(msg, lang);
         }
@@ -311,11 +334,16 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
     try {
       const res = await productService.delete(productToDelete.id);
       if (res.success) {
-        setProducts(prev => prev.filter(p => p.id !== productToDelete.id));
-        showToast(lang === 'ar' ? 'تم حذف المنتج بنجاح' : lang === 'he' ? 'המוצר נמחק בהצלחה' : 'Product deleted successfully', 'success');
+        setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id));
+        showToast(
+          lang === 'ar' ? 'تم حذف المنتج بنجاح' : lang === 'he' ? 'המוצר נמחק בהצלחה' : 'Product deleted successfully',
+          'success'
+        );
         setProductToDelete(null);
       } else {
-        const errMsg = getAuthErrorMessage(res.error || '', lang) || (lang === 'ar' ? 'فشل الحذف' : lang === 'he' ? 'המחיקה נכשלה' : 'Delete failed');
+        const errMsg =
+          getAuthErrorMessage(res.error || '', lang) ||
+          (lang === 'ar' ? 'فشل الحذف' : lang === 'he' ? 'המחיקה נכשלה' : 'Delete failed');
         showToast(errMsg, 'error');
       }
     } finally {
@@ -331,10 +359,25 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
     }
     const res = await productService.update(product.id, { isActive: newStatus });
     if (res.success) {
-      setProducts(prev => prev.map(p => p.id === product.id ? { ...p, isActive: newStatus } : p));
-      showToast(newStatus ? (lang === 'ar' ? 'تم تفعيل المنتج' : lang === 'he' ? 'המוצר הופעל' : 'Product Activated') : (lang === 'ar' ? 'تم إلغاء تفعيل المنتج' : lang === 'he' ? 'המוצר בוטל' : 'Product Deactivated'), 'success');
+      setProducts((prev) => prev.map((p) => (p.id === product.id ? { ...p, isActive: newStatus } : p)));
+      showToast(
+        newStatus
+          ? lang === 'ar'
+            ? 'تم تفعيل المنتج'
+            : lang === 'he'
+              ? 'המוצר הופעל'
+              : 'Product Activated'
+          : lang === 'ar'
+            ? 'تم إلغاء تفعيل المنتج'
+            : lang === 'he'
+              ? 'המוצר בוטל'
+              : 'Product Deactivated',
+        'success'
+      );
     } else {
-      const errMsg = getAuthErrorMessage(res.error || '', lang) || (lang === 'ar' ? 'فشل التحديث' : lang === 'he' ? 'העדכון נכשל' : 'Update failed');
+      const errMsg =
+        getAuthErrorMessage(res.error || '', lang) ||
+        (lang === 'ar' ? 'فشل التحديث' : lang === 'he' ? 'העדכון נכשל' : 'Update failed');
       showToast(errMsg, 'error');
     }
   };
@@ -345,10 +388,15 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
     setProductToDeactivate(null);
     const res = await productService.update(product.id, { isActive: false });
     if (res.success) {
-      setProducts(prev => prev.map(p => p.id === product.id ? { ...p, isActive: false } : p));
-      showToast(lang === 'ar' ? 'تم إلغاء تفعيل المنتج' : lang === 'he' ? 'המוצר בוטל' : 'Product Deactivated', 'success');
+      setProducts((prev) => prev.map((p) => (p.id === product.id ? { ...p, isActive: false } : p)));
+      showToast(
+        lang === 'ar' ? 'تم إلغاء تفعيل المنتج' : lang === 'he' ? 'המוצר בוטל' : 'Product Deactivated',
+        'success'
+      );
     } else {
-      const errMsg = getAuthErrorMessage(res.error || '', lang) || (lang === 'ar' ? 'فشل التحديث' : lang === 'he' ? 'העדכון נכשל' : 'Update failed');
+      const errMsg =
+        getAuthErrorMessage(res.error || '', lang) ||
+        (lang === 'ar' ? 'فشل التحديث' : lang === 'he' ? 'העדכון נכשל' : 'Update failed');
       showToast(errMsg, 'error');
     }
   };
@@ -416,7 +464,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
         refreshData();
         showToast(`${t.merchant.shipmentCreated}: ${shipmentRes.trackingNumber}`, 'success');
       } else {
-        showToast(getAuthErrorMessage(shipmentRes.error || '', lang) || (shipmentRes.error || t.common.error), 'error');
+        showToast(getAuthErrorMessage(shipmentRes.error || '', lang) || shipmentRes.error || t.common.error, 'error');
       }
     } catch (e: any) {
       const shipmentRes = await FlashLineService.automateShipmentCreation(order, user);
@@ -425,7 +473,11 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
         refreshData();
         showToast(`${t.merchant.shipmentCreated}: ${shipmentRes.trackingNumber}`, 'success');
       } else {
-        const errMsg = getAuthErrorMessage(e?.message || shipmentRes.error || '', lang) || e?.message || shipmentRes.error || t.common.error;
+        const errMsg =
+          getAuthErrorMessage(e?.message || shipmentRes.error || '', lang) ||
+          e?.message ||
+          shipmentRes.error ||
+          t.common.error;
         showToast(errMsg, 'error');
       }
     } finally {
@@ -483,7 +535,10 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
     try {
       const apiRes = await getShipmentStatusApi({ id: String(sid) });
       if (apiRes.success && apiRes.status != null) {
-        const st = typeof apiRes.status === 'object' && apiRes.status !== null && 'status' in apiRes.status ? (apiRes.status as any).status : String(apiRes.status);
+        const st =
+          typeof apiRes.status === 'object' && apiRes.status !== null && 'status' in apiRes.status
+            ? (apiRes.status as any).status
+            : String(apiRes.status);
         order.delivery_status = st;
         const displayStatus = FlashLineService.mapFlashlineStatus(st);
         marketStore.saveOrder(order);
@@ -502,7 +557,10 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
         refreshData();
         showToast(`${t.common.status}: ${displayStatus}`, 'info');
       } else {
-        showToast(lang === 'ar' ? 'تعذر جلب الحالة' : lang === 'he' ? 'לא ניתן לקבל סטטוס' : 'Could not fetch status', 'warning');
+        showToast(
+          lang === 'ar' ? 'تعذر جلب الحالة' : lang === 'he' ? 'לא ניתן לקבל סטטוס' : 'Could not fetch status',
+          'warning'
+        );
       }
     } catch (e: any) {
       showToast(getAuthErrorMessage(e?.message || '', lang) || e?.message || t.common.error, 'error');
@@ -531,93 +589,107 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
     }
   };
 
-  const tabFallback = <div className="p-8 text-center"><div className="w-8 h-8 border-4 border-slate-200 border-t-palma-primary rounded-full animate-spin mx-auto" /></div>;
+  const tabFallback = (
+    <div className="p-8 text-center">
+      <div className="w-8 h-8 border-4 border-slate-200 border-t-palma-primary rounded-full animate-spin mx-auto" />
+    </div>
+  );
 
   return (
     <>
-    <div className="space-y-8 sm:space-y-10 animate-fade-in pb-20 dashboard-page px-4 sm:px-6 pt-6 max-w-7xl mx-auto">
-      
-      {/* Header — تصميم حديث */}
-      <div className="dashboard-header">
-        <div className="dashboard-title-wrap">
-          <div className="dashboard-title-icon"><LayoutDashboard className="w-6 h-6 text-palma-primary" /></div>
-          <div>
-            <h1 className="font-heading text-2xl sm:text-3xl font-black text-palma-navy tracking-tight">{t.common.dashboard}</h1>
-            <p className="text-xs sm:text-sm font-medium text-slate-500 mt-0.5">{t.common.manageStore}</p>
+      <div className="space-y-8 sm:space-y-10 animate-fade-in pb-20 dashboard-page px-4 sm:px-6 pt-6 max-w-7xl mx-auto">
+        {/* Header — تصميم حديث */}
+        <div className="dashboard-header">
+          <div className="dashboard-title-wrap">
+            <div className="dashboard-title-icon">
+              <LayoutDashboard className="w-6 h-6 text-palma-primary" />
+            </div>
+            <div>
+              <h1 className="font-heading text-2xl sm:text-3xl font-black text-palma-navy tracking-tight">
+                {t.common.dashboard}
+              </h1>
+              <p className="text-xs sm:text-sm font-medium text-slate-500 mt-0.5">{t.common.manageStore}</p>
+            </div>
+          </div>
+
+          <div className="dashboard-tabs">
+            {[
+              { id: 'dashboard', label: t.common.dashboard, icon: LayoutDashboard },
+              { id: 'orders', label: t.common.orders, icon: Truck },
+              { id: 'products', label: t.common.products, icon: Box },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`dashboard-tab ${activeTab === tab.id ? 'dashboard-tab-active' : 'dashboard-tab-inactive'}`}
+              >
+                <tab.icon className="w-3.5 h-3.5" /> {tab.label}
+              </button>
+            ))}
           </div>
         </div>
-        
-        <div className="dashboard-tabs">
-          {[
-            { id: 'dashboard', label: t.common.dashboard, icon: LayoutDashboard },
-            { id: 'orders', label: t.common.orders, icon: Truck },
-            { id: 'products', label: t.common.products, icon: Box },
-          ].map(tab => (
-            <button 
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)} 
-              className={`dashboard-tab ${activeTab === tab.id ? 'dashboard-tab-active' : 'dashboard-tab-inactive'}`}
-            >
-              <tab.icon className="w-3.5 h-3.5" /> {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
 
-      {/* Content */}
-      {activeTab === 'dashboard' && (
-        <Suspense fallback={tabFallback}>
-          <MerchantDashboardTab lang={lang} t={t} dashboardData={dashboardData} orders={orders} products={products} />
-        </Suspense>
-      )}
-      {activeTab === 'products' && (
-        <Suspense fallback={tabFallback}>
-          <MerchantProductsTab
-            lang={lang}
-            t={t}
-            dashboardData={dashboardData}
-            products={products}
-            productForm={productForm}
-            setProductForm={setProductForm}
-            loading={loading}
-            isEditing={isEditing}
-            resetForm={resetForm}
-            handleProductSubmit={handleProductSubmit}
-            handleRemoveImage={handleRemoveImage}
-            uploadQueue={uploadQueue}
-            setUploadQueue={setUploadQueue}
-            isUploading={isUploading}
-            tagsInput={tagsInput}
-            setTagsInput={setTagsInput}
-            handleEditClick={handleEditClick}
-            handleToggleStatus={handleToggleStatus}
-            handleDeleteProduct={handleDeleteProduct}
-            onViewProduct={onViewProduct}
-          />
-        </Suspense>
-      )}
-      {activeTab === 'orders' && (
-        <Suspense fallback={tabFallback}>
-          <MerchantOrdersTab
-            lang={lang}
-            t={t}
-            orders={orders}
-            loading={loading}
-            refreshData={refreshData}
-            setOrderToInvoice={setOrderToInvoice}
-            setInvoiceUrlInput={setInvoiceUrlInput}
-            createShipment={createShipment}
-            handleCheckStatus={handleCheckStatus}
-            handleCancelShipment={handleCancelShipment}
-          />
-        </Suspense>
-      )}
-    </div>
+        {/* Content */}
+        {activeTab === 'dashboard' && (
+          <Suspense fallback={tabFallback}>
+            <MerchantDashboardTab lang={lang} t={t} dashboardData={dashboardData} orders={orders} products={products} />
+          </Suspense>
+        )}
+        {activeTab === 'products' && (
+          <Suspense fallback={tabFallback}>
+            <MerchantProductsTab
+              lang={lang}
+              t={t}
+              dashboardData={dashboardData}
+              products={products}
+              productForm={productForm}
+              setProductForm={setProductForm}
+              loading={loading}
+              isEditing={isEditing}
+              resetForm={resetForm}
+              handleProductSubmit={handleProductSubmit}
+              handleRemoveImage={handleRemoveImage}
+              uploadQueue={uploadQueue}
+              setUploadQueue={setUploadQueue}
+              isUploading={isUploading}
+              tagsInput={tagsInput}
+              setTagsInput={setTagsInput}
+              handleEditClick={handleEditClick}
+              handleToggleStatus={handleToggleStatus}
+              handleDeleteProduct={handleDeleteProduct}
+              onViewProduct={onViewProduct}
+            />
+          </Suspense>
+        )}
+        {activeTab === 'orders' && (
+          <Suspense fallback={tabFallback}>
+            <MerchantOrdersTab
+              lang={lang}
+              t={t}
+              orders={orders}
+              loading={loading}
+              refreshData={refreshData}
+              setOrderToInvoice={setOrderToInvoice}
+              setInvoiceUrlInput={setInvoiceUrlInput}
+              createShipment={createShipment}
+              handleCheckStatus={handleCheckStatus}
+              handleCancelShipment={handleCancelShipment}
+            />
+          </Suspense>
+        )}
+      </div>
 
       {/* Modal رفع الفاتورة الضريبية */}
       {orderToInvoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={() => !uploadingInvoice && (setOrderToInvoice(null), setInvoiceUrlInput(''))}>
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full p-6 sm:p-8 animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()} dir={lang === 'en' ? 'ltr' : 'rtl'}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in"
+          onClick={() => !uploadingInvoice && (setOrderToInvoice(null), setInvoiceUrlInput(''))}
+        >
+          <div
+            className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full p-6 sm:p-8 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+            dir={lang === 'en' ? 'ltr' : 'rtl'}
+          >
             <div className="flex items-center gap-4 mb-4">
               <div className="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center shrink-0">
                 <Receipt className="w-7 h-7 text-amber-600" />
@@ -627,14 +699,18 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                   {lang === 'ar' ? 'رفع الفاتورة الضريبية' : 'Upload tax invoice'}
                 </h3>
                 <p className="text-sm text-slate-500 mt-0.5">
-                  {lang === 'ar' ? 'أدخل رابط الفاتورة (رابط عام لملف PDF أو صورة).' : 'Enter the invoice link (public URL to PDF or image).'}
+                  {lang === 'ar'
+                    ? 'أدخل رابط الفاتورة (رابط عام لملف PDF أو صورة).'
+                    : 'Enter the invoice link (public URL to PDF or image).'}
                 </p>
               </div>
             </div>
             <p className="text-slate-600 text-sm mb-3 rounded-xl bg-slate-50 p-3 border border-slate-100">
               {lang === 'ar' ? 'الطلب' : 'Order'} <span className="font-mono font-bold">{orderToInvoice.id}</span>
             </p>
-            <label className="block text-xs font-bold text-slate-500 mb-2">{lang === 'ar' ? 'رابط الفاتورة' : 'Invoice URL'}</label>
+            <label className="block text-xs font-bold text-slate-500 mb-2">
+              {lang === 'ar' ? 'رابط الفاتورة' : 'Invoice URL'}
+            </label>
             <input
               type="url"
               value={invoiceUrlInput}
@@ -643,11 +719,27 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
               className="w-full py-3 px-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
             />
             <div className="flex gap-3 mt-6">
-              <button type="button" onClick={() => !uploadingInvoice && (setOrderToInvoice(null), setInvoiceUrlInput(''))} disabled={uploadingInvoice} className="flex-1 min-h-[48px] py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition border border-slate-200 disabled:opacity-50">
+              <button
+                type="button"
+                onClick={() => !uploadingInvoice && (setOrderToInvoice(null), setInvoiceUrlInput(''))}
+                disabled={uploadingInvoice}
+                className="flex-1 min-h-[48px] py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition border border-slate-200 disabled:opacity-50"
+              >
                 {t.common.cancel}
               </button>
-              <button type="button" onClick={handleSubmitInvoice} disabled={uploadingInvoice || !invoiceUrlInput.trim()} className="flex-1 min-h-[48px] py-3 rounded-xl font-bold text-white bg-amber-500 hover:bg-amber-600 transition shadow-lg shadow-amber-500/25 disabled:opacity-50 flex items-center justify-center gap-2">
-                {uploadingInvoice ? (lang === 'ar' ? 'جاري الرفع...' : 'Uploading...') : (lang === 'ar' ? 'رفع الفاتورة' : 'Upload invoice')}
+              <button
+                type="button"
+                onClick={handleSubmitInvoice}
+                disabled={uploadingInvoice || !invoiceUrlInput.trim()}
+                className="flex-1 min-h-[48px] py-3 rounded-xl font-bold text-white bg-amber-500 hover:bg-amber-600 transition shadow-lg shadow-amber-500/25 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {uploadingInvoice
+                  ? lang === 'ar'
+                    ? 'جاري الرفع...'
+                    : 'Uploading...'
+                  : lang === 'ar'
+                    ? 'رفع الفاتورة'
+                    : 'Upload invoice'}
               </button>
             </div>
           </div>
@@ -658,13 +750,15 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
       <ConfirmModal
         isOpen={!!productToDeactivate}
         title={lang === 'ar' ? 'إلغاء تفعيل المنتج' : lang === 'he' ? 'ביטול הפעלת מוצר' : 'Deactivate product'}
-        message={productToDeactivate
-          ? (lang === 'ar'
-            ? `سيُخفى «${productToDeactivate.name || productToDeactivate.title || productToDeactivate.id}» من المتجر.`
-            : lang === 'he'
-            ? `"${productToDeactivate.name || productToDeactivate.title || productToDeactivate.id}" יוסתר מהחנות.`
-            : `"${productToDeactivate.name || productToDeactivate.title || productToDeactivate.id}" will be hidden from the store.`)
-          : ''}
+        message={
+          productToDeactivate
+            ? lang === 'ar'
+              ? `سيُخفى «${productToDeactivate.name || productToDeactivate.title || productToDeactivate.id}» من المتجر.`
+              : lang === 'he'
+                ? `"${productToDeactivate.name || productToDeactivate.title || productToDeactivate.id}" יוסתר מהחנות.`
+                : `"${productToDeactivate.name || productToDeactivate.title || productToDeactivate.id}" will be hidden from the store.`
+            : ''
+        }
         confirmLabel={lang === 'ar' ? 'نعم، إلغاء التفعيل' : lang === 'he' ? 'בטל הפעלה' : 'Yes, deactivate'}
         cancelLabel={t.common.cancel}
         onConfirm={doDeactivateProduct}
@@ -698,8 +792,15 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
 
       {/* Modal تأكيد حذف المنتج */}
       {productToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={() => !deleting && setProductToDelete(null)}>
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full p-6 sm:p-8 animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()} dir={lang === 'en' ? 'ltr' : 'rtl'}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in"
+          onClick={() => !deleting && setProductToDelete(null)}
+        >
+          <div
+            className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full p-6 sm:p-8 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+            dir={lang === 'en' ? 'ltr' : 'rtl'}
+          >
             <div className="flex items-center gap-4 mb-6">
               <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center shrink-0">
                 <Trash2 className="w-7 h-7 text-red-500" />
@@ -709,20 +810,46 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                   {lang === 'ar' ? 'حذف المنتج' : lang === 'he' ? 'מחיקת מוצר' : 'Delete product'}
                 </h3>
                 <p className="text-sm text-slate-500 mt-0.5">
-                  {lang === 'ar' ? 'لا يمكن التراجع عن هذا الإجراء.' : lang === 'he' ? 'לא ניתן לבטל פעולה זו.' : 'This action cannot be undone.'}
+                  {lang === 'ar'
+                    ? 'لا يمكن التراجع عن هذا الإجراء.'
+                    : lang === 'he'
+                      ? 'לא ניתן לבטל פעולה זו.'
+                      : 'This action cannot be undone.'}
                 </p>
               </div>
             </div>
             <p className="text-slate-700 font-medium mb-6 rounded-xl bg-slate-50 p-4 border border-slate-100">
-              <span className="text-slate-500 font-bold text-xs uppercase tracking-wider block mb-1">{lang === 'ar' ? 'المنتج' : lang === 'he' ? 'המוצר' : 'Product'}</span>
+              <span className="text-slate-500 font-bold text-xs uppercase tracking-wider block mb-1">
+                {lang === 'ar' ? 'المنتج' : lang === 'he' ? 'המוצר' : 'Product'}
+              </span>
               «{productToDelete.name}»
             </p>
             <div className="flex gap-3 sm:gap-4">
-              <button type="button" onClick={() => !deleting && setProductToDelete(null)} disabled={deleting} className="flex-1 min-h-[48px] py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition border border-slate-200 disabled:opacity-50">
+              <button
+                type="button"
+                onClick={() => !deleting && setProductToDelete(null)}
+                disabled={deleting}
+                className="flex-1 min-h-[48px] py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition border border-slate-200 disabled:opacity-50"
+              >
                 {t.common.cancel}
               </button>
-              <button type="button" onClick={doDeleteProduct} disabled={deleting} className="flex-1 min-h-[48px] py-3 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 transition shadow-lg shadow-red-500/25 disabled:opacity-50 flex items-center justify-center gap-2">
-                {deleting ? (lang === 'ar' ? 'جاري الحذف...' : lang === 'he' ? 'מוחק...' : 'Deleting...') : (lang === 'ar' ? 'حذف' : lang === 'he' ? 'מחק' : 'Delete')}
+              <button
+                type="button"
+                onClick={doDeleteProduct}
+                disabled={deleting}
+                className="flex-1 min-h-[48px] py-3 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 transition shadow-lg shadow-red-500/25 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deleting
+                  ? lang === 'ar'
+                    ? 'جاري الحذف...'
+                    : lang === 'he'
+                      ? 'מוחק...'
+                      : 'Deleting...'
+                  : lang === 'ar'
+                    ? 'حذف'
+                    : lang === 'he'
+                      ? 'מחק'
+                      : 'Delete'}
               </button>
             </div>
           </div>

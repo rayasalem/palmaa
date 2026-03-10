@@ -49,7 +49,11 @@ export const CustomerCartTab: React.FC<CustomerCartTabProps> = ({
           <div className="space-y-4">
             {cart.length > 1 && (
               <div className="flex items-center justify-between mb-4">
-                <button type="button" onClick={onSelectAll} className="text-xs font-bold text-palma-primary hover:underline">
+                <button
+                  type="button"
+                  onClick={onSelectAll}
+                  className="text-xs font-bold text-palma-primary hover:underline"
+                >
                   {lang === 'ar' ? 'تحديد الكل' : 'Select all'}
                 </button>
                 <span className="text-[10px] font-bold text-slate-500">
@@ -75,7 +79,11 @@ export const CustomerCartTab: React.FC<CustomerCartTabProps> = ({
             <div className="space-y-1 text-center md:text-left rtl:md:text-right">
               <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t.cart.total}</p>
               <h3 className="text-4xl font-black text-palma-navy tracking-tight">₪{totalAmount}</h3>
-              {cart.length > 1 && <p className="text-[10px] text-slate-500">{selectedCartItems.length} {lang === 'ar' ? 'منتج محدد' : 'items selected'}</p>}
+              {cart.length > 1 && (
+                <p className="text-[10px] text-slate-500">
+                  {selectedCartItems.length} {lang === 'ar' ? 'منتج محدد' : 'items selected'}
+                </p>
+              )}
             </div>
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
               <button

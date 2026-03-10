@@ -16,7 +16,11 @@ export const userService = {
    * Register via backend API (POST /api/auth/register).
    * حالياً لا نستخدم تحقق إيميل (OTP)، التسجيل يُعد ناجحاً مباشرة.
    */
-  async register(user: User, password?: string, extraData?: any): Promise<ActionResponse<{ user: User; token: string }>> {
+  async register(
+    user: User,
+    password?: string,
+    extraData?: any
+  ): Promise<ActionResponse<{ user: User; token: string }>> {
     try {
       const role = (user.role || Role.CUSTOMER).toUpperCase();
       const body: any = {
@@ -29,7 +33,13 @@ export const userService = {
         body.termsAccepted = true;
         if (extraData?.termsVersion) body.termsVersion = extraData.termsVersion;
       }
-      const data = await api<{ success: boolean; message?: string; user?: any; emailSent?: boolean; verificationCode?: string }>('/api/auth/register', {
+      const data = await api<{
+        success: boolean;
+        message?: string;
+        user?: any;
+        emailSent?: boolean;
+        verificationCode?: string;
+      }>('/api/auth/register', {
         method: 'POST',
         body: JSON.stringify(body),
       });
@@ -38,7 +48,7 @@ export const userService = {
       if (regToken && !isSameOrigin()) setAuthToken(regToken);
       const newUser: User = {
         ...user,
-        id: (data.user?.id) || '',
+        id: data.user?.id || '',
         emailVerified: data.user?.is_email_verified ?? true,
         status: data.user?.status || 'PENDING',
         createdAt: Date.now(),

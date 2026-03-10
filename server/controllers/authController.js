@@ -3,9 +3,15 @@
  * All endpoints validate input and use try/catch with logging.
  */
 
+import { getEnv } from '../config/env.js';
 import * as authService from '../services/authService.js';
 import * as jwtService from '../services/jwtService.js';
 import logger from '../utils/logger.js';
+
+const HIGH_PRIVILEGE_ROLES = new Set(['ADMIN', 'MERCHANT']);
+function requiresMfaForRole(role) {
+  return role && HIGH_PRIVILEGE_ROLES.has(String(role).toUpperCase());
+}
 
 /**
  * GET /api/auth/me (protected)
@@ -49,7 +55,11 @@ async function login(req, res) {
   try {
     let { email, password } = req.body;
     // إزالة BOM أو مسافات خفية قد يرسلها المتصفح
-    if (typeof email === 'string') email = email.replace(/^\uFEFF/, '').trim().toLowerCase();
+    if (typeof email === 'string')
+      email = email
+        .replace(/^\uFEFF/, '')
+        .trim()
+        .toLowerCase();
     if (typeof password === 'string') password = password.trim();
     if (!email) {
       return res.status(400).json({ success: false, error: 'Email is required' });
@@ -74,12 +84,71 @@ async function login(req, res) {
         message: 'Please verify your email before continuing.',
       });
     }
-    const token = jwtService.sign({ sub: user.id, email: user.email, role: user.role });
+    if (user.mfa_enabled) {
+      const mfaChallengeToken = jwtService.signMfaChallenge(user.id);
+      return res.status(200).json({
+        success: false,
+        requiresMfa: true,
+        mfaChallengeToken,
+        message: 'MFA code required',
+      });
+    }
+    // MFA grace period and enforcement for ADMIN/MERCHANT (see LONG_TERM_SECURITY_IMPROVEMENT_PLAN.md)
+    const enforceMode = getEnv('MFA_ENFORCE_MODE', '').toLowerCase();
+    const gracePeriodEnd = getEnv('MFA_GRACE_PERIOD_END', '').trim();
+    if (requiresMfaForRole(user.role) && !user.mfa_enabled) {
+      const now = new Date();
+      const graceEnd = gracePeriodEnd ? new Date(gracePeriodEnd) : null;
+      const pastGrace = !graceEnd || now > graceEnd;
+      if (enforceMode === 'enforce' && pastGrace) {
+        logger.warn('login blocked: MFA required for role', { userId: user.id, role: user.role });
+        return res.status(403).json({
+          success: false,
+          error:
+            'MFA is required for your role. Please set up MFA from a previously logged-in session or contact support.',
+          code: 'MFA_REQUIRED_FOR_ROLE',
+        });
+      }
+      if (enforceMode === 'warn') {
+        const token = jwtService.sign({
+          sub: user.id,
+          email: user.email,
+          role: user.role,
+          ver: user.token_version ?? 0,
+        });
+        res.cookie(jwtService.getCookieName(), token, jwtService.getCookieOptions());
+        logger.info('login success (MFA warning)', { userId: user.id, role: user.role });
+        return res.status(200).json({
+          success: true,
+          user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            is_email_verified: user.is_email_verified,
+            status: user.status,
+          },
+          token,
+          message: 'Logged in',
+          mfaRequiredForRole: true,
+          mfaGracePeriodEnd: gracePeriodEnd || null,
+        });
+      }
+    }
+    const ver = user.token_version ?? 0;
+    const token = jwtService.sign({ sub: user.id, email: user.email, role: user.role, ver });
     res.cookie(jwtService.getCookieName(), token, jwtService.getCookieOptions());
     logger.info('login success', { userId: user.id, role: user.role });
     return res.status(200).json({
       success: true,
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, is_email_verified: user.is_email_verified, status: user.status },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        is_email_verified: user.is_email_verified,
+        status: user.status,
+      },
       token,
       message: 'Logged in',
     });
@@ -96,6 +165,31 @@ async function login(req, res) {
 async function logout(req, res) {
   res.clearCookie(jwtService.getCookieName(), { path: '/' });
   return res.status(200).json({ success: true, message: 'Logged out' });
+}
+
+/**
+ * POST /api/auth/logout-all
+ * Increments user token_version so all existing JWTs are invalid; clears cookie.
+ * Requires authenticate. Current session remains valid until this request completes.
+ */
+async function logoutAll(req, res) {
+  try {
+    const userId = req.auth && req.auth.sub;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+    const { error } = await authService.incrementTokenVersion(userId);
+    if (error) {
+      logger.error('logoutAll incrementTokenVersion', { message: error.message });
+      return res.status(500).json({ success: false, error: 'Failed to invalidate sessions' });
+    }
+    res.clearCookie(jwtService.getCookieName(), { path: '/' });
+    logger.info('logoutAll success', { userId });
+    return res.status(200).json({ success: true, message: 'Logged out from all devices' });
+  } catch (err) {
+    logger.error('logoutAll unexpected', { message: err.message });
+    return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
+  }
 }
 
 /**
@@ -135,21 +229,23 @@ async function registerUser(req, res) {
       const isDbSetup = /relation|otp_codes|column|does not exist|syntax/.test(msg);
       const userMsg = isDbSetup
         ? 'إعداد قاعدة البيانات ناقص. شغّل سكربت الإعداد (setup.sql) في Supabase SQL Editor ثم أعد المحاولة.'
-        : (error.message || 'Registration failed');
+        : error.message || 'Registration failed';
       return res.status(500).json({ success: false, error: userMsg });
     }
     // نفس تسجيل الدخول: نضع كوكي الجلسة (JWT) + نُرجع التوكن في الجواب للجوال (cross-origin)
     let token = null;
     if (user && user.id) {
-      token = jwtService.sign({ sub: user.id, email: user.email, role: user.role });
+      const ver = user.token_version ?? 0;
+      token = jwtService.sign({ sub: user.id, email: user.email, role: user.role, ver });
       res.cookie(jwtService.getCookieName(), token, jwtService.getCookieOptions());
       logger.info('registerUser: session cookie set', { userId: user.id, role: user.role });
     }
     const payload = {
       success: true,
-      message: emailSent !== false
-        ? 'Check your email for OTP to verify your account.'
-        : 'Account created. Email is not configured; use the code below to verify.',
+      message:
+        emailSent !== false
+          ? 'Check your email for OTP to verify your account.'
+          : 'Account created. Email is not configured; use the code below to verify.',
       user: user
         ? {
             id: user.id,
@@ -188,7 +284,10 @@ async function verifyEmail(req, res) {
     logger.info('verifyEmail', { email: email.trim().toLowerCase() });
     const verifyResult = await authService.verifyOtp(email, String(otp).trim(), 'email_verification', true);
     if (!verifyResult.success) {
-      return res.status(400).json({ success: false, error: (verifyResult.error && verifyResult.error.message) || 'Invalid or expired OTP' });
+      return res.status(400).json({
+        success: false,
+        error: (verifyResult.error && verifyResult.error.message) || 'Invalid or expired OTP',
+      });
     }
     const { data: user, error } = await authService.setEmailVerified(email);
     if (error) {
@@ -197,10 +296,22 @@ async function verifyEmail(req, res) {
     const payload = {
       success: true,
       message: 'Email verified successfully.',
-      user: user ? { id: user.id, email: user.email, name: user.name, role: user.role, is_email_verified: user.is_email_verified, status: user.status, created_at: user.created_at, phone: user.phone } : null,
+      user: user
+        ? {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            is_email_verified: user.is_email_verified,
+            status: user.status,
+            created_at: user.created_at,
+            phone: user.phone,
+          }
+        : null,
     };
     if (user) {
-      const token = jwtService.sign({ sub: user.id, email: user.email, role: user.role });
+      const ver = user.token_version ?? 0;
+      const token = jwtService.sign({ sub: user.id, email: user.email, role: user.role, ver });
       res.cookie(jwtService.getCookieName(), token, jwtService.getCookieOptions());
       payload.token = token;
     }
@@ -225,7 +336,9 @@ async function forgotPassword(req, res) {
     logger.info('forgotPassword', { email: email.trim().toLowerCase() });
     const result = await authService.forgotPassword(email);
     if (!result.success) {
-      return res.status(400).json({ success: false, error: (result.error && result.error.message) || 'Request failed' });
+      return res
+        .status(400)
+        .json({ success: false, error: (result.error && result.error.message) || 'Request failed' });
     }
     const payload = {
       success: true,
@@ -261,9 +374,12 @@ async function resetPassword(req, res) {
     logger.info('resetPassword', { email: email.trim().toLowerCase() });
     const verifyResult = await authService.verifyOtp(email, String(otp).trim(), 'password_reset', true);
     if (!verifyResult.success) {
-      return res.status(400).json({ success: false, error: (verifyResult.error && verifyResult.error.message) || 'Invalid or expired OTP' });
+      return res.status(400).json({
+        success: false,
+        error: (verifyResult.error && verifyResult.error.message) || 'Invalid or expired OTP',
+      });
     }
-    const { data, error } = await authService.updatePassword(email, newPassword);
+    const { error } = await authService.updatePassword(email, newPassword);
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to update password' });
     }
@@ -289,7 +405,9 @@ async function resendVerification(req, res) {
     }
     const result = await authService.resendVerification(email);
     if (!result.success) {
-      return res.status(400).json({ success: false, error: (result.error && result.error.message) || 'Request failed' });
+      return res
+        .status(400)
+        .json({ success: false, error: (result.error && result.error.message) || 'Request failed' });
     }
     return res.status(200).json({ success: true, message: 'Verification code sent.' });
   } catch (err) {
@@ -301,6 +419,7 @@ async function resendVerification(req, res) {
 export {
   login,
   logout,
+  logoutAll,
   registerUser,
   verifyEmail,
   forgotPassword,

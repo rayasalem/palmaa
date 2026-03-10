@@ -4,7 +4,7 @@
  */
 
 const XSS_REGEX = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi;
-const DANGEROUS_CHARS = /[<>\"'`;]/g;
+const DANGEROUS_CHARS = /[<>"'`;]/g;
 
 export function sanitizeString(str, maxLength = 1000) {
   if (str == null) return '';

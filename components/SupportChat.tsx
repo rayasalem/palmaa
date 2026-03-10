@@ -63,7 +63,18 @@ const QUICK_OPTIONS: Record<Language, { label: string; query: string }[]> = {
   ],
 };
 
-const CHAT_TEXTS: Record<Language, { title: string; placeholder: string; send: string; welcome: string; contactHint: string; quickOptionsTitle?: string; faq: Record<string, string> }> = {
+const CHAT_TEXTS: Record<
+  Language,
+  {
+    title: string;
+    placeholder: string;
+    send: string;
+    welcome: string;
+    contactHint: string;
+    quickOptionsTitle?: string;
+    faq: Record<string, string>;
+  }
+> = {
   ar: {
     title: 'الدعم الفني',
     placeholder: 'اكتب سؤالك...',
@@ -72,56 +83,99 @@ const CHAT_TEXTS: Record<Language, { title: string; placeholder: string; send: s
     contactHint: 'للمساعدة المباشرة: support@palma.com أو صفحة اتصل بنا.',
     quickOptionsTitle: 'اختر سؤالاً أو اكتب أسئلتك',
     roleLabel: { customer: 'زبون', merchant: 'تاجر', admin: 'أدمن', broker: 'وسيط', guest: 'زائر' },
-    roleIntro: { CUSTOMER: 'بما أنك زبون، ', MERCHANT: 'بما أنك تاجر، ', ADMIN: 'بما أنك أدمن، ', BROKER: 'بما أنك وسيط، ' },
+    roleIntro: {
+      CUSTOMER: 'بما أنك زبون، ',
+      MERCHANT: 'بما أنك تاجر، ',
+      ADMIN: 'بما أنك أدمن، ',
+      BROKER: 'بما أنك وسيط، ',
+    },
     faq: {
-      payment: 'الدفع إلكتروني وآمن. الخطوات: 1) أضف المنتجات للسلة 2) اضغط "إتمام الشراء" 3) أدخل بيانات التوصيل والدفع 4) أكد الطلب. الدفع بالبطاقات والطرق المتاحة في المنصة.',
-      shipping: 'الشحن حسب المتجر والمنطقة. بعد الشراء: ادخل إلى "طلباتي" من القائمة، واختر الطلب لتتبع حالة الشحنة والتوصيل.',
-      return: 'سياسة الإرجاع تختلف حسب التاجر. التفاصيل تظهر في صفحة المنتج أو عند إتمام الطلب. للاستفسار عن إرجاع معيّن تواصل مع الدعم: support@palma.com.',
-      login: 'تسجيل الدخول: 1) اضغط "تسجيل الدخول" 2) أدخل البريد الإلكتروني وكلمة المرور 3) اضغط دخول. لاستعادة كلمة المرور: من نفس الصفحة اختر "نسيت كلمة المرور" واتبع التعليمات.',
-      register: 'إنشاء حساب: 1) اضغط "إنشاء حساب" أو "انضم" 2) اختر نوع الحساب (زبون، تاجر، أو وسيط) 3) أدخل البيانات المطلوبة 4) فعّل الحساب عبر البريد إن طُلب منك ذلك.',
-      addProduct: 'رفع منتج جديد (للتاجر): 1) سجّل الدخول كتاجر 2) من القائمة اختر "لوحة التحكم" ثم "المنتجات" 3) اضغط "إضافة منتج" 4) املأ الاسم، الوصف، السعر، الصورة، والتصنيف 5) اضغط "حفظ". سيظهر المنتج في متجرك.',
-      editProduct: 'تعديل منتج: 1) سجّل الدخول كتاجر 2) لوحة التحكم ← المنتجات 3) ابحث عن المنتج واضغط "تعديل" 4) غيّر الاسم أو الوصف أو السعر أو الصورة كما تريد 5) اضغط "حفظ".',
-      deleteProduct: 'حذف منتج: 1) سجّل الدخول كتاجر 2) لوحة التحكم ← المنتجات 3) اختر المنتج 4) اضغط "حذف" (أو أيقونة الحذف) 5) أكد الحذف. لن يظهر المنتج بعدها في المتجر.',
-      manageOrders: 'إدارة الطلبات: • كزبون: من القائمة اختر "طلباتي" لعرض وتتبع طلباتك. • كتاجر: لوحة التحكم ← الطلبات لعرض طلبات المتجر وتحديث الحالة. • كأدمن: لوحة التحكم ← الطلبات لإدارة كل الطلبات على المنصة.',
-      manageCustomers: 'إدارة العملاء/المستخدمين (للأدمن): 1) لوحة التحكم ← المستخدمين 2) ستجد قائمة المستخدمين (عملاء، تجار، وسطاء) 3) يمكنك الموافقة، الرفض، التعطيل، أو عرض الملف حسب الصلاحيات.',
+      payment:
+        'الدفع إلكتروني وآمن. الخطوات: 1) أضف المنتجات للسلة 2) اضغط "إتمام الشراء" 3) أدخل بيانات التوصيل والدفع 4) أكد الطلب. الدفع بالبطاقات والطرق المتاحة في المنصة.',
+      shipping:
+        'الشحن حسب المتجر والمنطقة. بعد الشراء: ادخل إلى "طلباتي" من القائمة، واختر الطلب لتتبع حالة الشحنة والتوصيل.',
+      return:
+        'سياسة الإرجاع تختلف حسب التاجر. التفاصيل تظهر في صفحة المنتج أو عند إتمام الطلب. للاستفسار عن إرجاع معيّن تواصل مع الدعم: support@palma.com.',
+      login:
+        'تسجيل الدخول: 1) اضغط "تسجيل الدخول" 2) أدخل البريد الإلكتروني وكلمة المرور 3) اضغط دخول. لاستعادة كلمة المرور: من نفس الصفحة اختر "نسيت كلمة المرور" واتبع التعليمات.',
+      register:
+        'إنشاء حساب: 1) اضغط "إنشاء حساب" أو "انضم" 2) اختر نوع الحساب (زبون، تاجر، أو وسيط) 3) أدخل البيانات المطلوبة 4) فعّل الحساب عبر البريد إن طُلب منك ذلك.',
+      addProduct:
+        'رفع منتج جديد (للتاجر): 1) سجّل الدخول كتاجر 2) من القائمة اختر "لوحة التحكم" ثم "المنتجات" 3) اضغط "إضافة منتج" 4) املأ الاسم، الوصف، السعر، الصورة، والتصنيف 5) اضغط "حفظ". سيظهر المنتج في متجرك.',
+      editProduct:
+        'تعديل منتج: 1) سجّل الدخول كتاجر 2) لوحة التحكم ← المنتجات 3) ابحث عن المنتج واضغط "تعديل" 4) غيّر الاسم أو الوصف أو السعر أو الصورة كما تريد 5) اضغط "حفظ".',
+      deleteProduct:
+        'حذف منتج: 1) سجّل الدخول كتاجر 2) لوحة التحكم ← المنتجات 3) اختر المنتج 4) اضغط "حذف" (أو أيقونة الحذف) 5) أكد الحذف. لن يظهر المنتج بعدها في المتجر.',
+      manageOrders:
+        'إدارة الطلبات: • كزبون: من القائمة اختر "طلباتي" لعرض وتتبع طلباتك. • كتاجر: لوحة التحكم ← الطلبات لعرض طلبات المتجر وتحديث الحالة. • كأدمن: لوحة التحكم ← الطلبات لإدارة كل الطلبات على المنصة.',
+      manageCustomers:
+        'إدارة العملاء/المستخدمين (للأدمن): 1) لوحة التحكم ← المستخدمين 2) ستجد قائمة المستخدمين (عملاء، تجار، وسطاء) 3) يمكنك الموافقة، الرفض، التعطيل، أو عرض الملف حسب الصلاحيات.',
       buy: 'كيف تشتري: 1) تصفّح المنتجات من الرئيسية أو الكتالوج 2) اضغط "أضف للسلة" على المنتج المطلوب 3) ادخل إلى "السلة" من القائمة 4) اضغط "إتمام الشراء" وأدخل بيانات التوصيل والدفع 5) أكد الطلب. الدفع إلكتروني وآمن.',
       cart: 'استخدام السلة: 1) من صفحة المنتج أو الكتالوج اضغط "أضف للسلة" 2) من القائمة اختر "السلة" لرؤية المنتجات 3) يمكنك تغيير الكمية أو حذف صنف 4) "إتمام الشراء" للانتقال لصفحة الدفع.',
-      profile: 'الملف الشخصي: من القائمة اختر "الملف" أو "الملف الشخصي". يمكنك تعديل الاسم، البريد، العنوان، والقرية/المدينة. للتاجر: تظهر أيضاً "منتجاتي" من نفس الصفحة.',
-      siteSettings: 'إعدادات الموقع (للأدمن): 1) لوحة التحكم ← تبويب "المنصة" أو "Platform" 2) يمكنك تعديل إعدادات المنصة العامة، العمولات، والشروط 3) احفظ التغييرات. صلاحية هذه الصفحة للأدمن فقط.',
-      reports: 'التقارير والمبيعات: • كتاجر: لوحة التحكم ← "الأرباح" أو "Earnings" لمتابعة المبيعات والأرباح. • كأدمن: لوحة التحكم ← الطلبات، المستخدمين، وتبويب المنصة لتقارير أشمل وأرباح العمولة.',
-      permissions: 'الصلاحيات: • الزبون: الشراء، السلة، الطلبات، الملف الشخصي. • التاجر: كل ما سبق + لوحة التحكم (منتجات، طلبات المتجر، أرباح). • الأدمن: إدارة المستخدمين (موافقة/رفض/تعطيل)، إدارة المنتجات والطلبات، السحوبات، إعدادات المنصة. للاستفسار عن صلاحية معيّنة: support@palma.com.',
-      support: 'للتواصل مع الدعم البشري: البريد support@palma.com أو استخدم صفحة "اتصل بنا" في الموقع. فريقنا يرد على الاستفسارات التي تحتاج تدخلاً يدوياً.',
-      default: 'شكراً لسؤالك. إن لم تجد جوابك هنا، تواصل مع الدعم البشري: support@palma.com أو من صفحة اتصل بنا وسيساعدك الفريق.',
+      profile:
+        'الملف الشخصي: من القائمة اختر "الملف" أو "الملف الشخصي". يمكنك تعديل الاسم، البريد، العنوان، والقرية/المدينة. للتاجر: تظهر أيضاً "منتجاتي" من نفس الصفحة.',
+      siteSettings:
+        'إعدادات الموقع (للأدمن): 1) لوحة التحكم ← تبويب "المنصة" أو "Platform" 2) يمكنك تعديل إعدادات المنصة العامة، العمولات، والشروط 3) احفظ التغييرات. صلاحية هذه الصفحة للأدمن فقط.',
+      reports:
+        'التقارير والمبيعات: • كتاجر: لوحة التحكم ← "الأرباح" أو "Earnings" لمتابعة المبيعات والأرباح. • كأدمن: لوحة التحكم ← الطلبات، المستخدمين، وتبويب المنصة لتقارير أشمل وأرباح العمولة.',
+      permissions:
+        'الصلاحيات: • الزبون: الشراء، السلة، الطلبات، الملف الشخصي. • التاجر: كل ما سبق + لوحة التحكم (منتجات، طلبات المتجر، أرباح). • الأدمن: إدارة المستخدمين (موافقة/رفض/تعطيل)، إدارة المنتجات والطلبات، السحوبات، إعدادات المنصة. للاستفسار عن صلاحية معيّنة: support@palma.com.',
+      support:
+        'للتواصل مع الدعم البشري: البريد support@palma.com أو استخدم صفحة "اتصل بنا" في الموقع. فريقنا يرد على الاستفسارات التي تحتاج تدخلاً يدوياً.',
+      default:
+        'شكراً لسؤالك. إن لم تجد جوابك هنا، تواصل مع الدعم البشري: support@palma.com أو من صفحة اتصل بنا وسيساعدك الفريق.',
     },
   },
   en: {
     title: 'Support',
     placeholder: 'Type your question...',
     send: 'Send',
-    welcome: 'Hi! I\'m the support assistant for Palma. Type your question and I\'ll answer right away, clearly and simply.',
+    welcome:
+      "Hi! I'm the support assistant for Palma. Type your question and I'll answer right away, clearly and simply.",
     contactHint: 'For direct help: support@palma.com or the Contact page.',
     quickOptionsTitle: 'Choose a question or type yours',
     roleLabel: { customer: 'Customer', merchant: 'Vendor', admin: 'Admin', broker: 'Broker', guest: 'Guest' },
-    roleIntro: { CUSTOMER: 'As a customer, ', MERCHANT: 'As a vendor, ', ADMIN: 'As an admin, ', BROKER: 'As a broker, ' },
+    roleIntro: {
+      CUSTOMER: 'As a customer, ',
+      MERCHANT: 'As a vendor, ',
+      ADMIN: 'As an admin, ',
+      BROKER: 'As a broker, ',
+    },
     faq: {
-      payment: 'Payment is secure and online. Steps: 1) Add items to cart 2) Click "Checkout" 3) Enter shipping and payment details 4) Confirm. We accept cards and other methods available on the platform.',
-      shipping: 'Shipping depends on store and region. After purchase: go to "My Orders" from the menu and select your order to track delivery status.',
-      return: 'Return policy varies by merchant. Details are on the product page or at checkout. For a specific return, contact support@palma.com.',
-      login: 'To log in: 1) Click "Log in" 2) Enter email and password 3) Submit. To reset password: use "Forgot password" on the same page and follow the instructions.',
-      register: 'To sign up: 1) Click "Sign up" or "Join" 2) Choose account type (customer, merchant, or broker) 3) Fill in the required fields 4) Activate via email if requested.',
-      addProduct: 'Add a new product (merchant): 1) Log in as merchant 2) Go to Dashboard → Products 3) Click "Add product" 4) Enter name, description, price, image, and category 5) Save. The product will appear in your store.',
-      editProduct: 'Edit a product: 1) Log in as merchant 2) Dashboard → Products 3) Find the product and click "Edit" 4) Change name, description, price, or image 5) Save.',
-      deleteProduct: 'Delete a product: 1) Log in as merchant 2) Dashboard → Products 3) Select the product 4) Click "Delete" 5) Confirm. The product will be removed from your store.',
-      manageOrders: 'Manage orders: • As customer: Menu → "My Orders" to view and track orders. • As merchant: Dashboard → Orders to see store orders and update status. • As admin: Dashboard → Orders to manage all platform orders.',
-      manageCustomers: 'Manage users/customers (admin): 1) Dashboard → Users 2) You\'ll see the list (customers, merchants, brokers) 3) You can approve, reject, disable, or view profiles according to your role.',
+      payment:
+        'Payment is secure and online. Steps: 1) Add items to cart 2) Click "Checkout" 3) Enter shipping and payment details 4) Confirm. We accept cards and other methods available on the platform.',
+      shipping:
+        'Shipping depends on store and region. After purchase: go to "My Orders" from the menu and select your order to track delivery status.',
+      return:
+        'Return policy varies by merchant. Details are on the product page or at checkout. For a specific return, contact support@palma.com.',
+      login:
+        'To log in: 1) Click "Log in" 2) Enter email and password 3) Submit. To reset password: use "Forgot password" on the same page and follow the instructions.',
+      register:
+        'To sign up: 1) Click "Sign up" or "Join" 2) Choose account type (customer, merchant, or broker) 3) Fill in the required fields 4) Activate via email if requested.',
+      addProduct:
+        'Add a new product (merchant): 1) Log in as merchant 2) Go to Dashboard → Products 3) Click "Add product" 4) Enter name, description, price, image, and category 5) Save. The product will appear in your store.',
+      editProduct:
+        'Edit a product: 1) Log in as merchant 2) Dashboard → Products 3) Find the product and click "Edit" 4) Change name, description, price, or image 5) Save.',
+      deleteProduct:
+        'Delete a product: 1) Log in as merchant 2) Dashboard → Products 3) Select the product 4) Click "Delete" 5) Confirm. The product will be removed from your store.',
+      manageOrders:
+        'Manage orders: • As customer: Menu → "My Orders" to view and track orders. • As merchant: Dashboard → Orders to see store orders and update status. • As admin: Dashboard → Orders to manage all platform orders.',
+      manageCustomers:
+        "Manage users/customers (admin): 1) Dashboard → Users 2) You'll see the list (customers, merchants, brokers) 3) You can approve, reject, disable, or view profiles according to your role.",
       buy: 'How to buy: 1) Browse products from the home page or catalog 2) Click "Add to cart" on the product 3) Go to "Cart" from the menu 4) Click "Checkout" and enter shipping and payment details 5) Confirm the order. Payment is secure and online.',
       cart: 'Using the cart: 1) On product or catalog page click "Add to cart" 2) Menu → "Cart" to see items 3) Change quantity or remove items 4) "Checkout" to go to payment.',
-      profile: 'Profile: Menu → "Profile". You can edit name, email, address, city/village. For merchants, "My products" is also available from the profile area.',
-      siteSettings: 'Site settings (admin): 1) Dashboard → "Platform" tab 2) Edit platform settings, commissions, terms 3) Save. This page is admin-only.',
-      reports: 'Reports and sales: As vendor: Dashboard → "Earnings" for sales and revenue. As admin: Dashboard → Orders, Users, and Platform tab for full reports and commission.',
-      permissions: 'Permissions: Customer: shop, cart, orders, profile. Vendor: all above + dashboard (products, store orders, earnings). Admin: user management (approve/reject/disable), products, orders, withdrawals, platform settings. For a specific permission: support@palma.com.',
-      support: 'For human support: email support@palma.com or use the "Contact us" page. Our team handles requests that need manual help.',
-      default: 'Thanks for your question. If you need more help, contact support@palma.com or the Contact page and our team will assist you.',
+      profile:
+        'Profile: Menu → "Profile". You can edit name, email, address, city/village. For merchants, "My products" is also available from the profile area.',
+      siteSettings:
+        'Site settings (admin): 1) Dashboard → "Platform" tab 2) Edit platform settings, commissions, terms 3) Save. This page is admin-only.',
+      reports:
+        'Reports and sales: As vendor: Dashboard → "Earnings" for sales and revenue. As admin: Dashboard → Orders, Users, and Platform tab for full reports and commission.',
+      permissions:
+        'Permissions: Customer: shop, cart, orders, profile. Vendor: all above + dashboard (products, store orders, earnings). Admin: user management (approve/reject/disable), products, orders, withdrawals, platform settings. For a specific permission: support@palma.com.',
+      support:
+        'For human support: email support@palma.com or use the "Contact us" page. Our team handles requests that need manual help.',
+      default:
+        'Thanks for your question. If you need more help, contact support@palma.com or the Contact page and our team will assist you.',
     },
   },
   he: {
@@ -134,22 +188,28 @@ const CHAT_TEXTS: Record<Language, { title: string; placeholder: string; send: s
     roleLabel: { customer: 'לקוח', merchant: 'סוחר', admin: 'אדמין', broker: 'ברוקר', guest: 'אורח' },
     roleIntro: { CUSTOMER: 'כלקוח, ', MERCHANT: 'כסוחר, ', ADMIN: 'כאדמין, ', BROKER: 'כברוקר, ' },
     faq: {
-      payment: 'התשלום מאובטח ואונליין. שלבים: 1) הוסף מוצרים לסל 2) לחץ "השלם רכישה" 3) הזן פרטי משלוח ותשלום 4) אשר. מתקבלים כרטיסים והאמצעים הזמינים בפלטפורמה.',
+      payment:
+        'התשלום מאובטח ואונליין. שלבים: 1) הוסף מוצרים לסל 2) לחץ "השלם רכישה" 3) הזן פרטי משלוח ותשלום 4) אשר. מתקבלים כרטיסים והאמצעים הזמינים בפלטפורמה.',
       shipping: 'משלוח לפי חנות ואזור. אחרי רכישה: תפריט → "ההזמנות שלי" ובחר הזמנה למעקב.',
       return: 'מדיניות החזרות משתנה לפי סוחר. פרטים בדף המוצר או בהזמנה. להחזרה ספציפית: support@palma.com.',
       login: 'התחברות: 1) לחץ "התחבר" 2) הזן אימייל וסיסמה 3) שלח. לאיפוס סיסמה: "שכחתי סיסמה" באותה עמודה.',
       register: 'הרשמה: 1) "הרשמה" או "הצטרף" 2) בחר סוג חשבון (לקוח/סוחר/ברוקר) 3) מלא שדות 4) הפעל באימייל אם נדרש.',
-      addProduct: 'הוספת מוצר (סוחר): 1) התחבר כסוחר 2) לוח בקרה → מוצרים 3) "הוסף מוצר" 4) שם, תיאור, מחיר, תמונה, קטגוריה 5) שמור. המוצר יופיע בחנות.',
+      addProduct:
+        'הוספת מוצר (סוחר): 1) התחבר כסוחר 2) לוח בקרה → מוצרים 3) "הוסף מוצר" 4) שם, תיאור, מחיר, תמונה, קטגוריה 5) שמור. המוצר יופיע בחנות.',
       editProduct: 'עריכת מוצר: 1) התחבר כסוחר 2) לוח בקרה → מוצרים 3) מצא מוצר ← "ערוך" 4) שנה שדות 5) שמור.',
       deleteProduct: 'מחיקת מוצר: 1) התחבר כסוחר 2) לוח בקרה → מוצרים 3) בחר מוצר 4) "מחק" 5) אשר. המוצר יוסר.',
-      manageOrders: 'ניהול הזמנות: לקוח: תפריט → ההזמנות שלי. סוחר: לוח בקרה → הזמנות. אדמין: לוח בקרה → הזמנות לכל הפלטפורמה.',
-      manageCustomers: 'ניהול משתמשים (אדמין): 1) לוח בקרה → משתמשים 2) רשימת לקוחות/סוחרים/ברוקרים 3) אישור, דחייה, השבתה או צפייה בפרופיל.',
+      manageOrders:
+        'ניהול הזמנות: לקוח: תפריט → ההזמנות שלי. סוחר: לוח בקרה → הזמנות. אדמין: לוח בקרה → הזמנות לכל הפלטפורמה.',
+      manageCustomers:
+        'ניהול משתמשים (אדמין): 1) לוח בקרה → משתמשים 2) רשימת לקוחות/סוחרים/ברוקרים 3) אישור, דחייה, השבתה או צפייה בפרופיל.',
       buy: 'איך קונים: 1) עיין במוצרים מהדף הראשי או הקטלוג 2) "הוסף לסל" על המוצר 3) תפריט → סל 4) "השלם רכישה" והזן פרטים 5) אשר. התשלום מאובטח.',
       cart: 'שימוש בסל: 1) "הוסף לסל" בעמוד המוצר 2) תפריט → סל 3) שנה כמות או הסר 4) "השלם רכישה".',
       profile: 'פרופיל: תפריט → פרופיל. ערוך שם, אימייל, כתובת, עיר. לסוחר: גם "המוצרים שלי".',
-      siteSettings: 'הגדרות האתר (אדמין): 1) לוח בקרה → לשונית "פלטפורמה" 2) ערוך הגדרות, עמלות, תנאים 3) שמור. רק לאדמין.',
+      siteSettings:
+        'הגדרות האתר (אדמין): 1) לוח בקרה → לשונית "פלטפורמה" 2) ערוך הגדרות, עמלות, תנאים 3) שמור. רק לאדמין.',
       reports: 'דוחות ומכירות: סוחר: לוח בקרה → "הרווחים". אדמין: הזמנות, משתמשים, פלטפורמה לדוחות מלאים.',
-      permissions: 'הרשאות: לקוח: קנייה, סל, הזמנות, פרופיל. סוחר: + לוח בקרה (מוצרים, הזמנות, רווחים). אדמין: ניהול משתמשים, מוצרים, הזמנות, משיכות, הגדרות. לשאלה ספציפית: support@palma.com.',
+      permissions:
+        'הרשאות: לקוח: קנייה, סל, הזמנות, פרופיל. סוחר: + לוח בקרה (מוצרים, הזמנות, רווחים). אדמין: ניהול משתמשים, מוצרים, הזמנות, משיכות, הגדרות. לשאלה ספציפית: support@palma.com.',
       support: 'לתמיכה אנושית: support@palma.com או דף צור קשר.',
       default: 'תודה על השאלה. למידע נוסף: support@palma.com או דף צור קשר.',
     },
@@ -243,9 +303,7 @@ export const SupportChat: React.FC<SupportChatProps> = ({ lang, user }) => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>(() => {
     const t = CHAT_TEXTS[safeLang];
-    return [
-      { id: 'welcome', text: t.welcome, isBot: true, time: new Date() },
-    ];
+    return [{ id: 'welcome', text: t.welcome, isBot: true, time: new Date() }];
   });
   const [input, setInput] = useState('');
   const listRef = useRef<HTMLDivElement>(null);
@@ -303,15 +361,10 @@ export const SupportChat: React.FC<SupportChatProps> = ({ lang, user }) => {
           </div>
           <div ref={listRef} className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.map((m) => (
-              <div
-                key={m.id}
-                className={`flex ${m.isBot ? 'justify-start' : 'justify-end'}`}
-              >
+              <div key={m.id} className={`flex ${m.isBot ? 'justify-start' : 'justify-end'}`}>
                 <div
                   className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
-                    m.isBot
-                      ? 'bg-slate-100 text-slate-700'
-                      : 'bg-palma-primary text-white'
+                    m.isBot ? 'bg-slate-100 text-slate-700' : 'bg-palma-primary text-white'
                   }`}
                 >
                   {m.text}
@@ -322,7 +375,9 @@ export const SupportChat: React.FC<SupportChatProps> = ({ lang, user }) => {
           {quickOptions.length > 0 && (
             <div className="border-t border-slate-100 px-3 pt-2 pb-1">
               {quickOptionsTitle && (
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-2">{quickOptionsTitle}</p>
+                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-2">
+                  {quickOptionsTitle}
+                </p>
               )}
               <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
                 {quickOptions.map((opt, idx) => (
@@ -368,4 +423,4 @@ export const SupportChat: React.FC<SupportChatProps> = ({ lang, user }) => {
     return createPortal(chatUI, document.body);
   }
   return chatUI;
-}
+};

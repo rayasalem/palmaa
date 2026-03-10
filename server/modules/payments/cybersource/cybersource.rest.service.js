@@ -56,10 +56,7 @@ function buildHttpSignatureHeaders(method, resourcePath, body, cfg) {
   const bodyString = body ? JSON.stringify(body) : '';
   const date = new Date().toUTCString();
 
-  const digest = `SHA-256=${crypto
-    .createHash('sha256')
-    .update(bodyString, 'utf8')
-    .digest('base64')}`;
+  const digest = `SHA-256=${crypto.createHash('sha256').update(bodyString, 'utf8').digest('base64')}`;
 
   // (request-target) = method (lowercase) + space + path, e.g. "post /pts/v2/payments"
   const target = `${method.toLowerCase()} ${resourcePath}`;
@@ -83,10 +80,7 @@ function buildHttpSignatureHeaders(method, resourcePath, body, cfg) {
     // keep raw string if not valid base64
   }
 
-  const signature = crypto
-    .createHmac('sha256', hmacKey)
-    .update(signingString, 'utf8')
-    .digest('base64');
+  const signature = crypto.createHmac('sha256', hmacKey).update(signingString, 'utf8').digest('base64');
 
   const signatureHeader = [
     `keyid="${cfg.keyId}"`,
@@ -145,16 +139,15 @@ async function restRequest(method, resourcePath, body) {
       message: err.message,
     });
     if (status === 401) {
-      logger.warn('[cybersource-rest] 401 Unauthorized: check CYBS_REST_MERCHANT_ID, CYBS_REST_KEY_ID, CYBS_REST_SECRET_KEY. Secret must be Base64-decoded for HMAC per Cybersource doc.');
+      logger.warn(
+        '[cybersource-rest] 401 Unauthorized: check CYBS_REST_MERCHANT_ID, CYBS_REST_KEY_ID, CYBS_REST_SECRET_KEY. Secret must be Base64-decoded for HMAC per Cybersource doc.'
+      );
     }
     return {
       data: data || null,
       status: status || 500,
       error: new Error(
-        (data && data.message) ||
-          (data && data.reason) ||
-          err.message ||
-          'Cybersource REST request failed'
+        (data && data.message) || (data && data.reason) || err.message || 'Cybersource REST request failed'
       ),
     };
   }
@@ -242,4 +235,3 @@ async function capturePayment(params) {
 }
 
 export { authorizePayment, capturePayment };
-

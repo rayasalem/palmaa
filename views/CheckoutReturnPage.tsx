@@ -23,7 +23,13 @@ interface CheckoutReturnPageProps {
 
 type Step = 'waiting_payment' | 'paid_creating_shipment' | 'done' | 'payment_failed' | 'error';
 
-export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({ lang, orderId, paymentParam, clearCart, onBack }) => {
+export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({
+  lang,
+  orderId,
+  paymentParam,
+  clearCart,
+  onBack,
+}) => {
   const [step, setStep] = useState<Step>(paymentParam === 'success' ? 'waiting_payment' : 'payment_failed');
   const [order, setOrder] = useState<any>(null);
   const [shipment, setShipment] = useState<any>(null);
@@ -63,7 +69,9 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({ lang, or
       setTimeout(poll, POLL_MS);
     };
     poll();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [step, orderId, fetchOrder]);
 
   useEffect(() => {
@@ -75,7 +83,7 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({ lang, or
         if (!currentOrder) {
           const orderRes = await getOrder(orderId);
           if (cancelled) return;
-          currentOrder = (orderRes && typeof orderRes === 'object' && orderRes.order) ? orderRes.order : null;
+          currentOrder = orderRes && typeof orderRes === 'object' && orderRes.order ? orderRes.order : null;
         }
         if (cancelled || !currentOrder) return;
 
@@ -126,19 +134,30 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({ lang, or
         }
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [step, orderId, order, lang]);
 
   const isRtl = lang === 'ar';
 
   if (step === 'payment_failed') {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6" dir={isRtl ? 'rtl' : 'ltr'}>
+      <div
+        className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6"
+        dir={isRtl ? 'rtl' : 'ltr'}
+      >
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 max-w-md w-full text-center">
           <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="font-heading text-xl font-black text-palma-navy mb-2">{lang === 'ar' ? 'فشل الدفع' : 'Payment failed'}</h1>
-          <p className="text-slate-600 text-sm mb-6">{lang === 'ar' ? 'لم يتم تأكيد الدفع.' : 'Payment was not confirmed.'}</p>
-          <button type="button" onClick={onBack} className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold">{lang === 'ar' ? 'العودة للتسوق' : 'Back to shop'}</button>
+          <h1 className="font-heading text-xl font-black text-palma-navy mb-2">
+            {lang === 'ar' ? 'فشل الدفع' : 'Payment failed'}
+          </h1>
+          <p className="text-slate-600 text-sm mb-6">
+            {lang === 'ar' ? 'لم يتم تأكيد الدفع.' : 'Payment was not confirmed.'}
+          </p>
+          <button type="button" onClick={onBack} className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold">
+            {lang === 'ar' ? 'العودة للتسوق' : 'Back to shop'}
+          </button>
         </div>
       </div>
     );
@@ -146,10 +165,15 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({ lang, or
 
   if (step === 'waiting_payment') {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6" dir={isRtl ? 'rtl' : 'ltr'}>
+      <div
+        className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6"
+        dir={isRtl ? 'rtl' : 'ltr'}
+      >
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 max-w-md w-full text-center">
           <Loader2 className="w-12 h-12 text-green-600 animate-spin mx-auto mb-4" />
-          <h1 className="font-heading text-xl font-black text-palma-navy mb-2">{lang === 'ar' ? 'جاري تأكيد الدفع...' : 'Confirming payment...'}</h1>
+          <h1 className="font-heading text-xl font-black text-palma-navy mb-2">
+            {lang === 'ar' ? 'جاري تأكيد الدفع...' : 'Confirming payment...'}
+          </h1>
           <p className="text-slate-600 text-sm">{lang === 'ar' ? 'انتظر قليلاً.' : 'Please wait.'}</p>
         </div>
       </div>
@@ -158,12 +182,19 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({ lang, or
 
   if (step === 'paid_creating_shipment') {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6" dir={isRtl ? 'rtl' : 'ltr'}>
+      <div
+        className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6"
+        dir={isRtl ? 'rtl' : 'ltr'}
+      >
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 max-w-md w-full text-center">
           <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
-          <h1 className="font-heading text-xl font-black text-palma-navy mb-2">{lang === 'ar' ? 'تم الدفع' : 'Payment successful'}</h1>
+          <h1 className="font-heading text-xl font-black text-palma-navy mb-2">
+            {lang === 'ar' ? 'تم الدفع' : 'Payment successful'}
+          </h1>
           <Loader2 className="w-8 h-8 text-green-600 animate-spin mx-auto mt-4" />
-          <p className="text-slate-600 text-sm mt-4">{lang === 'ar' ? 'جاري إنشاء الشحنة...' : 'Creating shipment...'}</p>
+          <p className="text-slate-600 text-sm mt-4">
+            {lang === 'ar' ? 'جاري إنشاء الشحنة...' : 'Creating shipment...'}
+          </p>
         </div>
       </div>
     );
@@ -171,12 +202,19 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({ lang, or
 
   if (step === 'error') {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6" dir={isRtl ? 'rtl' : 'ltr'}>
+      <div
+        className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6"
+        dir={isRtl ? 'rtl' : 'ltr'}
+      >
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 max-w-md w-full text-center">
           <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="font-heading text-xl font-black text-palma-navy mb-2">{lang === 'ar' ? 'حدث خطأ' : 'Something went wrong'}</h1>
+          <h1 className="font-heading text-xl font-black text-palma-navy mb-2">
+            {lang === 'ar' ? 'حدث خطأ' : 'Something went wrong'}
+          </h1>
           <p className="text-slate-600 text-sm mb-6">{error}</p>
-          <button type="button" onClick={onBack} className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold">{lang === 'ar' ? 'العودة' : 'Back'}</button>
+          <button type="button" onClick={onBack} className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold">
+            {lang === 'ar' ? 'العودة' : 'Back'}
+          </button>
         </div>
       </div>
     );
@@ -186,8 +224,12 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({ lang, or
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6" dir={isRtl ? 'rtl' : 'ltr'}>
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 max-w-md w-full text-center">
         <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
-        <h1 className="font-heading text-xl font-black text-palma-navy mb-2">{lang === 'ar' ? 'تم تأكيد الطلب' : 'Order confirmed'}</h1>
-        <p className="text-slate-600 text-sm mb-6">{lang === 'ar' ? 'تم الدفع وإنشاء الشحنة.' : 'Payment and shipment completed.'}</p>
+        <h1 className="font-heading text-xl font-black text-palma-navy mb-2">
+          {lang === 'ar' ? 'تم تأكيد الطلب' : 'Order confirmed'}
+        </h1>
+        <p className="text-slate-600 text-sm mb-6">
+          {lang === 'ar' ? 'تم الدفع وإنشاء الشحنة.' : 'Payment and shipment completed.'}
+        </p>
         <div className="bg-slate-50 rounded-xl p-4 text-left rtl:text-right space-y-2 mb-6">
           <p className="text-xs font-bold text-slate-500">{lang === 'ar' ? 'رقم الطلب' : 'Order ID'}</p>
           <p className="text-sm font-mono text-slate-900 break-all">{order?.id || orderId}</p>
@@ -196,10 +238,14 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({ lang, or
           {(order?.shipment_id || shipment) && (
             <>
               <p className="text-xs font-bold text-slate-500 mt-2">{lang === 'ar' ? 'الشحنة' : 'Shipment'}</p>
-              <p className="text-sm font-mono text-slate-900">{order?.shipment_id || shipment?.id || (shipment && (shipment.shipment_id || shipment.shipmentId)) || '—'}</p>
+              <p className="text-sm font-mono text-slate-900">
+                {order?.shipment_id ||
+                  shipment?.id ||
+                  (shipment && (shipment.shipment_id || shipment.shipmentId)) ||
+                  '—'}
+              </p>
               <p className="text-xs text-slate-500">
-                {lang === 'ar' ? 'الحالة' : 'Status'}:{' '}
-                {order?.shipment_status || shipment?.status || 'created'}
+                {lang === 'ar' ? 'الحالة' : 'Status'}: {order?.shipment_status || shipment?.status || 'created'}
               </p>
               {shipment?.barcode && (
                 <p className="text-xs text-slate-500">
@@ -208,8 +254,7 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({ lang, or
               )}
               {shipment?.expectedDeliveryDate && (
                 <p className="text-xs text-slate-500">
-                  {lang === 'ar' ? 'تاريخ التسليم المتوقع' : 'Expected delivery'}:{' '}
-                  {shipment.expectedDeliveryDate}
+                  {lang === 'ar' ? 'تاريخ التسليم المتوقع' : 'Expected delivery'}: {shipment.expectedDeliveryDate}
                 </p>
               )}
             </>

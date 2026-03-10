@@ -1,4 +1,3 @@
-
 import { db } from './services/core/storage';
 import { authService } from './services/authService';
 import { productService } from './services/productService';
@@ -11,9 +10,9 @@ import { Review, WithdrawalRequest, CommissionRecord, SharedProduct, User, Produ
 export const paymentProcessor = {
   processDigitalPayment: async (method: string, amount: number) => {
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise((resolve) => setTimeout(resolve, 800));
     return { success: true };
-  }
+  },
 };
 
 /**
@@ -24,7 +23,6 @@ export const paymentProcessor = {
  * breaking existing callers; refactor call sites gradually if desired.
  */
 export const marketStore = {
-  
   // --- Auth & User ---
   login: authService.login,
   forgotPassword: authService.forgotPassword,
@@ -34,23 +32,20 @@ export const marketStore = {
   registerMerchant: userService.register,
   registerBroker: userService.register,
   // registerStudent Removed - role merged into Broker
-  
+
   getUsers: () => db.users,
-  getAllApprovedMerchants: () =>
-    db.users.filter(u => u.role === 'MERCHANT' && u.status === 'APPROVED'),
+  getAllApprovedMerchants: () => db.users.filter((u) => u.role === 'MERCHANT' && u.status === 'APPROVED'),
   getMerchantNameByUserId: (id: string) => {
-    const fromProducts = db.products.find(
-      p => p.merchant_id === id || p.merchantId === id,
-    )?.merchantName;
+    const fromProducts = db.products.find((p) => p.merchant_id === id || p.merchantId === id)?.merchantName;
     if (fromProducts && fromProducts !== 'Loading...') return fromProducts;
 
-    const user = db.users.find(u => u.id === id);
+    const user = db.users.find((u) => u.id === id);
     if (user && (user.role === 'MERCHANT' || user.role === 'ADMIN')) {
       return (user as any).companyName || (user as any).company_name || user.name || user.email || 'Merchant';
     }
 
     const fromService = userService.getMerchantName(id);
-    return fromService !== 'Unknown' ? fromService : (user?.name || user?.email || 'Merchant');
+    return fromService !== 'Unknown' ? fromService : user?.name || user?.email || 'Merchant';
   },
   getMerchantProfileByUserId: (id: string) => userService.getMerchantProfile(id),
   updateUserProfile: userService.updateProfile,
@@ -58,16 +53,16 @@ export const marketStore = {
   saveUser: (u: any) => db.updateItem('users', u.id, u),
 
   // --- Products ---
-  // Fix: getProducts must be synchronous for existing components. 
+  // Fix: getProducts must be synchronous for existing components.
   // For async fetching, use fetchMerchantProducts or access productService directly.
-  getProducts: () => db.products, 
-  
+  getProducts: () => db.products,
+
   // New Async Methods for Merchant Dashboard
   fetchMerchantProducts: productService.getByMerchantId,
   addProduct: productService.add,
   updateProduct: productService.update,
   deleteProduct: productService.delete,
-  
+
   getFilteredProducts: productService.filter,
   getAllUniqueCategories: productService.getCategories,
   getProductRating: (id: string) => {
@@ -95,9 +90,9 @@ export const marketStore = {
   saveOrder: (o: any) => db.updateItem('orders', o.id, o),
 
   // --- Reviews ---
-  getReviewsForProduct: (id: string) => db.reviews.filter(r => r.productId === id || r.product_id === id),
+  getReviewsForProduct: (id: string) => db.reviews.filter((r) => r.productId === id || r.product_id === id),
   addReview: (userId: string, productId: string, rating: number, comment: string) => {
-    if (db.reviews.find(r => r.userId === userId && r.productId === productId)) return false;
+    if (db.reviews.find((r) => r.userId === userId && r.productId === productId)) return false;
     const newReview: Review = {
       id: `REV-${Date.now()}`,
       product_id: productId,
@@ -108,7 +103,7 @@ export const marketStore = {
       rating,
       comment,
       date: new Date().toISOString(),
-      createdAt: Date.now()
+      createdAt: Date.now(),
     };
     db.addItem('reviews', newReview);
     return true;
@@ -126,10 +121,10 @@ export const marketStore = {
   getComments: socialService.getComments,
 
   // --- Broker / Analytics ---
-  getSharedProducts: (userId: string) => db.sharedProducts.filter(sp => sp.broker_id === userId),
+  getSharedProducts: (userId: string) => db.sharedProducts.filter((sp) => sp.broker_id === userId),
   upsertSharedProduct: (brokerId: string, productId: string, data: Partial<SharedProduct>) => {
-    const existingIndex = db.sharedProducts.findIndex(sp => sp.broker_id === brokerId && sp.product_id === productId);
-    
+    const existingIndex = db.sharedProducts.findIndex((sp) => sp.broker_id === brokerId && sp.product_id === productId);
+
     if (existingIndex >= 0) {
       // Update
       const updated = { ...db.sharedProducts[existingIndex], ...data };
@@ -146,37 +141,45 @@ export const marketStore = {
         marketing_title: data.marketing_title,
         marketing_description: data.marketing_description,
         custom_discount_text: data.custom_discount_text,
-        is_featured: false
+        is_featured: false,
       };
       db.addItem('sharedProducts', newShare);
     }
   },
   removeSharedProduct: (brokerId: string, productId: string) => {
-    const item = db.sharedProducts.find(sp => sp.broker_id === brokerId && sp.product_id === productId);
+    const item = db.sharedProducts.find((sp) => sp.broker_id === brokerId && sp.product_id === productId);
     if (item) {
       db.deleteItem('sharedProducts', item.id);
     }
   },
   toggleSharedProductFeatured: (shareId: string) => {
-    const item = db.sharedProducts.find(sp => sp.id === shareId);
+    const item = db.sharedProducts.find((sp) => sp.id === shareId);
     if (item) {
       db.updateItem<SharedProduct>('sharedProducts', shareId, { is_featured: !item.is_featured });
     }
   },
   getCommissions: () => db.commissions,
   incrementClicks: (userId: string) => {
-    const u = db.users.find(x => x.id === userId);
-    if(u) db.updateItem<User>('users', userId, { clicks: (u.clicks || 0) + 1 });
+    const u = db.users.find((x) => x.id === userId);
+    if (u) db.updateItem<User>('users', userId, { clicks: (u.clicks || 0) + 1 });
   },
-  setReferral: (id: string | null) => { /* logic moved to session/cookie in real app, keeping placeholder */ },
-  
+  setReferral: (id: string | null) => {
+    /* logic moved to session/cookie in real app, keeping placeholder */
+  },
+
   // --- Finance ---
   getWithdrawals: () => db.withdrawals,
   requestWithdrawal: (userId: string, amount: number) => {
-    const req: WithdrawalRequest = { id: crypto.randomUUID(), userId, amount, status: 'PENDING', date: new Date().toISOString() };
+    const req: WithdrawalRequest = {
+      id: crypto.randomUUID(),
+      userId,
+      amount,
+      status: 'PENDING',
+      date: new Date().toISOString(),
+    };
     db.addItem('withdrawals', req);
   },
-  updateWithdrawalStatus: (id: string, status: 'APPROVED'|'REJECTED') => {
+  updateWithdrawalStatus: (id: string, status: 'APPROVED' | 'REJECTED') => {
     db.updateItem<WithdrawalRequest>('withdrawals', id, { status });
-  }
+  },
 };

@@ -2,9 +2,9 @@
 
 Backend exposes two endpoints. Use them so **traffic is only routed to fully ready instances**.
 
-| Endpoint   | Purpose   | When to use |
-|-----------|-----------|-------------|
-| `GET /health` | **Liveness** – process is up | Restart container if unresponsive |
+| Endpoint      | Purpose                                          | When to use                              |
+| ------------- | ------------------------------------------------ | ---------------------------------------- |
+| `GET /health` | **Liveness** – process is up                     | Restart container if unresponsive        |
 | `GET /ready`  | **Readiness** – DB (and optional deps) reachable | Route traffic only when this returns 200 |
 
 ## Behaviour

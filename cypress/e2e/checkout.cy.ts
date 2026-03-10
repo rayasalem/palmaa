@@ -24,9 +24,11 @@ describe('Checkout', () => {
 
   it('checkout form has required fields when reached via direct hash', () => {
     cy.visit('/#/cart');
-    cy.get('a[href*="checkout"], button').contains(/دفع|Checkout|תשלום|متابعة/).then(($el) => {
-      if ($el.length) $el.first().click();
-    });
+    cy.get('a[href*="checkout"], button')
+      .contains(/دفع|Checkout|תשלום|متابعة/)
+      .then(($el) => {
+        if ($el.length) $el.first().click();
+      });
     cy.get('input[name="recipient_name"]').then(($input) => {
       if ($input.length) {
         cy.wrap($input).should('be.visible');

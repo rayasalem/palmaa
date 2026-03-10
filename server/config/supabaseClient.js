@@ -8,22 +8,25 @@ import logger from '../utils/logger.js';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 // دعم الاسمين (Supabase يسميه أحياناً service_role)
-const supabaseServiceKey =
-  process.env.SUPABASE_SERVICE_KEY ||
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  '';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 if (!supabaseUrl || !supabaseServiceKey) {
-  logger.warn('supabaseClient SUPABASE_URL or SUPABASE_SERVICE_KEY (or SUPABASE_SERVICE_ROLE_KEY) missing. Set in .env / Render Environment.');
+  logger.warn(
+    'supabaseClient SUPABASE_URL or SUPABASE_SERVICE_KEY (or SUPABASE_SERVICE_ROLE_KEY) missing. Set in .env / Render Environment.'
+  );
 }
 
 // تحذير: الباكند يجب أن يستخدم مفتاح service_role وليس anon (وإلا تسجيل الدخول يفشل)
 try {
   const payload = JSON.parse(Buffer.from(supabaseServiceKey.split('.')[1], 'base64').toString());
   if (payload.role === 'anon' || payload.aud === 'anon') {
-    logger.warn('supabaseClient You are using the ANON key. Backend MUST use the SERVICE ROLE key (Supabase Dashboard → Settings → API → service_role). Login will fail until you fix this.');
+    logger.warn(
+      'supabaseClient You are using the ANON key. Backend MUST use the SERVICE ROLE key (Supabase Dashboard → Settings → API → service_role). Login will fail until you fix this.'
+    );
   }
-} catch (_) {}
+} catch (_) {
+  /* ignore JWT parse error when checking key type */
+}
 
 const supabase = createClient(supabaseUrl || '', supabaseServiceKey || '');
 

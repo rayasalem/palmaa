@@ -8,7 +8,11 @@ export const AuthPage = {
 
   getEmailInput: () => cy.get('#login-email'),
   getPasswordInput: () => cy.get('#login-password'),
-  getLoginSubmitButton: () => cy.get('form').contains('button', /Log in|تسجيل/).first(),
+  getLoginSubmitButton: () =>
+    cy
+      .get('form')
+      .contains('button', /Log in|تسجيل/)
+      .first(),
   getLoginForm: () => cy.get('form').first(),
 
   getError: () => cy.get('.bg-red-50').first(),
@@ -22,9 +26,17 @@ export const AuthPage = {
     };
     return cy.contains('button', new RegExp(labels[role], 'i')).first().click();
   },
-  clickProceedToRegister: () => cy.contains('button', /Continue|متابعة|המשך/).first().click(),
+  clickProceedToRegister: () =>
+    cy
+      .contains('button', /Continue|متابعة|המשך/)
+      .first()
+      .click(),
 
-  clickForgotPassword: () => cy.contains('button', /Forgot|نسيت/).first().click(),
+  clickForgotPassword: () =>
+    cy
+      .contains('button', /Forgot|نسيت/)
+      .first()
+      .click(),
   getForgotEmailInput: () => cy.get('#forgot-email'),
   getVerificationCodeInput: () => cy.get('input[placeholder="000000"], input[maxLength="6"]').first(),
   getVerifySubmitButton: () => cy.contains('button', /Verify|تأكيد/).first(),

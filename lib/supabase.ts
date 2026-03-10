@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { env } from '../config/env';
 
@@ -12,12 +11,6 @@ const isValidUrl = (url: string) => {
   }
 };
 
-export const isSupabaseConfigured = Boolean(
-  env.SUPABASE.URL && 
-  env.SUPABASE.ANON_KEY && 
-  isValidUrl(env.SUPABASE.URL)
-);
+export const isSupabaseConfigured = Boolean(env.SUPABASE.URL && env.SUPABASE.ANON_KEY && isValidUrl(env.SUPABASE.URL));
 
-export const supabase = isSupabaseConfigured 
-  ? createClient(env.SUPABASE.URL, env.SUPABASE.ANON_KEY) 
-  : null;
+export const supabase = isSupabaseConfigured ? createClient(env.SUPABASE.URL, env.SUPABASE.ANON_KEY) : null;

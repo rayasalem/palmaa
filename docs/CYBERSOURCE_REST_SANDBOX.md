@@ -13,12 +13,12 @@ Checkout uses **only** the Cybersource REST API (Simple Order) with HTTP Signatu
 
 Set in `server/.env`. The code reads exactly these (with optional fallback):
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `CYBS_REST_HOST` | No (default: `https://apitest.cybersource.com`) | Sandbox or production API host |
-| `CYBS_REST_MERCHANT_ID` | Yes* | Merchant ID from Business Center (*or `CYBERSOURCE_MERCHANT_ID`) |
-| `CYBS_REST_KEY_ID` | Yes | REST API Key ID |
-| `CYBS_REST_SECRET_KEY` | Yes | REST API Shared Secret |
+| Variable                | Required                                        | Description                                                       |
+| ----------------------- | ----------------------------------------------- | ----------------------------------------------------------------- |
+| `CYBS_REST_HOST`        | No (default: `https://apitest.cybersource.com`) | Sandbox or production API host                                    |
+| `CYBS_REST_MERCHANT_ID` | Yes\*                                           | Merchant ID from Business Center (\*or `CYBERSOURCE_MERCHANT_ID`) |
+| `CYBS_REST_KEY_ID`      | Yes                                             | REST API Key ID                                                   |
+| `CYBS_REST_SECRET_KEY`  | Yes                                             | REST API Shared Secret                                            |
 
 ```env
 CYBS_REST_HOST=https://apitest.cybersource.com
@@ -31,12 +31,12 @@ Obtain Key ID and Shared Secret from Cybersource Business Center (Test) → API 
 
 ## API (matches code)
 
-- **Checkout payment:** `POST /api/payments/cybersource/rest/process`  
-  - Body: `{ orderId: string, amount: number, currency?: string }` (currency default `USD`)  
-  - Success (200): `{ success: true, orderId, paymentId, captureId }`  
+- **Checkout payment:** `POST /api/payments/cybersource/rest/process`
+  - Body: `{ orderId: string, amount: number, currency?: string }` (currency default `USD`)
+  - Success (200): `{ success: true, orderId, paymentId, captureId }`
   - Backend checks authorization decision is `AUTHORIZED` before capture and before calling `handlePaymentCallback`.
-- **Test only (disabled in production):** `POST /api/payments/cybersource/rest/test`  
-  - Body: `{ amount?, currency?, reference? }`  
+- **Test only (disabled in production):** `POST /api/payments/cybersource/rest/test`
+  - Body: `{ amount?, currency?, reference? }`
   - Uses same test card; returns auth + capture payload.
 
 ## Flow
@@ -57,14 +57,14 @@ Transactions appear as **REST API** in Cybersource Transaction Management. Reaso
 
 ## Code reference (matches this doc)
 
-| Item | Location |
-|------|----------|
-| Route mount | `server/server.js`: `app.use('/api/payments', ...)` → `cybersource.routes.js` |
-| REST process handler | `server/modules/payments/cybersource/cybersource.rest.controller.js`: `processRestPaymentHandler` |
-| REST service (auth/capture) | `server/modules/payments/cybersource/cybersource.rest.service.js`: `authorizePayment`, `capturePayment` |
-| Env config | Same service: `getRestConfig()` reads `CYBS_REST_*` (and `CYBERSOURCE_MERCHANT_ID` fallback) |
-| Frontend API | `services/checkoutApi.ts`: `processCybersourceRestPayment(orderId, amount, currency)` |
-| Checkout usage | `views/CheckoutPage.tsx`: after `createOrder`, calls `processCybersourceRestPayment(orderId, totalAmount, 'USD')` then `onPaymentSuccess(orderId)` |
+| Item                        | Location                                                                                                                                           |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Route mount                 | `server/server.js`: `app.use('/api/payments', ...)` → `cybersource.routes.js`                                                                      |
+| REST process handler        | `server/modules/payments/cybersource/cybersource.rest.controller.js`: `processRestPaymentHandler`                                                  |
+| REST service (auth/capture) | `server/modules/payments/cybersource/cybersource.rest.service.js`: `authorizePayment`, `capturePayment`                                            |
+| Env config                  | Same service: `getRestConfig()` reads `CYBS_REST_*` (and `CYBERSOURCE_MERCHANT_ID` fallback)                                                       |
+| Frontend API                | `services/checkoutApi.ts`: `processCybersourceRestPayment(orderId, amount, currency)`                                                              |
+| Checkout usage              | `views/CheckoutPage.tsx`: after `createOrder`, calls `processCybersourceRestPayment(orderId, totalAmount, 'USD')` then `onPaymentSuccess(orderId)` |
 
 ## References
 

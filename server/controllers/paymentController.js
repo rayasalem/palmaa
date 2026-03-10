@@ -73,16 +73,7 @@ async function paymentCallback(req, res) {
  */
 async function createCybersourceCharge(req, res) {
   try {
-    const {
-      orderId,
-      amount,
-      currency,
-      cardNumber,
-      expMonth,
-      expYear,
-      cvv,
-      cardholderName,
-    } = req.body || {};
+    const { orderId, amount, currency, cardNumber, expMonth, expYear, cvv, cardholderName } = req.body || {};
 
     if (orderId == null || String(orderId).trim() === '') {
       return res.status(400).json({ success: false, error: 'orderId is required' });

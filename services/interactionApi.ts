@@ -42,8 +42,26 @@ export async function getIsFollowing(merchantId: string): Promise<{ success: boo
 /** Fetch public profile (user + merchant) for profile page. */
 export async function getPublicProfile(profileId: string): Promise<{
   success: boolean;
-  user?: { id: string; name: string; role: string; email?: string; phone?: string; city?: string; bio?: string; profile_image?: string; logoUrl?: string; companyName?: string; isApproved?: boolean };
-  merchantProfile?: { business_name?: string; business_description?: string; logo_url?: string; city?: string; phone?: string };
+  user?: {
+    id: string;
+    name: string;
+    role: string;
+    email?: string;
+    phone?: string;
+    city?: string;
+    bio?: string;
+    profile_image?: string;
+    logoUrl?: string;
+    companyName?: string;
+    isApproved?: boolean;
+  };
+  merchantProfile?: {
+    business_name?: string;
+    business_description?: string;
+    logo_url?: string;
+    city?: string;
+    phone?: string;
+  };
 }> {
   return request(`/api/merchant/${profileId}`);
 }

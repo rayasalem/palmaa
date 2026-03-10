@@ -263,7 +263,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
       if (!session.success) {
         setError(
           (session as any).error ||
-            (lang === 'ar' ? 'فشل إنشاء جلسة الدفع. تحقق من CYBS_PROFILE_ID و CYBS_ACCESS_KEY و CYBS_SECRET_KEY في .env' : 'Failed to create payment session. Check CYBS_* in .env')
+            (lang === 'ar'
+              ? 'فشل إنشاء جلسة الدفع. تحقق من CYBS_PROFILE_ID و CYBS_ACCESS_KEY و CYBS_SECRET_KEY في .env'
+              : 'Failed to create payment session. Check CYBS_* in .env')
         );
         setLoading(false);
         return;
@@ -271,7 +273,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
       const actionUrl = (session as any).actionUrl || (session as any).action_url;
       const fields = (session as any).fields || {};
       if (!actionUrl || !Object.keys(fields).length) {
-        setError(lang === 'ar' ? 'استجابة غير صالحة من الباكند (Hosted Checkout).' : 'Invalid Hosted Checkout response.');
+        setError(
+          lang === 'ar' ? 'استجابة غير صالحة من الباكند (Hosted Checkout).' : 'Invalid Hosted Checkout response.'
+        );
         setLoading(false);
         return;
       }
@@ -293,7 +297,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
       const msg = err?.message || '';
       const data = err?.data;
       const isGatewayError = data && (data.stage === 'authorization' || data.stage === 'capture');
-      const isServerUnreachable = !data && (msg === 'Not found' || msg.includes('404') || msg.includes('Failed to fetch'));
+      const isServerUnreachable =
+        !data && (msg === 'Not found' || msg.includes('404') || msg.includes('Failed to fetch'));
       let friendly: string;
       if (isGatewayError) {
         const raw = data?.raw;
@@ -319,7 +324,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col pb-24" dir={isRtl ? 'rtl' : 'ltr'}>
       <div className="max-w-xl mx-auto w-full px-6 py-10">
-        <button type="button" onClick={onBack} className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-8 font-medium">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-8 font-medium"
+        >
           <ArrowLeft className="w-4 h-4" /> {lang === 'ar' ? 'العودة' : 'Back'}
         </button>
         <h1 className="font-heading text-2xl font-black text-palma-navy mb-2">
@@ -329,13 +338,19 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
           {lang === 'ar' ? 'أكمل البيانات ثم انقر متابعة للدفع.' : 'Fill details then proceed to payment.'}
         </p>
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">{lang === 'ar' ? 'إجمالي الطلب' : 'Order total'}</p>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+            {lang === 'ar' ? 'إجمالي الطلب' : 'Order total'}
+          </p>
           <p className="text-2xl font-black text-slate-900">₪{totalAmount.toFixed(2)}</p>
-          <p className="text-xs text-slate-500 mt-1">{cart.length} {lang === 'ar' ? 'منتج' : 'item(s)'}</p>
+          <p className="text-xs text-slate-500 mt-1">
+            {cart.length} {lang === 'ar' ? 'منتج' : 'item(s)'}
+          </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-xs font-bold text-slate-600 mb-1">{lang === 'ar' ? 'الاسم الكامل' : 'Full name'}</label>
+            <label className="block text-xs font-bold text-slate-600 mb-1">
+              {lang === 'ar' ? 'الاسم الكامل' : 'Full name'}
+            </label>
             <div className="relative">
               <User className="absolute top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 left-3 rtl:left-auto rtl:right-3" />
               <input
@@ -431,7 +446,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-600 mb-1">{lang === 'ar' ? 'الوزن (كغ)' : 'Weight (kg)'}</label>
+            <label className="block text-xs font-bold text-slate-600 mb-1">
+              {lang === 'ar' ? 'الوزن (كغ)' : 'Weight (kg)'}
+            </label>
             <input
               type="number"
               name="weight"
@@ -441,7 +458,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
               onChange={handleChange}
               className="w-full py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
-            <p className="text-xs text-slate-500 mt-1">{lang === 'ar' ? 'اقتراح' : 'Suggested'}: {suggestedWeight} kg</p>
+            <p className="text-xs text-slate-500 mt-1">
+              {lang === 'ar' ? 'اقتراح' : 'Suggested'}: {suggestedWeight} kg
+            </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -550,9 +569,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">
-                    CVV
-                  </label>
+                  <label className="block text-xs font-bold text-slate-600 mb-1">CVV</label>
                   <input
                     type="text"
                     name="cardCvv"
@@ -582,8 +599,14 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
             </div>
           </div>
           {error && <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm">{error}</div>}
-          <button type="submit" disabled={loading} className="w-full py-4 bg-green-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-70">
-            {loading ? <span className="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : null}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-4 bg-green-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-70"
+          >
+            {loading ? (
+              <span className="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : null}
             {lang === 'ar' ? 'متابعة للدفع' : 'Proceed to payment'} <ArrowRight className="w-4 h-4 rtl:rotate-180" />
           </button>
         </form>

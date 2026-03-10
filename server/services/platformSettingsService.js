@@ -14,26 +14,19 @@ const DEFAULTS = {
 };
 
 async function getSetting(key) {
-  const { data, error } = await supabase
-    .from(TABLE)
-    .select('value')
-    .eq('key', key)
-    .maybeSingle();
+  const { data, error } = await supabase.from(TABLE).select('value').eq('key', key).maybeSingle();
   if (error) {
     logger.error('platformSettingsService getSetting error', { message: error.message });
     return { value: DEFAULTS[key] ?? null, error };
   }
-  const raw = (data && data.value);
+  const raw = data && data.value;
   const num = raw != null ? Number(raw) : NaN;
   const value = !Number.isNaN(num) ? num : (DEFAULTS[key] ?? raw);
   return { value, error: null };
 }
 
 async function getRates() {
-  const [comm, tax] = await Promise.all([
-    getSetting('commission_rate'),
-    getSetting('tax_penalty_rate'),
-  ]);
+  const [comm, tax] = await Promise.all([getSetting('commission_rate'), getSetting('tax_penalty_rate')]);
   return {
     commission_rate: comm.error ? DEFAULTS.commission_rate : comm.value,
     tax_penalty_rate: tax.error ? DEFAULTS.tax_penalty_rate : tax.value,

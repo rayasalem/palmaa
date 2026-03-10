@@ -51,7 +51,9 @@ describe('Global navigation & buttons', () => {
       cy.url().should('include', '#/profile');
 
       // Back to dashboard via any dashboard-like button in layout
-      cy.contains('button, a', /لوحة التحكم|Dashboard|לוח בקרה/).first().click({ force: true });
+      cy.contains('button, a', /لوحة التحكم|Dashboard|לוח בקרה/)
+        .first()
+        .click({ force: true });
       cy.url().should('match', /#\/(dashboard|home)/);
     });
 
@@ -89,4 +91,3 @@ describe('Global navigation & buttons', () => {
     });
   });
 });
-

@@ -2,9 +2,9 @@
 
 ## Health endpoints
 
-| Endpoint  | Purpose   | Returns                    |
-|-----------|-----------|----------------------------|
-| `GET /health` | Liveness  | `{ ok: true, timestamp }`  |
+| Endpoint      | Purpose   | Returns                                     |
+| ------------- | --------- | ------------------------------------------- |
+| `GET /health` | Liveness  | `{ ok: true, timestamp }`                   |
 | `GET /ready`  | Readiness | DB (and optional payment) check; 200 or 503 |
 
 Use in load balancers and Kubernetes: liveness = `/health`, readiness = `/ready`.

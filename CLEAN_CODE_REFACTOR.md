@@ -94,15 +94,15 @@ server/
 
 ### 2.1 Naming Conventions
 
-| Type | Convention | Example |
-|------|------------|---------|
-| Files | camelCase or PascalCase per role | `authService.ts`, `Auth.tsx` |
-| Components | PascalCase | `Auth`, `CustomerView` |
-| Hooks | camelCase, prefix `use` | `useAuth`, `useCart` |
-| Functions | camelCase, verb-noun | `getCart`, `addItem` |
-| Constants | UPPER_SNAKE_CASE | `API_BASE`, `OTP_EXPIRY_MINUTES` |
-| Interfaces/Types | PascalCase | `User`, `CartItem` |
-| Enums | PascalCase members | `OrderStatus.PENDING` |
+| Type             | Convention                       | Example                          |
+| ---------------- | -------------------------------- | -------------------------------- |
+| Files            | camelCase or PascalCase per role | `authService.ts`, `Auth.tsx`     |
+| Components       | PascalCase                       | `Auth`, `CustomerView`           |
+| Hooks            | camelCase, prefix `use`          | `useAuth`, `useCart`             |
+| Functions        | camelCase, verb-noun             | `getCart`, `addItem`             |
+| Constants        | UPPER_SNAKE_CASE                 | `API_BASE`, `OTP_EXPIRY_MINUTES` |
+| Interfaces/Types | PascalCase                       | `User`, `CartItem`               |
+| Enums            | PascalCase members               | `OrderStatus.PENDING`            |
 
 ### 2.2 Function Rules
 
@@ -137,7 +137,7 @@ server/
 
 - **File header**: 2–3 lines describing the file's role.
 - **Functions**: JSDoc with `@param`, `@returns`, `@throws` where useful.
-- **Non-obvious logic**: Inline comment explaining *why*, not *what*.
+- **Non-obvious logic**: Inline comment explaining _why_, not _what_.
 
 ### 3.3 Explanation File Template
 
@@ -147,21 +147,25 @@ Create `README.md` (or `EXPLANATION.md`) next to each folder or key file:
 # [Folder/File Name]
 
 ## Purpose
+
 Brief description of the module's role.
 
 ## Functions
 
 ### `functionName(params)`
+
 - **Role**: What it does.
 - **Params**: Description of each.
 - **Returns**: What it returns.
 - **Key logic**: Important decisions or edge cases.
 
 ## Key Lines
+
 - Line X: Why this check exists.
 - Line Y: Business rule or constraint.
 
 ## Dependencies
+
 - Uses: `api/client`, `types/User`
 - Used by: `Auth.tsx`, `useAuth`
 ```
@@ -170,11 +174,11 @@ Brief description of the module's role.
 
 ## 4. React: Separate UI, Hooks, API
 
-| Layer | Location | Responsibility |
-|-------|----------|----------------|
-| **UI** | `ComponentName.tsx` | JSX, layout, event bindings |
-| **Hooks** | `useComponentName.ts` or `ComponentName.hooks.ts` | State, effects, API calls |
-| **API** | `services/*.ts` or `api/*.ts` | HTTP requests only |
+| Layer     | Location                                          | Responsibility              |
+| --------- | ------------------------------------------------- | --------------------------- |
+| **UI**    | `ComponentName.tsx`                               | JSX, layout, event bindings |
+| **Hooks** | `useComponentName.ts` or `ComponentName.hooks.ts` | State, effects, API calls   |
+| **API**   | `services/*.ts` or `api/*.ts`                     | HTTP requests only          |
 
 **Example**: `Auth.tsx` imports `useAuth` from `hooks/useAuth`; `useAuth` calls `authService` from `services/authService`. No direct `fetch` in `Auth.tsx`.
 
@@ -182,12 +186,12 @@ Brief description of the module's role.
 
 ## 5. Node.js: Controllers, Routes, Services, Utils
 
-| Layer | Responsibility |
-|-------|----------------|
-| **Routes** | Map method+path to controller |
+| Layer           | Responsibility                                |
+| --------------- | --------------------------------------------- |
+| **Routes**      | Map method+path to controller                 |
 | **Controllers** | Validate input, call service, format response |
-| **Services** | Business logic, DB access |
-| **Utils** | Pure helpers (logger, validation) |
+| **Services**    | Business logic, DB access                     |
+| **Utils**       | Pure helpers (logger, validation)             |
 
 **Flow**: `Route → Controller → Service → DB`. Controllers do not contain business logic.
 
@@ -218,6 +222,7 @@ Brief description of the module's role.
 ## 8. Example: api/client.ts
 
 See `api/client.ts` and `api/README.md` for a full example with:
+
 - TypeScript
 - Single-responsibility functions
 - Detailed comments

@@ -11,8 +11,8 @@ import logger from '../utils/logger.js';
 
 const TRANSACTIONS_TABLE = 'transactions';
 
-const COMMISSION_RATE = 0.15;   // default 15%
-const TAX_PENALTY_RATE = 0.16;  // default 16% when payment is online and no invoice
+const COMMISSION_RATE = 0.15; // default 15%
+const TAX_PENALTY_RATE = 0.16; // default 16% when payment is online and no invoice
 
 /**
  * Derive merchant_id from order (first item's product merchant).
@@ -24,7 +24,7 @@ async function getOrderMerchantId(orderId) {
   const productId = first.product_id || first.productId;
   if (!productId) return { merchantId: null, error: null };
   const { data: product } = await productService.getProductById(productId);
-  return { merchantId: (product && product.merchant_id != null) ? product.merchant_id : null, error: null };
+  return { merchantId: product && product.merchant_id != null ? product.merchant_id : null, error: null };
 }
 
 /**
@@ -72,11 +72,7 @@ async function recordOrderSettlement(orderId, totalAmount, paymentMethod, invoic
     status: 'COMPLETED',
   };
 
-  const { data, error } = await supabase
-    .from(TRANSACTIONS_TABLE)
-    .insert(row)
-    .select()
-    .single();
+  const { data, error } = await supabase.from(TRANSACTIONS_TABLE).insert(row).select().single();
   if (error) {
     logger.error('transactionService recordOrderSettlement error', { message: error.message });
     return { data: null, error };
@@ -106,11 +102,7 @@ async function recordPaymentAttempt(orderId, amount, currency, status, gatewayTr
     gateway_transaction_id: gatewayTransactionId || null,
   };
 
-  const { data, error } = await supabase
-    .from(TRANSACTIONS_TABLE)
-    .insert(row)
-    .select()
-    .single();
+  const { data, error } = await supabase.from(TRANSACTIONS_TABLE).insert(row).select().single();
   if (error) {
     logger.error('transactionService recordPaymentAttempt error', { message: error.message });
     return { data: null, error };

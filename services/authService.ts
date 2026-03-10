@@ -72,13 +72,14 @@ export const authService = {
         headers: { ...getAuthHeaders() },
       });
       const data = await res.json().catch(() => ({}));
-      const dataObj = data && typeof data === 'object' ? data as Record<string, unknown> : {};
+      const dataObj = data && typeof data === 'object' ? (data as Record<string, unknown>) : {};
       if (!res.ok) {
         currentUser = null;
         if (res.status === 401) setAuthToken(null);
-        const msg = (res.status === 404)
-          ? 'Auth API not found. Set VITE_API_URL to your backend URL if frontend and backend are on different hosts.'
-          : (dataObj.error as string) || 'Not authenticated';
+        const msg =
+          res.status === 404
+            ? 'Auth API not found. Set VITE_API_URL to your backend URL if frontend and backend are on different hosts.'
+            : (dataObj.error as string) || 'Not authenticated';
         return { success: false, error: msg, statusCode: res.status };
       }
       const apiUser = dataObj.user;

@@ -10,15 +10,15 @@
 
 ### التحقق المطبق
 
-| Module/Endpoint | Check Performed | Status | Notes |
-|-----------------|-----------------|--------|--------|
-| server/utils/pagination.js | وجود دالة parsePagination(opts, defaultLimit, maxLimit) | **Pass** | ملف موجود؛ يُرجع `{ limit, offset }` مع تطبيع وقص ضمن maxLimit. |
-| orderService.js | استيراد واستخدام parsePagination | **Pass** | getOrdersByCustomerId, getOrdersByMerchantId يستخدمان الـ util (defaultLimit 500, maxLimit 1000). |
-| productService.js | استيراد واستخدام parsePagination | **Pass** | getActiveProducts, getProductsByMerchantId يستخدمان الـ util. |
-| notificationService.js | استيراد واستخدام parsePagination | **Pass** | listByUserId يستخدم الـ util. |
-| adminService.js | استيراد واستخدام parsePagination(opts, 0, 1000) | **Pass** | applyPagination: عند opts فارغ → limit 0 فلا يُطبَّق .range()؛ متوافق مع السلوك السابق. |
-| API response shape | شكل استجابة قوائم الطلبات/المنتجات/المستخدمين/الإشعارات | **Unchanged** | لا تغيير في `{ success, orders }` أو `{ success, products }` أو غيرها. |
-| pagination.verify.mjs | تشغيل سكربت التحقق | **Pass** | التأكيدات على القيم الافتراضية وحد الـ admin (limit 0) تمر بنجاح. |
+| Module/Endpoint            | Check Performed                                         | Status        | Notes                                                                                             |
+| -------------------------- | ------------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------- |
+| server/utils/pagination.js | وجود دالة parsePagination(opts, defaultLimit, maxLimit) | **Pass**      | ملف موجود؛ يُرجع `{ limit, offset }` مع تطبيع وقص ضمن maxLimit.                                   |
+| orderService.js            | استيراد واستخدام parsePagination                        | **Pass**      | getOrdersByCustomerId, getOrdersByMerchantId يستخدمان الـ util (defaultLimit 500, maxLimit 1000). |
+| productService.js          | استيراد واستخدام parsePagination                        | **Pass**      | getActiveProducts, getProductsByMerchantId يستخدمان الـ util.                                     |
+| notificationService.js     | استيراد واستخدام parsePagination                        | **Pass**      | listByUserId يستخدم الـ util.                                                                     |
+| adminService.js            | استيراد واستخدام parsePagination(opts, 0, 1000)         | **Pass**      | applyPagination: عند opts فارغ → limit 0 فلا يُطبَّق .range()؛ متوافق مع السلوك السابق.           |
+| API response shape         | شكل استجابة قوائم الطلبات/المنتجات/المستخدمين/الإشعارات | **Unchanged** | لا تغيير في `{ success, orders }` أو `{ success, products }` أو غيرها.                            |
+| pagination.verify.mjs      | تشغيل سكربت التحقق                                      | **Pass**      | التأكيدات على القيم الافتراضية وحد الـ admin (limit 0) تمر بنجاح.                                 |
 
 ### خلاصة Phase 1
 
@@ -32,16 +32,16 @@
 
 ### التحقق المطبق
 
-| Module/Endpoint | Check Performed | Status | Notes |
-|-----------------|----------------|--------|--------|
-| views/merchant/MerchantDashboardTab.tsx | وجود مكون تبويب لوحة التحكم | **Pass** | مكون منفصل؛ يُستورد عبر lazy. |
-| views/merchant/MerchantProductsTab.tsx | وجود مكون تبويب المنتجات | **Pass** | مكون منفصل؛ يُستورد عبر lazy. |
-| views/merchant/MerchantOrdersTab.tsx | وجود مكون تبويب الطلبات | **Pass** | مكون منفصل؛ يُستورد عبر lazy. |
-| MerchantView.tsx | استخدام React.lazy + Suspense للتبويبات الثلاثة | **Pass** | استيراد lazy للثلاثة؛ عرض داخل Suspense مع tabFallback. |
-| MerchantView state/props | الحالة والـ handlers في الأب؛ لا تغيير في الـ API calls | **Pass** | products, orders, productForm, refreshData، إلخ تبقى في MerchantView؛ التبويبات تستقبل props فقط. |
-| AdminView | تبويبات lazy (users, products, orders, treasury, platform) | **Not Applied** | AdminView لا يزال ملفاً واحداً مع محتوى التبويبات inline. |
-| Bundle splitting | انقسام شظايا تبويبات Merchant | **Pass** | البناء ينتج MerchantDashboardTab-*.js, MerchantProductsTab-*.js, MerchantOrdersTab-*.js. |
-| UI/API behavior | سلوك الواجهة واستدعاءات الـ API | **Unchanged** | لا تغيير في تدفق المستخدم أو شكل الاستجابات. |
+| Module/Endpoint                         | Check Performed                                            | Status          | Notes                                                                                             |
+| --------------------------------------- | ---------------------------------------------------------- | --------------- | ------------------------------------------------------------------------------------------------- |
+| views/merchant/MerchantDashboardTab.tsx | وجود مكون تبويب لوحة التحكم                                | **Pass**        | مكون منفصل؛ يُستورد عبر lazy.                                                                     |
+| views/merchant/MerchantProductsTab.tsx  | وجود مكون تبويب المنتجات                                   | **Pass**        | مكون منفصل؛ يُستورد عبر lazy.                                                                     |
+| views/merchant/MerchantOrdersTab.tsx    | وجود مكون تبويب الطلبات                                    | **Pass**        | مكون منفصل؛ يُستورد عبر lazy.                                                                     |
+| MerchantView.tsx                        | استخدام React.lazy + Suspense للتبويبات الثلاثة            | **Pass**        | استيراد lazy للثلاثة؛ عرض داخل Suspense مع tabFallback.                                           |
+| MerchantView state/props                | الحالة والـ handlers في الأب؛ لا تغيير في الـ API calls    | **Pass**        | products, orders, productForm, refreshData، إلخ تبقى في MerchantView؛ التبويبات تستقبل props فقط. |
+| AdminView                               | تبويبات lazy (users, products, orders, treasury, platform) | **Not Applied** | AdminView لا يزال ملفاً واحداً مع محتوى التبويبات inline.                                         |
+| Bundle splitting                        | انقسام شظايا تبويبات Merchant                              | **Pass**        | البناء ينتج MerchantDashboardTab-_.js, MerchantProductsTab-_.js, MerchantOrdersTab-\*.js.         |
+| UI/API behavior                         | سلوك الواجهة واستدعاءات الـ API                            | **Unchanged**   | لا تغيير في تدفق المستخدم أو شكل الاستجابات.                                                      |
 
 ### خلاصة Phase 2
 
@@ -56,13 +56,13 @@
 
 ### التحقق المطبق
 
-| Module/Endpoint | Check Performed | Status | Notes |
-|-----------------|----------------|--------|--------|
-| utils/logger.ts | وجود logger منظم (error, warn, info) | **Pass** | واجهة مع meta (message, requestId, userId، إلخ)؛ لا PII. |
-| productService.getAll | استبدال console.error بـ logger.error | **Pass** | logger.error('productService.getAll', { message }). |
-| productService.getByMerchantId | استبدال console.error بـ logger.error | **Pass** | logger.error('productService.getByMerchantId', { message, merchantId }). |
-| سلوك التطبيق | نفس الرسائل والـ fallback (cached/db.products أو []) | **Unchanged** | لا تغيير في القيم المُرجعة أو تدفق المستخدم. |
-| خدمات أخرى (storage, emailService, userService، إلخ) | استخدام console | **Note** | لا يزال فيها console.warn/error؛ يمكن نقلها لاحقاً إلى logger. |
+| Module/Endpoint                                      | Check Performed                                      | Status        | Notes                                                                    |
+| ---------------------------------------------------- | ---------------------------------------------------- | ------------- | ------------------------------------------------------------------------ |
+| utils/logger.ts                                      | وجود logger منظم (error, warn, info)                 | **Pass**      | واجهة مع meta (message, requestId, userId، إلخ)؛ لا PII.                 |
+| productService.getAll                                | استبدال console.error بـ logger.error                | **Pass**      | logger.error('productService.getAll', { message }).                      |
+| productService.getByMerchantId                       | استبدال console.error بـ logger.error                | **Pass**      | logger.error('productService.getByMerchantId', { message, merchantId }). |
+| سلوك التطبيق                                         | نفس الرسائل والـ fallback (cached/db.products أو []) | **Unchanged** | لا تغيير في القيم المُرجعة أو تدفق المستخدم.                             |
+| خدمات أخرى (storage, emailService, userService، إلخ) | استخدام console                                      | **Note**      | لا يزال فيها console.warn/error؛ يمكن نقلها لاحقاً إلى logger.           |
 
 ### خلاصة Phase 3
 
@@ -76,12 +76,12 @@
 
 ### التحقق المطبق
 
-| Module/Endpoint | Check Performed | Status | Notes |
-|-----------------|----------------|--------|--------|
-| scripts/load-test-get.mjs | وجود سكربت GET فقط | **Pass** | يطلب /health, /ready, /api/products؛ يحسب p50/p95/p99 ونسبة النجاح. |
-| docs/LOAD_TEST_README.md | تعليمات وتوثيق | **Pass** | قائمة endpoints، طريقة التشغيل، أدوات اختيارية (autocannon, k6). |
-| تعديل بيانات أو endpoints | عدم المساس بالبيانات أو شكل الـ API | **Read-Only** | السكربت GET فقط؛ لا كتابة ولا تغيير استجابات. |
-| تشغيل فعلي على الإنتاج | تنفيذ السكربت على بيئة الإنتاج | **Manual / Approval** | لا تشغيل high concurrency على الإنتاج دون موافقة. |
+| Module/Endpoint           | Check Performed                     | Status                | Notes                                                               |
+| ------------------------- | ----------------------------------- | --------------------- | ------------------------------------------------------------------- |
+| scripts/load-test-get.mjs | وجود سكربت GET فقط                  | **Pass**              | يطلب /health, /ready, /api/products؛ يحسب p50/p95/p99 ونسبة النجاح. |
+| docs/LOAD_TEST_README.md  | تعليمات وتوثيق                      | **Pass**              | قائمة endpoints، طريقة التشغيل، أدوات اختيارية (autocannon, k6).    |
+| تعديل بيانات أو endpoints | عدم المساس بالبيانات أو شكل الـ API | **Read-Only**         | السكربت GET فقط؛ لا كتابة ولا تغيير استجابات.                       |
+| تشغيل فعلي على الإنتاج    | تنفيذ السكربت على بيئة الإنتاج      | **Manual / Approval** | لا تشغيل high concurrency على الإنتاج دون موافقة.                   |
 
 ### تعليمات التشغيل (Staging / نسخة اختبارية)
 
@@ -105,20 +105,20 @@
 
 ### ما تم تحسينه (مطبق وآمن)
 
-| Phase | التحسين | الحالة |
-|-------|---------|--------|
-| 1 | توحيد Pagination في server/utils/pagination.js واستخدامه في order/product/notification/admin services | ✅ مطبق ومُتحقَّق |
-| 2 | Lazy-load تبويبات MerchantView (Dashboard, Products, Orders) مع Suspense | ✅ مطبق ومُتحقَّق |
-| 3 | Logger منظم في الفرونتند واستبدال console.error في productService (getAll, getByMerchantId) | ✅ مطبق ومُتحقَّق |
-| 4 | سكربت تحميل read-only + توثيق (LOAD_TEST_README.md) | ✅ مطبق؛ التشغيل يدوي/بموافقة |
+| Phase | التحسين                                                                                               | الحالة                        |
+| ----- | ----------------------------------------------------------------------------------------------------- | ----------------------------- |
+| 1     | توحيد Pagination في server/utils/pagination.js واستخدامه في order/product/notification/admin services | ✅ مطبق ومُتحقَّق             |
+| 2     | Lazy-load تبويبات MerchantView (Dashboard, Products, Orders) مع Suspense                              | ✅ مطبق ومُتحقَّق             |
+| 3     | Logger منظم في الفرونتند واستبدال console.error في productService (getAll, getByMerchantId)           | ✅ مطبق ومُتحقَّق             |
+| 4     | سكربت تحميل read-only + توثيق (LOAD_TEST_README.md)                                                   | ✅ مطبق؛ التشغيل يدوي/بموافقة |
 
 ### ما زال يحتاج تحسين لاحقاً
 
-| البند | الوصف | ملاحظة |
-|-------|--------|--------|
+| البند               | الوصف                                                                                                  | ملاحظة                                            |
+| ------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
 | AdminView lazy tabs | تقسيم AdminView إلى مكونات تبويب (users, products, orders, treasury, platform) + React.lazy + Suspense | نفس نمط MerchantView؛ يُنفَّذ بعد مراجعة واختبار. |
-| Frontend console | نقل باقي console.warn/error في services أخرى إلى logger | اختياري؛ لا يؤثر على سلوك الإنتاج. |
-| Load test تشغيل | تشغيل السكربت على staging وتوثيق p95/p99 و% النجاح وسلوك الـ timeout | يُنفَّذ يدوياً عند الحاجة. |
+| Frontend console    | نقل باقي console.warn/error في services أخرى إلى logger                                                | اختياري؛ لا يؤثر على سلوك الإنتاج.                |
+| Load test تشغيل     | تشغيل السكربت على staging وتوثيق p95/p99 و% النجاح وسلوك الـ timeout                                   | يُنفَّذ يدوياً عند الحاجة.                        |
 
 ### نقاط التحذير للإنتاج
 
@@ -128,11 +128,11 @@
 
 ### خطوات تحتاج Manual / Approval قبل الإنتاج
 
-| الخطوة | الوصف |
-|--------|--------|
-| تطبيق Lazy tabs على AdminView | تنفيذ بعد مراجعة الفريق واختبار على staging/dev. |
-| تشغيل load test على إنتاج | إن لزم، تشغيل بحمولة منخفضة وبموافقة؛ تجنّب high concurrency دون موافقة. |
+| الخطوة                        | الوصف                                                                    |
+| ----------------------------- | ------------------------------------------------------------------------ |
+| تطبيق Lazy tabs على AdminView | تنفيذ بعد مراجعة الفريق واختبار على staging/dev.                         |
+| تشغيل load test على إنتاج     | إن لزم، تشغيل بحمولة منخفضة وبموافقة؛ تجنّب high concurrency دون موافقة. |
 
 ---
 
-*جميع التعديلات المذكورة أعلاه (Phase 1–4 كما مُطبَّقة حالياً) backward-compatible ولا تغيّر شكل استجابة أي endpoint ولا منطق الأعمال.*
+_جميع التعديلات المذكورة أعلاه (Phase 1–4 كما مُطبَّقة حالياً) backward-compatible ولا تغيّر شكل استجابة أي endpoint ولا منطق الأعمال._

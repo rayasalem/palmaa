@@ -17,7 +17,12 @@ async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 export async function upsertSharedProduct(
   productId: string,
-  data: { marketing_title?: string; marketing_description?: string; custom_discount_text?: string; is_featured?: boolean }
+  data: {
+    marketing_title?: string;
+    marketing_description?: string;
+    custom_discount_text?: string;
+    is_featured?: boolean;
+  }
 ): Promise<{ success: boolean; shared: any }> {
   return api(`/api/broker/shared-products/${productId}`, {
     method: 'PUT',

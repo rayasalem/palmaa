@@ -1,0 +1,558 @@
+openapi: 3.0.3
+info:
+  title: Palma Marketplace API
+  description: Backend API for Palma Marketplace (auth, products, orders, cart, admin, payments).
+  version: 1.0.0
+
+servers:
+  - url: /api
+    description: API base (relative to host)
+
+tags:
+  - name: Health
+  - name: Auth
+  - name: Products
+  - name: Orders
+  - name: Cart
+  - name: Admin
+  - name: Payment
+  - name: MFA
+  - name: Notifications
+  - name: Merchant
+  - name: Broker
+  - name: Follow
+  - name: Addresses
+  - name: Shipment
+  - name: Chat
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Liveness
+      responses:
+        '200':
+          description: Process is up
+  /ready:
+    get:
+      tags: [Health]
+      summary: Readiness (DB + optional checks)
+      responses:
+        '200': { description: Ready }
+        '503': { description: Not ready }
+  /metrics:
+    get:
+      tags: [Health]
+      summary: Prometheus metrics
+      responses:
+        '200':
+          description: text/plain exposition format
+
+  /auth/ping:
+    get:
+      tags: [Auth]
+      summary: Auth API ping
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Current user (JWT)
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      responses:
+        '200': { description: User object }
+        '401': { description: Unauthorized }
+  /auth/login:
+    post:
+      tags: [Auth]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200': { description: User + cookie set or MFA required }
+        '401': { description: Invalid credentials }
+  /auth/register:
+    post:
+      tags: [Auth]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 6 }
+                name: { type: string }
+                role: { type: string, enum: [CUSTOMER, MERCHANT, BROKER] }
+      responses:
+        '201': { description: Created }
+        '400': { description: Validation error }
+  /auth/logout:
+    post:
+      tags: [Auth]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+  /auth/logout-all:
+    post:
+      tags: [Auth]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      summary: Invalidate all sessions (token_version)
+  /auth/verify-email:
+    post:
+      tags: [Auth]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, otp]
+              properties:
+                email: { type: string }
+                otp: { type: string, pattern: '^\d{6}$' }
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string }
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, otp, newPassword]
+              properties:
+                email: { type: string }
+                otp: { type: string }
+                newPassword: { type: string, minLength: 6 }
+  /auth/mfa/status:
+    get:
+      tags: [MFA]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+  /auth/mfa/setup:
+    post:
+      tags: [MFA]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+  /auth/mfa/verify-setup:
+    post:
+      tags: [MFA]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string, pattern: '^\d{6}$' }
+  /auth/mfa/verify:
+    post:
+      tags: [MFA]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mfaChallengeToken, code]
+  /auth/mfa/disable:
+    post:
+      tags: [MFA]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+
+  /products:
+    get:
+      tags: [Products]
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 24 }
+        - name: offset
+          in: query
+          schema: { type: integer, minimum: 0, default: 0 }
+        - name: q
+          in: query
+          schema: { type: string, maxLength: 150 }
+          description: Search (name/title/description)
+        - name: category
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: { success: true, products: [] }
+    post:
+      tags: [Products]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                price: { type: number }
+                stock: { type: integer }
+                category: { type: string }
+                isActive: { type: boolean }
+                images: { type: array, items: { type: string, format: uri } }
+      responses:
+        '201': { description: Created }
+  /products/merchant/{merchantId}:
+    get:
+      tags: [Products]
+      parameters:
+        - name: merchantId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: limit
+          in: query
+          schema: { type: integer }
+        - name: offset
+          in: query
+          schema: { type: integer }
+  /products/{id}:
+    get:
+      tags: [Products]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+    put:
+      tags: [Products]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+    delete:
+      tags: [Products]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+  /products/{id}/like:
+    post:
+      tags: [Products]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+  /products/{id}/like:
+    delete:
+      tags: [Products]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+  /products/{id}/comment:
+    post:
+      tags: [Products]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content: { type: string, minLength: 1, maxLength: 2000 }
+  /products/{id}/comments:
+    get:
+      tags: [Products]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+
+  /orders:
+    get:
+      tags: [Orders]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      summary: My orders
+    post:
+      tags: [Orders]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recipient_name, address, city, phone, amount, weight]
+              properties:
+                recipient_name: { type: string }
+                address: { type: string }
+                city: { type: string }
+                phone: { type: string }
+                amount: { type: number }
+                weight: { type: number }
+                payment_method: { type: string }
+                items: { type: array, items: { type: object } }
+      responses:
+        '201': { description: Created }
+  /orders/merchant:
+    get:
+      tags: [Orders]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+  /orders/{id}:
+    get:
+      tags: [Orders]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: X-Order-Guest-Token
+          in: header
+          schema: { type: string }
+          description: For guest order lookup
+    patch:
+      tags: [Orders]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+
+  /cart:
+    get:
+      tags: [Cart]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+    delete:
+      tags: [Cart]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+  /cart/items:
+    post:
+      tags: [Cart]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                product_id: { type: string, format: uuid }
+                productId: { type: string, format: uuid }
+                quantity: { type: integer, minimum: 1, maximum: 100, default: 1 }
+  /cart/items/{productId}:
+    patch:
+      tags: [Cart]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quantity]
+              properties:
+                quantity: { type: integer, minimum: 0, maximum: 100 }
+    delete:
+      tags: [Cart]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+
+  /admin/users:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 0, maximum: 1000 }
+        - name: offset
+          in: query
+          schema: { type: integer, minimum: 0 }
+      responses:
+        '200':
+          description: { success: true, users: [] }
+  /admin/users/{id}/status:
+    patch:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [PENDING, APPROVED, REJECTED, SUSPENDED] }
+  /admin/users/{id}/delete:
+    post:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 1, maxLength: 500 }
+  /admin/users/{id}/restore:
+    post:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+  /admin/orders:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer }
+        - name: offset
+          in: query
+          schema: { type: integer }
+  /admin/products:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+  /admin/products/{id}:
+    put:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+    delete:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+  /admin/settings:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+    patch:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                commission_rate: { type: number, minimum: 0, maximum: 1 }
+                tax_penalty_rate: { type: number, minimum: 0, maximum: 1 }
+  /admin/platform-earnings:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+
+  /payment/create:
+    post:
+      tags: [Payment]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orderId, amount, returnUrl]
+  /payment/callback:
+    post:
+      tags: [Payment]
+  /payments/cybersource/rest/process:
+    post:
+      tags: [Payment]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+
+  /addresses/cities:
+    get:
+      tags: [Addresses]
+  /addresses/villages:
+    get:
+      tags: [Addresses]
+
+  /notifications:
+    get:
+      tags: [Notifications]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+    patch:
+      tags: [Notifications]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+
+  /merchant/dashboard:
+    get:
+      tags: [Merchant]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+  /merchant/{id}:
+    get:
+      tags: [Merchant]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+  /merchant/{id}/followers-count:
+    get:
+      tags: [Merchant]
+  /merchant/{id}/following:
+    get:
+      tags: [Follow]
+
+  /follow/{merchantId}:
+    post:
+      tags: [Follow]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+    delete:
+      tags: [Follow]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+
+  /broker/shared-products:
+    get:
+      tags: [Broker]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+  /broker/shared-products/{productId}:
+    put:
+      tags: [Broker]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+    delete:
+      tags: [Broker]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+
+  /shipment/create:
+    post:
+      tags: [Shipment]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+  /shipment/status:
+    get:
+      tags: [Shipment]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+
+  /chat:
+    post:
+      tags: [Chat]
+      security: [{ cookieAuth: [] }, { bearerAuth: [] }]
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: palma_token
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security: []

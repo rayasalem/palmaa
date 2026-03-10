@@ -1,14 +1,7 @@
 import React from 'react';
 import type { Language } from '../translations';
 
-type ConditionValue =
-  | 'new'
-  | 'used_like_new'
-  | 'used_good'
-  | 'used_fair'
-  | 'refurbished'
-  | 'open_box'
-  | 'vintage';
+type ConditionValue = 'new' | 'used_like_new' | 'used_good' | 'used_fair' | 'refurbished' | 'open_box' | 'vintage';
 
 interface ConditionMeta {
   labelAr: string;
@@ -77,26 +70,22 @@ export const ProductConditionBadge = React.memo(function ProductConditionBadge({
   const meta = CONDITION_META[value as ConditionValue];
   if (!meta) {
     // Legacy or unknown: show generic "used" style
-    const fallback = { labelAr: 'مستعمل', labelEn: 'Used', labelHe: 'משומש', className: 'bg-slate-100 text-slate-700 border-slate-200' };
+    const fallback = {
+      labelAr: 'مستعمل',
+      labelEn: 'Used',
+      labelHe: 'משומש',
+      className: 'bg-slate-100 text-slate-700 border-slate-200',
+    };
     const label = lang === 'he' ? fallback.labelHe : lang === 'en' ? fallback.labelEn : fallback.labelAr;
-    const baseClasses = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border';
+    const baseClasses =
+      'inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border';
     return <span className={`${baseClasses} ${fallback.className} ${className ?? ''}`}>{label}</span>;
   }
 
-  const label =
-    lang === 'he'
-      ? meta.labelHe
-      : lang === 'en'
-      ? meta.labelEn
-      : meta.labelAr;
+  const label = lang === 'he' ? meta.labelHe : lang === 'en' ? meta.labelEn : meta.labelAr;
 
   const baseClasses =
     'inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border';
 
-  return (
-    <span className={`${baseClasses} ${meta.className} ${className ?? ''}`}>
-      {label}
-    </span>
-  );
+  return <span className={`${baseClasses} ${meta.className} ${className ?? ''}`}>{label}</span>;
 });
-

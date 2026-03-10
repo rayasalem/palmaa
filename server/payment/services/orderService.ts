@@ -38,12 +38,7 @@ export async function updateOrderPaymentStatus(
   if (paymentStatus === PAYMENT_STATUS.PAID || paymentStatus === PAYMENT_STATUS.FAILED) {
     updates.status = paymentStatus;
   }
-  const { data, error } = await supabase
-    .from(ordersTable)
-    .update(updates)
-    .eq('id', orderId)
-    .select()
-    .single();
+  const { data, error } = await supabase.from(ordersTable).update(updates).eq('id', orderId).select().single();
   if (error) {
     console.error('[orderService] updateOrderPaymentStatus:', error.message);
     return { order: null, error: error.message };

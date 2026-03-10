@@ -75,9 +75,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({ lang, onVi
             className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 ${filter === 'unread' ? 'bg-palma-primary text-white' : 'bg-slate-100 text-slate-600'}`}
           >
             {lang === 'en' ? 'Unread' : 'غير مقروء'}
-            {unreadCount > 0 && (
-              <span className="bg-white/30 rounded-full px-1.5 text-[10px]">{unreadCount}</span>
-            )}
+            {unreadCount > 0 && <span className="bg-white/30 rounded-full px-1.5 text-[10px]">{unreadCount}</span>}
           </button>
         </div>
       </div>
@@ -111,19 +109,16 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({ lang, onVi
                   {typeIcon(n.type)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    {typeLabel(n.type)}
-                  </p>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{typeLabel(n.type)}</p>
                   <p className="text-sm font-medium text-slate-800 mt-0.5">
                     {n.type === 'new_product' &&
                       (lang === 'en'
                         ? 'A merchant you follow posted a new product.'
                         : 'تاجر تتابعه أضاف منتجاً جديداً.')}
-                    {n.type === 'like' &&
-                      (lang === 'en' ? 'Someone liked a product.' : 'أعجب أحدهم بمنتج.')}
-                    {n.type === 'comment' &&
-                      (lang === 'en' ? 'New comment on a product.' : 'تعليق جديد على منتج.')}
-                    {n.type === 'follow' && (n.message || (lang === 'en' ? 'A customer started following you.' : 'زبون بدأ بمتابعتك.'))}
+                    {n.type === 'like' && (lang === 'en' ? 'Someone liked a product.' : 'أعجب أحدهم بمنتج.')}
+                    {n.type === 'comment' && (lang === 'en' ? 'New comment on a product.' : 'تعليق جديد على منتج.')}
+                    {n.type === 'follow' &&
+                      (n.message || (lang === 'en' ? 'A customer started following you.' : 'زبون بدأ بمتابعتك.'))}
                   </p>
                   <p className="text-[10px] text-slate-400 mt-1">
                     {new Date(n.created_at).toLocaleString(lang === 'en' ? 'en-US' : 'ar-EG')}

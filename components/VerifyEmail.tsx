@@ -31,7 +31,10 @@ const VerifyEmail: React.FC<VerifyEmailProps> = ({ user, onVerified, onLogout, l
     setError('');
     const result = await userService.verifyEmail(user.email || '', verificationCode);
     if (result.success && result.data) {
-      showToast(displayLang === 'en' ? 'Account verified!' : displayLang === 'he' ? 'החשבון אומת!' : 'تم تأكيد الحساب!', 'success');
+      showToast(
+        displayLang === 'en' ? 'Account verified!' : displayLang === 'he' ? 'החשבון אומת!' : 'تم تأكيد الحساب!',
+        'success'
+      );
       onVerified(result.data.user);
     } else {
       const errMsg = getAuthErrorMessage(result.error || 'Verification failed', displayLang);
@@ -46,7 +49,10 @@ const VerifyEmail: React.FC<VerifyEmailProps> = ({ user, onVerified, onLogout, l
     setError('');
     const result = await userService.resendVerificationCode(user.email || '');
     if (result.success) {
-      showToast(displayLang === 'en' ? 'Code sent!' : displayLang === 'he' ? 'הקוד נשלח!' : 'تم إرسال الرمز!', 'success');
+      showToast(
+        displayLang === 'en' ? 'Code sent!' : displayLang === 'he' ? 'הקוד נשלח!' : 'تم إرسال الرمز!',
+        'success'
+      );
     } else {
       const errMsg = getAuthErrorMessage(result.error || 'Error', displayLang);
       showToast(errMsg, 'error');
@@ -56,15 +62,21 @@ const VerifyEmail: React.FC<VerifyEmailProps> = ({ user, onVerified, onLogout, l
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-6 py-20" dir={displayLang === 'en' ? 'ltr' : 'rtl'}>
+    <div
+      className="min-h-screen bg-slate-50 flex items-center justify-center px-6 py-20"
+      dir={displayLang === 'en' ? 'ltr' : 'rtl'}
+    >
       <div className="max-w-lg w-full bg-white p-12 rounded-[2rem] shadow-2xl border border-slate-100">
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-6"><Logo size="medium" /></div>
+          <div className="flex justify-center mb-6">
+            <Logo size="medium" />
+          </div>
           <h1 className="text-xl font-black text-slate-900">
             {displayLang === 'en' ? 'Verify your email' : 'تأكيد البريد الإلكتروني'}
           </h1>
           <p className="text-slate-500 text-sm mt-2">
-            {displayLang === 'en' ? 'Enter the 6-digit code sent to' : 'أدخل الرمز المكون من 6 أرقام المرسل إلى'}: <strong>{user.email}</strong>
+            {displayLang === 'en' ? 'Enter the 6-digit code sent to' : 'أدخل الرمز المكون من 6 أرقام المرسل إلى'}:{' '}
+            <strong>{user.email}</strong>
           </p>
         </div>
         <form onSubmit={handleVerify} className="space-y-6">
@@ -73,7 +85,7 @@ const VerifyEmail: React.FC<VerifyEmailProps> = ({ user, onVerified, onLogout, l
             type="text"
             maxLength={6}
             value={verificationCode}
-            onChange={e => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+            onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
             placeholder="000000"
             className="w-full p-4 rounded-2xl border border-slate-200 bg-slate-50 text-center text-xl font-mono tracking-[0.5em] focus:ring-2 focus:ring-palma-primary outline-none"
             autoFocus
@@ -83,7 +95,7 @@ const VerifyEmail: React.FC<VerifyEmailProps> = ({ user, onVerified, onLogout, l
             disabled={loading || verificationCode.length !== 6}
             className="w-full py-4 bg-palma-primary text-white rounded-xl font-bold text-sm uppercase disabled:opacity-50"
           >
-            {loading ? (displayLang === 'en' ? 'Loading...' : 'جاري...') : (displayLang === 'en' ? 'Verify' : 'تأكيد')}
+            {loading ? (displayLang === 'en' ? 'Loading...' : 'جاري...') : displayLang === 'en' ? 'Verify' : 'تأكيد'}
           </button>
           <button
             type="button"
@@ -93,11 +105,7 @@ const VerifyEmail: React.FC<VerifyEmailProps> = ({ user, onVerified, onLogout, l
           >
             {displayLang === 'en' ? 'Resend code' : 'إعادة إرسال الرمز'}
           </button>
-          <button
-            type="button"
-            onClick={onLogout}
-            className="w-full py-2 text-slate-400 text-xs hover:text-slate-600"
-          >
+          <button type="button" onClick={onLogout} className="w-full py-2 text-slate-400 text-xs hover:text-slate-600">
             {displayLang === 'en' ? 'Logout' : 'تسجيل الخروج'}
           </button>
         </form>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 // This component is deprecated. Student role is now merged with Broker.

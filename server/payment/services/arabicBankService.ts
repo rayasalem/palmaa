@@ -61,8 +61,10 @@ export async function createPaymentSession(
     };
   } catch (err: unknown) {
     const msg = axios.isAxiosError(err)
-      ? (err.response?.data as { message?: string })?.message ?? err.message
-      : err instanceof Error ? err.message : 'Unknown error';
+      ? ((err.response?.data as { message?: string })?.message ?? err.message)
+      : err instanceof Error
+        ? err.message
+        : 'Unknown error';
     console.error('[arabicBankService] createPaymentSession error:', msg);
     throw new Error(msg as string);
   }

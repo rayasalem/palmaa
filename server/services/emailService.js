@@ -28,7 +28,7 @@ async function sendViaResend(to, subject, text, html) {
     const res = await fetch(RESEND_API, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'User-Agent': 'Palma-Marketplace/1.0',
       },
@@ -55,7 +55,7 @@ async function sendViaResend(to, subject, text, html) {
 
 function createTransporter(portOverride) {
   const host = process.env.EMAIL_HOST ? String(process.env.EMAIL_HOST).trim() : '';
-  const port = portOverride != null ? portOverride : (Number(process.env.EMAIL_PORT) || 587);
+  const port = portOverride != null ? portOverride : Number(process.env.EMAIL_PORT) || 587;
   const user = process.env.EMAIL_USER ? String(process.env.EMAIL_USER).trim() : '';
   const pass = (process.env.EMAIL_PASS || '').trim();
   if (!host || !user || !pass) return null;
@@ -93,12 +93,16 @@ async function sendEmail(to, subject, text, html) {
     if (res && res.success) return res;
     console.warn('[emailService] Resend failed, trying SMTP:', (res.error && res.error.message) || 'no result');
   } else {
-    console.warn('[emailService] RESEND_API_KEY not set. Add it in .env or Render Environment (Resend → API Keys) to send emails.');
+    console.warn(
+      '[emailService] RESEND_API_KEY not set. Add it in .env or Render Environment (Resend → API Keys) to send emails.'
+    );
   }
 
   const transporter = getTransporter();
   if (!transporter) {
-    logger.warn('emailService Email not configured. Set RESEND_API_KEY (Resend → API Keys) in .env or Render Environment.');
+    logger.warn(
+      'emailService Email not configured. Set RESEND_API_KEY (Resend → API Keys) in .env or Render Environment.'
+    );
     return { success: false, error: { message: 'Email not configured' } };
   }
 
@@ -121,8 +125,9 @@ async function sendEmail(to, subject, text, html) {
     console.log('[emailService] SMTP sent successfully to', recipients.join(', '));
     return { success: true };
   } catch (err) {
-    const code = (err && err.code) ? String(err.code) : '';
-    const isConnectionError = /ECONNREFUSED|ETIMEDOUT|ECONNRESET|ENOTFOUND/.test(code) || /timeout|connection|refused/i.test(err.message || '');
+    const code = err && err.code ? String(err.code) : '';
+    const isConnectionError =
+      /ECONNREFUSED|ETIMEDOUT|ECONNRESET|ENOTFOUND/.test(code) || /timeout|connection|refused/i.test(err.message || '');
     if (isConnectionError && configuredPort === 465) {
       const fallback = createTransporter(587);
       if (fallback) {
@@ -132,7 +137,10 @@ async function sendEmail(to, subject, text, html) {
           console.log('[emailService] SMTP sent successfully via port 587 to', recipients.join(', '));
           return { success: true };
         } catch (err2) {
-          logger.error('emailService SMTP port 587 also failed', { code: err2.code || err2.message, message: err2.message });
+          logger.error('emailService SMTP port 587 also failed', {
+            code: err2.code || err2.message,
+            message: err2.message,
+          });
           return { success: false, error: err2 };
         }
       }
@@ -168,8 +176,4 @@ function getPasswordResetTemplate(otpCode) {
   `;
 }
 
-export {
-  sendEmail,
-  getEmailConfirmationTemplate,
-  getPasswordResetTemplate,
-};
+export { sendEmail, getEmailConfirmationTemplate, getPasswordResetTemplate };

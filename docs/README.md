@@ -1,14 +1,14 @@
 # Palma Marketplace – DevOps and operations
 
-| Document | Description |
-|----------|-------------|
-| [DEPLOYMENT_ARCHITECTURE.md](DEPLOYMENT_ARCHITECTURE.md) | High-level architecture and environments |
-| [INFRASTRUCTURE.md](INFRASTRUCTURE.md) | Folders, Docker, Nginx |
-| [CICD.md](CICD.md) | GitHub Actions CI/CD |
-| [MONITORING.md](MONITORING.md) | Health checks, logging, Prometheus/Grafana |
-| [BACKUP_STRATEGY.md](BACKUP_STRATEGY.md) | DB backup and restore |
-| [SCALABILITY.md](SCALABILITY.md) | Horizontal scaling, load balancing, caching |
-| [SECURITY.md](SECURITY.md) | Security measures and recommendations |
+| Document                                                 | Description                                 |
+| -------------------------------------------------------- | ------------------------------------------- |
+| [DEPLOYMENT_ARCHITECTURE.md](DEPLOYMENT_ARCHITECTURE.md) | High-level architecture and environments    |
+| [INFRASTRUCTURE.md](INFRASTRUCTURE.md)                   | Folders, Docker, Nginx                      |
+| [CICD.md](CICD.md)                                       | GitHub Actions CI/CD                        |
+| [MONITORING.md](MONITORING.md)                           | Health checks, logging, Prometheus/Grafana  |
+| [BACKUP_STRATEGY.md](BACKUP_STRATEGY.md)                 | DB backup and restore                       |
+| [SCALABILITY.md](SCALABILITY.md)                         | Horizontal scaling, load balancing, caching |
+| [SECURITY.md](SECURITY.md)                               | Security measures and recommendations       |
 
 ## Quick start (Docker)
 

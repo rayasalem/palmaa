@@ -28,9 +28,11 @@ describe('Form validation', () => {
       AuthPage.clickProceedToRegister();
 
       // نحن الآن في نموذج RegisterMerchant؛ جرّب الإرسال بدون ملء الحقول
-      cy.get('form').first().within(() => {
-        cy.root().submit();
-      });
+      cy.get('form')
+        .first()
+        .within(() => {
+          cy.root().submit();
+        });
 
       cy.get('.bg-red-50').first().should('be.visible');
     });
@@ -44,9 +46,11 @@ describe('Form validation', () => {
       AuthPage.clickProceedToRegister();
 
       // نموذج RegisterBroker: إرسال بدون تعبئة
-      cy.get('form').first().within(() => {
-        cy.root().submit();
-      });
+      cy.get('form')
+        .first()
+        .within(() => {
+          cy.root().submit();
+        });
 
       cy.get('.bg-red-50').first().should('be.visible');
     });
@@ -82,4 +86,3 @@ describe('Form validation', () => {
     });
   });
 });
-

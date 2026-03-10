@@ -49,4 +49,3 @@ async function notificationHandler(req, res) {
 }
 
 export { createHostedSessionHandler, notificationHandler };
-

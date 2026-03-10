@@ -11,7 +11,16 @@ import { ShopProductCard, CategoryPill } from '../../components/CustomerShared';
 import { prefetchComponent, prefetchProductData } from '../../prefetch';
 import { CATEGORY_EMOJI } from '../../types';
 
-const MAIN_GROUP_IDS = ['food', 'fashion', 'electronics', 'home', 'kids', 'automotive', 'personalCare', 'services'] as const;
+const MAIN_GROUP_IDS = [
+  'food',
+  'fashion',
+  'electronics',
+  'home',
+  'kids',
+  'automotive',
+  'personalCare',
+  'services',
+] as const;
 const MAIN_GROUP_ICONS: Record<string, string> = {
   food: '🛒',
   fashion: '👗',
@@ -23,9 +32,45 @@ const MAIN_GROUP_ICONS: Record<string, string> = {
   services: '🔧',
 };
 const MAIN_GROUP_SUBCATEGORIES: Record<string, string[]> = {
-  food: ['juices', 'soft_drinks', 'hot_drinks', 'water', 'dairy_drinks', 'fruits', 'vegetables', 'dairy', 'bakery', 'meat_poultry', 'canned_food', 'snacks', 'sweets', 'spices', 'grains', 'ready_meals', 'oils_sauces', 'frozen_food', 'food'],
-  fashion: ['men_clothing', 'women_clothing', 'kids_clothing', 'shoes', 'bags_accessories', 'traditional_wear', 'fashion'],
-  electronics: ['phones', 'computers', 'electronics_accessories', 'home_appliances', 'cameras', 'gaming', 'electronics'],
+  food: [
+    'juices',
+    'soft_drinks',
+    'hot_drinks',
+    'water',
+    'dairy_drinks',
+    'fruits',
+    'vegetables',
+    'dairy',
+    'bakery',
+    'meat_poultry',
+    'canned_food',
+    'snacks',
+    'sweets',
+    'spices',
+    'grains',
+    'ready_meals',
+    'oils_sauces',
+    'frozen_food',
+    'food',
+  ],
+  fashion: [
+    'men_clothing',
+    'women_clothing',
+    'kids_clothing',
+    'shoes',
+    'bags_accessories',
+    'traditional_wear',
+    'fashion',
+  ],
+  electronics: [
+    'phones',
+    'computers',
+    'electronics_accessories',
+    'home_appliances',
+    'cameras',
+    'gaming',
+    'electronics',
+  ],
   home: ['furniture', 'kitchen', 'home_decor', 'garden', 'tools', 'home', 'furnishings_textiles'],
   kids: ['baby', 'toys'],
   automotive: ['automotive'],
@@ -79,13 +124,16 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
   onViewProfile,
 }) => {
   const common = t.common as Record<string, string>;
-  const getGroupLabel = (groupId: string) => common[`group${groupId.charAt(0).toUpperCase() + groupId.slice(1)}`] || groupId;
+  const getGroupLabel = (groupId: string) =>
+    common[`group${groupId.charAt(0).toUpperCase() + groupId.slice(1)}`] || groupId;
   const searchLower = categorySearch.trim().toLowerCase();
   const filteredGroupIds = searchLower
     ? MAIN_GROUP_IDS.filter((gid) => {
         const label = getGroupLabel(gid);
         const subLabels = (MAIN_GROUP_SUBCATEGORIES[gid] || []).map((cid) => (t.categories[cid] || cid) as string);
-        return label.toLowerCase().includes(searchLower) || subLabels.some((s) => s.toLowerCase().includes(searchLower));
+        return (
+          label.toLowerCase().includes(searchLower) || subLabels.some((s) => s.toLowerCase().includes(searchLower))
+        );
       })
     : [...MAIN_GROUP_IDS];
   const visibleGroupIds = showAllGroups ? filteredGroupIds : filteredGroupIds.slice(0, INITIAL_VISIBLE_GROUPS);
@@ -98,12 +146,19 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
           {lang === 'ar' ? 'التسوق' : lang === 'he' ? 'קניות' : 'Shopping'}
         </h2>
         <p className="text-sm text-slate-500 mt-1">
-          {lang === 'ar' ? 'اختر تصنيفاً أو تصفّح كل المنتجات' : lang === 'he' ? 'בחר קטגוריה או עיין בהכל' : 'Choose a category or browse all products'}
+          {lang === 'ar'
+            ? 'اختر تصنيفاً أو تصفّح كل المنتجات'
+            : lang === 'he'
+              ? 'בחר קטגוריה או עיין בהכל'
+              : 'Choose a category or browse all products'}
         </p>
       </div>
 
       <div className="relative">
-        <Search className="absolute top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-600 left-4 rtl:left-auto rtl:right-4" aria-hidden />
+        <Search
+          className="absolute top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-600 left-4 rtl:left-auto rtl:right-4"
+          aria-hidden
+        />
         <input
           type="text"
           placeholder={common.searchCategoryPlaceholder ?? 'ابحث عن تصنيف...'}
@@ -156,7 +211,9 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
                     : 'bg-white border-emerald-100 text-slate-700 hover:border-emerald-300 hover:bg-emerald-50'
                 }`}
               >
-                <span className="text-2xl sm:text-3xl" aria-hidden>{emoji}</span>
+                <span className="text-2xl sm:text-3xl" aria-hidden>
+                  {emoji}
+                </span>
                 <span className="text-xs font-bold text-center line-clamp-2">{label}</span>
               </button>
             );
@@ -164,9 +221,16 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
         </div>
       </div>
 
-      <p className="text-xs text-slate-500 mb-2">{common.clickAgainToClearFilter ?? 'اضغط على التصنيف مرة ثانية لإلغاء الفلتر'}</p>
+      <p className="text-xs text-slate-500 mb-2">
+        {common.clickAgainToClearFilter ?? 'اضغط على التصنيف مرة ثانية لإلغاء الفلتر'}
+      </p>
       <div className="flex flex-wrap gap-2 items-center mb-4">
-        <CategoryPill category="all" active={shopCategoryId === 'all'} label={t.common.allCategories} onSelect={onCategorySelect} />
+        <CategoryPill
+          category="all"
+          active={shopCategoryId === 'all'}
+          label={t.common.allCategories}
+          onSelect={onCategorySelect}
+        />
       </div>
 
       <div className="space-y-4">
@@ -177,15 +241,26 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
             const subIds = MAIN_GROUP_SUBCATEGORIES[groupId] || [];
             const isExpanded = expandedGroupId === groupId;
             return (
-              <div key={groupId} className="bg-white rounded-2xl border-2 border-emerald-100 overflow-hidden shadow-soft hover:shadow-md transition-shadow">
+              <div
+                key={groupId}
+                className="bg-white rounded-2xl border-2 border-emerald-100 overflow-hidden shadow-soft hover:shadow-md transition-shadow"
+              >
                 <button
                   type="button"
                   onClick={() => setExpandedGroupId(expandedGroupId === groupId ? null : groupId)}
                   className="w-full flex items-center gap-4 p-5 text-right rtl:text-left"
                 >
-                  <span className="text-3xl flex-shrink-0" aria-hidden>{icon}</span>
-                  <span className="flex-1 font-black text-palma-navy text-sm uppercase tracking-wide">{groupLabel}</span>
-                  {isExpanded ? <ChevronDown className="w-5 h-5 text-emerald-600 flex-shrink-0" /> : <ChevronRight className="w-5 h-5 text-emerald-600 flex-shrink-0" />}
+                  <span className="text-3xl flex-shrink-0" aria-hidden>
+                    {icon}
+                  </span>
+                  <span className="flex-1 font-black text-palma-navy text-sm uppercase tracking-wide">
+                    {groupLabel}
+                  </span>
+                  {isExpanded ? (
+                    <ChevronDown className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                  ) : (
+                    <ChevronRight className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                  )}
                 </button>
                 {isExpanded && (
                   <div className="px-5 pb-5 pt-0 border-t border-emerald-50">
@@ -194,7 +269,10 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
                         <button
                           key={cat}
                           type="button"
-                          onClick={() => { onCategorySelect(cat); setExpandedGroupId(null); }}
+                          onClick={() => {
+                            onCategorySelect(cat);
+                            setExpandedGroupId(null);
+                          }}
                           className={`rounded-xl px-3 py-2 text-xs font-bold transition ${
                             shopCategoryId === cat
                               ? 'bg-emerald-600 text-white'
@@ -224,13 +302,21 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
 
       <div>
         <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">
-          {lang === 'ar' ? `عرض ${filteredShopProducts.length} منتج` : lang === 'he' ? `מציג ${filteredShopProducts.length} מוצרים` : `Showing ${filteredShopProducts.length} products`}
+          {lang === 'ar'
+            ? `عرض ${filteredShopProducts.length} منتج`
+            : lang === 'he'
+              ? `מציג ${filteredShopProducts.length} מוצרים`
+              : `Showing ${filteredShopProducts.length} products`}
         </p>
         {filteredShopProducts.length === 0 ? (
           <div className="dashboard-empty py-16 rounded-2xl">
             <span className="text-4xl block mb-4 grayscale opacity-60">🛍️</span>
             <p className="text-slate-500 font-semibold text-sm">
-              {lang === 'ar' ? 'لا توجد منتجات تطابق البحث أو التصنيف.' : lang === 'he' ? 'אין מוצרים תואמים.' : 'No products match your filters.'}
+              {lang === 'ar'
+                ? 'لا توجد منتجات تطابق البحث أو التصنيف.'
+                : lang === 'he'
+                  ? 'אין מוצרים תואמים.'
+                  : 'No products match your filters.'}
             </p>
           </div>
         ) : (
@@ -238,8 +324,14 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
             {filteredShopProducts.map((p) => (
               <div
                 key={p.id}
-                onMouseEnter={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}
-                onFocus={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}
+                onMouseEnter={() => {
+                  prefetchComponent('PublicProductDetails');
+                  prefetchProductData(p.id);
+                }}
+                onFocus={() => {
+                  prefetchComponent('PublicProductDetails');
+                  prefetchProductData(p.id);
+                }}
               >
                 <ShopProductCard
                   product={p}

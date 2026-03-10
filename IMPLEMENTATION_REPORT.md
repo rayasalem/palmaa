@@ -4,50 +4,50 @@
 
 ### Backend (`server/`)
 
-| File / folder | Contents |
-|---------------|----------|
-| **server.js** | Express app: CORS, JSON, static `public/`, request logging. Mounts `/api/orders`, `/api/payment`, `/api/shipment`. Serves **GET /sandbox-pay** with `sandbox-pay.html`. Defines `/health`, 404 and global error handler. Port from env or 5000. |
-| **.env.example** | Template: PORT, SANDBOX_PAYMENT_URL, SUPABASE_URL, SUPABASE_SERVICE_KEY, LOGESTECHS_COMPANY_ID, FRONTEND_URL. |
-| **.gitignore** | Ignores `node_modules/` and `.env`. |
-| **package.json** | express, axios, cors, dotenv, @supabase/supabase-js; nodemon (dev). Scripts: start, dev. |
-| **config/supabaseClient.js** | Creates Supabase client from SUPABASE_URL and SUPABASE_SERVICE_KEY. |
-| **routes/orderRoutes.js** | POST `/` → createOrder, GET `/:id` → getOrder. |
-| **routes/paymentRoutes.js** | POST `/create` → createPayment, POST `/callback` → paymentCallback. |
-| **routes/shipmentRoutes.js** | POST `/create` → createShipment. |
-| **controllers/orderController.js** | Validates recipient_name, address, city, phone, amount, weight. try/catch. Calls orderService createOrder / getOrderById. |
-| **controllers/paymentController.js** | createPayment: validates orderId, amount; accepts optional return_url; returns sandbox URL; comment “Replace with real bank credentials later.” paymentCallback: validates orderId, status; updates order paid/failed; supports simulation. |
-| **controllers/shipmentController.js** | Validates orderId, recipient_name, address, city, phone, weight (weight > 0). try/catch. Calls shipmentService.createShipment. |
-| **services/orderService.js** | createOrder (insert Supabase orders, status pending), getOrderById. |
-| **services/paymentService.js** | updateOrderStatus, buildSandboxPaymentUrl(orderId, amount, returnUrl), createPayment (sets payment_processing, returns URL), handlePaymentCallback (paid/failed). |
-| **services/shipmentService.js** | getOrderById, createLogesTechsShipment (POST to LogesTechs with company-id 634), updateOrderShipment (shipment_id, shipment_status), createShipment (fetch order → API → update order; reads shipment_id and shipment_status from response). |
-| **public/sandbox-pay.html** | Sandbox payment UI: reads orderId, amount, return_url from query; “Pay (Success)” / “Cancel (Fail)” → POST /api/payment/callback → redirect to return_url?orderId=...&payment=success|failed. |
-| **public/test-payment.html** | Test UI: input orderId, buttons to simulate success/failure via POST /api/payment/callback. |
-| **README.md** | Setup, env vars, Supabase schema, full API list, sandbox and test instructions. |
+| File / folder                         | Contents                                                                                                                                                                                                                                        |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| **server.js**                         | Express app: CORS, JSON, static `public/`, request logging. Mounts `/api/orders`, `/api/payment`, `/api/shipment`. Serves **GET /sandbox-pay** with `sandbox-pay.html`. Defines `/health`, 404 and global error handler. Port from env or 5000. |
+| **.env.example**                      | Template: PORT, SANDBOX_PAYMENT_URL, SUPABASE_URL, SUPABASE_SERVICE_KEY, LOGESTECHS_COMPANY_ID, FRONTEND_URL.                                                                                                                                   |
+| **.gitignore**                        | Ignores `node_modules/` and `.env`.                                                                                                                                                                                                             |
+| **package.json**                      | express, axios, cors, dotenv, @supabase/supabase-js; nodemon (dev). Scripts: start, dev.                                                                                                                                                        |
+| **config/supabaseClient.js**          | Creates Supabase client from SUPABASE_URL and SUPABASE_SERVICE_KEY.                                                                                                                                                                             |
+| **routes/orderRoutes.js**             | POST `/` → createOrder, GET `/:id` → getOrder.                                                                                                                                                                                                  |
+| **routes/paymentRoutes.js**           | POST `/create` → createPayment, POST `/callback` → paymentCallback.                                                                                                                                                                             |
+| **routes/shipmentRoutes.js**          | POST `/create` → createShipment.                                                                                                                                                                                                                |
+| **controllers/orderController.js**    | Validates recipient_name, address, city, phone, amount, weight. try/catch. Calls orderService createOrder / getOrderById.                                                                                                                       |
+| **controllers/paymentController.js**  | createPayment: validates orderId, amount; accepts optional return_url; returns sandbox URL; comment “Replace with real bank credentials later.” paymentCallback: validates orderId, status; updates order paid/failed; supports simulation.     |
+| **controllers/shipmentController.js** | Validates orderId, recipient_name, address, city, phone, weight (weight > 0). try/catch. Calls shipmentService.createShipment.                                                                                                                  |
+| **services/orderService.js**          | createOrder (insert Supabase orders, status pending), getOrderById.                                                                                                                                                                             |
+| **services/paymentService.js**        | updateOrderStatus, buildSandboxPaymentUrl(orderId, amount, returnUrl), createPayment (sets payment_processing, returns URL), handlePaymentCallback (paid/failed).                                                                               |
+| **services/shipmentService.js**       | getOrderById, createLogesTechsShipment (POST to LogesTechs with company-id 634), updateOrderShipment (shipment_id, shipment_status), createShipment (fetch order → API → update order; reads shipment_id and shipment_status from response).    |
+| **public/sandbox-pay.html**           | Sandbox payment UI: reads orderId, amount, return_url from query; “Pay (Success)” / “Cancel (Fail)” → POST /api/payment/callback → redirect to return_url?orderId=...&payment=success                                                           | failed. |
+| **public/test-payment.html**          | Test UI: input orderId, buttons to simulate success/failure via POST /api/payment/callback.                                                                                                                                                     |
+| **README.md**                         | Setup, env vars, Supabase schema, full API list, sandbox and test instructions.                                                                                                                                                                 |
 
 ### Frontend (project root)
 
-| File / folder | Contents |
-|---------------|----------|
-| **services/checkoutApi.ts** | API client (base VITE_API_URL or http://localhost:5000): createOrder, getOrder, createPayment(orderId, amount, returnUrl), createShipment. |
-| **views/CheckoutPage.tsx** | Form: recipient_name, address, city, phone, weight, amount (from cart). Validates all fields. Submit: createOrder → createPayment(return_url) → redirect to paymentUrl. Loading/error states, Back button. |
-| **views/CheckoutReturnPage.tsx** | Reads return params ?orderId=...&payment=success|failed. If failed: show “Payment failed”. If success: poll GET /api/orders/:id until status=paid, then POST /api/shipment/create; show “Order confirmed” with orderId, payment status, shipment_id and shipment_status. |
-| **App.tsx** (modified) | State: checkoutReturnOrderId, checkoutReturnPayment, showApiCheckout. Init: read orderId and payment from URL. Early render: CheckoutReturnPage when return params set; CheckoutPage when user and showApiCheckout. Passes onProceedToApiCheckout to CustomerView. |
-| **views/CustomerView.tsx** (modified) | Optional prop onProceedToApiCheckout. Cart section: second button “Payment + Shipment (API)” that calls onProceedToApiCheckout. |
-| **.env.example** (modified) | Added VITE_API_URL=http://localhost:5000. |
+| File / folder                         | Contents                                                                                                                                                                                                                                                           |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **services/checkoutApi.ts**           | API client (base VITE_API_URL or http://localhost:5000): createOrder, getOrder, createPayment(orderId, amount, returnUrl), createShipment.                                                                                                                         |
+| **views/CheckoutPage.tsx**            | Form: recipient_name, address, city, phone, weight, amount (from cart). Validates all fields. Submit: createOrder → createPayment(return_url) → redirect to paymentUrl. Loading/error states, Back button.                                                         |
+| **views/CheckoutReturnPage.tsx**      | Reads return params ?orderId=...&payment=success                                                                                                                                                                                                                   | failed. If failed: show “Payment failed”. If success: poll GET /api/orders/:id until status=paid, then POST /api/shipment/create; show “Order confirmed” with orderId, payment status, shipment_id and shipment_status. |
+| **App.tsx** (modified)                | State: checkoutReturnOrderId, checkoutReturnPayment, showApiCheckout. Init: read orderId and payment from URL. Early render: CheckoutReturnPage when return params set; CheckoutPage when user and showApiCheckout. Passes onProceedToApiCheckout to CustomerView. |
+| **views/CustomerView.tsx** (modified) | Optional prop onProceedToApiCheckout. Cart section: second button “Payment + Shipment (API)” that calls onProceedToApiCheckout.                                                                                                                                    |
+| **.env.example** (modified)           | Added VITE_API_URL=http://localhost:5000.                                                                                                                                                                                                                          |
 
 ---
 
 ## 2. Endpoints added and purpose
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| POST | /api/orders | Create order (body: recipient_name, address, city, phone, amount, weight). Insert Supabase, status pending. |
-| GET | /api/orders/:id | Get one order (polling and shipment creation). |
-| POST | /api/payment/create | Body: orderId, amount, return_url (optional). Set order to payment_processing; return sandbox payment URL. |
-| POST | /api/payment/callback | Body: orderId, status. Set order to paid or failed. Used by sandbox and test page. |
-| POST | /api/shipment/create | Body: orderId, recipient_name, address, city, phone, weight. Fetch order, call LogesTechs API, save shipment_id and shipment_status, return order + shipment. |
-| GET | /sandbox-pay | Serve sandbox payment page (simulate success/fail, then redirect to frontend). |
-| GET | /health | Health check. |
+| Method | Path                  | Purpose                                                                                                                                                       |
+| ------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST   | /api/orders           | Create order (body: recipient_name, address, city, phone, amount, weight). Insert Supabase, status pending.                                                   |
+| GET    | /api/orders/:id       | Get one order (polling and shipment creation).                                                                                                                |
+| POST   | /api/payment/create   | Body: orderId, amount, return_url (optional). Set order to payment_processing; return sandbox payment URL.                                                    |
+| POST   | /api/payment/callback | Body: orderId, status. Set order to paid or failed. Used by sandbox and test page.                                                                            |
+| POST   | /api/shipment/create  | Body: orderId, recipient_name, address, city, phone, weight. Fetch order, call LogesTechs API, save shipment_id and shipment_status, return order + shipment. |
+| GET    | /sandbox-pay          | Serve sandbox payment page (simulate success/fail, then redirect to frontend).                                                                                |
+| GET    | /health               | Health check.                                                                                                                                                 |
 
 ---
 

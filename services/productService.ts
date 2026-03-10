@@ -104,7 +104,10 @@ export const productService = {
       getByMerchantCache.set(merchantId, { at: now, data: mapped });
       return mapped;
     } catch (e) {
-      logger.error('productService.getByMerchantId', { message: e instanceof Error ? e.message : String(e), merchantId });
+      logger.error('productService.getByMerchantId', {
+        message: e instanceof Error ? e.message : String(e),
+        merchantId,
+      });
       const fallback = getByMerchantCache.get(merchantId);
       if (fallback) return fallback.data;
       return [];
@@ -126,7 +129,7 @@ export const productService = {
         stock: data.stock ?? 0,
         category: data.category ?? 'other',
         isActive: data.isActive !== undefined ? data.isActive : true,
-        images: data.images && data.images.length ? data.images : (data.image_url ? [data.image_url] : []),
+        images: data.images && data.images.length ? data.images : data.image_url ? [data.image_url] : [],
         image_url: data.image_url,
         is_bestseller: data.is_bestseller,
         sku: data.sku,
@@ -220,8 +223,10 @@ export const productService = {
         (p) => (p.name || '').toLowerCase().includes(term) || (p.description || '').toLowerCase().includes(term)
       );
     }
-    if (filters.minPrice !== undefined) result = result.filter((p) => (p.price ?? p.price_ils ?? 0) >= filters.minPrice!);
-    if (filters.maxPrice !== undefined) result = result.filter((p) => (p.price ?? p.price_ils ?? 0) <= filters.maxPrice!);
+    if (filters.minPrice !== undefined)
+      result = result.filter((p) => (p.price ?? p.price_ils ?? 0) >= filters.minPrice!);
+    if (filters.maxPrice !== undefined)
+      result = result.filter((p) => (p.price ?? p.price_ils ?? 0) <= filters.maxPrice!);
     if (filters.minRating !== undefined) result = result.filter((p) => (p.rating ?? 0) >= filters.minRating!);
     if (filters.sortBy) {
       switch (filters.sortBy) {

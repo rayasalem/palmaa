@@ -7,7 +7,7 @@
 
 ## قبل البدء
 
-- **بيئة الاختبار (Sandbox):** [businesscentertest.cybersource.com](https://businesscentertest.cybersource.com)  
+- **بيئة الاختبار (Sandbox):** [businesscentertest.cybersource.com](https://businesscentertest.cybersource.com)
 - **بيئة الإنتاج (Production):** [businesscenter.cybersource.com](https://businesscenter.cybersource.com)
 
 استخدم **Test** للتجربة أولاً، ثم نفس الخطوات على **Production** عند الجاهزية.
@@ -18,7 +18,7 @@
 
 1. ادخل إلى **Business Center** (Test أو Production).
 2. من القائمة اليسرى اختر:
-   - **Payment Configuration** → **Secure Acceptance Settings**  
+   - **Payment Configuration** → **Secure Acceptance Settings**
    - أو إن كنت Reseller: **Portfolio Management** → **Secure Acceptance Settings**.
 3. ستظهر قائمة البروفايلات. اختر البروفايل الذي تريد تفعيله (أو أنشئ واحداً جديداً من **New Profile**).
 
@@ -28,14 +28,14 @@
 
 إذا ضغطت **New Profile**:
 
-| الحقل | المطلوب |
-|-------|---------|
-| **Profile Name** | مطلوب، حتى 40 حرفاً (مثل: palma) |
-| **Integration Method** | فعّل **Hosted Checkout Integration** |
-| **Company Name** | مطلوب |
-| **Company Contact** | الاسم، البريد، الهاتف |
-| **Payment Tokenization** | اختياري (للدفع بضغطة لاحقاً) |
-| **Decision Manager** | اختياري |
+| الحقل                    | المطلوب                              |
+| ------------------------ | ------------------------------------ |
+| **Profile Name**         | مطلوب، حتى 40 حرفاً (مثل: palma)     |
+| **Integration Method**   | فعّل **Hosted Checkout Integration** |
+| **Company Name**         | مطلوب                                |
+| **Company Contact**      | الاسم، البريد، الهاتف                |
+| **Payment Tokenization** | اختياري (للدفع بضغطة لاحقاً)         |
+| **Decision Manager**     | اختياري                              |
 
 ثم اضغط **Submit**.
 
@@ -85,7 +85,7 @@
 
 1. من صفحة البروفايل اضغط **Customer Response** (أو من القائمة: Notifications / Customer Response).
 2. **Transaction Response Page:**
-   - إما **Hosted by Cybersource** (صفحة قبول/رفض جاهزة)،  
+   - إما **Hosted by Cybersource** (صفحة قبول/رفض جاهزة)،
    - أو **Hosted by You** ثم أدخل رابط صفحتك التي تستقبل POST بعد الدفع (يجب أن تتحقق من التوقيع).
 3. **Retry Limit:** حدد عدد المحاولات بعد الرفض (حتى 5).
 4. **Customer Redirect after Checkout:**  
@@ -105,7 +105,7 @@
 3. أدخل الرابط الكامل لـ endpoint الإشعار في مشروعك:
    - **اختبار:** `https://your-backend.onrender.com/api/payments/cybersource/notify`
    - **إنتاج:** `https://api.palma.ps/api/payments/cybersource/notify`  
-   (استبدل النطاق بنطاق الباكند الفعلي.)
+     (استبدل النطاق بنطاق الباكند الفعلي.)
 4. الرابط يجب أن يكون **HTTPS** ويدعم **TLS 1.2** على الأقل.
 5. اختر كيف تريد عرض رقم البطاقة في الإشعار (مثلاً آخر 4 أرقام فقط).
 6. اضغط **Save**.
@@ -138,6 +138,7 @@
 ## الخطوة 9: التحقق من المشروع
 
 1. **ملف `.env` في مجلد `server`** يجب أن يحتوي على الأقل:
+
    ```env
    CYBS_PROFILE_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
    CYBS_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -146,6 +147,7 @@
    CYBS_LOCALE=ar-xn
    CYBS_CURRENCY=USD
    ```
+
    للشيكل استخدم `CYBS_CURRENCY=ILS` إذا كان الحساب يدعمها.
 
 2. أعد تشغيل الباكند بعد تعديل `.env`.
@@ -156,16 +158,16 @@
 
 ## ملخص الترتيب
 
-| # | الخطوة | مطلوب للتفعيل |
-|---|--------|----------------|
-| 1 | الدخول إلى Secure Acceptance Settings | ✓ |
-| 2 | إنشاء/اختيار البروفايل | ✓ |
-| 3 | Payment Settings → Add Card Types + عملات | ✓ |
-| 4 | Security → Create Key (HMAC-SHA256) → نسخ Access + Secret | ✓ |
-| 5 | Customer Response → Redirect URL + (اختياري) Custom response | ✓ |
-| 6 | Notifications → Merchant POST URL = `/api/payments/cybersource/notify` | موصى به |
-| 7 | Payment Form (Billing/Shipping) | اختياري |
-| 8 | Promote Profile → Confirm | ✓ |
+| #   | الخطوة                                                                 | مطلوب للتفعيل |
+| --- | ---------------------------------------------------------------------- | ------------- |
+| 1   | الدخول إلى Secure Acceptance Settings                                  | ✓             |
+| 2   | إنشاء/اختيار البروفايل                                                 | ✓             |
+| 3   | Payment Settings → Add Card Types + عملات                              | ✓             |
+| 4   | Security → Create Key (HMAC-SHA256) → نسخ Access + Secret              | ✓             |
+| 5   | Customer Response → Redirect URL + (اختياري) Custom response           | ✓             |
+| 6   | Notifications → Merchant POST URL = `/api/payments/cybersource/notify` | موصى به       |
+| 7   | Payment Form (Billing/Shipping)                                        | اختياري       |
+| 8   | Promote Profile → Confirm                                              | ✓             |
 
 ---
 
@@ -174,6 +176,7 @@
 تم التحقق من الروابط والروابط الفرعية؛ التقرير الكامل في [CYBERSOURCE_LINKS_VERIFICATION.md](./CYBERSOURCE_LINKS_VERIFICATION.md).
 
 ### القائمة الرئيسية
+
 - [About This Guide](https://developer.cybersource.com/docs/cybs/en-us/sa/developer/all/sa-hosted/secure-acceptance/sa-about-guide.html)
 - [Overview](https://developer.cybersource.com/docs/cybs/en-us/sa/developer/all/sa-hosted/secure-acceptance/home-merch.html)
 - [Payment Configuration](https://developer.cybersource.com/docs/cybs/en-us/sa/developer/all/sa-hosted/secure-acceptance/sa-payment-configuration.html)

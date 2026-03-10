@@ -1,0 +1,99 @@
+{
+  "task": "Safe Frontend Component Split for Performance",
+  "generated": "2025-03-10",
+  "constraints_respected": [
+    "No breaking changes",
+    "No logic changes",
+    "State, hooks, props, API calls preserved",
+    "Backend and Redux interactions unchanged",
+    "Naming conventions preserved",
+    "Exported component name AdminView preserved"
+  ],
+  "completed_splits": [
+    {
+      "component": "AdminView.tsx",
+      "original_lines": 1047,
+      "status": "completed",
+      "new_structure": {
+        "main_file": {
+          "path": "views/AdminView.tsx",
+          "lines": 517,
+          "role": "Shell: state, handlers, context provider, header, tab buttons, Suspense + lazy tab render"
+        },
+        "shared_components": [
+          { "path": "views/admin/AdminUserRow.tsx", "lines": 125, "role": "Memoized user table row for Users tab" },
+          {
+            "path": "views/admin/AdminProductRow.tsx",
+            "lines": 80,
+            "role": "Memoized product table row for Products tab"
+          }
+        ],
+        "context": [
+          {
+            "path": "views/admin/AdminViewContext.tsx",
+            "lines": 101,
+            "role": "Extended with full state/handlers for all tabs; useAdminView() in tab components"
+          }
+        ],
+        "lazy_loaded_tabs": [
+          {
+            "path": "views/admin/AdminUsersTab.tsx",
+            "lines": 153,
+            "lazy": true,
+            "role": "Users list, filters, delete user modal"
+          },
+          {
+            "path": "views/admin/AdminProductsTab.tsx",
+            "lines": 98,
+            "lazy": true,
+            "role": "Products list, search, product delete modal"
+          },
+          { "path": "views/admin/AdminOrdersTab.tsx", "lines": 66, "lazy": true, "role": "Orders list, refresh" },
+          { "path": "views/admin/AdminTreasuryTab.tsx", "lines": 59, "lazy": true, "role": "Pending withdrawals" },
+          {
+            "path": "views/admin/AdminPlatformTab.tsx",
+            "lines": 98,
+            "lazy": true,
+            "role": "Platform settings and commission earnings"
+          }
+        ]
+      },
+      "lazy_loaded_components": [
+        "AdminUsersTab",
+        "AdminProductsTab",
+        "AdminOrdersTab",
+        "AdminTreasuryTab",
+        "AdminPlatformTab"
+      ],
+      "dependencies_preserved": {
+        "state": "All state remains in AdminView (allUsers, withdrawals, products, orders, platformSettings, platformEarnings, modals, filters, etc.)",
+        "handlers": "All handlers (handleStatusChange, loadProducts, handleProductDelete, confirmDeleteUser, etc.) unchanged and passed via AdminViewProvider value",
+        "api_calls": "userService, getAdminProducts, getAdminOrders, getAdminSettings, getAdminPlatformEarnings, updateAdminProduct, deleteAdminProduct, updateAdminSettings, marketStore, logEmail — all still called from AdminView",
+        "consumers": "App.tsx still imports AdminView from views/AdminView and passes view, onViewProduct, onViewProfile",
+        "exports": "export const AdminView preserved"
+      }
+    }
+  ],
+  "pending_splits": [
+    { "file": "components/PublicWebsite.tsx", "lines": 863, "priority": 2 },
+    { "file": "views/CustomerView.tsx", "lines": 775, "priority": 3 },
+    { "file": "views/MerchantView.tsx", "lines": 734, "priority": 4 },
+    { "file": "components/Auth.tsx", "lines": 618, "priority": 5 },
+    { "file": "views/CheckoutPage.tsx", "lines": 596, "priority": 6 },
+    { "file": "components/RegisterMerchant.tsx", "lines": 569, "priority": 7 },
+    { "file": "views/BrokerView.tsx", "lines": 559, "priority": 8 },
+    { "file": "views/PublicProductDetails.tsx", "lines": 508, "priority": 9 }
+  ],
+  "verification": {
+    "tsc": "Run npx tsc --noEmit. Project has pre-existing TS errors in other files; AdminView-related fixes applied (getUserLocation removed, context value cast, ACTIVE comparison cast).",
+    "tests": "Recommended: run existing unit/integration tests.",
+    "snapshots": "Optional: snapshot tests to ensure UI unchanged."
+  },
+  "summary": {
+    "admin_view_before": 1047,
+    "admin_view_after_main": 517,
+    "admin_view_total_new_files": 8,
+    "admin_view_lazy_tabs": 5,
+    "largest_file_now_under_500": "AdminView.tsx (517 lines)"
+  }
+}

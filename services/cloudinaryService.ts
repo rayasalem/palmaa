@@ -23,6 +23,6 @@ export const uploadImage = async (file: File): Promise<string> => {
       // In mock: return base64 string (بدون أي تأخير إضافي)
       resolve(reader.result as string);
     };
-    reader.onerror = error => reject(error);
+    reader.onerror = (error) => reject(error);
   });
 };

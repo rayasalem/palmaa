@@ -1,9 +1,10 @@
 /**
  * Request logging middleware. Does not log body (may contain secrets).
- * Structured logs include requestId, userId, orderId, productId where applicable (IDs only, no PII).
+ * Structured logs include requestId, userId, orderId, productId; IP is masked for privacy.
  */
 
 import logger from '../utils/logger.js';
+import { maskIp } from '../utils/maskIp.js';
 
 /** Extract orderId/productId from route params for structured logs. IDs only, no PII. */
 export function getRouteIds(req) {
@@ -18,7 +19,7 @@ export function requestLogger(req, res, next) {
   const start = Date.now();
   const method = req.method;
   const url = req.originalUrl || req.url;
-  const ip = req.ip || (req.socket && req.socket.remoteAddress);
+  const ipRaw = req.ip || (req.socket && req.socket.remoteAddress);
 
   res.on('finish', () => {
     const duration = Date.now() - start;
@@ -30,7 +31,7 @@ export function requestLogger(req, res, next) {
       url,
       status,
       durationMs: duration,
-      ip: ip ? String(ip).substring(0, 45) : undefined,
+      ipMasked: maskIp(ipRaw),
     };
     if (req.auth && req.auth.sub) meta.userId = req.auth.sub;
     if (orderId) meta.orderId = orderId;

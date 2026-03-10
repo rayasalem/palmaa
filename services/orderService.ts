@@ -1,4 +1,3 @@
-
 import { db } from './core/storage';
 import { Order, OrderItem, OrderStatus, PaymentMethod, ActionResponse } from '../types';
 import { productService } from './productService';
@@ -8,7 +7,6 @@ import { productService } from './productService';
  * Handles order placement, status updates, and retrieval.
  */
 export const orderService = {
-  
   getAll(): Order[] {
     return db.orders;
   },
@@ -17,12 +15,17 @@ export const orderService = {
     return db.orderItems;
   },
 
-  async placeOrder(productId: string, userId: string, paymentMethod: PaymentMethod, shippingDetails: any): Promise<ActionResponse<Order>> {
+  async placeOrder(
+    productId: string,
+    userId: string,
+    paymentMethod: PaymentMethod,
+    shippingDetails: any
+  ): Promise<ActionResponse<Order>> {
     const product = productService.getById(productId);
     if (!product) return { success: false, error: 'Product not found' };
 
     const orderId = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    
+
     const newOrder: Order = {
       id: orderId,
       customer_id: userId,
@@ -43,10 +46,10 @@ export const orderService = {
         villageName: shippingDetails.villageName,
         addressDetails: shippingDetails.address,
         phone: shippingDetails.phone,
-        regionId: shippingDetails.regionId
+        regionId: shippingDetails.regionId,
       },
       date: new Date().toISOString(),
-      createdAt: Date.now()
+      createdAt: Date.now(),
     };
 
     const newItem: OrderItem = {
@@ -54,7 +57,7 @@ export const orderService = {
       order_id: orderId,
       product_id: product.id,
       quantity: 1,
-      price: product.price || 0
+      price: product.price || 0,
     };
 
     db.addItem('orders', newOrder);
@@ -72,7 +75,7 @@ export const orderService = {
       expected_delivery_date: info.expectedDeliveryDate,
       status: 'SHIPPED',
       delivery_status: 'READY_FOR_PICKUP',
-      trackingNumber: info.trackingNumber
+      trackingNumber: info.trackingNumber,
     });
   },
 
@@ -80,7 +83,7 @@ export const orderService = {
     const updates: any = { delivery_status: status };
     if (status === 'CANCELLED') updates.status = OrderStatus.CANCELLED;
     if (status === 'DELIVERED') updates.status = OrderStatus.DELIVERED;
-    
+
     db.updateItem<Order>('orders', orderId, updates);
-  }
+  },
 };

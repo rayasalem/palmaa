@@ -23,7 +23,9 @@ function ensureConfig() {
   const keyId = process.env.CYBERSOURCE_KEY_ID;
   const secretKey = process.env.CYBERSOURCE_SECRET_KEY;
   if (!merchantId || !keyId || !secretKey) {
-    throw new Error('Cybersource is not configured. Please set CYBERSOURCE_MERCHANT_ID, CYBERSOURCE_KEY_ID, CYBERSOURCE_SECRET_KEY');
+    throw new Error(
+      'Cybersource is not configured. Please set CYBERSOURCE_MERCHANT_ID, CYBERSOURCE_KEY_ID, CYBERSOURCE_SECRET_KEY'
+    );
   }
   return { merchantId, keyId, secretKey };
 }
@@ -44,10 +46,7 @@ function buildSignatureHeaders(path, method, bodyString) {
     `v-c-merchant-id: ${merchantId}`;
 
   const keyBytes = Buffer.from(secretKey, 'base64');
-  const signature = crypto
-    .createHmac('sha256', keyBytes)
-    .update(signingString, 'utf8')
-    .digest('base64');
+  const signature = crypto.createHmac('sha256', keyBytes).update(signingString, 'utf8').digest('base64');
 
   const signatureHeader = [
     `keyid="${keyId}"`,
@@ -104,9 +103,9 @@ function httpPostJson(path, body) {
         } else {
           logger.error('Cybersource HTTP error', {
             statusCode: res.statusCode,
-            reason: parsed && parsed.reason || parsed && parsed.message || 'Unknown',
+            reason: (parsed && parsed.reason) || (parsed && parsed.message) || 'Unknown',
           });
-          reject(new Error(parsed && (parsed.reason || parsed.message) || `Cybersource error ${res.statusCode}`));
+          reject(new Error((parsed && (parsed.reason || parsed.message)) || `Cybersource error ${res.statusCode}`));
         }
       });
     });
@@ -173,4 +172,3 @@ async function createCardPayment({ orderId, amount, currency, card }) {
 }
 
 export { createCardPayment };
-

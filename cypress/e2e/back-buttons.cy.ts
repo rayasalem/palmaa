@@ -27,7 +27,9 @@ describe('Back buttons', () => {
       cy.url().should('include', '#/product/');
 
       // زر الرجوع إلى المنتجات
-      cy.contains('button', /المنتجات|Products/).first().click();
+      cy.contains('button', /المنتجات|Products/)
+        .first()
+        .click();
       cy.url().should('include', '#/catalog');
     });
   });
@@ -46,7 +48,9 @@ describe('Back buttons', () => {
       cy.wrap($links).first().click();
       cy.url().should('include', '#/profile/');
 
-      cy.contains('button', /العودة|رجوع|Back|Go Back/).first().click();
+      cy.contains('button', /العودة|رجوع|Back|Go Back/)
+        .first()
+        .click();
       cy.url().should('match', /#\/$/);
     });
   });
@@ -64,7 +68,9 @@ describe('Back buttons', () => {
       cy.wrap($links).first().click();
       cy.url().should('include', '#/broker');
 
-      cy.contains('button', /Go Home|الرئيسية|Home/).first().click();
+      cy.contains('button', /Go Home|الرئيسية|Home/)
+        .first()
+        .click();
       cy.url().should('match', /#\/$/);
     });
   });
@@ -73,7 +79,9 @@ describe('Back buttons', () => {
     cy.visit('/#/terms');
     cy.get('body').should('be.visible');
 
-    cy.contains('button', /رجوع|Back/).first().click();
+    cy.contains('button', /رجوع|Back/)
+      .first()
+      .click();
     cy.url().should('match', /#\/$/);
   });
 
@@ -105,7 +113,9 @@ describe('Back buttons', () => {
     cy.contains(/الدفع|Payment/).should('exist');
 
     // زر العودة/العودة للتسوق
-    cy.contains('button', /العودة للتسوق|Back to shop|العودة|Back/).first().click();
+    cy.contains('button', /العودة للتسوق|Back to shop|العودة|Back/)
+      .first()
+      .click();
 
     // الآن يجب أن تختفي معلمات البحث، وتعود الواجهة الرئيسية/الطلبات
     cy.location().should((loc) => {
@@ -113,4 +123,3 @@ describe('Back buttons', () => {
     });
   });
 });
-

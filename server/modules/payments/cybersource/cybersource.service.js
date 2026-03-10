@@ -28,8 +28,7 @@ function getConfig() {
   const profileId = getEnv('CYBS_PROFILE_ID');
   const accessKey = getEnv('CYBS_ACCESS_KEY');
   const secretKey = getEnv('CYBS_SECRET_KEY');
-  const hostedPayUrl =
-    getEnv('CYBS_HOSTED_PAY_URL') || 'https://testsecureacceptance.cybersource.com/pay';
+  const hostedPayUrl = getEnv('CYBS_HOSTED_PAY_URL') || 'https://testsecureacceptance.cybersource.com/pay';
   const locale = getEnv('CYBS_LOCALE', 'ar-xn');
   const currency = getEnv('CYBS_CURRENCY', 'USD');
 
@@ -87,7 +86,9 @@ async function createHostedSession(orderId, amount) {
   const signature = signFields(fields, signedFieldNames, cfg.secretKey);
 
   // Log only field names sent (no secrets) so you can verify we do NOT send merchant_category_code, usd_outlet_id, usd_terminal_id
-  const fieldNamesSent = Object.keys({ ...fields, signature }).sort().join(', ');
+  const fieldNamesSent = Object.keys({ ...fields, signature })
+    .sort()
+    .join(', ');
   logger.info(
     `[cybersource-hosted] session created orderId=${sanitizeForLog(orderId)} fields_sent=[${fieldNamesSent}]`
   );
@@ -125,11 +126,7 @@ async function handleNotification(payload) {
   }
 
   const decision = String(payload.decision || '').toUpperCase() || 'ERROR';
-  const orderId =
-    payload.req_reference_number ||
-    payload.reference_number ||
-    payload.req_referenceNumber ||
-    null;
+  const orderId = payload.req_reference_number || payload.reference_number || payload.req_referenceNumber || null;
   const transactionId = payload.transaction_id || payload.transactionId || null;
 
   if (!orderId) {
@@ -142,11 +139,7 @@ async function handleNotification(payload) {
   const idempotencyKey = transactionId ? `cybersource-sa:${transactionId}` : undefined;
 
   if (decision === 'ACCEPT') {
-    const { error } = await paymentService.handlePaymentCallback(
-      orderId,
-      'success',
-      idempotencyKey
-    );
+    const { error } = await paymentService.handlePaymentCallback(orderId, 'success', idempotencyKey);
     if (error) {
       logger.error('[cybersource] handlePaymentCallback error (ACCEPT)', {
         message: error.message,
@@ -158,11 +151,7 @@ async function handleNotification(payload) {
   }
 
   // For non-ACCEPT decisions, mark as failed but do not throw – application can retry or show error.
-  const { error } = await paymentService.handlePaymentCallback(
-    orderId,
-    'failed',
-    idempotencyKey
-  );
+  const { error } = await paymentService.handlePaymentCallback(orderId, 'failed', idempotencyKey);
   if (error) {
     logger.error('[cybersource] handlePaymentCallback error (NON-ACCEPT)', {
       message: error.message,
@@ -175,4 +164,3 @@ async function handleNotification(payload) {
 }
 
 export { createHostedSession, handleNotification };
-

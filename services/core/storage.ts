@@ -3,7 +3,22 @@
  * No mock/seed data; products/orders/users come from backend API.
  */
 
-import type { User, Product, Order, OrderItem, MerchantProfile, SharedProduct, Review, Notification, CommissionRecord, WithdrawalRequest, Transaction, Follow, Like, Comment } from '../../types';
+import type {
+  User,
+  Product,
+  Order,
+  OrderItem,
+  MerchantProfile,
+  SharedProduct,
+  Review,
+  Notification,
+  CommissionRecord,
+  WithdrawalRequest,
+  Transaction,
+  Follow,
+  Like,
+  Comment,
+} from '../../types';
 
 class StorageService {
   public users: User[] = [];
@@ -74,7 +89,7 @@ class StorageService {
 
   public updateItem<T extends { id: string }>(collection: keyof StorageService, id: string, updates: Partial<T>) {
     const list = (this as any)[collection] as T[];
-    const index = list.findIndex(i => i.id === id);
+    const index = list.findIndex((i) => i.id === id);
     if (index !== -1) {
       list[index] = { ...list[index], ...updates };
       this.persist(collection);
@@ -85,7 +100,7 @@ class StorageService {
 
   public deleteItem<T extends { id: string }>(collection: keyof StorageService, id: string) {
     const list = (this as any)[collection] as T[];
-    (this as any)[collection] = list.filter(i => i.id !== id);
+    (this as any)[collection] = list.filter((i) => i.id !== id);
     this.persist(collection);
   }
 }

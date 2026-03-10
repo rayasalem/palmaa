@@ -8,12 +8,18 @@ import { isProduction } from '../config/env.js';
 import { safeErrorForUser } from '../utils/userFacingError.js';
 import { getRouteIds } from './requestLogger.js';
 
-export function errorHandler(err, req, res, next) {
+export function errorHandler(err, req, res, _next) {
   const status = err.statusCode || err.status || 500;
   const message = safeErrorForUser(err, 'حدث خطأ، يرجى المحاولة لاحقاً') || 'Internal server error';
   const stack = err.stack;
 
-  const meta = { requestId: req && req.id, message, status, url: req && req.originalUrl, stack: isProduction() ? undefined : stack };
+  const meta = {
+    requestId: req && req.id,
+    message,
+    status,
+    url: req && req.originalUrl,
+    stack: isProduction() ? undefined : stack,
+  };
   if (req && req.auth && req.auth.sub) meta.userId = req.auth.sub;
   if (req) {
     const { orderId, productId } = getRouteIds(req);

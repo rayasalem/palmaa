@@ -10,13 +10,13 @@ The project integrates with **LogesTechs** (real logistics company), not mock da
 
 ## Configuration (Environment Variables)
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `SHIPMENT_API_BASE` | No | `https://apisv2.logestechs.com/api` | LogesTechs API base URL |
-| `LOGESTECHS_COMPANY_ID` | No | `634` | Company ID header |
-| `LOGESTECHS_EMAIL` | **Yes** (create/cancel) | — | Your LogesTechs account email |
-| `LOGESTECHS_PASSWORD` | **Yes** (create/cancel) | — | Your LogesTechs account password |
-| `LOG_SHIPMENT_REQUESTS` | No | `false` | Set to `true` to log full request/response for debugging |
+| Variable                | Required                | Default                             | Description                                              |
+| ----------------------- | ----------------------- | ----------------------------------- | -------------------------------------------------------- |
+| `SHIPMENT_API_BASE`     | No                      | `https://apisv2.logestechs.com/api` | LogesTechs API base URL                                  |
+| `LOGESTECHS_COMPANY_ID` | No                      | `634`                               | Company ID header                                        |
+| `LOGESTECHS_EMAIL`      | **Yes** (create/cancel) | —                                   | Your LogesTechs account email                            |
+| `LOGESTECHS_PASSWORD`   | **Yes** (create/cancel) | —                                   | Your LogesTechs account password                         |
+| `LOG_SHIPMENT_REQUESTS` | No                      | `false`                             | Set to `true` to log full request/response for debugging |
 
 **Sender defaults (optional):** `SENDER_NAME`, `SENDER_PHONE`, `SENDER_ADDRESS_LINE1`, `SENDER_CITY_ID`, `SENDER_VILLAGE_ID`, `SENDER_REGION_ID`, `SENDER_BUSINESS_NAME`
 
@@ -36,12 +36,12 @@ Restart the server. You will see full request and response bodies in the console
 
 ## API Endpoints (Backend)
 
-| Method | Path | Purpose |
-|--------|------|---------|
-| POST | `/api/shipment/create` | Create shipment for an order |
-| GET | `/api/shipment/status?id=` or `?barcode=` | Get package status |
-| POST | `/api/shipment/print-pdf` | Print AWB labels (body: `{ ids: [...] }`) |
-| PUT | `/api/shipment/:shipmentId/cancel` | Cancel shipment |
+| Method | Path                                      | Purpose                                   |
+| ------ | ----------------------------------------- | ----------------------------------------- |
+| POST   | `/api/shipment/create`                    | Create shipment for an order              |
+| GET    | `/api/shipment/status?id=` or `?barcode=` | Get package status                        |
+| POST   | `/api/shipment/print-pdf`                 | Print AWB labels (body: `{ ids: [...] }`) |
+| PUT    | `/api/shipment/:shipmentId/cancel`        | Cancel shipment                           |
 
 **Note:** There is no “calculate shipping cost” endpoint in the current implementation. LogesTechs may expose one; refer to their [Postman collection](https://www.postman.com/ali-asfour/logestech-s-api/collection/1kmztpz/logestechs-apis) for available operations.
 
@@ -177,7 +177,7 @@ curl -X PUT http://localhost:5000/api/shipment/12345/cancel
    - Endpoint: `POST https://apisv2.logestechs.com/api/ship/request/by-email`
    - Header: `company-id: 634`
    - Body: `{ "email": "...", "password": "...", ... }`  
-   See their [Postman collection](https://www.postman.com/ali-asfour/logestech-s-api/collection/1kmztpz/logestechs-apis) for the full schema.
+     See their [Postman collection](https://www.postman.com/ali-asfour/logestech-s-api/collection/1kmztpz/logestechs-apis) for the full schema.
 
 4. **Create a shipment via backend**
 
@@ -193,6 +193,7 @@ curl -X PUT http://localhost:5000/api/shipment/12345/cancel
   - Different credentials (test vs live accounts)
 
 Ask LogesTechs for:
+
 - Sandbox/test credentials for development
 - Production credentials for live use
 

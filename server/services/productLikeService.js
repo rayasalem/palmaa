@@ -26,11 +26,7 @@ async function like(productId, userId) {
 }
 
 async function unlike(productId, userId) {
-  const { error } = await supabase
-    .from(TABLE)
-    .delete()
-    .eq('product_id', productId)
-    .eq('user_id', userId);
+  const { error } = await supabase.from(TABLE).delete().eq('product_id', productId).eq('user_id', userId);
   if (error) {
     logger.error('productLikeService unlike error', { message: error.message });
     return { error };

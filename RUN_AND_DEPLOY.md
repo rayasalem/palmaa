@@ -28,11 +28,13 @@ If anything is missing, set it up before or while following the steps below.
 ### Backend (Node.js + Express + Supabase + NodeMailer)
 
 1. **Go to the server folder**
+
    ```bash
    cd server
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
@@ -46,14 +48,19 @@ If anything is missing, set it up before or while following the steps below.
      - **Optional:** `PORT=5000`, `LOGESTECHS_COMPANY_ID=634`, `SANDBOX_PAYMENT_URL=http://localhost:5000/sandbox-pay`
 
 4. **Start the backend**
+
    ```bash
    npm run dev
    ```
+
    Or, without nodemon:
+
    ```bash
    node server.js
    ```
+
    Or:
+
    ```bash
    npm start
    ```
@@ -67,15 +74,19 @@ If anything is missing, set it up before or while following the steps below.
 ### Frontend (React + Vite)
 
 1. **Go to the project root** (where `package.json` and `vite.config.ts` are)
+
    ```bash
    cd ..
    ```
+
    Or from anywhere:
+
    ```bash
    cd path/to/palma-marketplace
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
@@ -89,9 +100,11 @@ If anything is missing, set it up before or while following the steps below.
    - Use the same port as your backend (default 5000).
 
 4. **Start the frontend**
+
    ```bash
    npm run dev
    ```
+
    Vite will show a URL, usually `http://localhost:3000` (or another port if 3000 is busy).
 
 5. **Open in browser**
@@ -107,18 +120,18 @@ If anything is missing, set it up before or while following the steps below.
 - Open your **Vercel project** → **Settings** → **Environment Variables**.
 - Add these for the **backend** project:
 
-| Name | Value | Notes |
-|------|--------|--------|
-| PORT | (optional) | Vercel often sets this automatically |
-| SUPABASE_URL | Your Supabase project URL | From Supabase dashboard |
-| SUPABASE_SERVICE_KEY | Your Supabase service role key | From Supabase dashboard |
-| EMAIL_HOST | e.g. smtp.gmail.com | SMTP server |
-| EMAIL_PORT | 587 | SMTP port |
-| EMAIL_USER | your-email@gmail.com | Sender email |
-| EMAIL_PASS | Your app password | Gmail: use App Password |
-| FRONTEND_URL | https://your-frontend.vercel.app | Your Vercel frontend URL (for CORS) |
-| LOGESTECHS_COMPANY_ID | 634 | Or your company ID |
-| SANDBOX_PAYMENT_URL | https://your-backend.vercel.app/sandbox-pay | Your deployed backend URL + `/sandbox-pay` |
+| Name                  | Value                                       | Notes                                      |
+| --------------------- | ------------------------------------------- | ------------------------------------------ |
+| PORT                  | (optional)                                  | Vercel often sets this automatically       |
+| SUPABASE_URL          | Your Supabase project URL                   | From Supabase dashboard                    |
+| SUPABASE_SERVICE_KEY  | Your Supabase service role key              | From Supabase dashboard                    |
+| EMAIL_HOST            | e.g. smtp.gmail.com                         | SMTP server                                |
+| EMAIL_PORT            | 587                                         | SMTP port                                  |
+| EMAIL_USER            | your-email@gmail.com                        | Sender email                               |
+| EMAIL_PASS            | Your app password                           | Gmail: use App Password                    |
+| FRONTEND_URL          | https://your-frontend.vercel.app            | Your Vercel frontend URL (for CORS)        |
+| LOGESTECHS_COMPANY_ID | 634                                         | Or your company ID                         |
+| SANDBOX_PAYMENT_URL   | https://your-backend.vercel.app/sandbox-pay | Your deployed backend URL + `/sandbox-pay` |
 
 - For the **frontend** project, add:
   - **VITE_API_URL** = `https://your-backend.vercel.app` (your deployed backend URL)
@@ -160,11 +173,13 @@ You can use **Postman**, **Insomnia**, or **curl** to hit the APIs.
 ### Example calls (local; replace with your production URL if needed)
 
 **Health**
+
 ```bash
 curl http://localhost:5000/health
 ```
 
 **Register (sends OTP email)**
+
 ```bash
 curl -X POST http://localhost:5000/api/auth/register \
   -H "Content-Type: application/json" \
@@ -172,6 +187,7 @@ curl -X POST http://localhost:5000/api/auth/register \
 ```
 
 **Verify email (OTP)**
+
 ```bash
 curl -X POST http://localhost:5000/api/auth/verify-email \
   -H "Content-Type: application/json" \
@@ -179,6 +195,7 @@ curl -X POST http://localhost:5000/api/auth/verify-email \
 ```
 
 **Forgot password**
+
 ```bash
 curl -X POST http://localhost:5000/api/auth/forgot-password \
   -H "Content-Type: application/json" \
@@ -186,6 +203,7 @@ curl -X POST http://localhost:5000/api/auth/forgot-password \
 ```
 
 **Reset password**
+
 ```bash
 curl -X POST http://localhost:5000/api/auth/reset-password \
   -H "Content-Type: application/json" \
@@ -193,6 +211,7 @@ curl -X POST http://localhost:5000/api/auth/reset-password \
 ```
 
 **Create order**
+
 ```bash
 curl -X POST http://localhost:5000/api/orders \
   -H "Content-Type: application/json" \
@@ -200,6 +219,7 @@ curl -X POST http://localhost:5000/api/orders \
 ```
 
 **Create payment (sandbox URL)**
+
 ```bash
 curl -X POST http://localhost:5000/api/payment/create \
   -H "Content-Type: application/json" \
@@ -207,6 +227,7 @@ curl -X POST http://localhost:5000/api/payment/create \
 ```
 
 **Payment callback (simulate success)**
+
 ```bash
 curl -X POST http://localhost:5000/api/payment/callback \
   -H "Content-Type: application/json" \
@@ -214,6 +235,7 @@ curl -X POST http://localhost:5000/api/payment/callback \
 ```
 
 **Create shipment**
+
 ```bash
 curl -X POST http://localhost:5000/api/shipment/create \
   -H "Content-Type: application/json" \

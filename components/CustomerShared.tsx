@@ -36,7 +36,7 @@ export const ShippingInputGroup = React.memo(function ShippingInputGroup({
   error = false,
   onChange,
   lang,
-  disabled = false
+  disabled = false,
 }: ShippingInputGroupProps) {
   const inputValue = value ?? '';
   const displayValue = type === 'select' ? inputValue : String(inputValue);
@@ -46,7 +46,9 @@ export const ShippingInputGroup = React.memo(function ShippingInputGroup({
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       <div className="relative group">
-        <div className={`absolute top-1/2 -translate-y-1/2 ${lang === 'en' ? 'left-4' : 'right-4'} text-slate-400 group-focus-within:text-palma-primary transition-colors`}>
+        <div
+          className={`absolute top-1/2 -translate-y-1/2 ${lang === 'en' ? 'left-4' : 'right-4'} text-slate-400 group-focus-within:text-palma-primary transition-colors`}
+        >
           <Icon className="w-5 h-5" />
         </div>
         {type === 'select' ? (
@@ -74,7 +76,9 @@ export const ShippingInputGroup = React.memo(function ShippingInputGroup({
           />
         )}
         {type === 'select' && (
-          <div className={`absolute top-1/2 -translate-y-1/2 ${lang === 'en' ? 'right-4' : 'left-4'} text-slate-400 pointer-events-none`}>
+          <div
+            className={`absolute top-1/2 -translate-y-1/2 ${lang === 'en' ? 'right-4' : 'left-4'} text-slate-400 pointer-events-none`}
+          >
             <ArrowRight className="w-4 h-4 rotate-90" />
           </div>
         )}
@@ -92,7 +96,15 @@ export interface ShopProductCardProps {
   onAddToCart: (product: Product) => void;
   isAddingToCart?: boolean;
 }
-export const ShopProductCard = React.memo(function ShopProductCard({ product: p, lang, t, onViewProduct, onViewProfile, onAddToCart, isAddingToCart }: ShopProductCardProps) {
+export const ShopProductCard = React.memo(function ShopProductCard({
+  product: p,
+  lang,
+  t,
+  onViewProduct,
+  onViewProfile,
+  onAddToCart,
+  isAddingToCart,
+}: ShopProductCardProps) {
   const merchantId = p.merchant_id || p.merchantId || '';
   const merchantName = marketStore.getMerchantNameByUserId(merchantId);
   const displayImage = p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/400x400?text=No+Image';
@@ -167,7 +179,15 @@ export interface CartItemRowProps {
   onRemove: (productId: string, productName?: string) => void;
   lang: Language;
 }
-export const CartItemRow = React.memo(function CartItemRow({ item, isSelected, showCheckbox, onToggleSelection, onUpdateQuantity, onRemove, lang }: CartItemRowProps) {
+export const CartItemRow = React.memo(function CartItemRow({
+  item,
+  isSelected,
+  showCheckbox,
+  onToggleSelection,
+  onUpdateQuantity,
+  onRemove,
+  lang,
+}: CartItemRowProps) {
   return (
     <div className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-100 shadow-sm flex items-center gap-4 sm:gap-6 group hover:border-palma-primary/20 transition-all">
       {showCheckbox ? (
@@ -179,7 +199,12 @@ export const CartItemRow = React.memo(function CartItemRow({ item, isSelected, s
         />
       ) : null}
       <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-slate-50 shrink-0 border border-slate-100">
-        <img src={item.images?.[0] || item.imageUrl || item.image_url || 'https://placehold.co/200x200?text=No+Image'} loading="lazy" className="w-full h-full object-cover" alt="" />
+        <img
+          src={item.images?.[0] || item.imageUrl || item.image_url || 'https://placehold.co/200x200?text=No+Image'}
+          loading="lazy"
+          className="w-full h-full object-cover"
+          alt=""
+        />
       </div>
       <div className="flex-1 min-w-0">
         <h4 className="font-bold text-slate-900 text-sm sm:text-base mb-1 truncate">{item.name}</h4>
@@ -189,14 +214,29 @@ export const CartItemRow = React.memo(function CartItemRow({ item, isSelected, s
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center bg-slate-50 rounded-xl border border-slate-100">
-            <button onClick={() => onUpdateQuantity(item.id, -1)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 transition"><Minus className="w-3.5 h-3.5" /></button>
+            <button
+              onClick={() => onUpdateQuantity(item.id, -1)}
+              className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 transition"
+            >
+              <Minus className="w-3.5 h-3.5" />
+            </button>
             <span className="text-xs font-bold text-slate-900 w-6 text-center">{item.quantity}</span>
-            <button onClick={() => onUpdateQuantity(item.id, 1)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 transition"><Plus className="w-3.5 h-3.5" /></button>
+            <button
+              onClick={() => onUpdateQuantity(item.id, 1)}
+              className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 transition"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
           </div>
-          <span className="text-sm font-black text-emerald-600">₪{(item.price || item.price_ils || 0) * item.quantity}</span>
+          <span className="text-sm font-black text-emerald-600">
+            ₪{(item.price || item.price_ils || 0) * item.quantity}
+          </span>
         </div>
       </div>
-      <button onClick={() => onRemove(item.id, item.name || item.title)} className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+      <button
+        onClick={() => onRemove(item.id, item.name || item.title)}
+        className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+      >
         <Trash2 className="w-5 h-5" />
       </button>
     </div>
@@ -215,7 +255,9 @@ export const CategoryPill = React.memo(function CategoryPill({ category, active,
       type="button"
       onClick={() => onSelect(category)}
       className={`dashboard-filter-pill ${
-        active ? 'bg-palma-primary text-white border-palma-primary' : 'text-slate-500 hover:text-palma-navy hover:bg-white border border-transparent'
+        active
+          ? 'bg-palma-primary text-white border-palma-primary'
+          : 'text-slate-500 hover:text-palma-navy hover:bg-white border border-transparent'
       }`}
     >
       {label}

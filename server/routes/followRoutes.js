@@ -4,11 +4,23 @@
 
 import express from 'express';
 import * as followController from '../controllers/followController.js';
-import { authenticate, optionalAuth } from '../middlewares/authMiddleware.js';
+import { authenticate } from '../middlewares/authMiddleware.js';
+import { validate } from '../middlewares/validate.js';
+import { follow as followSchemas } from '../validation/schemas.js';
 
 const router = express.Router();
 
-router.post('/:merchantId', authenticate, followController.followMerchant);
-router.delete('/:merchantId', authenticate, followController.unfollowMerchant);
+router.post(
+  '/:merchantId',
+  authenticate,
+  validate(followSchemas.merchantParam, 'params', 'follow.merchant'),
+  followController.followMerchant
+);
+router.delete(
+  '/:merchantId',
+  authenticate,
+  validate(followSchemas.merchantParam, 'params', 'follow.merchant'),
+  followController.unfollowMerchant
+);
 
 export default router;

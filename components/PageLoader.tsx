@@ -10,8 +10,6 @@ export const PageLoader: React.FC = () => (
       className="w-10 h-10 sm:w-12 sm:h-12 border-2 border-slate-200 border-t-palma-primary rounded-full animate-spin"
       aria-hidden="true"
     />
-    <p className="text-xs sm:text-sm font-medium text-slate-500">
-      Loading…
-    </p>
+    <p className="text-xs sm:text-sm font-medium text-slate-500">Loading…</p>
   </div>
 );

@@ -12,10 +12,9 @@ const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_MODEL = 'gpt-4o-mini';
 
 function getSystemPrompt(lang, userRole) {
-  const langNote = lang === 'ar' ? 'Respond in Arabic (العربية).' : lang === 'he' ? 'Respond in Hebrew.' : 'Respond in English.';
-  const roleNote = userRole && userRole !== 'ADMIN'
-    ? `The user is a ${userRole}.`
-    : '';
+  const langNote =
+    lang === 'ar' ? 'Respond in Arabic (العربية).' : lang === 'he' ? 'Respond in Hebrew.' : 'Respond in English.';
+  const roleNote = userRole && userRole !== 'ADMIN' ? `The user is a ${userRole}.` : '';
   return `You are the friendly technical support assistant for Palma Marketplace (منصة بالما), a Palestinian e-commerce platform connecting merchants and customers. ${langNote} ${roleNote}
 
 Your role:

@@ -8,16 +8,16 @@
 
 ## Summary
 
-| # | Recommendation | Primary files | Risk | Section |
-|---|----------------|---------------|------|---------|
-| 1 | Replace remaining `console.log`/`console.warn` with logger | Multiple services | Low | 1 |
-| 2 | Add optional pagination to `getActiveProducts` (GET /api/products) | productService.js, productController.js | Low | 2 |
-| 3 | Add optional pagination to notifications `listByUserId` | notificationService.js, notification routes/controller | Low | 2 |
-| 4 | Cache: TTL tuning and invalidation key pattern | cacheMiddleware.js | Low | 3 |
-| 5 | Cache: document Redis option for multi-instance | docs only / optional new file | N/A | 3 |
-| 6 | Payment module (TS): use logger instead of console.error | server/payment/*.ts | Low | 4 |
-| 7 | Optional response timeout middleware | server.js, new middleware file | Medium | 5 |
-| 8 | Frontend: reduce duplicate product fetches / Admin cache | App, CustomerView, AdminView, PublicCatalog | Low | 6 |
+| #   | Recommendation                                                     | Primary files                                          | Risk   | Section |
+| --- | ------------------------------------------------------------------ | ------------------------------------------------------ | ------ | ------- |
+| 1   | Replace remaining `console.log`/`console.warn` with logger         | Multiple services                                      | Low    | 1       |
+| 2   | Add optional pagination to `getActiveProducts` (GET /api/products) | productService.js, productController.js                | Low    | 2       |
+| 3   | Add optional pagination to notifications `listByUserId`            | notificationService.js, notification routes/controller | Low    | 2       |
+| 4   | Cache: TTL tuning and invalidation key pattern                     | cacheMiddleware.js                                     | Low    | 3       |
+| 5   | Cache: document Redis option for multi-instance                    | docs only / optional new file                          | N/A    | 3       |
+| 6   | Payment module (TS): use logger instead of console.error           | server/payment/\*.ts                                   | Low    | 4       |
+| 7   | Optional response timeout middleware                               | server.js, new middleware file                         | Medium | 5       |
+| 8   | Frontend: reduce duplicate product fetches / Admin cache           | App, CustomerView, AdminView, PublicCatalog            | Low    | 6       |
 
 ---
 
@@ -29,22 +29,23 @@ Replace remaining `console.log` and `console.warn` with the shared Winston `logg
 
 **Files and approximate lines:**
 
-| File | Lines (approx.) | Current | Suggested level |
-|------|------------------|--------|------------------|
-| `server/services/profitService.js` | 34, 48, 102, 115 | `console.log` | `logger.info` or `logger.debug` |
-| `server/auth/services/findValidOtp.js` | 29 | `console.log` | `logger.debug` |
-| `server/services/shipmentService.js` | 22, 73, 197 | `console.log` | `logger.info` / `logger.debug` |
-| `server/auth/services/invalidateOtp.js` | 16 | `console.log` | `logger.debug` |
-| `server/auth/services/updatePassword.js` | 20 | `console.log` | `logger.debug` |
-| `server/services/authService.js` | 35, 65, 77, 103, 128, 191, 194, 201, 205, 208, 212, 231, 250, 262, 266, 268, 351, 353, 357, 363, 392, 401, 415, 417, 428, 430 | `console.log` / `console.warn` | `logger.info` / `logger.warn` / `logger.debug` |
-| `server/services/paymentService.js` | 27, 60, 64 | `console.log` | `logger.info` or `logger.debug` |
-| `server/controllers/shipmentController.js` | 105 | `console.log` | `logger.info` or `logger.debug` |
-| `server/config/env.js` | 43, 49, 54 | `console.warn` | `logger.warn` |
-| `server/services/emailService.js` | 48, 94, 96, 119, 121, 130, 132 | `console.log` / `console.warn` | `logger.info` / `logger.warn` |
-| `server/auth/services/saveOtp.js` | 18 | `console.log` | `logger.debug` |
-| `server/services/transactionService.js` | 57 | `console.log` | `logger.debug` |
+| File                                       | Lines (approx.)                                                                                                               | Current                        | Suggested level                                |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ---------------------------------------------- |
+| `server/services/profitService.js`         | 34, 48, 102, 115                                                                                                              | `console.log`                  | `logger.info` or `logger.debug`                |
+| `server/auth/services/findValidOtp.js`     | 29                                                                                                                            | `console.log`                  | `logger.debug`                                 |
+| `server/services/shipmentService.js`       | 22, 73, 197                                                                                                                   | `console.log`                  | `logger.info` / `logger.debug`                 |
+| `server/auth/services/invalidateOtp.js`    | 16                                                                                                                            | `console.log`                  | `logger.debug`                                 |
+| `server/auth/services/updatePassword.js`   | 20                                                                                                                            | `console.log`                  | `logger.debug`                                 |
+| `server/services/authService.js`           | 35, 65, 77, 103, 128, 191, 194, 201, 205, 208, 212, 231, 250, 262, 266, 268, 351, 353, 357, 363, 392, 401, 415, 417, 428, 430 | `console.log` / `console.warn` | `logger.info` / `logger.warn` / `logger.debug` |
+| `server/services/paymentService.js`        | 27, 60, 64                                                                                                                    | `console.log`                  | `logger.info` or `logger.debug`                |
+| `server/controllers/shipmentController.js` | 105                                                                                                                           | `console.log`                  | `logger.info` or `logger.debug`                |
+| `server/config/env.js`                     | 43, 49, 54                                                                                                                    | `console.warn`                 | `logger.warn`                                  |
+| `server/services/emailService.js`          | 48, 94, 96, 119, 121, 130, 132                                                                                                | `console.log` / `console.warn` | `logger.info` / `logger.warn`                  |
+| `server/auth/services/saveOtp.js`          | 18                                                                                                                            | `console.log`                  | `logger.debug`                                 |
+| `server/services/transactionService.js`    | 57                                                                                                                            | `console.log`                  | `logger.debug`                                 |
 
-**Excluded (intentionally):**  
+**Excluded (intentionally):**
+
 - `server/server.js` lines 12–13, 17: `console.error` for `uncaughtException` / `unhandledRejection` — keep as-is so fatal errors go to stderr before logger may be unavailable.
 
 ### 1.2 Impact
@@ -55,11 +56,13 @@ Replace remaining `console.log` and `console.warn` with the shared Winston `logg
 ### 1.3 Example snippet (profitService.js)
 
 **Before (e.g. line 34):**
+
 ```javascript
 console.log('[profitService] Order has no items, skip profit recording:', orderId);
 ```
 
 **After:**
+
 ```javascript
 import logger from '../utils/logger.js';
 // ...
@@ -67,12 +70,18 @@ logger.debug('profitService skip profit recording', { orderId });
 ```
 
 **Example (authService.js console.warn → logger.warn):**
+
 ```javascript
 // Before
-console.warn('[authService] registerUser: resendVerification failed after register', (sendResult.error && sendResult.error.message));
+console.warn(
+  '[authService] registerUser: resendVerification failed after register',
+  sendResult.error && sendResult.error.message
+);
 
 // After
-logger.warn('authService registerUser resendVerification failed', { message: sendResult.error && sendResult.error.message });
+logger.warn('authService registerUser resendVerification failed', {
+  message: sendResult.error && sendResult.error.message,
+});
 ```
 
 ---
@@ -123,6 +132,7 @@ async function getActiveProducts(opts = {}) {
 ```
 
 **Controller (productController.js list):**
+
 ```javascript
 async function list(req, res) {
   try {
@@ -165,11 +175,7 @@ async function listByUserId(userId, options = {}) {
   const limit = Math.min(Number(optLimit) || 0, 100);
   const offset = Math.max(0, Number(optOffset) || 0);
 
-  let q = supabase
-    .from(TABLE)
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
+  let q = supabase.from(TABLE).select('*').eq('user_id', userId).order('created_at', { ascending: false });
 
   if (unreadOnly) q = q.eq('is_read', false);
   if (limit > 0) q = q.range(offset, offset + limit - 1);
@@ -296,6 +302,7 @@ export function responseTimeout(ms = DEFAULT_MS) {
 ```
 
 **server.js:**
+
 ```javascript
 import { responseTimeout } from './middlewares/responseTimeout.js';
 // ...

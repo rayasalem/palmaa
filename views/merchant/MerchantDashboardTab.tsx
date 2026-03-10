@@ -9,7 +9,19 @@ import type { MerchantDashboardResponse } from '../../services/merchantDashboard
 import type { Language } from '../../translations';
 import { Package, Truck, DollarSign, Receipt, CreditCard } from 'lucide-react';
 
-const StatCard = ({ title, value, icon: Icon, color, trend }: { title: string; value: string | number; icon: React.ComponentType<{ className?: string }>; color: string; trend?: string }) => (
+const StatCard = ({
+  title,
+  value,
+  icon: Icon,
+  color,
+  trend,
+}: {
+  title: string;
+  value: string | number;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+  trend?: string;
+}) => (
   <div className="dashboard-stat-card flex flex-col justify-between min-h-[140px] group">
     <div className="absolute -right-4 -top-4 p-3 opacity-[0.06] group-hover:opacity-[0.1] transition-opacity">
       <Icon className="w-20 h-20 text-palma-navy" />
@@ -55,7 +67,12 @@ export const MerchantDashboardTab: React.FC<MerchantDashboardTabProps> = ({
           icon={DollarSign}
           color="bg-palma-primary"
         />
-        <StatCard title={t.common.commission} value={`₪${(dashboardData.stats.total_commission || 0).toLocaleString()}`} icon={Receipt} color="bg-blue-600" />
+        <StatCard
+          title={t.common.commission}
+          value={`₪${(dashboardData.stats.total_commission || 0).toLocaleString()}`}
+          icon={Receipt}
+          color="bg-blue-600"
+        />
         <StatCard
           title={lang === 'ar' ? 'خصم ضريبي' : lang === 'he' ? 'קנס מס' : 'Tax penalty'}
           value={`₪${(dashboardData.stats.total_tax_penalty || 0).toLocaleString()}`}
@@ -79,8 +96,8 @@ export const MerchantDashboardTab: React.FC<MerchantDashboardTabProps> = ({
           {lang === 'ar'
             ? 'اشتراكك في المنصة مجاني دائماً، ولا توجد أي رسوم اشتراك شهرية للتاجر.'
             : lang === 'he'
-            ? 'המנוי שלך בפלטפורמה חינמי לחלוטין – ללא דמי מנוי חודשיים לסוחר.'
-            : 'Your merchant account on the platform is always free – no monthly subscription fees.'}
+              ? 'המנוי שלך בפלטפורמה חינמי לחלוטין – ללא דמי מנוי חודשיים לסוחר.'
+              : 'Your merchant account on the platform is always free – no monthly subscription fees.'}
         </p>
       </div>
     )}
@@ -92,7 +109,12 @@ export const MerchantDashboardTab: React.FC<MerchantDashboardTabProps> = ({
         color="bg-palma-primary"
         trend="12%"
       />
-      <StatCard title={t.common.pendingOrders} value={orders.filter((o) => o.status === 'PENDING').length} icon={Truck} color="bg-blue-600" />
+      <StatCard
+        title={t.common.pendingOrders}
+        value={orders.filter((o) => o.status === 'PENDING').length}
+        icon={Truck}
+        color="bg-blue-600"
+      />
       <StatCard title={t.common.totalInventory} value={products.length} icon={Package} color="bg-purple-600" />
     </div>
   </div>

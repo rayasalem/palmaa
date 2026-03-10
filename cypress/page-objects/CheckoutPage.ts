@@ -7,11 +7,17 @@ export const CheckoutPage = {
   getBackButton: () => cy.contains('button', /العودة|Back|חזור/).first(),
 
   /** Order total display */
-  getOrderTotal: () => cy.contains(/إجمالي|Order total|סה״כ/).parent().find('p, span').first(),
+  getOrderTotal: () =>
+    cy
+      .contains(/إجمالي|Order total|סה״כ/)
+      .parent()
+      .find('p, span')
+      .first(),
 
   /** Recipient / full name */
   getRecipientNameInput: () => cy.get('input[name="recipient_name"]'),
-  getAddressInput: () => cy.get('input[name="addressLine1"], input[placeholder*="address"], input[placeholder*="عنوان"]').first(),
+  getAddressInput: () =>
+    cy.get('input[name="addressLine1"], input[placeholder*="address"], input[placeholder*="عنوان"]').first(),
   getPhoneInput: () => cy.get('input[name="phone"], input[type="tel"]').first(),
   getCitySelect: () => cy.get('select[name="cityId"], [name="cityId"]').first(),
 

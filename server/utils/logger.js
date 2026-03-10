@@ -1,5 +1,7 @@
 /**
- * Winston logger. Do not log passwords, tokens, or card data.
+ * Winston logger. Do not log passwords, tokens, API keys, or card data.
+ * Never pass SUPABASE_SERVICE_KEY, JWT_SECRET, or any secret env to logger meta.
+ * For request/response bodies use sanitizeForLog() before logging.
  */
 
 import winston from 'winston';
@@ -13,23 +15,34 @@ const logFormat = printf(({ level, message, timestamp: ts, ...meta }) => {
 
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
-  format: combine(
-    timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    logFormat
-  ),
+  format: combine(timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), logFormat),
   defaultMeta: { service: 'palma-server' },
   transports: [
     new winston.transports.Console({
-      format: process.env.NODE_ENV === 'production'
-        ? combine(timestamp(), logFormat)
-        : combine(colorize(), timestamp(), logFormat),
+      format:
+        process.env.NODE_ENV === 'production'
+          ? combine(timestamp(), logFormat)
+          : combine(colorize(), timestamp(), logFormat),
     }),
   ],
 });
 
 export function sanitizeForLog(obj) {
   if (obj == null) return obj;
-  const forbidden = ['password', 'token', 'secret', 'authorization', 'cookie', 'otp', 'code', 'card'];
+  const forbidden = [
+    'password',
+    'token',
+    'secret',
+    'authorization',
+    'cookie',
+    'otp',
+    'code',
+    'card',
+    'apikey',
+    'api_key',
+    'jwt_secret',
+    'supabase_service_key',
+  ];
   const out = Array.isArray(obj) ? [...obj] : { ...obj };
   function redact(o) {
     if (o == null || typeof o !== 'object') return;
