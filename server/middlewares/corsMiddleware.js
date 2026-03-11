@@ -15,6 +15,8 @@ const ALLOWED_ORIGINS = [
   // التطوير المحلي
   'http://localhost:3000',
   'http://127.0.0.1:3000',
+  'http://localhost:3002',
+  'http://127.0.0.1:3002',
   'http://localhost:5173',
   'http://127.0.0.1:5173',
   // Vite قد يختار منافذ أخرى (مثل 3001) إذا كان 3000 مستخدماً
@@ -46,7 +48,8 @@ export function corsMiddleware(frontendUrl = '') {
     res.setHeader('Access-Control-Allow-Origin', allowOrigin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    // السماح بـ X-Requested-With حتى لا تفشل طلبات CSRF header أو preflight
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
     res.setHeader('Access-Control-Max-Age', '86400');
 
     if (req.method === 'OPTIONS') {

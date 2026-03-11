@@ -38,11 +38,8 @@ import { SESSION_EXPIRED_EVENT } from './api/client';
 import { prefetchAfterLogin } from './prefetch';
 import { ROUTES } from './routes';
 
-/** Restore user profile from storage for UI (not JWT; auth uses httpOnly cookie or Bearer). */
-const loadUser = (): User | null => {
-  const stored = localStorage.getItem('palma_current_user');
-  return stored ? JSON.parse(stored) : null;
-};
+// لم نعد نستخدم fallback من localStorage لاسترجاع جلسة بعد إعادة التحميل؛
+// الاعتماد أصبح بالكامل على /api/auth/me حتى لا يعود المستخدم "مسجّل دخول" بعد تسجيل الخروج + refresh.
 
 // Component to handle verification logic inside ToastProvider context
 const AppContent: React.FC = () => {
@@ -221,19 +218,24 @@ const AppContent: React.FC = () => {
       const u = meResult && meResult.success && meResult.data?.user ? meResult.data.user : null;
       const is401 = meResult && !meResult.success && (meResult as { statusCode?: number }).statusCode === 401;
       if (u) {
+        // جلسة صحيحة من السيرفر
         authService.setCurrentUser(u);
         setUser(u);
         setDefaultView(u);
         localStorage.setItem('palma_current_user', JSON.stringify(u));
         prefetchAfterLogin(u);
       } else {
-        if (is401) localStorage.removeItem('palma_current_user');
-        const savedUser = loadUser();
-        if (savedUser) {
-          authService.setCurrentUser(savedUser);
-          setUser(savedUser);
-          setDefaultView(savedUser);
+        // في جميع الحالات التي لا يعود فيها u من السيرفر (401 أو أي خطأ آخر) نبقى في حالة ضيف
+        if (is401 || !meResult.success) {
+          localStorage.removeItem('palma_current_user');
         }
+        authService.setCurrentUser(null);
+        setUser(null);
+        // إعادة توجيه المسار والـ view للصفحة العامة حتى لا يبقى #/dashboard في الرابط فيظهر وكأن المستخدم داخل
+        setCurrentView(ROUTES.HOME_APP);
+        setPublicState('LANDING');
+        setAuthView('LOGIN');
+        updateHash(ROUTES.HOME);
       }
 
       // 3. Load products (for CustomerView shop; productService populates db.products)
@@ -301,8 +303,8 @@ const AppContent: React.FC = () => {
     prefetchAfterLogin(loggedInUser);
   };
 
-  const handleLogout = () => {
-    authService.logout();
+  const handleLogout = async () => {
+    await authService.logout();
     setUser(null);
     setLocalCart([]);
     mergedGuestCartRef.current = false;

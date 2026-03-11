@@ -11,11 +11,12 @@ import logger from '../utils/logger.js';
 
 async function list(req, res) {
   try {
+    const query = req.query ?? {};
     const opts = {
-      limit: req.query.limit,
-      offset: req.query.offset,
-      q: req.query.q,
-      category: req.query.category,
+      limit: query.limit,
+      offset: query.offset,
+      q: query.q,
+      category: query.category,
     };
     const { data, error } = await productService.getActiveProducts(opts);
     if (error) {

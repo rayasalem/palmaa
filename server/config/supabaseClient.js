@@ -6,9 +6,17 @@
 import { createClient } from '@supabase/supabase-js';
 import logger from '../utils/logger.js';
 
-const supabaseUrl = process.env.SUPABASE_URL;
-// دعم الاسمين (Supabase يسميه أحياناً service_role)
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+// نسمح بأسماء متغيّرات البيئة الموجودة حالياً في Render حتى لو لم يتم ضبط SUPABASE_URL مباشرة
+const supabaseUrl =
+  process.env.SUPABASE_URL ||
+  process.env.VITE_SUPABASE_URL || // fallback للبيئة الحالية
+  '';
+// دعم الاسمين (Supabase يسميه أحياناً service_role) + fallback لـ VITE_SUPABASE_ANON_KEY عند الحاجة
+const supabaseServiceKey =
+  process.env.SUPABASE_SERVICE_KEY ||
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.VITE_SUPABASE_ANON_KEY ||
+  '';
 
 if (!supabaseUrl || !supabaseServiceKey) {
   logger.warn(

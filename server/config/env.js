@@ -43,7 +43,6 @@ function validateEnv() {
       // eslint-disable-next-line no-console
       console.warn('[config] Production: consider setting:', recommended.join(', '));
     }
-    // تحذيرات أمان اختيارية عند بدء التشغيل (يمكن تعطيلها في الإنتاج عبر PALMA_SHOW_ENV_WARNINGS)
     const jwtSecret = getEnv('JWT_SECRET') || getEnv('JWT_SECRET_KEY');
     if (!jwtSecret) {
       // eslint-disable-next-line no-console

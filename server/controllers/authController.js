@@ -53,7 +53,8 @@ async function getMe(req, res) {
  */
 async function login(req, res) {
   try {
-    let { email, password } = req.body;
+    const body = req.body || {};
+    let { email, password } = body;
     // إزالة BOM أو مسافات خفية قد يرسلها المتصفح
     if (typeof email === 'string')
       email = email
@@ -68,10 +69,27 @@ async function login(req, res) {
       return res.status(400).json({ success: false, error: 'Password is required' });
     }
     logger.info('login attempt', { email });
-    const { user, error } = await authService.login(email, password);
-    if (error || !user) {
-      logger.warn('login failed', { email, reason: (error && error.message) || 'no user' });
-      return res.status(401).json({ success: false, error: (error && error.message) || 'Invalid credentials' });
+    let user = null;
+    let authError = null;
+    try {
+      const result = await authService.login(email, password);
+      user = result.user;
+      authError = result.error;
+    } catch (err) {
+      logger.error('login service error', { message: err?.message });
+      return res
+        .status(503)
+        .json({
+          success: false,
+          error:
+            getEnv('NODE_ENV') === 'production'
+              ? 'Service temporarily unavailable. Try again later.'
+              : 'Backend or database error. Check server/.env (SUPABASE_URL, SUPABASE_SERVICE_KEY) and server logs.',
+        });
+    }
+    if (authError || !user) {
+      logger.warn('login failed', { email, reason: (authError && authError.message) || 'no user' });
+      return res.status(401).json({ success: false, error: (authError && authError.message) || 'Invalid credentials' });
     }
     // في الإنتاج: منع الدخول حتى يتم تأكيد البريد (الواجهة تتوقع requiresEmailVerification)
     const emailVerified = user.is_email_verified ?? user.email_verified ?? false;
@@ -160,10 +178,10 @@ async function login(req, res) {
 
 /**
  * POST /api/auth/logout
- * Clears JWT cookie.
+ * Clears JWT cookie using options that exactly match login (httpOnly, secure, sameSite, path).
  */
 async function logout(req, res) {
-  res.clearCookie(jwtService.getCookieName(), { path: '/' });
+  res.clearCookie(jwtService.getCookieName(), jwtService.getClearCookieOptions());
   return res.status(200).json({ success: true, message: 'Logged out' });
 }
 
@@ -183,7 +201,7 @@ async function logoutAll(req, res) {
       logger.error('logoutAll incrementTokenVersion', { message: error.message });
       return res.status(500).json({ success: false, error: 'Failed to invalidate sessions' });
     }
-    res.clearCookie(jwtService.getCookieName(), { path: '/' });
+    res.clearCookie(jwtService.getCookieName(), jwtService.getClearCookieOptions());
     logger.info('logoutAll success', { userId });
     return res.status(200).json({ success: true, message: 'Logged out from all devices' });
   } catch (err) {

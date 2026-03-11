@@ -7,14 +7,16 @@ import { recordValidationFailure } from '../utils/metrics.js';
 
 /**
  * @param {import('joi').ObjectSchema} schema - Joi schema
- * @param {'body'|'query'} type - where to read input from
+ * @param {'body'|'query'|'params'} type - where to read input from
  * @param {string} [source] - label for metrics/logs (e.g. 'auth.login')
  */
 export function validate(schema, type, source) {
-  const sourceLabel = source || (type === 'body' ? 'body' : 'query');
+  const sourceLabel = source || type;
   return (req, res, next) => {
-    const value = type === 'body' ? req.body : req.query;
-    const { error, value: validated } = schema.validate(value, {
+    const value =
+      type === 'body' ? req.body : type === 'params' ? req.params : req.query;
+    const raw = value ?? {};
+    const { error, value: validated } = schema.validate(raw, {
       stripUnknown: true,
       abortEarly: false,
     });
@@ -29,6 +31,7 @@ export function validate(schema, type, source) {
       return res.status(400).json({ success: false, error: message });
     }
     if (type === 'body') req.body = validated;
+    else if (type === 'params') req.params = validated;
     else req.query = validated;
     next();
   };

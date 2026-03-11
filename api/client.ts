@@ -21,22 +21,23 @@ function isHttpUrl(s: string): boolean {
 
 /**
  * Resolve API base on every call (not cached).
- * - On palma.ps (or any non-local host): always PRODUCTION_API.
- * - On localhost: use VITE_API_URL if set; otherwise PRODUCTION_API (الافتراضي: Render).
+ * - If VITE_API_URL is set to a valid http/https URL → نستخدمه كما هو.
+ * - إذا كنا على localhost → نوجّه مباشرة للباكند المحلي http://localhost:5000 عشان التطوير.
+ * - غير ذلك نستخدم PRODUCTION_API على Render.
  */
 function getApiBase(): string {
-  const env = (import.meta as { env?: { PROD?: boolean; VITE_API_URL?: string } }).env;
-  const candidate = (env?.VITE_API_URL || '').trim();
-  if (typeof window !== 'undefined' && window.location?.hostname) {
-    const h = window.location.hostname.toLowerCase();
-    if (h === 'palma.ps' || h.endsWith('.palma.ps')) return PRODUCTION_API;
-    if (h && h !== 'localhost' && h !== '127.0.0.1') return PRODUCTION_API;
-    // Running on localhost: استخدم VITE_API_URL إن وُجد، وإلا استخدم Render مباشرة
-    if (isHttpUrl(candidate)) return candidate;
-    return PRODUCTION_API;
+  const env = (import.meta as { env?: { VITE_API_URL?: string } }).env;
+  const override = (env?.VITE_API_URL ?? '').trim();
+  if (isHttpUrl(override)) return override;
+
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return 'http://localhost:5000';
+    }
   }
-  if (isHttpUrl(candidate)) return candidate;
-  return (env?.PROD ? PRODUCTION_API : '') || PRODUCTION_API;
+
+  return PRODUCTION_API;
 }
 
 /** @deprecated Use getApiBase() so URL is resolved at request time (avoids EBADNAME). */

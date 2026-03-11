@@ -21,7 +21,7 @@ const password = common.password;
 
 export const auth = {
   login: Joi.object({
-    email: email.required(),
+    email: Joi.string().min(1).max(255).trim().required(),
     password: Joi.string().required(),
   }),
   register: Joi.object({
@@ -113,6 +113,7 @@ export const catalogListQuery = Joi.object({
 
 export const products = {
   listQuery: catalogListQuery,
+  merchantParam: Joi.object({ merchantId: uuid.required() }),
   create: Joi.object({
     name: Joi.string().max(300),
     title: Joi.string().max(300).allow('', null),

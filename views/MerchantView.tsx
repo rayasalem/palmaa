@@ -1,7 +1,7 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { User, Product, Order, PRODUCT_CATEGORIES, CATEGORY_EMOJI } from '../types';
 import { marketStore } from '../store';
-import { productService } from '../services/productService';
+import { productService } from '../services/productService'; 
 import { storageService } from '../services/storageService';
 import { FlashLineService, cancelLogestechsShipment } from '../services/flashlineService';
 import { createShipmentApi, cancelShipmentApi, getShipmentStatusApi } from '../services/shipmentApi';
@@ -79,7 +79,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
 
   useEffect(() => {
     if (user.role === 'MERCHANT') {
-      refreshData();
+        refreshData();
     }
   }, [user.id, view]);
 
@@ -188,9 +188,9 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
 
   const handleRemoveImage = (index: number) => {
     setProductForm((prev) => {
-      const newImages = [...(prev.images || [])];
-      newImages.splice(index, 1);
-      return { ...prev, images: newImages };
+        const newImages = [...(prev.images || [])];
+        newImages.splice(index, 1);
+        return { ...prev, images: newImages };
     });
   };
 
@@ -201,7 +201,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
 
     try {
       let uploadedUrls: string[] = [...(productForm.images || [])];
-
+      
       // Upload new files if any using Storage Service
       if (uploadQueue.length > 0) {
         for (const file of uploadQueue) {
@@ -218,15 +218,15 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                   lang === 'ar'
                     ? 'حجم الصورة كبير جداً (الحد الأقصى 2MB). سيتم حفظ المنتج بدون هذه الصورة، الرجاء اختيار صورة أخرى أصغر لاحقاً.'
                     : lang === 'he'
-                      ? 'התמונה גדולה מדי (מקסימום 2MB). המוצר יישמר בלי התמונה; נא לבחור תמונה קטנה יותר.'
-                      : 'Image too large (max 2MB). The product will be saved without this image; please choose a smaller one later.';
+                    ? 'התמונה גדולה מדי (מקסימום 2MB). המוצר יישמר בלי התמונה; נא לבחור תמונה קטנה יותר.'
+                    : 'Image too large (max 2MB). The product will be saved without this image; please choose a smaller one later.';
               } else if (msg.includes('Invalid format')) {
                 msg =
                   lang === 'ar'
                     ? 'صيغة الصورة غير مدعومة. سيتم حفظ المنتج بدون هذه الصورة، الرجاء استخدام JPG أو PNG أو WebP.'
                     : lang === 'he'
-                      ? 'פורמט תמונה לא נתמך. נא להשתמש ב-JPG, PNG או WebP.'
-                      : 'Invalid image format. The product will be saved without this image; please use JPG, PNG, or WebP.';
+                    ? 'פורמט תמונה לא נתמך. נא להשתמש ב-JPG, PNG או WebP.'
+                    : 'Invalid image format. The product will be saved without this image; please use JPG, PNG, or WebP.';
               }
             }
             showToast(
@@ -241,7 +241,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
           }
         }
       }
-
+      
       // إذا لم تُقبل أي صورة، نستخدم صورة افتراضية ولا نمنع حفظ المنتج
       if (uploadedUrls.length === 0) {
         const placeholder = 'https://placehold.co/600x600?text=No+Image';
@@ -250,8 +250,8 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
           lang === 'ar'
             ? 'لم يتم قبول أي صورة، سيتم حفظ المنتج بدون صورة حقيقية. يمكنك تعديل الصورة لاحقاً من لوحة المنتجات.'
             : lang === 'he'
-              ? 'לא התקבלה תמונה. המוצר יישמר עם תמונת placeholder; ניתן לעדכן מאוחר יותר.'
-              : 'No image was accepted. The product will be saved with a placeholder image; you can update it later.',
+            ? 'לא התקבלה תמונה. המוצר יישמר עם תמונת placeholder; ניתן לעדכן מאוחר יותר.'
+            : 'No image was accepted. The product will be saved with a placeholder image; you can update it later.',
           'info'
         );
       }
@@ -260,7 +260,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
         .split(',')
         .map((tag) => tag.trim())
         .filter((tag) => tag !== '');
-
+      
       const payload = {
         ...productForm,
         tags,
@@ -302,15 +302,15 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
             lang === 'ar'
               ? 'حجم الصورة كبير جداً (الحد الأقصى 2MB). الرجاء اختيار صورة أخرى أصغر.'
               : lang === 'he'
-                ? 'התמונה גדולה מדי (מקסימום 2MB). נא לבחור תמונה קטנה יותר.'
-                : 'Image too large (max 2MB). Please choose a smaller image.';
+              ? 'התמונה גדולה מדי (מקסימום 2MB). נא לבחור תמונה קטנה יותר.'
+              : 'Image too large (max 2MB). Please choose a smaller image.';
         } else if (msg.includes('Invalid format')) {
           msg =
             lang === 'ar'
               ? 'صيغة الصورة غير مدعومة. الرجاء استخدام صورة بصيغة JPG أو PNG أو WebP.'
               : lang === 'he'
-                ? 'פורמט לא נתמך. נא להשתמש ב-JPG, PNG או WebP.'
-                : 'Invalid image format. Please use JPG, PNG, or WebP.';
+              ? 'פורמט לא נתמך. נא להשתמש ב-JPG, PNG או WebP.'
+              : 'Invalid image format. Please use JPG, PNG, or WebP.';
         } else {
           msg = getAuthErrorMessage(msg, lang);
         }
@@ -597,40 +597,40 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
 
   return (
     <>
-      <div className="space-y-8 sm:space-y-10 animate-fade-in pb-20 dashboard-page px-4 sm:px-6 pt-6 max-w-7xl mx-auto">
-        {/* Header — تصميم حديث */}
-        <div className="dashboard-header">
-          <div className="dashboard-title-wrap">
+    <div className="space-y-8 sm:space-y-10 animate-fade-in pb-20 dashboard-page px-4 sm:px-6 pt-6 max-w-7xl mx-auto">
+      {/* Header — تصميم حديث */}
+      <div className="dashboard-header">
+        <div className="dashboard-title-wrap">
             <div className="dashboard-title-icon">
               <LayoutDashboard className="w-6 h-6 text-palma-primary" />
             </div>
-            <div>
+          <div>
               <h1 className="font-heading text-2xl sm:text-3xl font-black text-palma-navy tracking-tight">
                 {t.common.dashboard}
               </h1>
-              <p className="text-xs sm:text-sm font-medium text-slate-500 mt-0.5">{t.common.manageStore}</p>
-            </div>
-          </div>
-
-          <div className="dashboard-tabs">
-            {[
-              { id: 'dashboard', label: t.common.dashboard, icon: LayoutDashboard },
-              { id: 'orders', label: t.common.orders, icon: Truck },
-              { id: 'products', label: t.common.products, icon: Box },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`dashboard-tab ${activeTab === tab.id ? 'dashboard-tab-active' : 'dashboard-tab-inactive'}`}
-              >
-                <tab.icon className="w-3.5 h-3.5" /> {tab.label}
-              </button>
-            ))}
+            <p className="text-xs sm:text-sm font-medium text-slate-500 mt-0.5">{t.common.manageStore}</p>
           </div>
         </div>
+        
+        <div className="dashboard-tabs">
+          {[
+            { id: 'dashboard', label: t.common.dashboard, icon: LayoutDashboard },
+            { id: 'orders', label: t.common.orders, icon: Truck },
+            { id: 'products', label: t.common.products, icon: Box },
+            ].map((tab) => (
+            <button 
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)} 
+              className={`dashboard-tab ${activeTab === tab.id ? 'dashboard-tab-active' : 'dashboard-tab-inactive'}`}
+            >
+              <tab.icon className="w-3.5 h-3.5" /> {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-        {/* Content */}
-        {activeTab === 'dashboard' && (
+      {/* Content */}
+      {activeTab === 'dashboard' && (
           <Suspense fallback={tabFallback}>
             <MerchantDashboardTab lang={lang} t={t} dashboardData={dashboardData} orders={orders} products={products} />
           </Suspense>
@@ -676,8 +676,8 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
               handleCancelShipment={handleCancelShipment}
             />
           </Suspense>
-        )}
-      </div>
+                )}
+              </div>
 
       {/* Modal رفع الفاتورة الضريبية */}
       {orderToInvoice && (
@@ -693,18 +693,18 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
             <div className="flex items-center gap-4 mb-4">
               <div className="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center shrink-0">
                 <Receipt className="w-7 h-7 text-amber-600" />
-              </div>
+                  </div>
               <div>
                 <h3 className="text-lg font-black text-palma-navy">
                   {lang === 'ar' ? 'رفع الفاتورة الضريبية' : 'Upload tax invoice'}
                 </h3>
                 <p className="text-sm text-slate-500 mt-0.5">
-                  {lang === 'ar'
+                    {lang === 'ar'
                     ? 'أدخل رابط الفاتورة (رابط عام لملف PDF أو صورة).'
                     : 'Enter the invoice link (public URL to PDF or image).'}
-                </p>
-              </div>
-            </div>
+                  </p>
+                </div>
+                  </div>
             <p className="text-slate-600 text-sm mb-3 rounded-xl bg-slate-50 p-3 border border-slate-100">
               {lang === 'ar' ? 'الطلب' : 'Order'} <span className="font-mono font-bold">{orderToInvoice.id}</span>
             </p>
@@ -719,8 +719,8 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
               className="w-full py-3 px-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm"
             />
             <div className="flex gap-3 mt-6">
-              <button
-                type="button"
+                  <button
+                    type="button"
                 onClick={() => !uploadingInvoice && (setOrderToInvoice(null), setInvoiceUrlInput(''))}
                 disabled={uploadingInvoice}
                 className="flex-1 min-h-[48px] py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition border border-slate-200 disabled:opacity-50"
@@ -740,8 +740,8 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                   : lang === 'ar'
                     ? 'رفع الفاتورة'
                     : 'Upload invoice'}
-              </button>
-            </div>
+                  </button>
+                </div>
           </div>
         </div>
       )}
@@ -754,7 +754,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
           productToDeactivate
             ? lang === 'ar'
               ? `سيُخفى «${productToDeactivate.name || productToDeactivate.title || productToDeactivate.id}» من المتجر.`
-              : lang === 'he'
+                        : lang === 'he'
                 ? `"${productToDeactivate.name || productToDeactivate.title || productToDeactivate.id}" יוסתר מהחנות.`
                 : `"${productToDeactivate.name || productToDeactivate.title || productToDeactivate.id}" will be hidden from the store.`
             : ''

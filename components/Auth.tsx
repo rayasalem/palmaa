@@ -85,37 +85,43 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
     setError('');
     setLoading(true);
 
-    // Simulate slight network delay for effect
-    await new Promise((r) => setTimeout(r, 600));
+    try {
+      await new Promise((r) => setTimeout(r, 600));
 
-    const result = await marketStore.login(email.trim(), password.trim());
+      const result = await marketStore.login(email.trim(), password.trim());
 
-    if ((result as any).requiresEmailVerification) {
-      // البريد غير موثق: نفعّل وضع التحقق عبر OTP ونمنع الدخول الكامل
-      setVerificationMode(true);
-      setUnverifiedEmail(email.trim());
-      setVerificationCode('');
-      setError('');
-      showToast(
-        lang === 'ar'
-          ? 'يرجى تأكيد بريدك الإلكتروني قبل المتابعة.'
-          : lang === 'he'
-            ? 'אנא אמת את כתובת האימייל לפני המשך השימוש.'
-            : 'Please verify your email before continuing.',
-        'error'
-      );
-      if (typeof window !== 'undefined') {
-        window.location.hash = `#/${ROUTES.VERIFY_EMAIL}`;
+      if ((result as any).requiresEmailVerification) {
+        // البريد غير موثق: نفعّل وضع التحقق عبر OTP ونمنع الدخول الكامل
+        setVerificationMode(true);
+        setUnverifiedEmail(email.trim());
+        setVerificationCode('');
+        setError('');
+        showToast(
+          lang === 'ar'
+            ? 'يرجى تأكيد بريدك الإلكتروني قبل المتابعة.'
+            : lang === 'he'
+              ? 'אנא אמת את כתובת האימייל לפני המשך השימוש.'
+              : 'Please verify your email before continuing.',
+          'error'
+        );
+        if (typeof window !== 'undefined') {
+          window.location.hash = `#/${ROUTES.VERIFY_EMAIL}`;
+        }
+      } else if (result?.success && result?.data?.user) {
+        showToast(t.common.success, 'success');
+        onLogin(result.data.user);
+      } else {
+        const errMsg = getAuthErrorMessage((result as any)?.error || 'Invalid credentials', lang);
+        setError(errMsg);
+        showToast(errMsg, 'error');
       }
-    } else if (result.success && result.data) {
-      showToast(t.common.success, 'success');
-      onLogin(result.data.user);
-    } else {
-      const errMsg = getAuthErrorMessage(result.error || 'Invalid credentials', lang);
-      setError(errMsg);
-      showToast(errMsg, 'error');
+    } catch (err: any) {
+      const msg = err?.message || (lang === 'ar' ? 'فشل الاتصال. تحقق من الشبكة أو جرّب لاحقاً.' : 'Connection failed. Check network or try again.');
+      setError(msg);
+      showToast(msg, 'error');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleRoleSelection = (selectedRole: UserRole) => {

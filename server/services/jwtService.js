@@ -71,4 +71,17 @@ export function getCookieOptions() {
   };
 }
 
-export default { sign, verify, getCookieName, getCookieOptions };
+/**
+ * Options for clearCookie — MUST match getCookieOptions() exactly (httpOnly, secure, sameSite, path)
+ * so the browser removes the cookie. maxAge: 0 and expires ensure removal in all browsers.
+ */
+export function getClearCookieOptions() {
+  const opts = getCookieOptions();
+  return {
+    ...opts,
+    maxAge: 0,
+    expires: new Date(0),
+  };
+}
+
+export default { sign, verify, getCookieName, getCookieOptions, getClearCookieOptions };
