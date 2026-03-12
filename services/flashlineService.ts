@@ -97,6 +97,8 @@ export const createShipment = async (shipmentData: ShipmentBody): Promise<Flashl
 
 export const getShipmentStatus = async (shipmentId: string): Promise<string | null> => {
   if (shipmentId.startsWith('FL-')) return 'IN_TRANSIT';
+  // شحنات محاكاة (عند عدم تفعيل LogesTechs) تُعرض كـ created
+  if (shipmentId.startsWith('sim-')) return 'created';
   return null;
 };
 
@@ -107,6 +109,8 @@ export const mapFlashlineStatus = (status: string | undefined): string => {
     IN_TRANSIT: 'قيد التوصيل',
     CANCELLED: 'ملغاة',
     DELIVERED: 'تم التسليم',
+    created: 'تم إنشاء الشحنة',
+    CREATED: 'تم إنشاء الشحنة',
   };
   return statusMap[status] || status;
 };

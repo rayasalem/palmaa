@@ -19,23 +19,40 @@ function isCacheValid(at) {
   return at && Date.now() - at < CACHE_TTL_MS;
 }
 
+/**
+ * Call LogesTechs address API. Tries multiple paths to match Postman collection.
+ * Ref: https://www.postman.com/ali-asfour/logestech-s-api/request/prrjuvs/get-villages-districts
+ */
 async function fetchFromApi(path, params = {}) {
-  if (!SHIPMENT_API_BASE) return null;
+  if (!SHIPMENT_API_BASE || !String(SHIPMENT_API_BASE).trim()) return null;
+  const base = SHIPMENT_API_BASE.replace(/\/$/, '');
   const companyId = process.env.LOGESTECHS_COMPANY_ID || '634';
+  const headers = { 'company-id': companyId, 'Content-Type': 'application/json' };
+  const tryUrl = (p, q = {}) => {
+    const u = new URL(p, base + '/');
+    Object.entries(q).forEach(([k, v]) => {
+      if (v != null && v !== '') u.searchParams.set(k, String(v));
+    });
+    return u.toString();
+  };
   try {
-    const url = new URL(path, SHIPMENT_API_BASE.replace(/\/$/, '') + '/');
-    Object.entries(params).forEach(([k, v]) => {
-      if (v != null && v !== '') url.searchParams.set(k, v);
-    });
-    const response = await axios.get(url.toString(), {
-      headers: { 'company-id': companyId, 'Content-Type': 'application/json' },
-      timeout: 10000,
-    });
+    const url = tryUrl(path, params);
+    const response = await axios.get(url, { headers, timeout: 10000 });
     return response.data;
   } catch (err) {
-    logger.error('addressService API error', { message: (err.response && err.response.data) || err.message });
+    logger.error('addressService API error', { path, message: (err.response && err.response.data) || err.message });
     return null;
   }
+}
+
+/** Try several paths; return first non-empty result. */
+async function fetchFromApiWithFallbackPaths(paths, params = {}) {
+  for (const path of paths) {
+    const raw = await fetchFromApi(path, params);
+    if (Array.isArray(raw) && raw.length > 0) return raw;
+    if (raw && Array.isArray(raw.data) && raw.data.length > 0) return raw.data;
+  }
+  return null;
 }
 
 /** Fallback cities when API is not configured or fails (so dropdowns are never empty). */
@@ -86,20 +103,26 @@ async function getCities() {
   if (isCacheValid(cache.citiesAt) && Array.isArray(cache.cities) && cache.cities.length > 0) {
     return cache.cities;
   }
-  const raw = await fetchFromApi('addresses/cities');
-  if (Array.isArray(raw) && raw.length > 0) {
-    cache.cities = raw;
-    cache.citiesAt = Date.now();
-    return cache.cities;
-  }
-  if (raw && Array.isArray(raw.data) && raw.data.length > 0) {
-    cache.cities = raw.data;
+  // LogesTechs Postman: try guests/cities then addresses/cities
+  const list = await fetchFromApiWithFallbackPaths(['guests/cities', 'addresses/cities']);
+  if (list && list.length > 0) {
+    cache.cities = normalizeCityList(list);
     cache.citiesAt = Date.now();
     return cache.cities;
   }
   cache.cities = FALLBACK_CITIES;
   cache.citiesAt = Date.now();
   return cache.cities;
+}
+
+function normalizeCityList(arr) {
+  return (arr || []).map((c) => ({
+    id: String(c.id ?? c.cityId ?? c.city_id ?? ''),
+    name: c.name || c.nameAr || c.nameEn || '',
+    nameAr: c.nameAr || c.name || '',
+    nameEn: c.nameEn || c.name || '',
+    regionId: c.regionId ?? c.region_id ?? undefined,
+  }));
 }
 
 /**
@@ -109,6 +132,17 @@ async function getCities() {
  * @param {string} [cityId] - Filter by city
  * @returns {Promise<Array<{ id: string, name: string, cityId?: string, regionId?: string }>>}
  */
+function normalizeVillageList(arr, cityId) {
+  return (arr || []).map((v) => ({
+    id: String(v.id ?? v.villageId ?? v.village_id ?? ''),
+    name: v.name || v.nameAr || v.nameEn || '',
+    nameAr: v.nameAr || v.name || '',
+    nameEn: v.nameEn || v.name || '',
+    cityId: String(v.cityId ?? v.city_id ?? cityId ?? ''),
+    regionId: v.regionId ?? v.region_id ?? undefined,
+  }));
+}
+
 async function getVillages(search, cityId) {
   const cacheKey = cityId || 'all';
   const cached = cache.villages[cacheKey];
@@ -120,12 +154,14 @@ async function getVillages(search, cityId) {
     }
     return list;
   }
-  const raw = await fetchFromApi('addresses/villages', { search: search || '', cityId: cityId || '' });
-  let list = Array.isArray(raw) ? raw : raw && raw.data ? raw.data : [];
+  const q = { search: search || '', cityId: cityId || '', city_id: cityId || '' };
+  // LogesTechs Postman "Get Villages/Districts": try guests/villages, guests/districts, addresses/villages
+  const listRaw = await fetchFromApiWithFallbackPaths(
+    ['guests/villages', 'guests/districts', 'addresses/villages'],
+    q
+  );
+  let list = listRaw ? normalizeVillageList(listRaw, cityId) : [];
 
-  // إذا كان في API خارجي (LogesTechs) واعتمدنا عليه مع cityId، نفترض أنه رجّع القرى الصحيحة للمدينة،
-  // وما نعمل فلترة إضافية على خصائص cityId/city_id (اللي أحياناً ما بترجع)، حتى ما نخسر قرى.
-  // الفلترة اليدوية نستخدمها فقط في حالة fallback (عدم توفر API خارجي).
   const usingExternalApi = !!SHIPMENT_API_BASE;
   if (cityId && !usingExternalApi) {
     list = list.filter((v) => String(v.cityId || v.city_id) === String(cityId));

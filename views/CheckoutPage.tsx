@@ -47,11 +47,6 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
     receiverPhone: '',
     quantity: 1,
     description: '',
-    cardNumber: '',
-    cardExpiryMonth: '',
-    cardExpiryYear: '',
-    cardCvv: '',
-    cardholderName: '',
   });
   const [cities, setCities] = useState<City[]>([]);
   const [villages, setVillages] = useState<Village[]>([]);
@@ -160,32 +155,6 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
     }
     if (totalAmount <= 0 || cart.length === 0) {
       setError(lang === 'ar' ? 'السلة فارغة' : 'Cart is empty');
-      return false;
-    }
-    // Basic card validation (no storage, just in-memory check)
-    const cardNumberDigits = form.cardNumber.replace(/\s+/g, '');
-    if (!cardNumberDigits || !/^\d{12,19}$/.test(cardNumberDigits)) {
-      setError(lang === 'ar' ? 'رقم البطاقة غير صالح (أرقام فقط)' : 'Invalid card number (digits only)');
-      return false;
-    }
-    if (!form.cardExpiryMonth.trim() || !form.cardExpiryYear.trim()) {
-      setError(lang === 'ar' ? 'تاريخ انتهاء البطاقة مطلوب' : 'Card expiry is required');
-      return false;
-    }
-    if (!/^\d{1,2}$/.test(form.cardExpiryMonth.trim())) {
-      setError(lang === 'ar' ? 'شهر الانتهاء غير صالح' : 'Invalid expiry month');
-      return false;
-    }
-    if (!/^\d{2,4}$/.test(form.cardExpiryYear.trim())) {
-      setError(lang === 'ar' ? 'سنة الانتهاء غير صالحة' : 'Invalid expiry year');
-      return false;
-    }
-    if (!form.cardCvv.trim() || !/^\d{3,4}$/.test(form.cardCvv.trim())) {
-      setError(lang === 'ar' ? 'رمز CVV غير صالح' : 'Invalid CVV');
-      return false;
-    }
-    if (!form.cardholderName.trim()) {
-      setError(lang === 'ar' ? 'اسم حامل البطاقة مطلوب' : 'Cardholder name is required');
       return false;
     }
     return true;
@@ -527,87 +496,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
               className="w-full py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
           </div>
-          {/* Payment details */}
-          <div className="pt-2 border-t border-slate-200 mt-4">
-            <h2 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
-              {lang === 'ar' ? 'بيانات البطاقة' : 'Card details'}
-            </h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1">
-                  {lang === 'ar' ? 'رقم البطاقة' : 'Card number'}
-                </label>
-                <input
-                  type="text"
-                  name="cardNumber"
-                  value={form.cardNumber}
-                  onChange={handleChange}
-                  maxLength={19}
-                  inputMode="numeric"
-                  className="w-full py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="4111 1111 1111 1111"
-                />
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">
-                    {lang === 'ar' ? 'شهر الانتهاء' : 'Expiry month'}
-                  </label>
-                  <input
-                    type="text"
-                    name="cardExpiryMonth"
-                    value={form.cardExpiryMonth}
-                    onChange={handleChange}
-                    maxLength={2}
-                    inputMode="numeric"
-                    className="w-full py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="MM"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">
-                    {lang === 'ar' ? 'سنة الانتهاء' : 'Expiry year'}
-                  </label>
-                  <input
-                    type="text"
-                    name="cardExpiryYear"
-                    value={form.cardExpiryYear}
-                    onChange={handleChange}
-                    maxLength={4}
-                    inputMode="numeric"
-                    className="w-full py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="YYYY"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1">CVV</label>
-                  <input
-                    type="text"
-                    name="cardCvv"
-                    value={form.cardCvv}
-                    onChange={handleChange}
-                    maxLength={4}
-                    inputMode="numeric"
-                    className="w-full py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="123"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1">
-                  {lang === 'ar' ? 'اسم حامل البطاقة' : 'Cardholder name'}
-                </label>
-                <input
-                  type="text"
-                  name="cardholderName"
-                  value={form.cardholderName}
-                  onChange={handleChange}
-                  maxLength={64}
-                  className="w-full py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder={lang === 'ar' ? 'كما هو على البطاقة' : 'As shown on card'}
-                />
-              </div>
-            </div>
+          {/* الدفع يتم على صفحة البنك الآمنة — لا ندخل رقم البطاقة هنا */}
+          <div className="pt-2 border-t border-slate-200 mt-4 p-3 bg-slate-50 rounded-xl border border-slate-100">
+            <p className="text-xs text-slate-600">
+              {lang === 'ar'
+                ? 'بعد الضغط على «متابعة للدفع» ستُنقل إلى صفحة الدفع الآمنة للبنك لإدخال بيانات البطاقة هناك.'
+                : "After clicking «Proceed to payment» you will be redirected to the bank's secure payment page to enter your card details there."}
+            </p>
           </div>
           {error && <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm">{error}</div>}
           <button

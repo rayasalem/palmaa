@@ -225,6 +225,32 @@ export const CustomerView: React.FC<Props> = ({
     return [...apiOrders, ...localOnly];
   }, [apiOrders, myOrders]);
 
+  // بعد ظهور طلب مدفوع في قائمة الطلبات، نتأكد مرة واحدة أن السلة مفرّغة للمستخدم الحالي
+  useEffect(() => {
+    if (!user || !clearCart) return;
+    if (!displayOrders || displayOrders.length === 0) return;
+    const hasPaid = displayOrders.some((o) => String(o.status || o.delivery_status || '').toUpperCase() === 'PAID');
+    if (!hasPaid) return;
+    const key = `palma_cart_cleared_after_paid_${user.id}`;
+    try {
+      if (typeof window !== 'undefined') {
+        const already = window.localStorage.getItem(key);
+        if (already === '1') return;
+      }
+    } catch {
+      // ignore storage errors
+    }
+    Promise.resolve(clearCart()).then(() => {
+      try {
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(key, '1');
+        }
+      } catch {
+        // ignore
+      }
+    });
+  }, [user, clearCart, displayOrders]);
+
   const loadApiOrders = React.useCallback(async () => {
     try {
       const res = await fetchMyOrders();

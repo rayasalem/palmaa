@@ -47,6 +47,14 @@ Restart the server. You will see full request and response bodies in the console
 
 ---
 
+### Why don't my orders appear on the LogesTechs app?
+
+Shipments are sent to LogesTechs only when **LOGESTECHS_EMAIL** and **LOGESTECHS_PASSWORD** are set. If either is missing, the server creates a *simulated* shipment (ID like `sim-xxx`) so checkout can complete, but **no request is sent to LogesTechs** and the order will not show in their app. Set both variables in your environment (e.g. on Render) and redeploy.
+
+### Cities and villages from LogesTechs
+
+The backend uses **SHIPMENT_API_BASE** to load cities and villages. It tries `guests/cities`, `addresses/cities` for cities, and `guests/villages`, `guests/districts`, `addresses/villages` for villages ([Get Villages/Districts](https://www.postman.com/ali-asfour/logestech-s-api/request/prrjuvs/get-villages-districts)). If SHIPMENT_API_BASE is not set or the API fails, fallback lists are used.
+
 ## Step-by-Step Manual Testing
 
 ### Prerequisites

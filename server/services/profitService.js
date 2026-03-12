@@ -11,6 +11,11 @@ import logger from '../utils/logger.js';
 
 const ORDER_PROFITS_TABLE = 'order_profits';
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+function isValidUuid(s) {
+  return typeof s === 'string' && s.trim() && UUID_REGEX.test(s.trim());
+}
+
 const STORE_RATE = 0.15; // 15% للمتجر عند البيع المباشر
 const STORE_RATE_WITH_BROKER = 0.12; // 12% للمتجر عند البيع عبر الوسيط
 const BROKER_RATE = 0.03; // 3% للوسيط من قيمة القطعة
@@ -63,7 +68,8 @@ async function recordProfitsForOrder(orderId) {
     const storeAmount = Math.round(storeRate * itemTotal * 100) / 100;
     const brokerAmount = hasBroker ? Math.round(BROKER_RATE * itemTotal * 100) / 100 : 0;
 
-    const orderItemId = item.id || null;
+    const rawItemId = item.id || null;
+    const orderItemId = rawItemId && isValidUuid(String(rawItemId)) ? rawItemId : null;
 
     if (merchantId != null && merchantAmount > 0) {
       rowsToInsert.push({

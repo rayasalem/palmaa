@@ -190,15 +190,22 @@ function buildShipmentPayload(order, shipmentInput) {
   };
 }
 
+/** Once per process: log that real LogesTechs API is disabled. */
+let _loggedSimulation = false;
+
 /**
  * Create shipment for an order via LogesTechs POST /ship/request/by-email.
  * Requires env: LOGESTECHS_EMAIL, LOGESTECHS_PASSWORD; LOGESTECHS_COMPANY_ID (default 634).
- * When credentials are not set, simulates success (fake shipment id) for local/dev so checkout flow can complete.
+ * When credentials are not set, simulates success (fake shipment id) so checkout can complete;
+ * في هذه الحالة الطلبات لا تظهر على تطبيق LogesTechs — يجب تعيين المتغيرات لتفعيل الـ API الحقيقي.
  */
 async function createShipment(orderId, shipmentInput) {
   const auth = getAuth();
   if (!auth.email || !auth.password) {
-    // Simulate shipment creation for local/dev when LogesTechs is not configured
+    if (!_loggedSimulation) {
+      _loggedSimulation = true;
+      logger.warn('shipmentService LogesTechs not configured: set LOGESTECHS_EMAIL and LOGESTECHS_PASSWORD so shipments appear on LogesTechs app. See: https://www.postman.com/ali-asfour/logestech-s-api/collection/1kmztpz/logestechs-apis');
+    }
     const orderResult = await getOrderById(orderId);
     if (orderResult.error) {
       return { order: null, shipment: null, error: orderResult.error };
@@ -257,11 +264,27 @@ async function createShipment(orderId, shipmentInput) {
 
 /**
  * Get package status from LogesTechs GET /guests/packages/status?id= or ?barcode=
+ * For simulated shipments (id starting with sim-), return status from orders table.
  */
 async function getPackageStatus(params) {
   const { id, barcode } = params;
   if (!id && !barcode) {
     return { data: null, error: { message: 'id or barcode is required' } };
+  }
+  const sid = (id && String(id).trim()) || null;
+  if (sid && sid.startsWith('sim-')) {
+    const { data: rows, error } = await supabase
+      .from(ORDERS_TABLE)
+      .select('delivery_status, status')
+      .eq('delivery_id', sid)
+      .limit(1);
+    if (error) {
+      logger.error('shipmentService getPackageStatus sim lookup', { message: error.message });
+      return { data: { status: 'created' }, error: null };
+    }
+    const order = rows && rows[0];
+    const status = (order && (order.delivery_status || order.status)) || 'created';
+    return { data: { status }, error: null };
   }
   const url = `${SHIPMENT_API_BASE.replace(/\/$/, '')}/guests/packages/status`;
   const query = id ? `id=${encodeURIComponent(id)}` : `barcode=${encodeURIComponent(barcode)}`;

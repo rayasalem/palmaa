@@ -136,6 +136,8 @@ async function handlePaymentCallback(orderId, status, idempotencyKey) {
             customerId,
             message: cartErr.message || String(cartErr),
           });
+        } else {
+          logger.info('paymentService clearCart after paid ok', { orderId, customerId });
         }
       } catch (err) {
         logger.error('paymentService clearCart after paid threw', {
@@ -144,6 +146,8 @@ async function handlePaymentCallback(orderId, status, idempotencyKey) {
           message: err && err.message,
         });
       }
+    } else {
+      logger.warn('paymentService clearCart skipped, no customer_id on order', { orderId });
     }
     // ربط الطلب بالتوصيل: إنشاء شحنة تلقائياً إذا الطلب فيه عنوان توصيل كامل (cityId, villageId)
     const hasShippingAddress =

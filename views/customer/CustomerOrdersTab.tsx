@@ -129,17 +129,39 @@ export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
                   </div>
 
                   <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 flex flex-col justify-center space-y-4">
-                    <div>
+                    <div className="space-y-3">
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                        {t.checkout.address}
+                        {lang === 'ar' ? 'تفاصيل الطلب' : 'Order details'}
                       </p>
-                      <p className="text-xs font-bold text-slate-700 leading-relaxed">
-                        {o.shippingAddress?.cityName || o.city || ''} - {o.shippingAddress?.villageName || ''}
-                        <br />
-                        <span className="text-slate-500 font-medium">
-                          {o.shipping_address || o.shippingAddress?.addressDetails || o.address || ''}
-                        </span>
-                      </p>
+                      <div className="text-xs text-slate-700 space-y-1.5">
+                        <p className="font-bold">
+                          <span className="text-slate-500 font-medium">{lang === 'ar' ? 'العنوان: ' : 'Address: '}</span>
+                          {o.shipping_address || o.shippingAddress?.addressDetails || o.address || '—'}
+                        </p>
+                        {(o.shippingAddress?.cityName || o.shippingAddress?.villageName || o.city) && (
+                          <p className="text-slate-600">
+                            {[o.shippingAddress?.cityName || o.city, o.shippingAddress?.villageName].filter(Boolean).join(' - ')}
+                          </p>
+                        )}
+                        <p>
+                          <span className="text-slate-500 font-medium">{lang === 'ar' ? 'المستلم: ' : 'Recipient: '}</span>
+                          {o.shipping_name || (o as any).recipient_name || '—'}
+                        </p>
+                        <p>
+                          <span className="text-slate-500 font-medium">{lang === 'ar' ? 'الهاتف: ' : 'Phone: '}</span>
+                          {o.shipping_phone || (o as any).phone || '—'}
+                        </p>
+                        <p>
+                          <span className="text-slate-500 font-medium">{lang === 'ar' ? 'المبلغ: ' : 'Amount: '}</span>
+                          <span className="font-bold">₪{o.total_amount ?? (o as any).amount ?? '—'}</span>
+                        </p>
+                        {(o.payment_method || (o as any).payment_method) && (
+                          <p>
+                            <span className="text-slate-500 font-medium">{lang === 'ar' ? 'طريقة الدفع: ' : 'Payment: '}</span>
+                            {String(o.payment_method || (o as any).payment_method || '').toUpperCase()}
+                          </p>
+                        )}
+                      </div>
                     </div>
                     {(o.delivery_id || o.shipmentId) && !isCancelled && !isDelivered && (
                       <div className="bg-white rounded-xl p-4 border border-palma-primary/20 space-y-3">
