@@ -122,7 +122,12 @@ async function getVillages(search, cityId) {
   }
   const raw = await fetchFromApi('addresses/villages', { search: search || '', cityId: cityId || '' });
   let list = Array.isArray(raw) ? raw : raw && raw.data ? raw.data : [];
-  if (cityId) {
+
+  // إذا كان في API خارجي (LogesTechs) واعتمدنا عليه مع cityId، نفترض أنه رجّع القرى الصحيحة للمدينة،
+  // وما نعمل فلترة إضافية على خصائص cityId/city_id (اللي أحياناً ما بترجع)، حتى ما نخسر قرى.
+  // الفلترة اليدوية نستخدمها فقط في حالة fallback (عدم توفر API خارجي).
+  const usingExternalApi = !!SHIPMENT_API_BASE;
+  if (cityId && !usingExternalApi) {
     list = list.filter((v) => String(v.cityId || v.city_id) === String(cityId));
   }
   if (list.length === 0 && cityId) {
