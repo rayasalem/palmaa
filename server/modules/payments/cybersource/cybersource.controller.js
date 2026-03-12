@@ -1,14 +1,22 @@
 import { createHostedSession, handleNotification } from './cybersource.service.js';
 import logger, { sanitizeForLog } from '../../../utils/logger.js';
 
+function normalizeOrderId(value) {
+  if (value == null) return '';
+  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'object' && value.id != null) return String(value.id).trim();
+  return String(value);
+}
+
 async function createHostedSessionHandler(req, res) {
   try {
-    const { orderId, amount } = req.body || {};
+    const { orderId: rawOrderId, amount } = req.body || {};
+    const orderId = normalizeOrderId(rawOrderId);
     if (!orderId || amount == null) {
       return res.status(400).json({ success: false, error: 'orderId and amount are required' });
     }
 
-    const session = await createHostedSession(String(orderId), Number(amount));
+    const session = await createHostedSession(orderId, Number(amount));
     return res.status(200).json({
       success: true,
       action_url: session.actionUrl,

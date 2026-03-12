@@ -25,11 +25,17 @@ function pruneIdempotency() {
 }
 
 async function updateOrderStatus(orderId, status) {
-  console.log('[paymentService] Updating order', orderId, 'to', status);
+  const { data: order, error: resolveErr } = await orderService.getOrderById(orderId);
+  if (resolveErr || !order) {
+    logger.error('paymentService updateOrderStatus getOrderById', { orderId, message: (resolveErr && resolveErr.message) || 'Order not found' });
+    return { data: null, error: resolveErr || new Error('Order not found') };
+  }
+  const id = order.id;
+  console.log('[paymentService] Updating order', orderId, '(id:', id, ') to', status);
   const { data, error } = await supabase
     .from(ORDERS_TABLE)
     .update({ status, updated_at: new Date().toISOString() })
-    .eq('id', orderId)
+    .eq('id', id)
     .select()
     .single();
 
@@ -97,7 +103,12 @@ async function handlePaymentCallback(orderId, status, idempotencyKey) {
     await decrementStockForOrder(orderId);
     const { error: profitErr } = await profitService.recordProfitsForOrder(orderId);
     if (profitErr) {
-      logger.error('paymentService recordProfitsForOrder error', { message: profitErr.message });
+      const isMissingTable = profitErr.message && (profitErr.message.includes('order_profits') || profitErr.message.includes('schema cache'));
+      if (isMissingTable) {
+        logger.warn('paymentService recordProfitsForOrder skipped (table order_profits may be missing; run migration 003)', { message: profitErr.message });
+      } else {
+        logger.error('paymentService recordProfitsForOrder error', { message: profitErr.message });
+      }
     }
     const { data: order } = await orderService.getOrderById(orderId);
     const totalAmount = order && order.total_amount != null ? order.total_amount : 0;
