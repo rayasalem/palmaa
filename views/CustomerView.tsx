@@ -593,27 +593,26 @@ export const CustomerView: React.FC<Props> = ({
       />
       {/* Shop/Cart sub-tabs (تظهر لكل الأدوار) */}
       <div className="dashboard-tabs w-fit">
-          <button
-            type="button"
-            onClick={() => setShopOrCart('shop')}
-            className={`dashboard-tab ${activeTab === 'shop' ? 'dashboard-tab-active' : 'dashboard-tab-inactive'}`}
-          >
-            <ShoppingBag className="w-4 h-4" /> {lang === 'ar' ? 'التسوق' : 'Shop'}
-          </button>
-          <button
-            type="button"
-            onClick={() => setShopOrCart('cart')}
-            className={`dashboard-tab flex items-center gap-2 ${activeTab === 'cart' ? 'dashboard-tab-active' : 'dashboard-tab-inactive'}`}
-          >
-            {lang === 'ar' ? 'السلة' : 'Cart'}
-            {cart.length > 0 && (
-              <span className="bg-white/20 text-current text-[10px] font-bold min-w-[20px] h-5 rounded-full flex items-center justify-center px-1.5">
-                {cart.reduce((a, b) => a + b.quantity, 0)}
-              </span>
-            )}
-          </button>
-        </div>
-      )}
+        <button
+          type="button"
+          onClick={() => setShopOrCart('shop')}
+          className={`dashboard-tab ${activeTab === 'shop' ? 'dashboard-tab-active' : 'dashboard-tab-inactive'}`}
+        >
+          <ShoppingBag className="w-4 h-4" /> {lang === 'ar' ? 'التسوق' : 'Shop'}
+        </button>
+        <button
+          type="button"
+          onClick={() => setShopOrCart('cart')}
+          className={`dashboard-tab flex items-center gap-2 ${activeTab === 'cart' ? 'dashboard-tab-active' : 'dashboard-tab-inactive'}`}
+        >
+          {lang === 'ar' ? 'السلة' : 'Cart'}
+          {cart.length > 0 && (
+            <span className="bg-white/20 text-current text-[10px] font-bold min-w-[20px] h-5 rounded-full flex items-center justify-center px-1.5">
+              {cart.reduce((a, b) => a + b.quantity, 0)}
+            </span>
+          )}
+        </button>
+      </div>
 
       {/* Cancellation Modal */}
       {orderToCancel && (

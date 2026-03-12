@@ -10,6 +10,7 @@ import * as productService from './productService.js';
 import * as profitService from './profitService.js';
 import * as transactionService from './transactionService.js';
 import * as shipmentService from './shipmentService.js';
+import * as cartService from './cartService.js';
 import { createCardPayment as cybersourceCreateCardPayment } from './cybersourceClient.js';
 import logger from '../utils/logger.js';
 
@@ -123,6 +124,27 @@ async function handlePaymentCallback(orderId, status, idempotencyKey) {
       !!(order && order.invoice_uploaded)
     );
     if (txErr) logger.error('paymentService recordOrderSettlement error', { message: txErr.message });
+
+    // تفريغ سلة المستخدم تلقائياً بعد تأكيد الدفع (حتى لو الفرونت لم يستدعِ clearCart)
+    const customerId = order && (order.customer_id || order.customerId);
+    if (customerId) {
+      try {
+        const { error: cartErr } = await cartService.clearCart(customerId);
+        if (cartErr) {
+          logger.error('paymentService clearCart after paid error', {
+            orderId,
+            customerId,
+            message: cartErr.message || String(cartErr),
+          });
+        }
+      } catch (err) {
+        logger.error('paymentService clearCart after paid threw', {
+          orderId,
+          customerId,
+          message: err && err.message,
+        });
+      }
+    }
     // ربط الطلب بالتوصيل: إنشاء شحنة تلقائياً إذا الطلب فيه عنوان توصيل كامل (cityId, villageId)
     const hasShippingAddress =
       order &&
