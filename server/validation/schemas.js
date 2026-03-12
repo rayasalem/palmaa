@@ -115,6 +115,9 @@ export const catalogListQuery = Joi.object({
 
 export const products = {
   listQuery: catalogListQuery,
+  merchantParam: Joi.object({
+    merchantId: uuid.required(),
+  }),
   create: Joi.object({
     name: Joi.string().max(300),
     title: Joi.string().max(300).allow('', null),
