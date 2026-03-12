@@ -418,6 +418,91 @@ ALTER TABLE public.otp_codes DISABLE ROW LEVEL SECURITY;
 GRANT ALL ON public.otp_codes TO anon, authenticated, service_role;
 
 -- =============================================================================
+-- CARTS, ADMIN MESSAGES, ORDER PROFITS, ORDER REFERENCE, SHIPPING CITY/VILLAGE
+-- (مجمّعة من 002 و003 و012 و013 لسهولة التشغيل من ملف واحد)
+-- =============================================================================
+
+-- One cart per user (customer); used for logged-in cart persistence
+CREATE TABLE IF NOT EXISTS public.carts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_carts_user_id ON public.carts(user_id);
+
+-- Cart items: product + quantity + price snapshot per cart
+CREATE TABLE IF NOT EXISTS public.cart_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    cart_id UUID NOT NULL REFERENCES public.carts(id) ON DELETE CASCADE,
+    product_id TEXT NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+    quantity INT NOT NULL CHECK (quantity > 0),
+    price NUMERIC NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(cart_id, product_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cart_items_cart_id ON public.cart_items(cart_id);
+CREATE INDEX IF NOT EXISTS idx_cart_items_product_id ON public.cart_items(product_id);
+
+-- Optional: admin/merchant messages about a product (e.g. approval notes, questions)
+CREATE TABLE IF NOT EXISTS public.admin_product_messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    product_id TEXT NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+    from_user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    to_user_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_product_messages_product_id ON public.admin_product_messages(product_id);
+CREATE INDEX IF NOT EXISTS idx_admin_product_messages_from_user ON public.admin_product_messages(from_user_id);
+CREATE INDEX IF NOT EXISTS idx_admin_product_messages_to_user ON public.admin_product_messages(to_user_id);
+
+-- Allow linking order to broker when sale came through broker referral
+ALTER TABLE public.orders
+  ADD COLUMN IF NOT EXISTS broker_id UUID REFERENCES public.users(id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS idx_orders_broker_id ON public.orders(broker_id);
+
+-- Profit records per order: نصيب التاجر، المتجر، الوسيط
+-- party_type: 'merchant' | 'store' | 'broker'
+-- party_id: user id for merchant/broker; NULL for store (platform)
+CREATE TABLE IF NOT EXISTS public.order_profits (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    order_id TEXT NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+    order_item_id UUID NULL,
+    party_type TEXT NOT NULL CHECK (party_type IN ('merchant', 'store', 'broker')),
+    party_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+    amount_ils NUMERIC NOT NULL CHECK (amount_ils >= 0),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_order_profits_order_id ON public.order_profits(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_profits_party ON public.order_profits(party_type, party_id);
+CREATE INDEX IF NOT EXISTS idx_order_profits_created_at ON public.order_profits(created_at);
+
+-- Orders: short reference for Cybersource receipt (ORD-xxxxxxxx).
+ALTER TABLE public.orders
+  ADD COLUMN IF NOT EXISTS order_reference TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_orders_order_reference ON public.orders (order_reference) WHERE order_reference IS NOT NULL;
+
+-- Backfill: ORD- + last 8 chars of id
+UPDATE public.orders
+SET order_reference = 'ORD-' || LOWER(SUBSTRING(REPLACE(id::text, '-', '') FROM 25 FOR 8))
+WHERE order_reference IS NULL AND id IS NOT NULL;
+
+-- Orders: store city/village for automatic shipment creation after payment.
+ALTER TABLE public.orders
+  ADD COLUMN IF NOT EXISTS shipping_city_id TEXT;
+
+ALTER TABLE public.orders
+  ADD COLUMN IF NOT EXISTS shipping_village_id TEXT;
+
+-- =============================================================================
 -- 4. CRITICAL: RELOAD SCHEMA CACHE (Fixes PGRST204)
 -- =============================================================================
 NOTIFY pgrst, 'reload schema';

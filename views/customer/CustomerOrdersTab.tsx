@@ -11,6 +11,11 @@ import type { Language } from '../../translations';
 import { Package, Truck, RefreshCw } from 'lucide-react';
 import { ProductConditionBadge } from '../../components/ProductConditionBadge';
 
+export interface TrackingDisplay {
+  orderId: string;
+  status: string;
+}
+
 export interface CustomerOrdersTabProps {
   lang: Language;
   t: Record<string, any> & { nav: { orders: string }; checkout: { address: string } };
@@ -22,6 +27,8 @@ export interface CustomerOrdersTabProps {
   setOrderToCancel: (order: Order | null) => void;
   checkingStatusId: string | null;
   onCheckOrderStatus: (order: Order) => void;
+  /** آخر نتيجة تتبع معروضة للمستخدم */
+  trackingDisplay?: TrackingDisplay | null;
 }
 
 export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
@@ -35,6 +42,7 @@ export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
   setOrderToCancel,
   checkingStatusId,
   onCheckOrderStatus,
+  trackingDisplay = null,
 }) => {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -157,6 +165,16 @@ export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
                             </>
                           )}
                         </button>
+                        {trackingDisplay && trackingDisplay.orderId === o.id && (
+                          <div className="mt-3 p-3 rounded-lg bg-palma-primary/10 border border-palma-primary/30 text-center">
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
+                              {lang === 'ar' ? 'حالة الطلب' : 'Order status'}
+                            </p>
+                            <p className="text-sm font-bold text-palma-navy mt-1">
+                              {trackingDisplay.status}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
                     {isApiOrder && isPending && (

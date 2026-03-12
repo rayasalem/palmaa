@@ -18,12 +18,11 @@ import {
   cancelLogestechsShipment,
   getShipmentStatus,
   mapFlashlineStatus,
-  getInternalCities,
-  getInternalVillages,
   getShipmentLabels,
   resolveLocationName,
 } from '../services/flashlineService';
-import { cancelOrder as cancelOrderApi, fetchMyOrders } from '../services/checkoutApi';
+import { cancelOrder as cancelOrderApi, fetchMyOrders, getCities as getCitiesApi, getVillages as getVillagesApi } from '../services/checkoutApi';
+import type { City as ApiCity, Village as ApiVillage } from '../services/checkoutApi';
 import { sendEmail, getShipmentDetailsTemplate } from '../services/emailService';
 import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense, lazy } from 'react';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -106,19 +105,38 @@ export const CustomerView: React.FC<Props> = ({
   const [processingCancelId, setProcessingCancelId] = useState<string | null>(null);
   const [cancelConfirmOrderId, setCancelConfirmOrderId] = useState<string | null>(null);
   const [checkingStatusId, setCheckingStatusId] = useState<string | null>(null);
+  const [trackingDisplay, setTrackingDisplay] = useState<{ orderId: string; status: string } | null>(null);
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
   const [showCheckoutForm, setShowCheckoutForm] = useState(false);
   const [checkoutStep, setCheckoutStep] = useState<'form' | 'summary'>('form');
   const [showJsonPayload, setShowJsonPayload] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, boolean>>({});
 
-  // Hierarchical Location State
-  const cities = useMemo(() => getInternalCities(), []);
-  const [selectedCityId, setSelectedCityId] = useState<number | undefined>(undefined);
-  const availableVillages = useMemo(
-    () => (selectedCityId ? getInternalVillages(selectedCityId) : []),
-    [selectedCityId]
-  );
+  // Cities and villages from API
+  const [cities, setCities] = useState<ApiCity[]>([]);
+  const [villages, setVillages] = useState<ApiVillage[]>([]);
+  const [selectedCityId, setSelectedCityId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    getCitiesApi()
+      .then((res) => {
+        if (res.success && Array.isArray(res.data)) setCities(res.data);
+      })
+      .catch(() => setCities([]));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedCityId) {
+      setVillages([]);
+      return;
+    }
+    getVillagesApi({ cityId: selectedCityId })
+      .then((res) => {
+        if (res?.success && Array.isArray(res.data)) setVillages(res.data);
+        else setVillages([]);
+      })
+      .catch(() => setVillages([]));
+  }, [selectedCityId]);
 
   const [shippingData, setShippingData] = useState({
     fullName: user.name || '',
@@ -136,21 +154,26 @@ export const CustomerView: React.FC<Props> = ({
     notes: '',
   });
 
-  // Effect to update resolved names when language changes (so summary updates)
+  // Effect to set city/village names from API data when selection or lang changes
   useEffect(() => {
-    if (shippingData.cityId) {
-      setShippingData((prev) => ({
-        ...prev,
-        cityName: resolveLocationName(prev.cityId!, 'city', lang),
-        villageName: prev.villageId ? resolveLocationName(prev.villageId, 'village', lang) : '',
-      }));
+    if (shippingData.cityId && cities.length > 0) {
+      const city = cities.find((c) => String(c.id) === String(shippingData.cityId));
+      if (city) {
+        setShippingData((prev) => ({ ...prev, cityName: city.name }));
+      }
     }
-  }, [lang]);
+    if (shippingData.villageId && villages.length > 0) {
+      const v = villages.find((vv) => String(vv.id) === String(shippingData.villageId));
+      if (v) {
+        setShippingData((prev) => ({ ...prev, villageName: v.name }));
+      }
+    }
+  }, [lang, shippingData.cityId, shippingData.villageId, cities, villages]);
 
   // When checkout modal opens, sync selectedCityId from shippingData so city dropdown shows correct value
   useEffect(() => {
     if (showCheckoutForm && shippingData.cityId != null && shippingData.cityId !== undefined) {
-      setSelectedCityId(Number(shippingData.cityId));
+      setSelectedCityId(String(shippingData.cityId));
     }
   }, [showCheckoutForm]);
 
@@ -269,15 +292,15 @@ export const CustomerView: React.FC<Props> = ({
   };
 
   const handleCityChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const cityId = parseInt((e.target as HTMLSelectElement).value, 10);
-    const city = cities.find((c) => c.id === cityId);
+    const cityId = (e.target as HTMLSelectElement).value;
+    const city = cities.find((c) => String(c.id) === String(cityId));
     if (city) {
       setSelectedCityId(cityId);
       setShippingData((prev) => ({
         ...prev,
-        cityId: city.id,
-        regionId: city.regionId,
-        cityName: lang === 'en' ? city.nameEn : city.nameAr,
+        cityId: city.id as any,
+        regionId: city.regionId as any,
+        cityName: city.name,
         villageId: undefined,
         villageName: '',
       }));
@@ -286,13 +309,13 @@ export const CustomerView: React.FC<Props> = ({
   };
 
   const handleVillageChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const vId = parseInt((e.target as HTMLSelectElement).value, 10);
-    const v = availableVillages.find((vv) => vv.id === vId);
+    const vId = (e.target as HTMLSelectElement).value;
+    const v = villages.find((vv) => String(vv.id) === String(vId));
     if (v) {
       setShippingData((prev) => ({
         ...prev,
-        villageId: v.id,
-        villageName: lang === 'en' ? v.nameEn : v.nameAr,
+        villageId: v.id as any,
+        villageName: v.name,
       }));
       setFormErrors((prev) => ({ ...prev, villageId: false }));
     }
@@ -478,21 +501,25 @@ export const CustomerView: React.FC<Props> = ({
       return;
     }
     setCheckingStatusId(order.id);
+    setTrackingDisplay(null);
     try {
       const status = await getShipmentStatus(deliveryId);
       if (status) {
         await marketStore.updateLocalOrderStatus(order.id, status);
         const displayStatus = mapFlashlineStatus(status);
+        setTrackingDisplay({ orderId: order.id, status: displayStatus });
         showToast(lang === 'ar' ? `حالة الطلب: ${displayStatus}` : `Order status: ${displayStatus}`, 'success');
         loadApiOrders();
         if (onRefresh) onRefresh();
       } else {
+        setTrackingDisplay({ orderId: order.id, status: lang === 'ar' ? '—' : '—' });
         showToast(
           lang === 'ar' ? 'تعذر جلب حالة الشحن. حاول لاحقاً.' : 'Could not fetch shipment status. Try again later.',
           'warning'
         );
       }
     } catch (err: any) {
+      setTrackingDisplay({ orderId: order.id, status: lang === 'ar' ? 'تعذر جلب الحالة' : 'Could not fetch status' });
       showToast(getAuthErrorMessage(err?.message || '', lang) || err?.message || t.common.error, 'error');
     } finally {
       setCheckingStatusId(null);
@@ -591,8 +618,8 @@ export const CustomerView: React.FC<Props> = ({
         isLoading={!!cancelConfirmOrderId && processingCancelId === cancelConfirmOrderId}
         variant="danger"
       />
-      {/* Shop/Cart sub-tabs (تظهر لكل الأدوار) */}
-      <div className="dashboard-tabs w-fit">
+      {/* Shop/Cart/Orders sub-tabs (تظهر لكل الأدوار) */}
+      <div className="dashboard-tabs flex flex-wrap gap-2">
         <button
           type="button"
           onClick={() => setShopOrCart('shop')}
@@ -611,6 +638,13 @@ export const CustomerView: React.FC<Props> = ({
               {cart.reduce((a, b) => a + b.quantity, 0)}
             </span>
           )}
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('orders')}
+          className={`dashboard-tab ${activeTab === 'orders' ? 'dashboard-tab-active' : 'dashboard-tab-inactive'}`}
+        >
+          {lang === 'ar' ? 'طلباتي' : 'My orders'}
         </button>
       </div>
 
@@ -789,7 +823,7 @@ export const CustomerView: React.FC<Props> = ({
                           <>
                             {cities.map((c) => (
                               <option key={c.id} value={c.id}>
-                                {lang === 'ar' ? c.nameAr : c.nameEn}
+                                {c.name}
                               </option>
                             ))}
                           </>
@@ -807,9 +841,9 @@ export const CustomerView: React.FC<Props> = ({
                         required
                         options={
                           <>
-                            {availableVillages.map((v) => (
+                            {villages.map((v) => (
                               <option key={v.id} value={v.id}>
-                                {lang === 'ar' ? v.nameAr : v.nameEn}
+                                {v.name}
                               </option>
                             ))}
                           </>
@@ -979,6 +1013,7 @@ export const CustomerView: React.FC<Props> = ({
             setOrderToCancel={setOrderToCancel}
             checkingStatusId={checkingStatusId}
             onCheckOrderStatus={handleCheckOrderStatus}
+            trackingDisplay={trackingDisplay}
           />
         </Suspense>
       )}
