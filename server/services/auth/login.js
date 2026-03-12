@@ -9,7 +9,8 @@ import { hashPassword } from './utils.js';
 import logger from '../../utils/logger.js';
 
 const USERS_TABLE = 'users';
-const selectCols = 'id, email, password, name, role, status, created_at, email_verified, token_version, mfa_enabled';
+// أعمدة أساسية (بدون token_version و mfa_enabled لتعمل إن لم تُنفَّذ migration 011)
+const selectCols = 'id, email, password, name, role, status, created_at, email_verified';
 
 export async function login(email, password) {
   const emailNorm = email.toLowerCase().trim();
@@ -123,13 +124,14 @@ export async function login(email, password) {
   const { password: _p, ...user } = userRow;
   user.is_email_verified = user.email_verified ?? user.is_email_verified ?? false;
   user.token_version = user.token_version ?? 0;
+  user.mfa_enabled = user.mfa_enabled ?? false;
   return { user, error: null };
 }
 
 export async function getUserById(userId) {
   const { data, error } = await supabase
     .from(USERS_TABLE)
-    .select('id, email, name, role, status, phone, created_at, updated_at, email_verified, token_version')
+    .select('id, email, name, role, status, phone, created_at, updated_at, email_verified')
     .eq('id', userId)
     .single();
   if (error) {
@@ -141,5 +143,6 @@ export async function getUserById(userId) {
     return { data: null, error: { message: 'User deleted' } };
   }
   data.is_email_verified = data.email_verified ?? data.is_email_verified ?? false;
+  data.token_version = data.token_version ?? 0;
   return { data, error: null };
 }

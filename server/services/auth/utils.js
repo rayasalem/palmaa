@@ -15,7 +15,11 @@ export async function hashPassword(plainPassword) {
 
 export async function getTokenVersion(userId) {
   const { data, error } = await supabase.from(USERS_TABLE).select('token_version').eq('id', userId).single();
-  if (error || data == null) return 0;
+  if (error) {
+    if (error.code === '42703') return 0;
+    return 0;
+  }
+  if (data == null) return 0;
   return Number(data.token_version) || 0;
 }
 
@@ -25,9 +29,11 @@ export async function incrementTokenVersion(userId) {
     .select('token_version')
     .eq('id', userId)
     .single();
-  if (fetchErr || row == null) {
-    return { error: fetchErr || new Error('User not found') };
+  if (fetchErr) {
+    if (fetchErr.code === '42703') return { error: null };
+    return { error: fetchErr };
   }
+  if (row == null) return { error: new Error('User not found') };
   const nextVer = (Number(row.token_version) || 0) + 1;
   const { error: updateErr } = await supabase
     .from(USERS_TABLE)
