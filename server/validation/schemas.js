@@ -51,8 +51,9 @@ export const auth = {
 
 export const cart = {
   addItem: Joi.object({
-    product_id: uuid,
-    productId: uuid,
+    // نسمح بالـ UUID أو أي معرف نصي (مثل PRD-xxxx) تماماً كما فعلنا في orders.items
+    product_id: Joi.alternatives().try(uuid, Joi.string().min(1).max(64)),
+    productId: Joi.alternatives().try(uuid, Joi.string().min(1).max(64)),
     quantity: Joi.number().integer().min(1).max(100).default(1),
   })
     .or('product_id', 'productId')

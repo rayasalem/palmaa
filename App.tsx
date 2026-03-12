@@ -438,8 +438,16 @@ const AppContent: React.FC = () => {
       setAddingToCartProductId(productId);
       try {
         const ok = await apiCart.addItem(productId, quantity);
-        if (ok) showToast(lang === 'ar' ? 'تمت الإضافة للسلة' : 'Added to cart', 'success');
-        else if (apiCart.error) showToast(getAuthErrorMessage(apiCart.error, lang) || apiCart.error, 'error');
+        if (ok) {
+          showToast(lang === 'ar' ? 'تمت الإضافة للسلة' : 'Added to cart', 'success');
+        } else if (apiCart.error) {
+          const generic =
+            lang === 'ar'
+              ? 'تعذّر إضافة المنتج إلى السلة. حاول مرة أخرى.'
+              : 'Could not add the item to your cart. Please try again.';
+          const mapped = getAuthErrorMessage(apiCart.error, lang);
+          showToast(mapped || generic, 'error');
+        }
       } finally {
         setAddingToCartProductId(null);
       }
