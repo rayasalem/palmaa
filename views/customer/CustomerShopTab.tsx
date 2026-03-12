@@ -141,7 +141,7 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
 
   return (
     <div className="space-y-8">
-      <div className="text-center sm:text-right rtl:sm:text-left">
+      <div className="text-center sm:text-right">
         <h2 className="font-heading text-2xl sm:text-3xl font-black text-palma-navy tracking-tight">
           {lang === 'ar' ? 'التسوق' : lang === 'he' ? 'קניות' : 'Shopping'}
         </h2>

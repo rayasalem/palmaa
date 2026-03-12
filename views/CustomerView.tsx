@@ -591,9 +591,8 @@ export const CustomerView: React.FC<Props> = ({
         isLoading={!!cancelConfirmOrderId && processingCancelId === cancelConfirmOrderId}
         variant="danger"
       />
-      {/* Shop/Cart sub-tabs for MERCHANT/BROKER — تصميم حديث */}
-      {shopOnlySection && (
-        <div className="dashboard-tabs w-fit">
+      {/* Shop/Cart sub-tabs (تظهر لكل الأدوار) */}
+      <div className="dashboard-tabs w-fit">
           <button
             type="button"
             onClick={() => setShopOrCart('shop')}
