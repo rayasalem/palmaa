@@ -88,11 +88,12 @@ export const orders = {
     items: Joi.array()
       .items(
         Joi.object({
-          product_id: uuid,
-          productId: uuid,
+          product_id: Joi.alternatives().try(uuid, Joi.string().min(1).max(64)),
+          productId: Joi.alternatives().try(uuid, Joi.string().min(1).max(64)),
           quantity: Joi.number().integer().min(1).max(100),
           price: Joi.number().min(0),
         })
+          .or('product_id', 'productId')
       )
       .allow(null),
   }),
