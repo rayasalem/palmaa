@@ -4,7 +4,20 @@
  * Run: npm run dev | npm start
  */
 
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const _dir = path.dirname(fileURLToPath(import.meta.url));
+// تحميل .env: مسار مخصّص إن وُجد، ثم جذر المشروع و server/ (لا نستبدل قيم process.env)
+if (process.env.PALMA_ENV_FILE) dotenv.config({ path: process.env.PALMA_ENV_FILE, override: false });
+dotenv.config({ path: path.join(_dir, '..', '.env'), override: false });
+dotenv.config({ path: path.join(_dir, '.env'), override: false });
+dotenv.config({ override: false });
+
+// على Render قد لا تصل VITE_* وقت التشغيل؛ ننسخها إلى SUPABASE_* إن وُجدت
+if (process.env.VITE_SUPABASE_URL && !process.env.SUPABASE_URL) process.env.SUPABASE_URL = process.env.VITE_SUPABASE_URL;
+if (process.env.VITE_SUPABASE_ANON_KEY && !process.env.SUPABASE_SERVICE_KEY) process.env.SUPABASE_SERVICE_KEY = process.env.VITE_SUPABASE_ANON_KEY;
 
 // Log uncaught errors so Render/PM2 show the real cause of exit 1
 process.on('uncaughtException', (err) => {
@@ -18,8 +31,6 @@ process.on('unhandledRejection', (reason, _promise) => {
   process.exit(1);
 });
 import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 
@@ -83,6 +94,19 @@ app.use(csrfHeaderMiddleware);
 app.use(requestIdMiddleware);
 // Health and metrics before general limiter so load balancer and Prometheus always reach them
 app.use('/', healthRoutes);
+app.use('/api', healthRoutes);
+// مسار صريح لضمان عمل /api/status بعد النشر (للتحقق من اتصال قاعدة البيانات)
+app.get('/api/status', async (req, res) => {
+  let database = false;
+  try {
+    const { supabase } = await import('./config/supabaseClient.js');
+    const { error } = await supabase.from('users').select('id').limit(1);
+    database = !error;
+  } catch {
+    database = false;
+  }
+  res.json({ ok: true, database });
+});
 app.use(generalLimiter());
 app.use(requestLogger);
 app.use(metricsMiddleware);

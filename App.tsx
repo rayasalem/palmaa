@@ -34,7 +34,7 @@ import { Language, getAuthErrorMessage } from './translations';
 import { ToastProvider, useToast } from './components/ToastProvider';
 import { useCart } from './hooks/useCart';
 import * as cartApi from './services/cartApi';
-import { SESSION_EXPIRED_EVENT } from './api/client';
+import { SESSION_EXPIRED_EVENT, getApiBase } from './api/client';
 import { prefetchAfterLogin } from './prefetch';
 import { ROUTES } from './routes';
 
@@ -79,7 +79,85 @@ const AppContent: React.FC = () => {
   const [showMerchantTermsPage, setShowMerchantTermsPage] = useState(false);
   const [pendingAuthAfterTerms, setPendingAuthAfterTerms] = useState<'REGISTER_MERCHANT' | null>(null);
   const [addingToCartProductId, setAddingToCartProductId] = useState<string | null>(null);
+  const [apiStatus, setApiStatus] = useState<{ ok: boolean; database: boolean } | null>(null);
+  const [dismissDbBanner, setDismissDbBanner] = useState(false);
   const isApplyingHashRef = useRef(false);
+
+  const isLocalhost =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const localhostBar = isLocalhost ? (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 99999,
+        background: '#1a472a',
+        color: '#fff',
+        padding: '8px 16px',
+        textAlign: 'center',
+        fontSize: 14,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+      }}
+    >
+      <a
+        href="https://palma.ps/"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ color: '#fff', textDecoration: 'underline', fontWeight: 600 }}
+      >
+        {lang === 'ar' ? 'انتقل للموقع المرفوع (palma.ps)' : 'Go to live site (palma.ps)'}
+      </a>
+    </div>
+  ) : null;
+  const dbBanner =
+    apiStatus && apiStatus.database === false && !dismissDbBanner ? (
+      <div
+        style={{
+          background: '#b91c1c',
+          color: '#fff',
+          padding: '10px 16px',
+          textAlign: 'center',
+          fontSize: 14,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 12,
+          flexWrap: 'wrap',
+        }}
+      >
+        <span>
+          {lang === 'ar'
+            ? 'اتصال قاعدة البيانات غير متاح — المنتجات والدخول قد لا يعملان. تحقق من إعدادات الخادم و Supabase (مثلاً: /ready).'
+            : 'Database connection unavailable — products and login may not work. Check server and Supabase settings (e.g. /ready).'}
+        </span>
+        <button
+          type="button"
+          onClick={() => setDismissDbBanner(true)}
+          style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', padding: '4px 12px', borderRadius: 4, cursor: 'pointer' }}
+        >
+          {lang === 'ar' ? 'إخفاء' : 'Dismiss'}
+        </button>
+      </div>
+    ) : null;
+  const withLocalhostBar = (jsx: React.ReactNode) => (
+    <>
+      {localhostBar}
+      {isLocalhost ? (
+        <div style={{ paddingTop: 44 }}>
+          {dbBanner}
+          {jsx}
+        </div>
+      ) : (
+        <>
+          {dbBanner}
+          {jsx}
+        </>
+      )}
+    </>
+  );
 
   /** Update browser URL hash so the path changes when navigating (e.g. palma.ps/#/catalog, #/admin) */
   const updateHash = useCallback((path: string) => {
@@ -201,11 +279,30 @@ const AppContent: React.FC = () => {
       if (productRef) {
         handleViewProduct(productRef);
       }
-      const orderIdParam = params.get('orderId');
-      const paymentParam = params.get('payment');
+      let orderIdParam = params.get('orderId') || '';
+      let paymentParam = params.get('payment') || '';
+      const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(s).trim());
+      try {
+        const pending = sessionStorage.getItem('palma_pending_checkout_return');
+        if (pending) {
+          const parsed = JSON.parse(pending);
+          if (parsed && parsed.orderId) {
+            const savedId = String(parsed.orderId).trim();
+            if (isUuid(savedId)) {
+              orderIdParam = savedId;
+              paymentParam = parsed.payment || 'success';
+              sessionStorage.removeItem('palma_pending_checkout_return');
+            }
+          }
+        }
+      } catch (_) {
+        sessionStorage.removeItem('palma_pending_checkout_return');
+      }
+      if (!orderIdParam && params.get('orderId')) orderIdParam = params.get('orderId') || '';
+      if (!paymentParam && params.get('payment')) paymentParam = params.get('payment') || '';
       if (orderIdParam && paymentParam) {
-        setCheckoutReturnOrderId(orderIdParam);
-        setCheckoutReturnPayment(paymentParam);
+        setCheckoutReturnOrderId(orderIdParam.trim());
+        setCheckoutReturnPayment(paymentParam.trim());
       }
 
       // 2. Restore session from backend (JWT cookie) or fallback to localStorage
@@ -251,6 +348,20 @@ const AppContent: React.FC = () => {
     };
 
     initApp();
+  }, []);
+
+  // التحقق من حالة الـ API وقاعدة البيانات (للتنبيه إذا كانت غير متاحة)
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${getApiBase()}/api/status`, { credentials: 'include' })
+      .then((r) => r.json().catch(() => ({})))
+      .then((d: { ok?: boolean; database?: boolean }) => {
+        if (!cancelled && d && typeof d.database === 'boolean') setApiStatus({ ok: !!d.ok, database: d.database });
+      })
+      .catch(() => {
+        if (!cancelled) setApiStatus({ ok: false, database: false });
+      });
+    return () => { cancelled = true; };
   }, []);
 
   // أي طلب يرجع 401 يمسح التوكن ويطلق هذا الحدث — نمسح المستخدم محلياً لتفادي "مسجل دخول" بدون جلسة
@@ -388,6 +499,32 @@ const AppContent: React.FC = () => {
     }
   };
 
+  // إفراغ السلة عند العودة من الدفع: إما Referrer من Cybersource أو علم "ذهبت للدفع" خلال آخر 30 دقيقة
+  const clearedCartFromReturnRef = useRef(false);
+  useEffect(() => {
+    if (clearedCartFromReturnRef.current) return;
+    try {
+      let shouldClear = false;
+      const ref = typeof document !== 'undefined' ? document.referrer || '' : '';
+      if (ref && (ref.includes('cybersource') || ref.includes('testsecureacceptance'))) {
+        shouldClear = true;
+      } else {
+        const wentAt = sessionStorage.getItem('palma_went_to_payment_at');
+        if (wentAt) {
+          const t = parseInt(wentAt, 10);
+          if (Number.isFinite(t) && Date.now() - t < 30 * 60 * 1000) shouldClear = true;
+          sessionStorage.removeItem('palma_went_to_payment_at');
+        }
+      }
+      if (shouldClear) {
+        clearedCartFromReturnRef.current = true;
+        Promise.resolve(clearCart()).catch(() => {});
+      }
+    } catch (_) {
+      clearedCartFromReturnRef.current = true;
+    }
+  }, [clearCart]);
+
   const openAuth = (view: typeof authView) => {
     // تسجيل التاجر يمر أولاً على صفحة الشروط والأحكام
     if (view === 'REGISTER_MERCHANT') {
@@ -429,13 +566,14 @@ const AppContent: React.FC = () => {
     }
   };
 
-  if (checkoutReturnOrderId && checkoutReturnPayment) {
-    return (
+  if (checkoutReturnOrderId && String(checkoutReturnOrderId).trim() && checkoutReturnPayment) {
+    return withLocalhostBar(
       <>
         <CheckoutReturnPage
           lang={lang}
           orderId={checkoutReturnOrderId}
           paymentParam={checkoutReturnPayment}
+          user={user}
           clearCart={clearCart}
           onBack={() => {
             setCheckoutReturnOrderId(null);
@@ -444,6 +582,7 @@ const AppContent: React.FC = () => {
               window.history.replaceState({}, '', window.location.pathname || '/');
               window.dispatchEvent(new CustomEvent('palma-refresh-orders'));
             }
+            updateHash(ROUTES.ORDERS);
           }}
         />
         <SupportChat lang={lang} user={user} />
@@ -452,7 +591,7 @@ const AppContent: React.FC = () => {
   }
 
   if (user && showApiCheckout) {
-    return (
+    return withLocalhostBar(
       <>
         <CheckoutPage
           lang={lang}
@@ -476,7 +615,7 @@ const AppContent: React.FC = () => {
 
   if (!user) {
     if (publicState === 'PRODUCT_DETAILS' && selectedProductId) {
-      return (
+      return withLocalhostBar(
         <>
           <Suspense fallback={<PageLoader />}>
             <PublicProductDetails
@@ -497,7 +636,7 @@ const AppContent: React.FC = () => {
     }
 
     if (publicState === 'PUBLIC_PROFILE' && selectedProfileId) {
-      return (
+      return withLocalhostBar(
         <>
           <PublicProfileView
             lang={lang}
@@ -517,7 +656,7 @@ const AppContent: React.FC = () => {
     }
 
     if (publicState === 'BROKER_PAGE' && publicBrokerId) {
-      return (
+      return withLocalhostBar(
         <>
           <PublicBrokerPage
             lang={lang}
@@ -536,7 +675,7 @@ const AppContent: React.FC = () => {
     }
 
     if (showMerchantTermsPage) {
-      return (
+      return withLocalhostBar(
         <>
           <MerchantTermsView
             lang={lang}
@@ -560,7 +699,7 @@ const AppContent: React.FC = () => {
     }
 
     if (publicState === 'LANDING') {
-      return (
+      return withLocalhostBar(
         <>
           <Suspense fallback={<PageLoader />}>
             <PublicWebsite
@@ -590,7 +729,7 @@ const AppContent: React.FC = () => {
     }
 
     if (publicState === 'CATALOG') {
-      return (
+      return withLocalhostBar(
         <>
           <Suspense fallback={<PageLoader />}>
             <PublicCatalog
@@ -607,7 +746,7 @@ const AppContent: React.FC = () => {
       );
     }
 
-    return (
+    return withLocalhostBar(
       <>
         <Auth
           onLogin={handleLogin}
@@ -626,7 +765,7 @@ const AppContent: React.FC = () => {
   // أدمن: لا يدخل إلا بعد تأكيد الإيميل؛ إن سجّل دخول وهو غير مؤكد نعرض له شاشة التأكيد
   const roleUpper = (user.role || '').toUpperCase();
   if (roleUpper === 'ADMIN' && !user.emailVerified) {
-    return (
+    return withLocalhostBar(
       <>
         <VerifyEmail
           user={user}
@@ -635,8 +774,8 @@ const AppContent: React.FC = () => {
             setUser(verifiedUser);
             localStorage.setItem('palma_current_user', JSON.stringify(verifiedUser));
           }}
-          onLogout={handleLogout}
-          lang={lang}
+        onLogout={handleLogout}
+        lang={lang}
         />
         <SupportChat lang={lang} user={user} />
       </>
@@ -645,7 +784,7 @@ const AppContent: React.FC = () => {
 
   // فقط الحسابات المرفوضة تبقى محجوبة؛ التسجيل الجديد يدخل مباشرة لصفحته
   if (user.status === 'REJECTED' && roleUpper !== 'ADMIN') {
-    return (
+    return withLocalhostBar(
       <>
         <PendingReview user={user} onLogout={handleLogout} lang={lang} />
         <SupportChat lang={lang} user={user} />
@@ -653,7 +792,7 @@ const AppContent: React.FC = () => {
     );
   }
 
-  return (
+  return withLocalhostBar(
     <>
       <Layout
         user={user}

@@ -19,5 +19,6 @@ router.patch('/:id/cancel', authenticate, orderController.cancelOrder);
 router.patch('/:id/invoice', authenticate, orderController.updateOrderInvoice);
 router.patch('/:id/complete', authenticate, requireRole('ADMIN'), orderController.completeOrder);
 router.get('/:id', optionalAuth, orderController.getOrder);
+router.patch('/:id/claim', authenticate, orderController.claimOrder);
 
 export default router;

@@ -1175,6 +1175,21 @@ export function getAuthErrorMessage(error: string | undefined, lang: Language): 
     if (lang === 'he') return 'פרטי התחברות שגויים';
     return error;
   }
+  if (e.includes('verify your email') || e.includes('verify your email before')) {
+    if (lang === 'ar') return 'يرجى تأكيد بريدك الإلكتروني قبل المتابعة';
+    if (lang === 'he') return 'אנא אמת את כתובת האימייל לפני ההמשך';
+    return error;
+  }
+  if (e.includes('account suspended')) {
+    if (lang === 'ar') return 'الحساب موقوف. تواصل مع الدعم.';
+    if (lang === 'he') return 'החשבון מושעה. צור קשר עם התמיכה.';
+    return error;
+  }
+  if (e.includes('account deleted')) {
+    if (lang === 'ar') return 'الحساب محذوف. يمكنك التواصل مع الدعم خلال 30 يوماً لاستعادته.';
+    if (lang === 'he') return 'החשבון נמחק. צור קשר עם התמיכה תוך 30 יום לשחזור.';
+    return error;
+  }
   if (e.includes('no account found') || e.includes('account not found')) {
     if (lang === 'ar') return 'لا يوجد حساب بهذا البريد الإلكتروني';
     if (lang === 'he') return 'לא נמצא חשבון עם אימייל זה';

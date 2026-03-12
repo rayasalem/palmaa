@@ -7,8 +7,9 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
-import { getOrder, createShipment, printAWB } from '../services/checkoutApi';
+import { getOrder, createShipment, printAWB, claimOrder } from '../services/checkoutApi';
 import type { Language } from '../translations';
+import type { User } from '../types';
 
 const POLL_MS = 2000;
 const TIMEOUT_MS = 60000;
@@ -17,6 +18,7 @@ interface CheckoutReturnPageProps {
   lang: Language;
   orderId: string;
   paymentParam: string;
+  user?: User | null;
   clearCart?: () => void | Promise<void>;
   onBack: () => void;
 }
@@ -27,6 +29,7 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({
   lang,
   orderId,
   paymentParam,
+  user,
   clearCart,
   onBack,
 }) => {
@@ -35,6 +38,18 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({
   const [shipment, setShipment] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [awbIds, setAwbIds] = useState<string[]>([]);
+  const [claimed, setClaimed] = useState(false);
+  const [cartCleared, setCartCleared] = useState(false);
+
+  // إفراغ السلة فور وصول صفحة العودة من الدفع (المستخدم رجع من بوابة الدفع = اكتمل الدفع أو ألغى؛ نفضي السلة عند success)
+  useEffect(() => {
+    if (paymentParam !== 'success' || cartCleared || !clearCart) return;
+    const t = setTimeout(() => {
+      setCartCleared(true);
+      clearCart();
+    }, 800);
+    return () => clearTimeout(t);
+  }, [paymentParam, cartCleared, clearCart]);
 
   const fetchOrder = useCallback(async () => {
     try {
@@ -73,6 +88,39 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({
       cancelled = true;
     };
   }, [step, orderId, fetchOrder]);
+
+  // إفراغ السلة فور تأكيد الدفع (ما تنتظر زر "العودة للتسوق")
+  useEffect(() => {
+    if (cartCleared || (step !== 'paid_creating_shipment' && step !== 'done')) return;
+    if (clearCart) {
+      setCartCleared(true);
+      clearCart();
+    }
+  }, [step, cartCleared, clearCart]);
+
+  // ربط الطلب بالمستخدم عند العودة من الدفع حتى يظهر في "طلباتي"
+  useEffect(() => {
+    if (!order || !user?.id || claimed) return;
+    const customerId = order.customer_id ?? (order as any).customerId;
+    if (customerId != null && String(customerId).trim() !== '') return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await claimOrder(orderId);
+        if (!cancelled && res.success) {
+          setClaimed(true);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('palma-refresh-orders'));
+          }
+        }
+      } catch (_) {
+        /* ignore */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [order, orderId, user?.id, claimed]);
 
   useEffect(() => {
     if (step !== 'paid_creating_shipment') return;

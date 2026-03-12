@@ -9,6 +9,7 @@ import * as orderService from './orderService.js';
 import * as productService from './productService.js';
 import * as profitService from './profitService.js';
 import * as transactionService from './transactionService.js';
+import * as shipmentService from './shipmentService.js';
 import { createCardPayment as cybersourceCreateCardPayment } from './cybersourceClient.js';
 import logger from '../utils/logger.js';
 
@@ -109,6 +110,19 @@ async function handlePaymentCallback(orderId, status, idempotencyKey) {
       !!(order && order.invoice_uploaded)
     );
     if (txErr) logger.error('paymentService recordOrderSettlement error', { message: txErr.message });
+    // ربط الطلب بالتوصيل: إنشاء شحنة تلقائياً إذا الطلب فيه عنوان توصيل كامل (cityId, villageId)
+    const hasShippingAddress =
+      order &&
+      (order.shipping_city_id != null && String(order.shipping_city_id).trim() !== '') &&
+      (order.shipping_village_id != null && String(order.shipping_village_id).trim() !== '');
+    if (hasShippingAddress && !order.delivery_id) {
+      try {
+        const { error: shipErr } = await shipmentService.createShipment(orderId, order);
+        if (shipErr) logger.error('paymentService createShipment after paid', { orderId, message: shipErr.message });
+      } catch (err) {
+        logger.error('paymentService createShipment after paid threw', { orderId, message: err && err.message });
+      }
+    }
   }
   if (idempotencyKey) {
     idempotencyCache.set(idempotencyKey, { result, at: Date.now() });

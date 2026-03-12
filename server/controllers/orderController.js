@@ -7,15 +7,19 @@
 import * as orderService from '../services/orderService.js';
 import logger from '../utils/logger.js';
 
-/** UUID v4 format (8-4-4-4-12 hex with version 4 and variant bits). */
+/** UUID v4 or Cybersource short ref ORD-xxxxxxxx */
 const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const ORDER_REF_REGEX = /^ORD-[0-9a-f]{8}$/i;
 function isUuidV4(s) {
   return typeof s === 'string' && UUID_V4_REGEX.test(s.trim());
+}
+function isValidOrderId(s) {
+  return typeof s === 'string' && (UUID_V4_REGEX.test(s.trim()) || ORDER_REF_REGEX.test(s.trim()));
 }
 
 async function createOrder(req, res) {
   try {
-    const { recipient_name, address, city, phone, amount, weight, items, payment_method } = req.body || {};
+    const { recipient_name, address, city, cityId, villageId, phone, amount, weight, items, payment_method } = req.body || {};
     if (recipient_name == null || String(recipient_name).trim() === '') {
       return res.status(400).json({ success: false, error: 'recipient_name is required' });
     }
@@ -44,6 +48,8 @@ async function createOrder(req, res) {
       recipient_name,
       address,
       city,
+      cityId: cityId != null ? String(cityId).trim() || undefined : undefined,
+      villageId: villageId != null ? String(villageId).trim() || undefined : undefined,
       phone,
       amount: numAmount,
       weight: numWeight,
@@ -70,7 +76,7 @@ async function getOrder(req, res) {
       return res.status(400).json({ success: false, error: 'Order id is required' });
     }
     const orderId = id.trim();
-    if (!isUuidV4(orderId)) {
+    if (!isValidOrderId(orderId)) {
       return res.status(400).json({ success: false, error: 'Invalid order id format' });
     }
     const guestTokenRaw = req.get && req.get('X-Order-Guest-Token');
@@ -200,4 +206,25 @@ async function completeOrder(req, res) {
   }
 }
 
-export { createOrder, getOrder, listMyOrders, listMerchantOrders, cancelOrder, updateOrderInvoice, completeOrder };
+async function claimOrder(req, res) {
+  try {
+    const orderId = (req.params.id || '').trim();
+    const customerId = req.auth && req.auth.sub;
+    if (!customerId) return res.status(401).json({ success: false, error: 'Authentication required' });
+    if (!orderId) return res.status(400).json({ success: false, error: 'Order id is required' });
+    if (!isValidOrderId(orderId)) {
+      return res.status(400).json({ success: false, error: 'Invalid order id format' });
+    }
+    const { data, error } = await orderService.claimOrder(orderId, customerId);
+    if (error) {
+      const status = error.message === 'Order not found' ? 404 : 400;
+      return res.status(status).json({ success: false, error: error.message });
+    }
+    return res.status(200).json({ success: true, order: data });
+  } catch (err) {
+    logger.error('orderController claimOrder unexpected', { message: err.message });
+    return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
+  }
+}
+
+export { createOrder, getOrder, listMyOrders, listMerchantOrders, cancelOrder, updateOrderInvoice, completeOrder, claimOrder };

@@ -210,6 +210,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
         recipient_name: form.recipient_name.trim(),
         address: `${form.addressLine1.trim()} ${form.addressLine2.trim()}`.trim(),
         city: form.cityName || form.cityId,
+        cityId: form.cityId,
+        villageId: form.villageId,
         phone: form.phone.trim(),
         amount: totalAmount,
         weight: form.weight,
@@ -278,6 +280,15 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
         );
         setLoading(false);
         return;
+      }
+      try {
+        sessionStorage.setItem(
+          'palma_pending_checkout_return',
+          JSON.stringify({ orderId, payment: 'success' })
+        );
+        sessionStorage.setItem('palma_went_to_payment_at', String(Date.now()));
+      } catch (_) {
+        /* ignore */
       }
       const redirectForm = document.createElement('form');
       redirectForm.method = 'POST';

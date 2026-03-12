@@ -25,6 +25,9 @@ export async function login(email, password) {
     .eq('email', emailNorm)
     .maybeSingle();
 
+  if (exactErr) {
+    logger.warn('authService login: Supabase query error', { email: emailNorm, message: exactErr.message, code: exactErr.code });
+  }
   if (exact) {
     userRow = exact;
   } else if (exactErr || !exact) {
@@ -33,6 +36,7 @@ export async function login(email, password) {
       .select(selectCols)
       .ilike('email', emailNorm)
       .limit(1);
+    if (listErr) logger.warn('authService login: Supabase ilike error', { message: listErr.message });
     if (!listErr && rows?.length > 0) userRow = rows[0];
   }
 

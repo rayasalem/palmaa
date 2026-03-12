@@ -21,8 +21,8 @@ const password = common.password;
 
 export const auth = {
   login: Joi.object({
-    email: Joi.string().min(1).max(255).trim().required(),
-    password: Joi.string().required(),
+    email: Joi.string().trim().email().max(255).required(),
+    password: Joi.string().min(1).required(),
   }),
   register: Joi.object({
     email: email.required(),
@@ -77,6 +77,8 @@ export const orders = {
     recipient_name: Joi.string().max(200).required(),
     address: Joi.string().max(500).required(),
     city: Joi.string().max(100).required(),
+    cityId: Joi.alternatives().try(Joi.string(), Joi.number()).allow('', null),
+    villageId: Joi.alternatives().try(Joi.string(), Joi.number()).allow('', null),
     phone: Joi.string().max(50).required(),
     amount: Joi.number().min(0).required(),
     weight: Joi.number().min(0).required(),
@@ -113,7 +115,6 @@ export const catalogListQuery = Joi.object({
 
 export const products = {
   listQuery: catalogListQuery,
-  merchantParam: Joi.object({ merchantId: uuid.required() }),
   create: Joi.object({
     name: Joi.string().max(300),
     title: Joi.string().max(300).allow('', null),

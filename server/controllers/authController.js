@@ -93,7 +93,8 @@ async function login(req, res) {
     }
     // في الإنتاج: منع الدخول حتى يتم تأكيد البريد (الواجهة تتوقع requiresEmailVerification)
     const emailVerified = user.is_email_verified ?? user.email_verified ?? false;
-    if (!emailVerified) {
+    const skipVerify = process.env.NODE_ENV !== 'production' && getEnv('SKIP_EMAIL_VERIFY_FOR_LOGIN', '').toLowerCase() === 'true';
+    if (!emailVerified && !skipVerify) {
       logger.info('login blocked: email not verified', { email: user.email });
       return res.status(401).json({
         success: false,

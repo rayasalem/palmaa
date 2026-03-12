@@ -24,7 +24,9 @@ router.get('/metrics', (req, res) => {
 
 router.get('/ready', async (req, res) => {
   const checks = { database: false, payment: null };
-  if (getEnv('SUPABASE_URL') && getEnv('SUPABASE_SERVICE_KEY')) {
+  const supabaseUrl = getEnv('VITE_SUPABASE_URL') || getEnv('SUPABASE_URL');
+  const supabaseKey = getEnv('VITE_SUPABASE_ANON_KEY') || getEnv('SUPABASE_SERVICE_KEY') || getEnv('SUPABASE_SERVICE_ROLE_KEY');
+  if (supabaseUrl && supabaseKey) {
     try {
       const { error } = await supabase.from('users').select('id').limit(1);
       checks.database = !error;
@@ -47,6 +49,18 @@ router.get('/ready', async (req, res) => {
     timestamp: new Date().toISOString(),
     checks,
   });
+});
+
+/** للواجهة: التحقق من أن الـ API وقاعدة البيانات متاحة (نفس عنوان الباكند) */
+router.get('/status', async (req, res) => {
+  let database = false;
+  try {
+    const { error } = await supabase.from('users').select('id').limit(1);
+    database = !error;
+  } catch {
+    database = false;
+  }
+  res.json({ ok: true, database });
 });
 
 export default router;

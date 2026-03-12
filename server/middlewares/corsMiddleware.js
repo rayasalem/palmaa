@@ -12,17 +12,31 @@ const ALLOWED_ORIGINS = [
   'http://palmaa.onrender.com',
   // نسخة Vercel الاحتياطية / القديمة
   'https://palmaa.vercel.app',
-  // التطوير المحلي
+  // التطوير المحلي (منافذ شائعة + أي localhost/127.0.0.1 يُقبل لاحقاً)
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   'http://localhost:3002',
   'http://127.0.0.1:3002',
   'http://localhost:5173',
   'http://127.0.0.1:5173',
-  // Vite قد يختار منافذ أخرى (مثل 3001) إذا كان 3000 مستخدماً
   'http://localhost:3001',
   'http://127.0.0.1:3001',
+  'http://localhost:8080',
+  'http://localhost:8082',
+  'http://127.0.0.1:8080',
+  'http://127.0.0.1:8082',
 ];
+
+function isLocalOrigin(origin) {
+  if (!origin || typeof origin !== 'string') return false;
+  try {
+    const u = new URL(origin);
+    const h = (u.hostname || '').toLowerCase();
+    return (h === 'localhost' || h === '127.0.0.1') && (u.protocol === 'http:' || u.protocol === 'https:');
+  } catch {
+    return false;
+  }
+}
 
 function getAllowedOrigins(envFrontendUrl) {
   const list = [...ALLOWED_ORIGINS];
@@ -43,7 +57,8 @@ export function corsMiddleware(frontendUrl = '') {
 
   return (req, res, next) => {
     const origin = req.get('Origin');
-    const allowOrigin = origin && allowed.includes(origin) ? origin : allowed[0];
+    const allowOrigin =
+      origin && (allowed.includes(origin) || isLocalOrigin(origin)) ? origin : allowed[0];
 
     res.setHeader('Access-Control-Allow-Origin', allowOrigin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');

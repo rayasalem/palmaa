@@ -104,6 +104,13 @@ export async function cancelOrder(orderId: string): Promise<{ success: boolean; 
   });
 }
 
+/** ربط طلب ضيف بالمستخدم الحالي حتى يظهر في "طلباتي" */
+export async function claimOrder(orderId: string): Promise<{ success: boolean; order?: Order }> {
+  return request<{ success: boolean; order?: Order }>(`/api/orders/${orderId}/claim`, {
+    method: 'PATCH',
+  });
+}
+
 /** رفع رابط الفاتورة الضريبية للطلب (للتاجر بعد الدفع). */
 export async function updateOrderInvoice(
   orderId: string,

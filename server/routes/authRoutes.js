@@ -19,7 +19,7 @@ router.get('/check-key', (req, res) => {
   if (isProduction() && getEnv('ALLOW_AUTH_CHECK_KEY', 'false') !== 'true') {
     return res.status(404).json({ error: 'Not found' });
   }
-  const key = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  const key = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   let keyType = 'missing';
   if (key) {
     try {

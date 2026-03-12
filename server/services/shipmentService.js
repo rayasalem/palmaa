@@ -32,13 +32,26 @@ function getAuth() {
   };
 }
 
+function isUuid(s) {
+  return typeof s === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s.trim());
+}
+
 async function getOrderById(orderId) {
-  const { data, error } = await supabase.from(ORDERS_TABLE).select('*').eq('id', orderId).single();
-  if (error) {
-    logger.error('shipmentService Get order error', { message: error.message });
-    return { data: null, error };
+  const id = orderId && String(orderId).trim();
+  if (!id) return { data: null, error: { message: 'Order id is required' } };
+  let result;
+  if (isUuid(id)) {
+    result = await supabase.from(ORDERS_TABLE).select('*').eq('id', id).single();
+  } else if (/^ORD-[0-9a-f]{8}$/i.test(id)) {
+    result = await supabase.from(ORDERS_TABLE).select('*').eq('order_reference', id).single();
+  } else {
+    return { data: null, error: { message: 'Invalid order id format' } };
   }
-  return { data, error: null };
+  if (result.error) {
+    logger.error('shipmentService Get order error', { message: result.error.message });
+    return { data: null, error: result.error };
+  }
+  return { data: result.data, error: null };
 }
 
 /**
@@ -98,23 +111,23 @@ async function updateOrderShipment(orderId, shipmentId, shipmentStatus) {
 function buildShipmentPayload(order, shipmentInput) {
   const merged = { ...(order || {}), ...(shipmentInput || {}) };
 
-  const cod = Number(merged.cod ?? merged.amount ?? 0);
+  const cod = Number(merged.cod ?? merged.amount ?? merged.total_amount ?? 0);
   const quantity = Math.max(1, Number(merged.quantity ?? 1));
   const serviceType = merged.serviceType || 'STANDARD';
   const shipmentType = merged.shipmentType || 'COD';
 
   const senderName = String(merged.senderName || process.env.SENDER_NAME || 'Palma Marketplace').trim();
   const senderPhone = String(merged.senderPhone || process.env.SENDER_PHONE || merged.phone || '').trim();
-  const receiverName = String(merged.receiverName || merged.recipient_name || '').trim();
-  const receiverPhone = String(merged.receiverPhone || merged.phone || '').trim();
+  const receiverName = String(merged.receiverName || merged.recipient_name || merged.shipping_name || '').trim();
+  const receiverPhone = String(merged.receiverPhone || merged.phone || merged.shipping_phone || '').trim();
   const receiverPhone2 = String(merged.receiverPhone2 || '').trim() || undefined;
 
-  const destCityId = Number(merged.cityId) || null;
-  const destVillageId = Number(merged.villageId) || null;
-  const destRegionId = Number(merged.regionId) || null;
+  const destCityId = Number(merged.cityId ?? merged.shipping_city_id) || null;
+  const destVillageId = Number(merged.villageId ?? merged.shipping_village_id) || null;
+  const destRegionId = Number(merged.regionId ?? merged.shipping_region_id) || null;
 
   const destinationAddress = {
-    addressLine1: String(merged.addressLine1 || merged.address || '').trim(),
+    addressLine1: String(merged.addressLine1 || merged.address || merged.shipping_address || '').trim(),
     cityId: destCityId,
     villageId: destVillageId,
     regionId: destRegionId,
@@ -192,9 +205,9 @@ async function createShipment(orderId, shipmentInput) {
         error: null,
       };
     }
-    const simId = `sim-${String(orderId).slice(-8)}-${Date.now()}`;
-    console.log('[shipmentService] LogesTechs not configured; simulating shipment creation for order:', orderId);
-    const updateResult = await updateOrderShipment(orderId, simId, 'created');
+    const simId = `sim-${String(order.id || orderId).slice(-8)}-${Date.now()}`;
+    console.log('[shipmentService] LogesTechs not configured; simulating shipment creation for order:', order.id || orderId);
+    const updateResult = await updateOrderShipment(order.id, simId, 'created');
     if (updateResult.error) {
       return { order, shipment: null, error: updateResult.error };
     }
@@ -229,7 +242,7 @@ async function createShipment(orderId, shipmentInput) {
   const shipmentId = res.id ?? res.shipment_id ?? res.shipmentId ?? null;
   const shipmentStatus = (res.status ?? res.barcode) ? 'created' : 'created';
 
-  const updateResult = await updateOrderShipment(orderId, String(shipmentId), shipmentStatus);
+  const updateResult = await updateOrderShipment(order.id, String(shipmentId), shipmentStatus);
   if (updateResult.error) {
     return { order, shipment: res, error: updateResult.error };
   }
