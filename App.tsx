@@ -928,7 +928,6 @@ const AppContent: React.FC = () => {
                       setCheckoutCart(items);
                       setShowApiCheckout(true);
                     }}
-                    shopOnlySection
                   />
                 </Suspense>
               </div>
@@ -980,7 +979,6 @@ const AppContent: React.FC = () => {
                       setCheckoutCart(items);
                       setShowApiCheckout(true);
                     }}
-                    shopOnlySection
                   />
                 </Suspense>
               </div>
@@ -1031,7 +1029,6 @@ const AppContent: React.FC = () => {
                       setCheckoutCart(items);
                       setShowApiCheckout(true);
                     }}
-                    shopOnlySection
                   />
                 </Suspense>
               </div>
