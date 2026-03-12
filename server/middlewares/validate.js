@@ -13,6 +13,10 @@ import { recordValidationFailure } from '../utils/metrics.js';
 export function validate(schema, type, source) {
   const sourceLabel = source || type;
   return (req, res, next) => {
+    if (!schema || typeof schema.validate !== 'function') {
+      logger.error('validate middleware: schema missing or invalid', { source: sourceLabel });
+      return res.status(500).json({ success: false, error: 'Validation schema not configured' });
+    }
     const value =
       type === 'body' ? req.body : type === 'params' ? req.params : req.query;
     const raw = value ?? {};

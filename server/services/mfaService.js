@@ -11,13 +11,21 @@ const USERS_TABLE = 'users';
 
 export async function getMfaStatus(userId) {
   const { data, error } = await supabase.from(USERS_TABLE).select('mfa_enabled').eq('id', userId).single();
-  if (error || !data) return { enabled: false, error };
+  if (error) {
+    if (error.code === '42703') return { enabled: false, error: null };
+    return { enabled: false, error };
+  }
+  if (!data) return { enabled: false, error: null };
   return { enabled: !!data.mfa_enabled, error: null };
 }
 
 export async function getMfaSecret(userId) {
   const { data, error } = await supabase.from(USERS_TABLE).select('mfa_secret').eq('id', userId).single();
-  if (error || !data) return { secret: null, error };
+  if (error) {
+    if (error.code === '42703') return { secret: null, error: null };
+    return { secret: null, error };
+  }
+  if (!data) return { secret: null, error: null };
   return { secret: data.mfa_secret || null, error: null };
 }
 
@@ -35,6 +43,9 @@ export async function setupMfa(userId, issuer = 'Palma Marketplace') {
     })
     .eq('id', userId);
   if (error) {
+    if (error.code === '42703') {
+      return { secret: null, otpauthUrl: null, error: new Error('MFA columns missing; run migration 011') };
+    }
     logger.error('mfaService setupMfa', { message: error.message, userId });
     return { secret: null, otpauthUrl: null, error };
   }
@@ -106,6 +117,7 @@ export async function disableMfa(userId) {
     })
     .eq('id', userId);
   if (error) {
+    if (error.code === '42703') return { error: null };
     logger.error('mfaService disableMfa', { message: error.message, userId });
     return { error };
   }

@@ -4,7 +4,11 @@ import logger, { sanitizeForLog } from '../../../utils/logger.js';
 function normalizeOrderId(value) {
   if (value == null) return '';
   if (typeof value === 'string') return value.trim();
-  if (typeof value === 'object' && value.id != null) return String(value.id).trim();
+  if (typeof value === 'object') {
+    const id = value.id ?? value.orderId ?? value.order_id ?? value.order?.id ?? value.order?.orderId;
+    if (id != null && typeof id === 'string') return id.trim();
+    if (id != null) return String(id).trim();
+  }
   return String(value);
 }
 

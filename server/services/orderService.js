@@ -128,14 +128,11 @@ async function getOrdersByMerchantId(merchantId, opts = {}) {
 }
 
 async function cancelOrder(orderId, customerId) {
-  const { data: order, error: fetchErr } = await supabase
-    .from(ORDERS_TABLE)
-    .select('id, customer_id, status, delivery_id')
-    .eq('id', orderId)
-    .single();
+  const { data: order, error: fetchErr } = await getOrderById(orderId);
   if (fetchErr || !order) {
     return { data: null, error: fetchErr || { message: 'Order not found' } };
   }
+  const id = order.id;
   if (order.customer_id !== customerId) {
     return { data: null, error: { message: 'Not authorized to cancel this order' } };
   }
@@ -145,7 +142,7 @@ async function cancelOrder(orderId, customerId) {
   const { data: updated, error: updateErr } = await supabase
     .from(ORDERS_TABLE)
     .update({ status: 'CANCELLED', updated_at: new Date().toISOString() })
-    .eq('id', orderId)
+    .eq('id', id)
     .select()
     .single();
   if (updateErr) return { data: null, error: updateErr };
@@ -153,6 +150,9 @@ async function cancelOrder(orderId, customerId) {
 }
 
 async function updateOrderInvoice(orderId, invoiceUrl) {
+  const { data: order, error: resolveErr } = await getOrderById(orderId);
+  if (resolveErr || !order) return { data: null, error: resolveErr || { message: 'Order not found' } };
+  const id = order.id;
   const { data, error } = await supabase
     .from(ORDERS_TABLE)
     .update({
@@ -161,7 +161,7 @@ async function updateOrderInvoice(orderId, invoiceUrl) {
       invoice_verified_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
-    .eq('id', orderId)
+    .eq('id', id)
     .select()
     .single();
   if (error) {
@@ -172,6 +172,9 @@ async function updateOrderInvoice(orderId, invoiceUrl) {
 }
 
 async function completeOrder(orderId) {
+  const { data: order, error: resolveErr } = await getOrderById(orderId);
+  if (resolveErr || !order) return { data: null, error: resolveErr || { message: 'Order not found' } };
+  const id = order.id;
   const { data, error } = await supabase
     .from(ORDERS_TABLE)
     .update({
@@ -179,7 +182,7 @@ async function completeOrder(orderId) {
       completed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
-    .eq('id', orderId)
+    .eq('id', id)
     .select()
     .single();
   if (error) {

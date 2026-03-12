@@ -91,4 +91,16 @@
 
 ---
 
+---
+
+## 9. مشاكل مشابهة تم تفاديها (مراجعة إضافية)
+
+| المشكلة | الحل |
+|--------|------|
+| **validate(schema)** عندما `schema` غير معرّف | في `validate.js`: التحقق من وجود `schema` و `schema.validate` قبل الاستدعاء؛ إرجاع 500 مع رسالة واضحة بدل crash. |
+| **orderId** بصيغة ORD-xxx في التحديثات | في `orderService`: cancelOrder، updateOrderInvoice، completeOrder تستخدم `getOrderById(orderId)` ثم `order.id` (UUID) في `.eq('id', id) حتى تعمل مع الطلبات بالمرجع القصير. |
+| **paymentService** REST card payment | استخدام `order.id` (من getOrderById) في تحديث payment_method بدل `orderId` عندما يكون المرجع ORD-xxx. |
+| **shipmentService.updateOrderShipment** | حلّ orderId عبر `getOrderById` ثم التحديث بـ `order.id` ليدعم UUID و ORD-xxx. |
+| **mfaService** عند غياب أعمدة mfa_enabled/mfa_secret | في getMfaStatus/getMfaSecret: عند خطأ 42703 إرجاع enabled: false أو secret: null بدون رمي. في setupMfa/verifyAndEnableMfa/disableMfa: معالجة 42703 برسالة "run migration 011" أو no-op. |
+
 *آخر مراجعة: بناءً على محتويات الملفات الحالية في server/.*

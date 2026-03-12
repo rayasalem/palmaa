@@ -83,7 +83,13 @@ async function callCreateShipmentApi(body) {
 }
 
 async function updateOrderShipment(orderId, shipmentId, shipmentStatus) {
-  console.log('[shipmentService] Updating order shipment:', { orderId, shipmentId, shipmentStatus });
+  const { data: order, error: resolveErr } = await getOrderById(orderId);
+  if (resolveErr || !order) {
+    logger.error('shipmentService updateOrderShipment getOrderById', { orderId, message: (resolveErr && resolveErr.message) || 'Order not found' });
+    return { data: null, error: resolveErr || { message: 'Order not found' } };
+  }
+  const id = order.id;
+  console.log('[shipmentService] Updating order shipment:', { orderId, id, shipmentId, shipmentStatus });
   const now = new Date().toISOString();
   const isDelivered = String(shipmentStatus || '').toLowerCase() === 'delivered';
   const updatePayload = {
@@ -96,7 +102,7 @@ async function updateOrderShipment(orderId, shipmentId, shipmentStatus) {
     updatePayload.delivery_confirmed_at = now;
     updatePayload.status = 'completed';
   }
-  const { data, error } = await supabase.from(ORDERS_TABLE).update(updatePayload).eq('id', orderId).select().single();
+  const { data, error } = await supabase.from(ORDERS_TABLE).update(updatePayload).eq('id', id).select().single();
   if (error) {
     logger.error('shipmentService Update error', { message: error.message });
     return { data: null, error };

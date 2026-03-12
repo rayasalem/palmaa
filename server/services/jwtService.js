@@ -72,15 +72,16 @@ export function getCookieOptions() {
 }
 
 /**
- * Options for clearCookie — MUST match getCookieOptions() exactly (httpOnly, secure, sameSite, path)
- * so the browser removes the cookie. maxAge: 0 and expires ensure removal in all browsers.
+ * Options for clearCookie — MUST match getCookieOptions() for path, httpOnly, secure, sameSite
+ * so the browser removes the correct cookie. Do NOT pass expires/maxAge (Express 5 ignores them; clearCookie expires immediately).
  */
 export function getClearCookieOptions() {
   const opts = getCookieOptions();
   return {
-    ...opts,
-    maxAge: 0,
-    expires: new Date(0),
+    path: opts.path || '/',
+    httpOnly: opts.httpOnly,
+    secure: opts.secure,
+    sameSite: opts.sameSite,
   };
 }
 

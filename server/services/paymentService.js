@@ -31,11 +31,13 @@ async function updateOrderStatus(orderId, status) {
     return { data: null, error: resolveErr || new Error('Order not found') };
   }
   const id = order.id;
-  console.log('[paymentService] Updating order', orderId, '(id:', id, ') to', status);
+  const isOrderRef = /^ORD-[0-9a-f]{8}$/i.test(String(id || ''));
+  const updateBy = isOrderRef ? { column: 'order_reference', value: String(orderId || id).trim() } : { column: 'id', value: id };
+  console.log('[paymentService] Updating order', orderId, 'to', status, '(by', updateBy.column, ')');
   const { data, error } = await supabase
     .from(ORDERS_TABLE)
     .update({ status, updated_at: new Date().toISOString() })
-    .eq('id', id)
+    .eq(updateBy.column, updateBy.value)
     .select()
     .single();
 
@@ -203,7 +205,7 @@ async function processCybersourceCardPayment(orderId, amount, currency, card) {
     await supabase
       .from(ORDERS_TABLE)
       .update({ payment_method: 'online', updated_at: new Date().toISOString() })
-      .eq('id', orderId);
+      .eq('id', order.id);
     // Reuse existing callback logic (idempotent) to update order status, stock, profits, settlement
     const idempotencyKey = transactionId ? `cybersource:${transactionId}` : undefined;
     const { error } = await handlePaymentCallback(orderId, 'success', idempotencyKey);
