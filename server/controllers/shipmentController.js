@@ -89,11 +89,11 @@ async function createShipment(req, res) {
       return res.status(400).json({ success: false, error: 'Invalid phone number' });
     }
 
-    const { data: order, error: orderErr } = await orderService.getOrderById(orderId);
-    if (orderErr || !order) {
+    const { data: existingOrder, error: orderErr } = await orderService.getOrderById(orderId);
+    if (orderErr || !existingOrder) {
       return res.status(404).json({ success: false, error: 'Order not found' });
     }
-    if (!canAccessOrder(order, req)) {
+    if (!canAccessOrder(existingOrder, req)) {
       return res.status(403).json({ success: false, error: 'Not authorized to create shipment for this order' });
     }
 
