@@ -178,6 +178,11 @@ export const MerchantOrdersTab: React.FC<MerchantOrdersTabProps> = ({
                     )}
                     {(order.shipmentId || order.delivery_id) && order.status !== 'CANCELLED' && (
                       <>
+                        {(order.delivery_id || order.shipmentId || '').toString().startsWith('sim-') && (
+                          <span className="text-[9px] text-amber-600 font-medium" title={lang === 'ar' ? 'شحنة محاكاة — اضبط LOGESTECHS_EMAIL و PASSWORD على السيرفر للاتصال الحقيقي بلوجستيك' : 'Simulated — set LOGESTECHS_EMAIL/PASSWORD on server for real LogesTechs'}>
+                            {lang === 'ar' ? 'محاكاة' : 'Sim'}
+                          </span>
+                        )}
                         <button
                           onClick={() => handleCheckStatus(order)}
                           disabled={loading}

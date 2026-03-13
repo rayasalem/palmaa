@@ -21,7 +21,7 @@ import {
   getShipmentLabels,
   resolveLocationName,
 } from '../services/flashlineService';
-import { cancelOrder as cancelOrderApi, fetchMyOrders, getCities as getCitiesApi, getVillages as getVillagesApi } from '../services/checkoutApi';
+import { cancelOrder as cancelOrderApi, fetchMyOrders, getCities as getCitiesApi, getVillages as getVillagesApi, getDistrictsAndVillages as getDistrictsAndVillagesApi } from '../services/checkoutApi';
 import type { City as ApiCity, Village as ApiVillage } from '../services/checkoutApi';
 import { sendEmail, getShipmentDetailsTemplate } from '../services/emailService';
 import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense, lazy } from 'react';
@@ -38,9 +38,9 @@ import {
   ArrowLeft,
   X,
   Building,
-  Navigation,
   ShoppingBag,
 } from 'lucide-react';
+import { DistrictVillageSelect } from '../components/CustomerShared';
 import { useToast } from '../components/ToastProvider';
 
 const CustomerShopTab = lazy(() => import('./customer/CustomerShopTab').then((m) => ({ default: m.CustomerShopTab })));
@@ -112,31 +112,57 @@ export const CustomerView: React.FC<Props> = ({
   const [showJsonPayload, setShowJsonPayload] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, boolean>>({});
 
-  // Cities and villages from API
-  const [cities, setCities] = useState<ApiCity[]>([]);
+  // Districts (محافظات) and villages (قرى) from API – single load from get-villages-districts when possible
+  const [districts, setDistricts] = useState<ApiCity[]>([]);
   const [villages, setVillages] = useState<ApiVillage[]>([]);
   const [selectedCityId, setSelectedCityId] = useState<string | undefined>(undefined);
+  const [addressDataLoaded, setAddressDataLoaded] = useState(false);
+
+  const [useDistrictsVillagesApi, setUseDistrictsVillagesApi] = useState(false);
 
   useEffect(() => {
-    getCitiesApi()
+    if (!showCheckoutForm) return;
+    setAddressDataLoaded(false);
+    getDistrictsAndVillagesApi()
       .then((res) => {
-        if (res.success && Array.isArray(res.data)) setCities(res.data);
+        if (res.success && res.data?.districts?.length) {
+          setDistricts(res.data.districts);
+          setVillages(res.data.villages ?? []);
+          setUseDistrictsVillagesApi(true);
+        } else {
+          getCitiesApi()
+            .then((c) => {
+              if (c.success && Array.isArray(c.data)) setDistricts(c.data);
+            })
+            .catch(() => setDistricts([]));
+          setVillages([]);
+          setUseDistrictsVillagesApi(false);
+        }
+        setAddressDataLoaded(true);
       })
-      .catch(() => setCities([]));
-  }, []);
+      .catch(() => {
+        getCitiesApi()
+          .then((c) => {
+            if (c.success && Array.isArray(c.data)) setDistricts(c.data);
+          })
+          .catch(() => setDistricts([]));
+        setVillages([]);
+        setUseDistrictsVillagesApi(false);
+        setAddressDataLoaded(true);
+      });
+  }, [showCheckoutForm]);
 
   useEffect(() => {
-    if (!selectedCityId) {
-      setVillages([]);
-      return;
-    }
+    if (useDistrictsVillagesApi || !selectedCityId) return;
+    setVillages([]);
     getVillagesApi({ cityId: selectedCityId })
       .then((res) => {
         if (res?.success && Array.isArray(res.data)) setVillages(res.data);
         else setVillages([]);
       })
       .catch(() => setVillages([]));
-  }, [selectedCityId]);
+  }, [selectedCityId, useDistrictsVillagesApi]);
+
 
   const [shippingData, setShippingData] = useState({
     fullName: user.name || '',
@@ -154,10 +180,10 @@ export const CustomerView: React.FC<Props> = ({
     notes: '',
   });
 
-  // Effect to set city/village names from API data when selection or lang changes
+  // Effect to set district/village names from API data when selection or lang changes
   useEffect(() => {
-    if (shippingData.cityId && cities.length > 0) {
-      const city = cities.find((c) => String(c.id) === String(shippingData.cityId));
+    if (shippingData.cityId && districts.length > 0) {
+      const city = districts.find((c) => String(c.id) === String(shippingData.cityId));
       if (city) {
         setShippingData((prev) => ({ ...prev, cityName: city.name }));
       }
@@ -168,7 +194,7 @@ export const CustomerView: React.FC<Props> = ({
         setShippingData((prev) => ({ ...prev, villageName: v.name }));
       }
     }
-  }, [lang, shippingData.cityId, shippingData.villageId, cities, villages]);
+  }, [lang, shippingData.cityId, shippingData.villageId, districts, villages]);
 
   // When checkout modal opens, sync selectedCityId from shippingData so city dropdown shows correct value
   useEffect(() => {
@@ -317,34 +343,25 @@ export const CustomerView: React.FC<Props> = ({
     }
   };
 
-  const handleCityChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const cityId = (e.target as HTMLSelectElement).value;
-    const city = cities.find((c) => String(c.id) === String(cityId));
-    if (city) {
-      setSelectedCityId(cityId);
-      setShippingData((prev) => ({
-        ...prev,
-        cityId: city.id as any,
-        regionId: city.regionId as any,
-        cityName: city.name,
-        villageId: undefined,
-        villageName: '',
-      }));
-      setFormErrors((prev) => ({ ...prev, cityId: false }));
-    }
+  const handleDistrictChange = (districtId: string, districtName: string) => {
+    setSelectedCityId(districtId);
+    setShippingData((prev) => ({
+      ...prev,
+      cityId: districtId as any,
+      cityName: districtName,
+      villageId: undefined,
+      villageName: '',
+    }));
+    setFormErrors((prev) => ({ ...prev, cityId: false }));
   };
 
-  const handleVillageChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const vId = (e.target as HTMLSelectElement).value;
-    const v = villages.find((vv) => String(vv.id) === String(vId));
-    if (v) {
-      setShippingData((prev) => ({
-        ...prev,
-        villageId: v.id as any,
-        villageName: v.name,
-      }));
-      setFormErrors((prev) => ({ ...prev, villageId: false }));
-    }
+  const handleVillageSelectChange = (villageId: string, villageName: string) => {
+    setShippingData((prev) => ({
+      ...prev,
+      villageId: villageId as any,
+      villageName,
+    }));
+    setFormErrors((prev) => ({ ...prev, villageId: false }));
   };
 
   const previewPayload = useMemo(() => {
@@ -390,8 +407,10 @@ export const CustomerView: React.FC<Props> = ({
     if (!shippingData.fullName?.trim()) errors.fullName = true;
     if (!shippingData.email?.trim()) errors.email = true;
     if (!shippingData.phone?.trim()) errors.phone = true;
-    if (shippingData.cityId == null || shippingData.cityId === undefined) errors.cityId = true;
-    if (shippingData.villageId == null || shippingData.villageId === undefined) errors.villageId = true;
+    const noCity = shippingData.cityId == null || shippingData.cityId === undefined || String(shippingData.cityId).trim() === '';
+    const noVillage = shippingData.villageId == null || shippingData.villageId === undefined || String(shippingData.villageId).trim() === '';
+    if (noCity) errors.cityId = true;
+    if (noVillage) errors.villageId = true;
     if (!shippingData.address?.trim()) errors.address = true;
 
     if (Object.keys(errors).length > 0) {
@@ -400,11 +419,11 @@ export const CustomerView: React.FC<Props> = ({
       const msg =
         missing.length === 1
           ? lang === 'ar'
-            ? `الحقل الناقص: ${missing[0] === 'fullName' ? 'الاسم' : missing[0] === 'email' ? 'البريد' : missing[0] === 'phone' ? 'الهاتف' : missing[0] === 'cityId' ? 'المدينة' : missing[0] === 'villageId' ? 'القرية/المنطقة' : 'العنوان'}`
+            ? `الحقل الناقص: ${missing[0] === 'fullName' ? 'الاسم' : missing[0] === 'email' ? 'البريد' : missing[0] === 'phone' ? 'الهاتف' : missing[0] === 'cityId' ? 'المحافظة' : missing[0] === 'villageId' ? 'القرية/الحي' : missing[0] === 'address' ? 'العنوان' : 'العنوان'}`
             : `Missing: ${missing[0]}`
           : lang === 'ar'
-            ? 'يرجى إكمال الحقول المطلوبة'
-            : 'Please fill required fields';
+            ? 'يرجى اختيار المحافظة والقرية وتعبئة العنوان وجميع الحقول المطلوبة'
+            : 'Please select district and village, enter address and fill all required fields';
       showToast(msg, 'error');
       return;
     }
@@ -839,47 +858,26 @@ export const CustomerView: React.FC<Props> = ({
                   </div>
                   <div className="space-y-4">
                     <div className="grid md:grid-cols-2 gap-5">
-                      <ShippingInputGroup
-                        label={lang === 'ar' ? 'المدينة' : 'City'}
-                        name="cityId"
-                        icon={Building}
-                        type="select"
-                        required
-                        options={
-                          <>
-                            {cities.map((c) => (
-                              <option key={c.id} value={c.id}>
-                                {c.name}
-                              </option>
-                            ))}
-                          </>
-                        }
-                        value={selectedCityId ?? ''}
-                        error={!!formErrors.cityId}
-                        onChange={handleCityChange}
-                        lang={lang}
-                      />
-                      <ShippingInputGroup
-                        label={lang === 'ar' ? 'القرية/المنطقة' : 'Area'}
-                        name="villageId"
-                        icon={Navigation}
-                        type="select"
-                        required
-                        options={
-                          <>
-                            {villages.map((v) => (
-                              <option key={v.id} value={v.id}>
-                                {v.name}
-                              </option>
-                            ))}
-                          </>
-                        }
-                        value={shippingData.villageId ?? ''}
-                        error={!!formErrors.villageId}
-                        onChange={handleVillageChange}
-                        lang={lang}
-                        disabled={!selectedCityId}
-                      />
+                      {addressDataLoaded ? (
+                        <DistrictVillageSelect
+                          districts={districts}
+                          villages={villages}
+                          districtId={selectedCityId}
+                          villageId={shippingData.villageId != null ? String(shippingData.villageId) : undefined}
+                          villageName={shippingData.villageName}
+                          onDistrictChange={handleDistrictChange}
+                          onVillageChange={handleVillageSelectChange}
+                          errorDistrict={!!formErrors.cityId}
+                          errorVillage={!!formErrors.villageId}
+                          lang={lang}
+                          required
+                          villageSearchPlaceholder={lang === 'ar' ? 'ابحث عن القرية أو الحي...' : 'Search village or district...'}
+                        />
+                      ) : (
+                        <div className="col-span-2 py-4 text-center text-slate-500 text-sm">
+                          {lang === 'ar' ? 'جاري تحميل المحافظات والقرى...' : 'Loading districts and villages...'}
+                        </div>
+                      )}
                     </div>
                     <ShippingInputGroup
                       label={t.checkout.address}

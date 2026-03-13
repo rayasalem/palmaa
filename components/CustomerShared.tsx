@@ -7,7 +7,7 @@ import React from 'react';
 import { Product, CartItem } from '../types';
 import { marketStore } from '../store';
 import type { Language } from '../translations';
-import { ArrowRight, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import { ArrowRight, Building, Minus, Plus, Search, ShoppingBag, Trash2 } from 'lucide-react';
 import { ProductConditionBadge } from './ProductConditionBadge';
 
 export interface ShippingInputGroupProps {
@@ -81,6 +81,174 @@ export const ShippingInputGroup = React.memo(function ShippingInputGroup({
           >
             <ArrowRight className="w-4 h-4 rotate-90" />
           </div>
+        )}
+      </div>
+    </div>
+  );
+});
+
+export interface DistrictVillageItem {
+  id: string;
+  name: string;
+  cityId?: string;
+  regionId?: string;
+}
+
+export interface DistrictVillageSelectProps {
+  /** المحافظات */
+  districts: DistrictVillageItem[];
+  /** كل القرى (يتم الفلترة حسب districtId) */
+  villages: DistrictVillageItem[];
+  districtId: string | undefined;
+  villageId: string | undefined;
+  villageName?: string;
+  onDistrictChange: (districtId: string, districtName: string) => void;
+  onVillageChange: (villageId: string, villageName: string) => void;
+  errorDistrict?: boolean;
+  errorVillage?: boolean;
+  lang: Language;
+  required?: boolean;
+  /** Placeholder for village search */
+  villageSearchPlaceholder?: string;
+  disabled?: boolean;
+}
+
+export const DistrictVillageSelect = React.memo(function DistrictVillageSelect({
+  districts,
+  villages,
+  districtId,
+  villageId,
+  villageName,
+  onDistrictChange,
+  onVillageChange,
+  errorDistrict = false,
+  errorVillage = false,
+  lang,
+  required = true,
+  villageSearchPlaceholder,
+  disabled = false,
+}: DistrictVillageSelectProps) {
+  const [villageSearch, setVillageSearch] = React.useState('');
+  const [villageDropdownOpen, setVillageDropdownOpen] = React.useState(false);
+  const villageDropdownRef = React.useRef<HTMLDivElement>(null);
+
+  const villagesForDistrict = React.useMemo(() => {
+    if (!districtId) return [];
+    return villages.filter((v) => String(v.cityId ?? '') === String(districtId));
+  }, [villages, districtId]);
+
+  const filteredVillages = React.useMemo(() => {
+    if (!villageSearch.trim()) return villagesForDistrict;
+    const s = villageSearch.trim().toLowerCase();
+    return villagesForDistrict.filter((v) => (v.name || '').toLowerCase().includes(s));
+  }, [villagesForDistrict, villageSearch]);
+
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (villageDropdownRef.current && !villageDropdownRef.current.contains(e.target as Node)) {
+        setVillageDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const searchPlaceholder =
+    villageSearchPlaceholder ?? (lang === 'ar' ? 'ابحث عن القرية أو الحي...' : 'Search village or district...');
+  const selectDistrictPlaceholder = lang === 'ar' ? 'اختر المحافظة' : 'Select district';
+  const selectVillagePlaceholder = lang === 'ar' ? 'اختر القرية أولاً' : 'Select district first';
+  const selectVillagePlaceholderAfter = lang === 'ar' ? 'اختر القرية' : 'Select village';
+
+  return (
+    <div className="grid md:grid-cols-2 gap-5 w-full">
+      <div className="space-y-1.5 w-full">
+        <label className="text-[10px] font-black uppercase text-palma-muted tracking-widest flex items-center gap-1">
+          {lang === 'ar' ? 'المحافظة' : 'District'} {required && <span className="text-red-500">*</span>}
+        </label>
+        <div className="relative group">
+          <div className={`absolute top-1/2 -translate-y-1/2 z-10 ${lang === 'en' ? 'left-4' : 'right-4'} text-slate-400`}>
+            <Building className="w-5 h-5" />
+          </div>
+          <select
+            value={districtId ?? ''}
+            onChange={(e) => {
+              const id = e.target.value;
+              const d = districts.find((x) => String(x.id) === String(id));
+              if (d) onDistrictChange(id, d.name);
+            }}
+            disabled={disabled}
+            className={`w-full ${lang === 'en' ? 'pl-12 pr-4' : 'pr-12 pl-4'} py-3.5 bg-slate-50 border ${errorDistrict ? 'border-red-300 ring-2 ring-red-100' : 'border-slate-200'} rounded-2xl text-sm font-bold text-palma-navy outline-none focus:bg-white focus:border-palma-primary focus:ring-4 focus:ring-palma-primary/10 transition-all appearance-none cursor-pointer`}
+          >
+            <option value="">{selectDistrictPlaceholder}</option>
+            {districts.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
+          </select>
+          <div className={`absolute top-1/2 -translate-y-1/2 ${lang === 'en' ? 'right-4' : 'left-4'} text-slate-400 pointer-events-none`}>
+            <ArrowRight className="w-4 h-4 rotate-90" />
+          </div>
+        </div>
+        {errorDistrict && (
+          <p className="text-[10px] text-red-500 font-medium">{lang === 'ar' ? 'يرجى اختيار المحافظة' : 'Please select district'}</p>
+        )}
+      </div>
+
+      <div ref={villageDropdownRef} className="space-y-1.5 w-full">
+        <label className="text-[10px] font-black uppercase text-palma-muted tracking-widest flex items-center gap-1">
+          {lang === 'ar' ? 'القرية / الحي' : 'Village / District'} {required && <span className="text-red-500">*</span>}
+        </label>
+        <div className="relative group">
+          <div className={`absolute top-1/2 -translate-y-1/2 z-10 ${lang === 'en' ? 'left-4' : 'right-4'} text-slate-400`}>
+            <Search className="w-5 h-5" />
+          </div>
+          <input
+            type="text"
+            readOnly={!districtId}
+            placeholder={
+              !districtId ? selectVillagePlaceholder : villageDropdownOpen ? searchPlaceholder : (villageName || selectVillagePlaceholderAfter)
+            }
+            value={villageDropdownOpen ? villageSearch : (villageName || '')}
+            onChange={(e) => {
+              setVillageSearch(e.target.value);
+              if (!villageDropdownOpen) setVillageDropdownOpen(true);
+            }}
+            onFocus={() => {
+              if (districtId) {
+                setVillageDropdownOpen(true);
+                setVillageSearch('');
+              }
+            }}
+            disabled={disabled}
+            className={`w-full ${lang === 'en' ? 'pl-12 pr-4' : 'pr-12 pl-4'} py-3.5 bg-slate-50 border ${errorVillage ? 'border-red-300 ring-2 ring-red-100' : 'border-slate-200'} rounded-2xl text-sm font-bold text-palma-navy outline-none focus:bg-white focus:border-palma-primary focus:ring-4 focus:ring-palma-primary/10 transition-all placeholder:text-slate-400 cursor-pointer`}
+          />
+          {villageDropdownOpen && districtId && (
+            <ul className="absolute z-20 left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-white border border-slate-200 rounded-2xl shadow-xl py-2">
+              {filteredVillages.length === 0 ? (
+                <li className="px-4 py-3 text-slate-500 text-sm">{lang === 'ar' ? 'لا توجد نتائج' : 'No results'}</li>
+              ) : (
+                filteredVillages.map((v) => (
+                  <li
+                    key={v.id}
+                    role="option"
+                    tabIndex={0}
+                    className={`px-4 py-2.5 text-sm font-medium cursor-pointer hover:bg-palma-primary/10 ${lang === 'ar' ? 'text-right' : 'text-left'} ${String(villageId) === String(v.id) ? 'bg-palma-primary/10 text-palma-navy' : 'text-slate-700'}`}
+                    onClick={() => {
+                      onVillageChange(v.id, v.name);
+                      setVillageSearch('');
+                      setVillageDropdownOpen(false);
+                    }}
+                  >
+                    {v.name}
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+        </div>
+        {errorVillage && (
+          <p className="text-[10px] text-red-500 font-medium">{lang === 'ar' ? 'يرجى اختيار القرية أو الحي' : 'Please select village'}</p>
         )}
       </div>
     </div>

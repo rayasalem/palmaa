@@ -49,7 +49,29 @@ Restart the server. You will see full request and response bodies in the console
 
 ### Why don't my orders appear on the LogesTechs app?
 
-Shipments are sent to LogesTechs only when **LOGESTECHS_EMAIL** and **LOGESTECHS_PASSWORD** are set. If either is missing, the server creates a *simulated* shipment (ID like `sim-xxx`) so checkout can complete, but **no request is sent to LogesTechs** and the order will not show in their app. Set both variables in your environment (e.g. on Render) and redeploy.
+Shipments are sent to LogesTechs only when **LOGESTECHS_EMAIL** and **LOGESTECHS_PASSWORD** are set on the **server** (e.g. Render / palmaa.cr). If either is missing, the server creates a *simulated* shipment (ID like `sim-xxx`) so checkout can complete, but **no request is sent to LogesTechs** and the order will **not** show in their website or app.
+
+**ما يلزم لظهور الطلبات على موقع لوجستيك:**
+1. إضافة المتغيرات على السيرفر (مثلاً في Render: Environment → LOGESTECHS_EMAIL, LOGESTECHS_PASSWORD).
+2. استخدام نفس البريد وكلمة المرور المسجّلين في LogesTechs (مثلاً raya123 / raya@123321).
+3. إعادة النشر (Redeploy) بعد حفظ المتغيرات.
+
+إذا كان مسار إنشاء الشحنة في Postman مختلفاً عن `/ship/request/by-email`، يمكن تعيينه عبر المتغير:  
+`LOGESTECHS_CREATE_SHIPMENT_PATH=/المسار/من/بوستمان`
+
+### Postman reference (LogesTechs APIs)
+
+| Request | Link |
+|--------|------|
+| Create Shipment | https://www.postman.com/ali-asfour/logestech-s-api/request/9i88iut/create-shipment |
+| Get Villages/Districts | https://www.postman.com/ali-asfour/logestech-s-api/request/prrjuvs/get-villages-districts |
+| Get Package Status | https://www.postman.com/ali-asfour/logestech-s-api/request/twmpx9j/get-package-status |
+| Cancel Shipment | https://www.postman.com/ali-asfour/logestech-s-api/request/ekwhkyt/cancel-shipment |
+| Get Company ID by Domain | https://www.postman.com/ali-asfour/logestech-s-api/request/s9lt7t7/get-company-id-by-domain |
+| Print Shipments AWBs | https://www.postman.com/ali-asfour/logestech-s-api/request/wglg9ou/print-shipments-awbs |
+| Get Shipment History/Tracking | https://www.postman.com/ali-asfour/logestech-s-api/request/4itm72v/get-shipment-history-tracking |
+
+تأكد من أن الـ URL والـ Body في Postman يطابقان ما يرسله السيرفر (أو عدّل `LOGESTECHS_CREATE_SHIPMENT_PATH` و/أو البودي في `shipmentService.buildShipmentPayload` إذا اختلف الشكل).
 
 ### Cities and villages from LogesTechs
 

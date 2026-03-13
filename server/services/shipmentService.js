@@ -12,9 +12,23 @@ import logger from '../utils/logger.js';
 const ORDERS_TABLE = 'orders';
 const SHIPMENT_API_BASE = process.env.SHIPMENT_API_BASE || 'https://apisv2.logestechs.com/api';
 const COMPANY_ID = process.env.LOGESTECHS_COMPANY_ID || '634';
-const LOGESTECHS_EMAIL = process.env.LOGESTECHS_EMAIL || '';
-const LOGESTECHS_PASSWORD = process.env.LOGESTECHS_PASSWORD || '';
+const LOGESTECHS_EMAIL = (process.env.LOGESTECHS_EMAIL || '').trim();
+const LOGESTECHS_PASSWORD = (process.env.LOGESTECHS_PASSWORD || '').trim();
 const LOG_SHIPMENT_REQUESTS = process.env.LOG_SHIPMENT_REQUESTS === 'true' || process.env.LOG_SHIPMENT_REQUESTS === '1';
+
+/** Log once at startup so Render logs show if LogesTechs is configured (redeploy after changing env vars). */
+let _loggedConfig = false;
+function logConfigStatus() {
+  if (_loggedConfig) return;
+  _loggedConfig = true;
+  const hasEmail = !!LOGESTECHS_EMAIL;
+  const hasPassword = !!LOGESTECHS_PASSWORD;
+  const configured = hasEmail && hasPassword;
+  console.log(
+    '[shipmentService] LogesTechs:',
+    configured ? 'configured (credentials set). Real API will be used.' : 'not configured (LOGESTECHS_EMAIL or LOGESTECHS_PASSWORD missing or empty). Set env vars and redeploy service.'
+  );
+}
 
 function safeLog(label, obj) {
   if (!LOG_SHIPMENT_REQUESTS) return;
@@ -55,11 +69,16 @@ async function getOrderById(orderId) {
 }
 
 /**
- * Call LogesTechs POST /ship/request/by-email
- * Body: { email, password, pkgUnitType, pkg, destinationAddress, originAddress }
+ * Call LogesTechs create-shipment API.
+ * Default: POST {SHIPMENT_API_BASE}/ship/request/by-email
+ * If your Postman collection uses another path (e.g. /guests/634/packages), set env:
+ *   LOGESTECHS_CREATE_SHIPMENT_PATH=/guests/634/packages
+ * Ref: https://www.postman.com/ali-asfour/logestech-s-api/collection/1kmztpz/logestechs-apis
  */
 async function callCreateShipmentApi(body) {
-  const url = `${SHIPMENT_API_BASE.replace(/\/$/, '')}/ship/request/by-email`;
+  const path = process.env.LOGESTECHS_CREATE_SHIPMENT_PATH || '/ship/request/by-email';
+  const base = SHIPMENT_API_BASE.replace(/\/$/, '');
+  const url = path.startsWith('http') ? path : `${base}${path.startsWith('/') ? path : `/${path}`}`;
   safeLog('CREATE SHIPMENT REQUEST', { url, headers: { 'company-id': COMPANY_ID }, body });
   try {
     const response = await axios.post(url, body, {
@@ -200,6 +219,7 @@ let _loggedSimulation = false;
  * في هذه الحالة الطلبات لا تظهر على تطبيق LogesTechs — يجب تعيين المتغيرات لتفعيل الـ API الحقيقي.
  */
 async function createShipment(orderId, shipmentInput) {
+  logConfigStatus();
   const auth = getAuth();
   if (!auth.email || !auth.password) {
     if (!_loggedSimulation) {
@@ -252,10 +272,16 @@ async function createShipment(orderId, shipmentInput) {
   }
 
   const res = apiResult.data || {};
-  const shipmentId = res.id ?? res.shipment_id ?? res.shipmentId ?? null;
-  const shipmentStatus = (res.status ?? res.barcode) ? 'created' : 'created';
+  const raw = res.data || res;
+  const shipmentId =
+    raw.id ?? raw.shipment_id ?? raw.shipmentId ?? raw.packageId ?? raw.barcode ?? res.id ?? res.shipment_id ?? res.shipmentId ?? null;
+  const shipmentStatus = (raw.status ?? res.status ?? raw.barcode) ? 'created' : 'created';
 
-  const updateResult = await updateOrderShipment(order.id, String(shipmentId), shipmentStatus);
+  if (!shipmentId) {
+    logger.warn('shipmentService LogesTechs API returned success but no shipment id in response. Check API response shape. Body:', JSON.stringify(res).slice(0, 500));
+  }
+  const idToStore = shipmentId ? String(shipmentId) : `logestechs-${order.id}-${Date.now()}`;
+  const updateResult = await updateOrderShipment(order.id, idToStore, shipmentStatus);
   if (updateResult.error) {
     return { order, shipment: res, error: updateResult.error };
   }
@@ -286,14 +312,14 @@ async function getPackageStatus(params) {
     const status = (order && (order.delivery_status || order.status)) || 'created';
     return { data: { status }, error: null };
   }
-  const url = `${SHIPMENT_API_BASE.replace(/\/$/, '')}/guests/packages/status`;
+  const base = SHIPMENT_API_BASE.replace(/\/$/, '');
+  const statusPath = process.env.LOGESTECHS_STATUS_PATH || `/guests/${COMPANY_ID}/packages/status`;
+  const url = statusPath.startsWith('http') ? statusPath : `${base}${statusPath.startsWith('/') ? statusPath : `/${statusPath}`}`;
   const query = id ? `id=${encodeURIComponent(id)}` : `barcode=${encodeURIComponent(barcode)}`;
-  safeLog('GET STATUS REQUEST', { url: `${url}?${query}`, headers: { 'company-id': COMPANY_ID } });
+  const headers = { 'company-id': COMPANY_ID, 'Content-Type': 'application/json' };
+  safeLog('GET STATUS REQUEST', { url: `${url}?${query}`, headers });
   try {
-    const response = await axios.get(`${url}?${query}`, {
-      headers: { 'company-id': COMPANY_ID, 'Content-Type': 'application/json' },
-      timeout: 10000,
-    });
+    const response = await axios.get(`${url}?${query}`, { headers, timeout: 10000 });
     safeLog('GET STATUS RESPONSE', { status: response.status, data: response.data });
     return { data: response.data, error: null };
   } catch (err) {
@@ -364,5 +390,7 @@ async function cancelShipment(shipmentId) {
     return { data: null, error: { message: msg } };
   }
 }
+
+logConfigStatus();
 
 export { getOrderById, updateOrderShipment, createShipment, getPackageStatus, printAwb, cancelShipment, ORDERS_TABLE };

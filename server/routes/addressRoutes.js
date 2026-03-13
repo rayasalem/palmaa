@@ -5,6 +5,7 @@ import * as addressController from '../controllers/addressController.js';
 
 const router = express.Router();
 router.get('/cities', addressController.getCities);
+router.get('/districts-villages', addressController.getDistrictsAndVillages);
 router.get(
   '/villages',
   validate(addressSchemas.getVillagesQuery, 'query', 'address.getVillages'),

@@ -114,19 +114,19 @@ const MAX_PRODUCTS_PAGE = 500;
 
 async function getActiveProducts(opts = {}) {
   const limit = Math.min(Number(opts?.limit) || 0, MAX_PRODUCTS_PAGE);
-  const offset = Math.max(0, Number(opts?.offset) || 0);
+const offset = Math.max(0, Number(opts?.offset) || 0);
 
-  let query = supabase
-    .from(PRODUCTS_TABLE)
-    .select('*')
-    .or('status.eq.active,is_active.eq.true')
-    .order('created_at', { ascending: false });
+let query = supabase
+  .from(PRODUCTS_TABLE)
+  .select('*')
+  .or('status.eq.active,is_active.eq.true')
+  .order('created_at', { ascending: false });
 
   if (limit > 0) {
     query = query.range(offset, offset + limit - 1);
   }
 
-  const { data: products, error } = await query;
+const { data: products, error } = await query;
   // ... rest unchanged (merchantIds, suspended, namesMap, enriched)
 }
 ```
@@ -142,7 +142,7 @@ async function list(req, res) {
       ? { limit: limit || 100, offset: offset || 0 }
       : {};
     const { data, error } = await productService.getActiveProducts(opts);
-    // ... rest unchanged
+// ... rest unchanged
   }
 }
 ```

@@ -48,6 +48,15 @@ export interface Village {
   regionId?: string;
 }
 
+/** Districts = محافظات (same shape as City); villages = قرى/أحياء */
+export interface DistrictsAndVillagesResponse {
+  success: boolean;
+  data?: {
+    districts: City[];
+    villages: Village[];
+  };
+}
+
 export interface Order {
   id: string;
   status: string;
@@ -252,6 +261,17 @@ export async function getVillages(params: {
   if (params.cityId) query.set('cityId', params.cityId);
   const qs = query.toString();
   return request<{ success: boolean; data: Village[] }>(`/api/addresses/villages${qs ? `?${qs}` : ''}`);
+}
+
+/**
+ * Fetch all Palestinian districts (محافظات) and villages (قرى) in one request.
+ * Uses LogesTechs get-villages-districts API when available.
+ */
+export async function getDistrictsAndVillages(): Promise<{
+  success: boolean;
+  data?: { districts: City[]; villages: Village[] };
+}> {
+  return request<DistrictsAndVillagesResponse>('/api/addresses/districts-villages');
 }
 
 export function printAWB(shipmentIds: string[]) {

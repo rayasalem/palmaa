@@ -28,4 +28,20 @@ async function getVillages(req, res) {
   }
 }
 
-export { getCities, getVillages };
+async function getDistrictsAndVillages(req, res) {
+  try {
+    const { districts, villages } = await addressService.getDistrictsAndVillages();
+    return res.status(200).json({
+      success: true,
+      data: {
+        districts: Array.isArray(districts) ? districts : [],
+        villages: Array.isArray(villages) ? villages : [],
+      },
+    });
+  } catch (err) {
+    logger.error('addressController getDistrictsAndVillages', { message: err.message });
+    return res.status(500).json({ success: false, error: err.message || 'Failed to load districts and villages' });
+  }
+}
+
+export { getCities, getVillages, getDistrictsAndVillages };

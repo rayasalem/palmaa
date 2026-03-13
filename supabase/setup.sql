@@ -473,7 +473,7 @@ CREATE INDEX IF NOT EXISTS idx_orders_broker_id ON public.orders(broker_id);
 CREATE TABLE IF NOT EXISTS public.order_profits (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     order_id TEXT NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
-    order_item_id UUID NULL,
+    order_item_id TEXT NULL,
     party_type TEXT NOT NULL CHECK (party_type IN ('merchant', 'store', 'broker')),
     party_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
     amount_ils NUMERIC NOT NULL CHECK (amount_ils >= 0),

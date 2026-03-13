@@ -80,4 +80,57 @@ export const ROUTES = {
   WITHDRAWALS: 'withdrawals',
   /** المستخدمون (أدمن) */
   USERS: 'users',
+  /** إعدادات/إيرادات المنصة (أدمن) */
+  PLATFORM: 'platform',
 } as const;
+
+/** مسارات عامة — لا تتطلب تسجيل دخول */
+export const PUBLIC_TOP_ROUTES = new Set([
+  '',
+  ROUTES.CATALOG,
+  ROUTES.LOGIN,
+  ROUTES.JOIN,
+  ROUTES.REGISTER_MERCHANT,
+  ROUTES.REGISTER_BROKER,
+  ROUTES.REGISTER,
+  ROUTES.TERMS,
+  ROUTES.VERIFY_EMAIL,
+]);
+
+/** مسارات تتطلب تسجيل دخول (غير مسموح للضيف) */
+export const PROTECTED_TOP_ROUTES = new Set([
+  ROUTES.HOME_APP,
+  ROUTES.SHOP,
+  ROUTES.CART,
+  ROUTES.ORDERS,
+  ROUTES.PROFILE,
+  ROUTES.NOTIFICATIONS,
+  ROUTES.DASHBOARD,
+  ROUTES.PRODUCTS,
+  ROUTES.SUBSCRIPTION,
+  ROUTES.PROMOTE,
+  ROUTES.EARNINGS,
+  ROUTES.STATS,
+  ROUTES.ADMIN,
+  ROUTES.USERS,
+  ROUTES.WITHDRAWALS,
+  ROUTES.PLATFORM,
+]);
+
+/** مسارات للأدمن فقط — أي دور آخر يُحوَّل للرئيسية */
+export const ADMIN_ONLY_TOP_ROUTES = new Set([
+  ROUTES.ADMIN,
+  ROUTES.USERS,
+  ROUTES.WITHDRAWALS,
+  ROUTES.PLATFORM,
+]);
+
+/** مسارات لوحة التاجر/الوسيط — الزبون يُحوَّل للرئيسية */
+export const MERCHANT_DASHBOARD_TOP_ROUTES = new Set([
+  ROUTES.DASHBOARD,
+  ROUTES.PRODUCTS,
+  ROUTES.SUBSCRIPTION,
+  ROUTES.PROMOTE,
+  ROUTES.EARNINGS,
+  ROUTES.STATS,
+]);

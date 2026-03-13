@@ -15,6 +15,13 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-
 function isValidUuid(s) {
   return typeof s === 'string' && s.trim() && UUID_REGEX.test(s.trim());
 }
+/** order_items.id is TEXT (e.g. ITM-xxxxxxxx); order_profits.order_item_id accepts TEXT or UUID depending on migration */
+function orderItemIdForProfits(item) {
+  const raw = item && (item.id != null ? item.id : null);
+  if (raw == null || raw === '') return null;
+  const s = String(raw).trim();
+  return s.length > 0 ? s : null;
+}
 
 const STORE_RATE = 0.15; // 15% للمتجر عند البيع المباشر
 const STORE_RATE_WITH_BROKER = 0.12; // 12% للمتجر عند البيع عبر الوسيط
@@ -44,7 +51,8 @@ async function recordProfitsForOrder(orderId) {
   const hasBroker = !!brokerId;
   const storeRate = hasBroker ? STORE_RATE_WITH_BROKER : STORE_RATE;
 
-  const { data: existing } = await supabase.from(ORDER_PROFITS_TABLE).select('id').eq('order_id', orderId).limit(1);
+  const orderPk = order.id;
+  const { data: existing } = await supabase.from(ORDER_PROFITS_TABLE).select('id').eq('order_id', orderPk).limit(1);
   if (existing && existing.length > 0) {
     console.log('[profitService] Profits already recorded for order:', orderId);
     return { error: null };
@@ -68,12 +76,11 @@ async function recordProfitsForOrder(orderId) {
     const storeAmount = Math.round(storeRate * itemTotal * 100) / 100;
     const brokerAmount = hasBroker ? Math.round(BROKER_RATE * itemTotal * 100) / 100 : 0;
 
-    const rawItemId = item.id || null;
-    const orderItemId = rawItemId && isValidUuid(String(rawItemId)) ? rawItemId : null;
+    const orderItemId = orderItemIdForProfits(item);
 
     if (merchantId != null && merchantAmount > 0) {
       rowsToInsert.push({
-        order_id: orderId,
+        order_id: orderPk,
         order_item_id: orderItemId,
         party_type: 'merchant',
         party_id: merchantId,
@@ -82,7 +89,7 @@ async function recordProfitsForOrder(orderId) {
     }
     if (storeAmount > 0) {
       rowsToInsert.push({
-        order_id: orderId,
+        order_id: orderPk,
         order_item_id: orderItemId,
         party_type: 'store',
         party_id: null,
@@ -91,7 +98,7 @@ async function recordProfitsForOrder(orderId) {
     }
     if (hasBroker && brokerId && brokerAmount > 0) {
       rowsToInsert.push({
-        order_id: orderId,
+        order_id: orderPk,
         order_item_id: orderItemId,
         party_type: 'broker',
         party_id: brokerId,

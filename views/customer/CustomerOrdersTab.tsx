@@ -38,7 +38,7 @@ export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
   apiOrders,
   onRefreshOrders,
   processingCancelId,
-  onCancelConfirm,
+  setCancelConfirmOrderId,
   setOrderToCancel,
   checkingStatusId,
   onCheckOrderStatus,
@@ -80,8 +80,8 @@ export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
                       <Package className="w-5 h-5 text-palma-muted" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Order Ref</p>
-                      <p className="text-xs font-mono font-bold text-slate-900">{o.id}</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{lang === 'ar' ? 'رقم الطلب' : 'Order Ref'}</p>
+                      <p className="text-xs font-mono font-bold text-slate-900">{o.order_reference || o.id}</p>
                     </div>
                   </div>
                   <span
@@ -130,18 +130,40 @@ export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
 
                   <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 flex flex-col justify-center space-y-4">
                     <div className="space-y-3">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">
                         {lang === 'ar' ? 'تفاصيل الطلب' : 'Order details'}
                       </p>
-                      <div className="text-xs text-slate-700 space-y-1.5">
+                      <div className="text-xs text-slate-700 space-y-2">
+                        {(o.order_reference || o.id) && (
+                          <p>
+                            <span className="text-slate-500 font-medium">{lang === 'ar' ? 'رقم المرجع: ' : 'Ref: '}</span>
+                            <span className="font-mono font-bold">{o.order_reference || o.id}</span>
+                          </p>
+                        )}
+                        {(o.created_at || (o as any).createdAt) && (
+                          <p>
+                            <span className="text-slate-500 font-medium">{lang === 'ar' ? 'تاريخ الطلب: ' : 'Order date: '}</span>
+                            {new Date(o.created_at || (o as any).createdAt).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-GB', {
+                              dateStyle: 'medium',
+                              timeStyle: 'short',
+                            })}
+                          </p>
+                        )}
                         <p className="font-bold">
                           <span className="text-slate-500 font-medium">{lang === 'ar' ? 'العنوان: ' : 'Address: '}</span>
                           {o.shipping_address || o.shippingAddress?.addressDetails || o.address || '—'}
                         </p>
-                        {(o.shippingAddress?.cityName || o.shippingAddress?.villageName || o.city) && (
-                          <p className="text-slate-600">
-                            {[o.shippingAddress?.cityName || o.city, o.shippingAddress?.villageName].filter(Boolean).join(' - ')}
-                          </p>
+                        {(o.shippingAddress?.cityName || o.shippingAddress?.villageName || o.shipping_city_id || o.shipping_village_id) && (
+                          <>
+                            <p>
+                              <span className="text-slate-500 font-medium">{lang === 'ar' ? 'المحافظة: ' : 'District: '}</span>
+                              {o.shippingAddress?.cityName || (o as any).city_name || o.shipping_city_id || '—'}
+                            </p>
+                            <p>
+                              <span className="text-slate-500 font-medium">{lang === 'ar' ? 'القرية / الحي: ' : 'Village: '}</span>
+                              {o.shippingAddress?.villageName || (o as any).village_name || o.shipping_village_id || '—'}
+                            </p>
+                          </>
                         )}
                         <p>
                           <span className="text-slate-500 font-medium">{lang === 'ar' ? 'المستلم: ' : 'Recipient: '}</span>
@@ -195,6 +217,13 @@ export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
                             <p className="text-sm font-bold text-palma-navy mt-1">
                               {trackingDisplay.status}
                             </p>
+                            {(o.delivery_id || o.shipmentId || '').toString().startsWith('sim-') && (
+                              <p className="text-[10px] text-amber-700 mt-2">
+                                {lang === 'ar'
+                                  ? 'شحنة محاكاة — لظهور الطلب على موقع لوجستيك اضبط بيانات الدخول (LOGESTECHS_EMAIL / PASSWORD) على السيرفر.'
+                                  : 'Simulated shipment — set LOGESTECHS_EMAIL and PASSWORD on the server for real LogesTechs integration.'}
+                              </p>
+                            )}
                           </div>
                         )}
                       </div>
