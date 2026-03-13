@@ -2,6 +2,7 @@ import { env } from '../config/env';
 import { palestineVillages, City, Village } from '../data/palestine-villages';
 import { ActionResponse, ShipmentBody, FlashlineShipmentResponse, Order, User } from '../types';
 import { logEmail } from './emailService';
+import { getShipmentStatusApi } from './shipmentApi';
 
 let cachedToken: string | null = null;
 
@@ -96,8 +97,22 @@ export const createShipment = async (shipmentData: ShipmentBody): Promise<Flashl
 };
 
 export const getShipmentStatus = async (shipmentId: string): Promise<string | null> => {
+  // أولاً: نحاول جلب الحالة من API الباكند (LogesTechs)
+  try {
+    const res = await getShipmentStatusApi({ id: shipmentId });
+    if (res.success && res.status) {
+      const raw: any = res.status;
+      const status =
+        typeof raw === 'string'
+          ? raw
+          : raw.status || raw.delivery_status || raw.state || raw.Stage || raw.stage || null;
+      if (status) return String(status);
+    }
+  } catch {
+    // إذا فشل الاتصال، نكمل بالمنطق الاحتياطي
+  }
+  // منطق FlashLine / المحاكاة القديم
   if (shipmentId.startsWith('FL-')) return 'IN_TRANSIT';
-  // شحنات محاكاة (عند عدم تفعيل LogesTechs) تُعرض كـ created
   if (shipmentId.startsWith('sim-')) return 'created';
   return null;
 };
