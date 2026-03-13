@@ -185,10 +185,19 @@ function buildShipmentPayload(order, shipmentInput) {
   const originVillageId = Number(merged.originVillageId || process.env.SENDER_VILLAGE_ID) || destVillageId;
   const originRegionId = Number(merged.originRegionId || process.env.SENDER_REGION_ID) || destRegionId;
 
+  let originAddressLine1 = String(
+    merged.originAddressLine1 ||
+      process.env.SENDER_ADDRESS_LINE1 ||
+      merged.addressLine1 ||
+      destAddressLine1 ||
+      ''
+  ).trim();
+  if (!originAddressLine1) {
+    originAddressLine1 = 'Palma Marketplace';
+  }
+
   const originAddress = {
-    addressLine1: String(
-      merged.originAddressLine1 || process.env.SENDER_ADDRESS_LINE1 || merged.addressLine1 || ''
-    ).trim(),
+    addressLine1: originAddressLine1,
     addressLine2: String(merged.originAddressLine2 || process.env.SENDER_ADDRESS_LINE2 || '').trim() || undefined,
     cityId: originCityId,
     regionId: originRegionId,
