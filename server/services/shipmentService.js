@@ -12,22 +12,40 @@ import logger from '../utils/logger.js';
 const ORDERS_TABLE = 'orders';
 const SHIPMENT_API_BASE = process.env.SHIPMENT_API_BASE || 'https://apisv2.logestechs.com/api';
 const COMPANY_ID = process.env.LOGESTECHS_COMPANY_ID || '634';
-const LOGESTECHS_EMAIL = (process.env.LOGESTECHS_EMAIL || '').trim();
-const LOGESTECHS_PASSWORD = (process.env.LOGESTECHS_PASSWORD || '').trim();
 const LOG_SHIPMENT_REQUESTS = process.env.LOG_SHIPMENT_REQUESTS === 'true' || process.env.LOG_SHIPMENT_REQUESTS === '1';
+
+/** Read credentials at runtime so env vars are picked up after dotenv; support alternate names. */
+function getAuth() {
+  const email = (
+    (process.env.LOGESTECHS_EMAIL || process.env.LOGESTECH_EMAIL || process.env.LOGESTECHS_USER || '') + ''
+  ).trim();
+  const password = (
+    (process.env.LOGESTECHS_PASSWORD || process.env.LOGESTECH_PASSWORD || '') + ''
+  ).trim();
+  return { email, password };
+}
 
 /** Log once at startup so Render logs show if LogesTechs is configured (redeploy after changing env vars). */
 let _loggedConfig = false;
 function logConfigStatus() {
   if (_loggedConfig) return;
   _loggedConfig = true;
-  const hasEmail = !!LOGESTECHS_EMAIL;
-  const hasPassword = !!LOGESTECHS_PASSWORD;
+  const auth = getAuth();
+  const hasEmail = !!auth.email;
+  const hasPassword = !!auth.password;
   const configured = hasEmail && hasPassword;
-  console.log(
-    '[shipmentService] LogesTechs:',
-    configured ? 'configured (credentials set). Real API will be used.' : 'not configured (LOGESTECHS_EMAIL or LOGESTECHS_PASSWORD missing or empty). Set env vars and redeploy service.'
-  );
+  if (configured) {
+    console.log('[shipmentService] LogesTechs: configured (credentials set). Real API will be used.');
+  } else {
+    const missing = [];
+    if (!hasEmail) missing.push('LOGESTECHS_EMAIL');
+    if (!hasPassword) missing.push('LOGESTECHS_PASSWORD');
+    console.log(
+      '[shipmentService] LogesTechs: not configured. Missing or empty:',
+      missing.join(', '),
+      '— Add them in .env (local) or Render Environment, then restart/redeploy.'
+    );
+  }
 }
 
 function safeLog(label, obj) {
@@ -37,13 +55,6 @@ function safeLog(label, obj) {
       ? JSON.parse(JSON.stringify(obj, (k, v) => (k === 'password' ? '[REDACTED]' : v)))
       : obj;
   console.log(`[shipmentService] ${label}:`, JSON.stringify(sanitized, null, 2));
-}
-
-function getAuth() {
-  return {
-    email: LOGESTECHS_EMAIL,
-    password: LOGESTECHS_PASSWORD,
-  };
 }
 
 function isUuid(s) {
@@ -88,6 +99,7 @@ async function callCreateShipmentApi(body) {
       },
       timeout: 20000,
     });
+    console.log('[shipmentService] LogesTechs API create-shipment success', { status: response.status });
     safeLog('CREATE SHIPMENT RESPONSE', { status: response.status, data: response.data });
     return { data: response.data, error: null };
   } catch (err) {
@@ -224,7 +236,10 @@ async function createShipment(orderId, shipmentInput) {
   if (!auth.email || !auth.password) {
     if (!_loggedSimulation) {
       _loggedSimulation = true;
-      logger.warn('shipmentService LogesTechs not configured: set LOGESTECHS_EMAIL and LOGESTECHS_PASSWORD so shipments appear on LogesTechs app. See: https://www.postman.com/ali-asfour/logestech-s-api/collection/1kmztpz/logestechs-apis');
+      const missing = [];
+      if (!auth.email) missing.push('LOGESTECHS_EMAIL');
+      if (!auth.password) missing.push('LOGESTECHS_PASSWORD');
+      logger.warn('shipmentService LogesTechs not configured: missing or empty env:', missing.join(', '), '— Add in .env (local) or Render Environment, then restart server / Redeploy.');
     }
     const orderResult = await getOrderById(orderId);
     if (orderResult.error) {
@@ -265,6 +280,7 @@ async function createShipment(orderId, shipmentInput) {
     };
   }
 
+  console.log('[shipmentService] Calling LogesTechs API to create shipment for order:', orderId);
   const body = buildShipmentPayload(order, shipmentInput);
   const apiResult = await callCreateShipmentApi(body);
   if (apiResult.error) {
@@ -339,10 +355,14 @@ async function printAwb(shipmentIds) {
   }
   const url = `${SHIPMENT_API_BASE.replace(/\/$/, '')}/guests/${COMPANY_ID}/packages/pdf`;
   safeLog('PRINT PDF REQUEST', { url, body: { ids: shipmentIds } });
+  const idsPayload = shipmentIds.map((id) => {
+    const n = Number(id);
+    return Number.isNaN(n) ? String(id) : n;
+  });
   try {
     const response = await axios.post(
       url,
-      { ids: shipmentIds.map((id) => Number(id)).filter((n) => !Number.isNaN(n)) },
+      { ids: idsPayload },
       {
         headers: { 'company-id': COMPANY_ID, 'Content-Type': 'application/json' },
         timeout: 15000,

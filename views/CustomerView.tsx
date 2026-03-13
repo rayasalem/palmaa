@@ -120,6 +120,22 @@ export const CustomerView: React.FC<Props> = ({
 
   const [useDistrictsVillagesApi, setUseDistrictsVillagesApi] = useState(false);
 
+  const [shippingData, setShippingData] = useState({
+    fullName: user.name || '',
+    email: user.email || '',
+    phone: String(user.phone ?? ''),
+    phone2: '',
+    address: '',
+    paymentMethod: PaymentMethod.COD,
+    villageId: undefined as number | undefined,
+    cityId: undefined as number | undefined,
+    regionId: undefined as number | undefined,
+    cityName: '',
+    villageName: '',
+    shipmentType: 'COD' as ShipmentType,
+    notes: '',
+  });
+
   useEffect(() => {
     if (!showCheckoutForm) return;
     setAddressDataLoaded(false);
@@ -163,22 +179,25 @@ export const CustomerView: React.FC<Props> = ({
       .catch(() => setVillages([]));
   }, [selectedCityId, useDistrictsVillagesApi]);
 
-
-  const [shippingData, setShippingData] = useState({
-    fullName: user.name || '',
-    email: user.email || '',
-    phone: String(user.phone ?? ''),
-    phone2: '',
-    address: '',
-    paymentMethod: PaymentMethod.COD,
-    villageId: undefined as number | undefined,
-    cityId: undefined as number | undefined,
-    regionId: undefined as number | undefined,
-    cityName: '',
-    villageName: '',
-    shipmentType: 'COD' as ShipmentType,
-    notes: '',
-  });
+  // عند استخدام واجهة المحافظات+القرى: إذا اختار محافظة ولا توجد قرى لها، جلب القرى من الـ API
+  useEffect(() => {
+    if (!useDistrictsVillagesApi || !shippingData.cityId) return;
+    const forDistrict = villages.filter((v) => String(v.cityId ?? '') === String(shippingData.cityId));
+    if (forDistrict.length > 0) return;
+    getVillagesApi({ cityId: String(shippingData.cityId) })
+      .then((res) => {
+        if (!res?.success || !Array.isArray(res.data) || res.data.length === 0) return;
+        const ids = new Set(villages.map((v) => String(v.id)));
+        const withCityId = res.data.map((v) => ({
+          ...v,
+          id: String(v.id ?? ''),
+          cityId: String((v as any).cityId ?? shippingData.cityId ?? ''),
+        }));
+        const added = withCityId.filter((v) => !ids.has(v.id));
+        if (added.length > 0) setVillages((prev) => [...prev, ...added]);
+      })
+      .catch(() => {});
+  }, [useDistrictsVillagesApi, shippingData.cityId, villages]);
 
   // Effect to set district/village names from API data when selection or lang changes
   useEffect(() => {

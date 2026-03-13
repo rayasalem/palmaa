@@ -2,6 +2,7 @@
  * Profit service: حساب وتسجيل أرباح التاجر، المتجر، والوسيط عند إتمام بيع.
  * - بيع من التاجر مباشرة: التاجر 85%، المتجر 15%.
  * - بيع عبر الوسيط: التاجر 85%، المتجر 12%، الوسيط 3%.
+ * يُستدعى تلقائياً بعد دفع الطلب (لا يظهر للعميل؛ توزيع داخلي بين التاجر/المتجر/الوسيط فقط).
  */
 
 import { supabase } from '../config/supabaseClient.js';
@@ -15,12 +16,13 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-
 function isValidUuid(s) {
   return typeof s === 'string' && s.trim() && UUID_REGEX.test(s.trim());
 }
-/** order_items.id is TEXT (e.g. ITM-xxxxxxxx); order_profits.order_item_id accepts TEXT or UUID depending on migration */
+/** order_items.id may be TEXT (e.g. ITM-xxxxxxxx). If order_profits.order_item_id is still UUID in DB, pass null for non-UUID to avoid insert error. */
 function orderItemIdForProfits(item) {
   const raw = item && (item.id != null ? item.id : null);
   if (raw == null || raw === '') return null;
   const s = String(raw).trim();
-  return s.length > 0 ? s : null;
+  if (s.length === 0) return null;
+  return isValidUuid(s) ? s : null;
 }
 
 const STORE_RATE = 0.15; // 15% للمتجر عند البيع المباشر
@@ -76,7 +78,8 @@ async function recordProfitsForOrder(orderId) {
     const storeAmount = Math.round(storeRate * itemTotal * 100) / 100;
     const brokerAmount = hasBroker ? Math.round(BROKER_RATE * itemTotal * 100) / 100 : 0;
 
-    const orderItemId = orderItemIdForProfits(item);
+    const rawItemId = orderItemIdForProfits(item);
+    const orderItemId = rawItemId || null;
 
     if (merchantId != null && merchantAmount > 0) {
       rowsToInsert.push({
@@ -112,7 +115,14 @@ async function recordProfitsForOrder(orderId) {
     return { error: null };
   }
 
-  const { error: insertErr } = await supabase.from(ORDER_PROFITS_TABLE).insert(rowsToInsert);
+  let { error: insertErr } = await supabase.from(ORDER_PROFITS_TABLE).insert(rowsToInsert);
+
+  if (insertErr && insertErr.message && /invalid input syntax for type uuid/i.test(insertErr.message)) {
+    const rowsWithNullItemId = rowsToInsert.map((r) => ({ ...r, order_item_id: null }));
+    const retry = await supabase.from(ORDER_PROFITS_TABLE).insert(rowsWithNullItemId);
+    insertErr = retry.error;
+    if (!insertErr) console.log('[profitService] Insert succeeded with order_item_id=null (run migration 014 to store item ids)');
+  }
 
   if (insertErr) {
     logger.error('profitService Insert error', { message: insertErr.message });

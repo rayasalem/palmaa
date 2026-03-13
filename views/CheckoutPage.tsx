@@ -10,9 +10,11 @@ import {
   createCybersourceHostedSession,
   getCities,
   getVillages,
+  getDistrictsAndVillages,
   type City,
   type Village,
 } from '../services/checkoutApi';
+import { DistrictVillageSelect } from '../components/CustomerShared';
 import type { CartItem } from '../types';
 import type { Language } from '../translations';
 
@@ -48,31 +50,43 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
     quantity: 1,
     description: '',
   });
-  const [cities, setCities] = useState<City[]>([]);
+  const [districts, setDistricts] = useState<City[]>([]);
   const [villages, setVillages] = useState<Village[]>([]);
+  const [addressDataLoaded, setAddressDataLoaded] = useState(false);
+  const [useDistrictsVillagesApi, setUseDistrictsVillagesApi] = useState(false);
 
   const totalAmount = cart.reduce((s, p) => s + (p.price || (p as any).price_ils || 0) * p.quantity, 0);
   const suggestedWeight = Math.max(0.5, cart.reduce((s, p) => s + p.quantity, 0) * 0.5);
 
   useEffect(() => {
     (async () => {
+      setAddressDataLoaded(false);
       try {
-        const res = await getCities();
-        if (res.success) {
-          setCities(res.data);
+        const res = await getDistrictsAndVillages();
+        if (res.success && res.data?.districts?.length) {
+          setDistricts(res.data.districts);
+          setVillages(res.data.villages ?? []);
+          setUseDistrictsVillagesApi(true);
+        } else {
+          const citiesRes = await getCities();
+          if (citiesRes.success) setDistricts(citiesRes.data);
+          setVillages([]);
+          setUseDistrictsVillagesApi(false);
         }
+        setAddressDataLoaded(true);
       } catch (e) {
-        console.error('[Checkout] getCities error:', e);
+        console.error('[Checkout] getDistrictsAndVillages error:', e);
+        const citiesRes = await getCities();
+        if (citiesRes.success) setDistricts(citiesRes.data);
+        setVillages([]);
+        setUseDistrictsVillagesApi(false);
+        setAddressDataLoaded(true);
       }
     })();
   }, []);
 
   useEffect(() => {
-    if (!form.cityId) {
-      setVillages([]);
-      setForm((prev) => ({ ...prev, villageId: '', villageName: '' }));
-      return;
-    }
+    if (useDistrictsVillagesApi || !form.cityId) return;
     (async () => {
       try {
         const res = await getVillages({ cityId: form.cityId });
@@ -82,7 +96,29 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
         setVillages([]);
       }
     })();
-  }, [form.cityId]);
+  }, [form.cityId, useDistrictsVillagesApi]);
+
+  // عند استخدام واجهة المحافظات+القرى: إذا اختار محافظة ولا توجد قرى لها، جلب القرى من الـ API
+  useEffect(() => {
+    if (!useDistrictsVillagesApi || !form.cityId) return;
+    const forDistrict = villages.filter((v) => String(v.cityId ?? '') === String(form.cityId));
+    if (forDistrict.length > 0) return;
+    getVillages({ cityId: form.cityId })
+      .then((res) => {
+        if (!res?.success || !Array.isArray(res.data) || res.data.length === 0) return;
+        setVillages((prev) => {
+          const ids = new Set(prev.map((v) => String(v.id)));
+          const withCityId = (res.data || []).map((v) => ({
+            ...v,
+            id: String(v.id ?? ''),
+            cityId: String((v as any).cityId ?? form.cityId ?? ''),
+          }));
+          const added = withCityId.filter((v) => !ids.has(v.id));
+          return added.length > 0 ? [...prev, ...added] : prev;
+        });
+      })
+      .catch(() => {});
+  }, [useDistrictsVillagesApi, form.cityId, villages]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -97,7 +133,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
         return { ...prev, quantity: Math.max(1, parseInt(value, 10) || 1) };
       }
       if (name === 'cityId') {
-        const city = cities.find((c) => c.id === value);
+        const city = districts.find((c) => String(c.id) === String(value));
         return {
           ...prev,
           cityId: value,
@@ -125,11 +161,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
       return false;
     }
     if (!form.cityId) {
-      setError(lang === 'ar' ? 'المدينة مطلوبة' : 'City is required');
+      setError(lang === 'ar' ? 'يرجى اختيار المحافظة' : 'Please select district');
       return false;
     }
     if (!form.villageId) {
-      setError(lang === 'ar' ? 'القرية/الحي مطلوبة' : 'Village is required');
+      setError(lang === 'ar' ? 'يرجى اختيار القرية أو الحي' : 'Please select village');
       return false;
     }
     if (!form.phone.trim()) {
@@ -196,7 +232,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
         setLoading(false);
         return;
       }
-      const orderId = orderRes.order.id;
+      const order = orderRes.order as { id?: string; order_reference?: string };
+      const orderId = String(order?.order_reference ?? order?.id ?? '').trim();
 
       // Persist shipment details client-side for use on return page
       try {
@@ -372,44 +409,37 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
               placeholder={lang === 'ar' ? 'شقة، طابق، معلم قريب' : 'Apartment, floor, landmark'}
             />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1">
-                {lang === 'ar' ? 'المدينة' : 'City'}
-              </label>
-              <select
-                name="cityId"
-                value={form.cityId}
-                onChange={handleChange}
-                className="w-full py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
-              >
-                <option value="">{lang === 'ar' ? 'اختر المدينة' : 'Select city'}</option>
-                {cities.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1">
-                {lang === 'ar' ? 'القرية / الحي' : 'Village / district'}
-              </label>
-              <select
-                name="villageId"
-                value={form.villageId}
-                onChange={handleChange}
-                className="w-full py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
-                disabled={!form.cityId}
-              >
-                <option value="">{lang === 'ar' ? 'اختر القرية' : 'Select village'}</option>
-                {villages.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="grid grid-cols-1 gap-4">
+            {addressDataLoaded ? (
+              <DistrictVillageSelect
+                districts={districts}
+                villages={villages}
+                districtId={form.cityId || undefined}
+                villageId={form.villageId || undefined}
+                villageName={form.villageName}
+                onDistrictChange={(districtId, districtName) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    cityId: districtId,
+                    cityName: districtName,
+                    villageId: '',
+                    villageName: '',
+                  }))
+                }
+                onVillageChange={(villageId, villageName) =>
+                  setForm((prev) => ({ ...prev, villageId: villageId, villageName }))
+                }
+                errorDistrict={false}
+                errorVillage={false}
+                lang={lang}
+                required
+                villageSearchPlaceholder={lang === 'ar' ? 'ابحث عن القرية أو الحي...' : 'Search village or district...'}
+              />
+            ) : (
+              <div className="py-3 text-slate-500 text-sm">
+                {lang === 'ar' ? 'جاري تحميل المحافظات والقرى...' : 'Loading districts and villages...'}
+              </div>
+            )}
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-600 mb-1">{lang === 'ar' ? 'الهاتف' : 'Phone'}</label>

@@ -189,6 +189,13 @@ const FALLBACK_VILLAGES_BY_CITY = {
     { id: '701', name: 'مركز المدينة', nameAr: 'مركز المدينة', nameEn: 'City Center', cityId: '7' },
     { id: '702', name: 'العوجا', nameAr: 'العوجا', nameEn: 'Al-Auja', cityId: '7' },
     { id: '703', name: 'النويعمة', nameAr: 'النويعمة', nameEn: 'An-Nuwayma', cityId: '7' },
+    { id: '704', name: 'عين السلطان', nameAr: 'عين السلطان', nameEn: 'Ain as-Sultan', cityId: '7' },
+    { id: '705', name: 'القلط', nameAr: 'القلط', nameEn: 'Al-Qilt', cityId: '7' },
+    { id: '706', name: 'فصايل', nameAr: 'فصايل', nameEn: 'Fasa\'il', cityId: '7' },
+    { id: '707', name: 'الجفتلك', nameAr: 'الجفتلك', nameEn: 'Al-Jiftlik', cityId: '7' },
+    { id: '708', name: 'الزبيدات', nameAr: 'الزبيدات', nameEn: 'Az-Zubaidat', cityId: '7' },
+    { id: '709', name: 'مرج الغزال', nameAr: 'مرج الغزال', nameEn: 'Marj al-Ghazal', cityId: '7' },
+    { id: '710', name: 'وادي القلط', nameAr: 'وادي القلط', nameEn: 'Wadi al-Qilt', cityId: '7' },
   ],
   8: [
     { id: '801', name: 'مركز المدينة', nameAr: 'مركز المدينة', nameEn: 'City Center', cityId: '8' },
@@ -347,6 +354,11 @@ async function getDistrictsAndVillages() {
         if (result.villages.length === 0) {
           const allVillages = await getVillages('', null);
           result.villages = Array.isArray(allVillages) ? allVillages : [];
+        }
+        // إذا القرى من الـ API بدون cityId فلن تظهر عند فلترة بالمحافظة؛ استخدم القائمة الاحتياطية الكاملة
+        const missingCityId = result.villages.some((v) => !String(v.cityId || '').trim());
+        if (missingCityId && result.districts && result.districts.length > 0) {
+          result.villages = Object.values(FALLBACK_VILLAGES_BY_CITY).flat();
         }
         districtsVillagesCache.data = result;
         districtsVillagesCache.at = Date.now();

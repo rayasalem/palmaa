@@ -89,8 +89,9 @@ async function createHostedSession(orderId, amount) {
   const fieldNamesSent = Object.keys({ ...fields, signature })
     .sort()
     .join(', ');
+  const orderIdLog = typeof orderId === 'string' ? orderId : (orderId && (orderId.id ?? orderId.orderId ?? orderId.order_reference) || '[invalid]');
   logger.info(
-    `[cybersource-hosted] session created orderId=${sanitizeForLog(orderId)} fields_sent=[${fieldNamesSent}]`
+    `[cybersource-hosted] session created orderId=${orderIdLog} fields_sent=[${fieldNamesSent}]`
   );
 
   return {

@@ -224,9 +224,24 @@ async function claimOrder(orderId, customerId) {
   return { data: updated, error: null };
 }
 
+/**
+ * Get order by delivery_id (for shipment ownership checks).
+ * @param {string} deliveryId - delivery_id or shipment id stored on order
+ * @returns {{ data: object | null, error: object | null }}
+ */
+async function getOrderByDeliveryId(deliveryId) {
+  const id = deliveryId && String(deliveryId).trim();
+  if (!id) return { data: null, error: { message: 'deliveryId is required' } };
+  const { data: order, error } = await supabase.from(ORDERS_TABLE).select('*').eq('delivery_id', id).limit(1).single();
+  if (error || !order) return { data: null, error: error || { message: 'Order not found' } };
+  const { data: orderItems } = await supabase.from(ORDER_ITEMS_TABLE).select('*').eq('order_id', order.id);
+  return { data: { ...order, items: orderItems || [] }, error: null };
+}
+
 export {
   createOrder,
   getOrderById,
+  getOrderByDeliveryId,
   getOrdersByCustomerId,
   getOrdersByMerchantId,
   cancelOrder,

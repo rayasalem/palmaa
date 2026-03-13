@@ -533,6 +533,17 @@ const AppContent: React.FC = () => {
     }
   }, [clearCart]);
 
+  // عند عرض صفحة العودة من الدفع (orderId + payment=success) نفرغ السلة فوراً
+  useEffect(() => {
+    if (
+      checkoutReturnOrderId &&
+      String(checkoutReturnOrderId).trim() &&
+      checkoutReturnPayment === 'success'
+    ) {
+      Promise.resolve(clearCart()).catch(() => {});
+    }
+  }, [checkoutReturnOrderId, checkoutReturnPayment, clearCart]);
+
   const openAuth = (view: typeof authView) => {
     // تسجيل التاجر يمر أولاً على صفحة الشروط والأحكام
     if (view === 'REGISTER_MERCHANT') {

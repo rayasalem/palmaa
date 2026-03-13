@@ -1,9 +1,20 @@
 /**
  * Shipment controller: create shipment, get status, print AWB (LogesTechs API).
+ * All actions verify order/shipment ownership (customer, merchant, or ADMIN).
  */
 
 import * as shipmentService from '../services/shipmentService.js';
+import * as orderService from '../services/orderService.js';
 import logger from '../utils/logger.js';
+
+/** Check if the current user may access this order (customer, merchant, or ADMIN). */
+function canAccessOrder(order, req) {
+  const userId = req.auth && req.auth.sub;
+  const role = (req.auth && (req.auth.role || req.auth.role_id || '')) || '';
+  if (role.toUpperCase() === 'ADMIN') return true;
+  if (!userId) return false;
+  return order.customer_id === userId || order.merchant_id === userId;
+}
 
 async function createShipment(req, res) {
   try {
@@ -78,6 +89,14 @@ async function createShipment(req, res) {
       return res.status(400).json({ success: false, error: 'Invalid phone number' });
     }
 
+    const { data: order, error: orderErr } = await orderService.getOrderById(orderId);
+    if (orderErr || !order) {
+      return res.status(404).json({ success: false, error: 'Order not found' });
+    }
+    if (!canAccessOrder(order, req)) {
+      return res.status(403).json({ success: false, error: 'Not authorized to create shipment for this order' });
+    }
+
     const shipmentInput = {
       addressLine1,
       addressLine2,
@@ -129,6 +148,14 @@ async function createShipment(req, res) {
 async function getStatus(req, res) {
   try {
     const { id, barcode } = req.query;
+    const sid = (id && String(id).trim()) || (barcode && String(barcode).trim());
+    if (!sid) {
+      return res.status(400).json({ success: false, error: 'id or barcode is required' });
+    }
+    const { data: orderByDelivery } = await orderService.getOrderByDeliveryId(sid);
+    if (orderByDelivery && !canAccessOrder(orderByDelivery, req)) {
+      return res.status(403).json({ success: false, error: 'Not authorized to view this shipment status' });
+    }
     const { data, error } = await shipmentService.getPackageStatus({ id, barcode });
     if (error) {
       return res.status(400).json({ success: false, error: error.message });
@@ -144,6 +171,14 @@ async function printPdf(req, res) {
   try {
     const { ids } = req.body || {};
     const list = Array.isArray(ids) ? ids : [];
+    for (const sid of list) {
+      const idStr = sid != null ? String(sid).trim() : '';
+      if (!idStr) continue;
+      const { data: orderByDelivery } = await orderService.getOrderByDeliveryId(idStr);
+      if (orderByDelivery && !canAccessOrder(orderByDelivery, req)) {
+        return res.status(403).json({ success: false, error: 'Not authorized to print AWB for one or more shipments' });
+      }
+    }
     const { data, error } = await shipmentService.printAwb(list);
     if (error) {
       return res.status(400).json({ success: false, error: error.message });
@@ -160,6 +195,10 @@ async function cancel(req, res) {
     const { shipmentId } = req.params;
     if (!shipmentId) {
       return res.status(400).json({ success: false, error: 'shipmentId is required' });
+    }
+    const { data: orderByDelivery, error: orderErr } = await orderService.getOrderByDeliveryId(shipmentId);
+    if (!orderErr && orderByDelivery && !canAccessOrder(orderByDelivery, req)) {
+      return res.status(403).json({ success: false, error: 'Not authorized to cancel this shipment' });
     }
     const { data, error } = await shipmentService.cancelShipment(shipmentId);
     if (error) {

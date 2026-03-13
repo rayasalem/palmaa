@@ -5,11 +5,18 @@ function normalizeOrderId(value) {
   if (value == null) return '';
   if (typeof value === 'string') return value.trim();
   if (typeof value === 'object') {
-    const id = value.id ?? value.orderId ?? value.order_id ?? value.order?.id ?? value.order?.orderId;
+    const id =
+      value.id ?? value.orderId ?? value.order_id ?? value.order_reference
+      ?? value.order?.id ?? value.order?.orderId ?? value.order?.order_reference;
     if (id != null && typeof id === 'string') return id.trim();
+    if (id != null && typeof id === 'object') {
+      const nested = id.id ?? id.orderId ?? id.order_reference ?? id.value;
+      if (nested != null && typeof nested === 'string') return nested.trim();
+    }
     if (id != null) return String(id).trim();
   }
-  return String(value);
+  const str = String(value).trim();
+  return str === '[object Object]' ? '' : str;
 }
 
 async function createHostedSessionHandler(req, res) {

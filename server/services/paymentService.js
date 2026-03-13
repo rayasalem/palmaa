@@ -150,11 +150,21 @@ async function handlePaymentCallback(orderId, status, idempotencyKey) {
       logger.warn('paymentService clearCart skipped, no customer_id on order', { orderId });
     }
     // ربط الطلب بالتوصيل: إنشاء شحنة تلقائياً إذا الطلب فيه عنوان توصيل كامل (cityId, villageId)
+    const cityId = order && (order.shipping_city_id ?? order.shippingCityId);
+    const villageId = order && (order.shipping_village_id ?? order.shippingVillageId);
     const hasShippingAddress =
       order &&
-      (order.shipping_city_id != null && String(order.shipping_city_id).trim() !== '') &&
-      (order.shipping_village_id != null && String(order.shipping_village_id).trim() !== '');
+      (cityId != null && String(cityId).trim() !== '') &&
+      (villageId != null && String(villageId).trim() !== '');
+    if (!hasShippingAddress && order && newStatus === 'paid') {
+      logger.warn('paymentService createShipment skipped: order missing shipping_city_id or shipping_village_id (required for LogesTechs)', {
+        orderId,
+        hasCityId: !!(cityId != null && String(cityId).trim() !== ''),
+        hasVillageId: !!(villageId != null && String(villageId).trim() !== ''),
+      });
+    }
     if (hasShippingAddress && !order.delivery_id) {
+      logger.info('paymentService creating shipment for order (LogesTechs)', { orderId });
       try {
         const { error: shipErr } = await shipmentService.createShipment(orderId, order);
         if (shipErr) logger.error('paymentService createShipment after paid', { orderId, message: shipErr.message });

@@ -143,7 +143,7 @@ export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
                         {(o.created_at || (o as any).createdAt) && (
                           <p>
                             <span className="text-slate-500 font-medium">{lang === 'ar' ? 'تاريخ الطلب: ' : 'Order date: '}</span>
-                            {new Date(o.created_at || (o as any).createdAt).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-GB', {
+                            {new Date(o.created_at || (o as any).createdAt).toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-GB', {
                               dateStyle: 'medium',
                               timeStyle: 'short',
                             })}
@@ -220,8 +220,8 @@ export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
                             {(o.delivery_id || o.shipmentId || '').toString().startsWith('sim-') && (
                               <p className="text-[10px] text-amber-700 mt-2">
                                 {lang === 'ar'
-                                  ? 'شحنة محاكاة — لظهور الطلب على موقع لوجستيك اضبط بيانات الدخول (LOGESTECHS_EMAIL / PASSWORD) على السيرفر.'
-                                  : 'Simulated shipment — set LOGESTECHS_EMAIL and PASSWORD on the server for real LogesTechs integration.'}
+                                  ? 'شحنة محاكاة — لظهور الطلب على موقع لوجستيك: أضف LOGESTECHS_EMAIL و LOGESTECHS_PASSWORD في ملف .env (محلياً) أو في Render Environment، ثم أعد تشغيل السيرفر أو اعمل Redeploy.'
+                                  : 'Simulated shipment — add LOGESTECHS_EMAIL and LOGESTECHS_PASSWORD in .env (local) or Render Environment, then restart the server or Redeploy.'}
                               </p>
                             )}
                           </div>

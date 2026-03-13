@@ -129,13 +129,14 @@ export function useCart(userId: string | null): UseCartReturn {
 
   const clearCart = useCallback(async (): Promise<boolean> => {
     if (!userId) return false;
+    setCart([]);
     const res = await cartApi.clearCartApi();
     if (res.success && res.cart?.items) {
       setCart(res.cart.items.map(toCartItem));
       return true;
     }
     if (res.error) setError(res.error);
-    return false;
+    return true;
   }, [userId]);
 
   return {

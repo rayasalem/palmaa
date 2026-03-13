@@ -41,14 +41,11 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({
   const [claimed, setClaimed] = useState(false);
   const [cartCleared, setCartCleared] = useState(false);
 
-  // إفراغ السلة فور وصول صفحة العودة من الدفع (المستخدم رجع من بوابة الدفع = اكتمل الدفع أو ألغى؛ نفضي السلة عند success)
+  // إفراغ السلة فور وصول صفحة العودة من الدفع (لا ننتظر؛ لئلا يغادر المستخدم قبل انتهاء التأخير)
   useEffect(() => {
     if (paymentParam !== 'success' || cartCleared || !clearCart) return;
-    const t = setTimeout(() => {
-      setCartCleared(true);
-      clearCart();
-    }, 800);
-    return () => clearTimeout(t);
+    setCartCleared(true);
+    clearCart();
   }, [paymentParam, cartCleared, clearCart]);
 
   const fetchOrder = useCallback(async () => {
