@@ -224,20 +224,7 @@ async function getCities() {
   if (isCacheValid(cache.citiesAt) && Array.isArray(cache.cities) && cache.cities.length > 0) {
     return cache.cities;
   }
-  // LogesTechs Postman: try paths with and without companyId to match collection
-  const list = await fetchFromApiWithFallbackPaths([
-    `guests/${COMPANY_ID}/cities`,
-    'guests/cities',
-    'addresses/cities',
-    `guests/${COMPANY_ID}/villages-districts`,
-    'guests/villages-districts',
-    'guests/districts',
-  ]);
-  if (list && list.length > 0) {
-    cache.cities = normalizeCityList(list);
-    cache.citiesAt = Date.now();
-    return cache.cities;
-  }
+  // نستخدم قائمة المحافظات الفلسطينية المحلية دائماً لسهولة الفهم للزائر
   cache.cities = FALLBACK_CITIES;
   cache.citiesAt = Date.now();
   return cache.cities;
@@ -246,9 +233,10 @@ async function getCities() {
 function normalizeCityList(arr) {
   return (arr || []).map((c) => ({
     id: String(c.id ?? c.cityId ?? c.city_id ?? ''),
-    name: c.name || c.nameAr || c.nameEn || '',
-    nameAr: c.nameAr || c.name || '',
-    nameEn: c.nameEn || c.name || '',
+    // فضّل الاسم العربي إن وُجد، ثم الاسم العام، ثم الإنجليزي
+    name: c.nameAr || c.name || c.nameEn || '',
+    nameAr: c.nameAr || c.name || c.nameEn || '',
+    nameEn: c.nameEn || c.name || c.nameAr || '',
     regionId: c.regionId ?? c.region_id ?? undefined,
   }));
 }
@@ -263,9 +251,10 @@ function normalizeCityList(arr) {
 function normalizeVillageList(arr, cityId) {
   return (arr || []).map((v) => ({
     id: String(v.id ?? v.villageId ?? v.village_id ?? ''),
-    name: v.name || v.nameAr || v.nameEn || '',
-    nameAr: v.nameAr || v.name || '',
-    nameEn: v.nameEn || v.name || '',
+    // فضّل الاسم العربي إن وُجد، ثم الاسم العام، ثم الإنجليزي
+    name: v.nameAr || v.name || v.nameEn || '',
+    nameAr: v.nameAr || v.name || v.nameEn || '',
+    nameEn: v.nameEn || v.name || v.nameAr || '',
     cityId: String(v.cityId ?? v.city_id ?? cityId ?? ''),
     regionId: v.regionId ?? v.region_id ?? undefined,
   }));
@@ -282,28 +271,9 @@ async function getVillages(search, cityId) {
     }
     return list;
   }
-  const q = { search: search || '', cityId: cityId || '', city_id: cityId || '' };
-  // LogesTechs Postman "Get Villages/Districts" – try with companyId in path then without
-  const listRaw = await fetchFromApiWithFallbackPaths(
-    [
-      `guests/${COMPANY_ID}/villages`,
-      `guests/${COMPANY_ID}/villages-districts`,
-      'guests/villages-districts',
-      'guests/villages',
-      'guests/districts',
-      'addresses/villages',
-      'villages',
-      'districts',
-    ],
-    q
-  );
-  let list = listRaw ? normalizeVillageList(listRaw, cityId) : [];
-
-  const usingExternalApi = !!SHIPMENT_API_BASE;
-  if (cityId && !usingExternalApi) {
-    list = list.filter((v) => String(v.cityId || v.city_id) === String(cityId));
-  }
-  if (list.length === 0 && cityId) {
+  // نستخدم القرى الفلسطينية المحلية دائماً؛ لا نعتمد على أسماء/أكواد خارجية للواجهة
+  let list = [];
+  if (cityId) {
     list = FALLBACK_VILLAGES_BY_CITY[String(cityId)] || [
       { id: '0', name: 'مركز المدينة', nameAr: 'مركز المدينة', nameEn: 'City Center', cityId: String(cityId) },
     ];
@@ -331,44 +301,10 @@ async function getDistrictsAndVillages() {
   if (districtsVillagesCache.data && isCacheValid(districtsVillagesCache.at)) {
     return districtsVillagesCache.data;
   }
-  if (SHIPMENT_API_BASE && String(SHIPMENT_API_BASE).trim()) {
-    const paths = [
-      `guests/${COMPANY_ID}/villages-districts`,
-      'guests/villages-districts',
-      'guests/districts/villages',
-      'addresses/villages-districts',
-    ];
-    for (const path of paths) {
-      const raw = await fetchFromApi(path);
-      if (!raw || typeof raw !== 'object') continue;
-      const districtsArr = extractArray(raw.districts) || extractArray(raw.data?.districts) || extractArray(raw.cities);
-      const villagesArr = extractArray(raw.villages) || extractArray(raw.data?.villages) || extractArray(raw.items);
-      const districts = (districtsArr && districtsArr.length > 0 ? normalizeCityList(districtsArr) : null) || null;
-      const villages =
-        (villagesArr && villagesArr.length > 0 ? normalizeVillageList(villagesArr, null) : null) || null;
-      if ((districts && districts.length > 0) || (villages && villages.length > 0)) {
-        const result = {
-          districts: districts && districts.length > 0 ? districts : await getCities(),
-          villages: villages && villages.length > 0 ? villages : [],
-        };
-        if (result.villages.length === 0) {
-          const allVillages = await getVillages('', null);
-          result.villages = Array.isArray(allVillages) ? allVillages : [];
-        }
-        // إذا القرى من الـ API بدون cityId فلن تظهر عند فلترة بالمحافظة؛ استخدم القائمة الاحتياطية الكاملة
-        const missingCityId = result.villages.some((v) => !String(v.cityId || '').trim());
-        if (missingCityId && result.districts && result.districts.length > 0) {
-          result.villages = Object.values(FALLBACK_VILLAGES_BY_CITY).flat();
-        }
-        districtsVillagesCache.data = result;
-        districtsVillagesCache.at = Date.now();
-        return result;
-      }
-    }
-  }
-  const districts = await getCities();
-  const villages = await getVillages('', null);
-  const result = { districts, villages: Array.isArray(villages) ? villages : [] };
+  // إرجاع جميع المحافظات والقرى الفلسطينية من القوائم المحلية
+  const districts = FALLBACK_CITIES;
+  const villages = Object.values(FALLBACK_VILLAGES_BY_CITY).flat();
+  const result = { districts, villages };
   districtsVillagesCache.data = result;
   districtsVillagesCache.at = Date.now();
   return result;

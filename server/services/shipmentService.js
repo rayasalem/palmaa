@@ -163,8 +163,19 @@ function buildShipmentPayload(order, shipmentInput) {
   const destVillageId = Number(merged.villageId ?? merged.shipping_village_id) || null;
   const destRegionId = Number(merged.regionId ?? merged.shipping_region_id) || null;
 
+  let destAddressLine1 = String(
+    merged.addressLine1 ||
+      merged.address ||
+      merged.shipping_address ||
+      `${merged.cityName || ''} ${merged.villageName || ''}` ||
+      ''
+  ).trim();
+  if (!destAddressLine1) {
+    destAddressLine1 = 'عنوان غير مذكور';
+  }
+
   const destinationAddress = {
-    addressLine1: String(merged.addressLine1 || merged.address || merged.shipping_address || '').trim(),
+    addressLine1: destAddressLine1,
     cityId: destCityId,
     villageId: destVillageId,
     regionId: destRegionId,
