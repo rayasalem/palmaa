@@ -83,7 +83,7 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
   const [likeLoading, setLikeLoading] = useState(false);
   const [commentLoading, setCommentLoading] = useState(false);
 
-  // Fetch Product Logic
+  // Fetch Product Logic — نجلِب من الـ API دائماً (forceRefresh) لظهور آخر تعديل مثل الخصم
   useEffect(() => {
     if (!productId) {
       setIsLoadingProduct(false);
@@ -92,8 +92,7 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
     }
     setIsLoadingProduct(true);
     const loadProduct = async () => {
-      let p = marketStore.getProducts().find((p) => p.id === productId);
-      if (!p) p = await productService.fetchById(productId);
+      const p = await productService.fetchById(productId, true);
       setProduct(p);
       setIsLoadingProduct(false);
     };

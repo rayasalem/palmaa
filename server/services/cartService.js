@@ -6,7 +6,8 @@
 
 import { supabase } from '../config/supabaseClient.js';
 import { applyDiscount } from './productService.js';
-import { getActiveOfferForProduct } from './offersService.js';
+import { getApplicableOffersForProduct } from './offersService.js';
+import { getApplicableMerchantOffersForProduct } from './merchantOffersService.js';
 
 const CARTS_TABLE = 'carts';
 const CART_ITEMS_TABLE = 'cart_items';
@@ -80,16 +81,23 @@ async function addItem(userId, productId, quantity) {
   if (cartErr || !cart) return { data: null, error: cartErr || new Error('Cart not found') };
   const { data: product, error: productErr } = await supabase
     .from(PRODUCTS_TABLE)
-    .select('id, price_ils, price, discount_type, discount_value, is_discount_active, discount_starts_at, discount_ends_at')
+    .select('id, price_ils, price, category, merchant_id, discount_type, discount_value, is_discount_active, discount_starts_at, discount_ends_at')
     .eq('id', productId)
     .single();
   if (productErr || !product) return { data: null, error: { message: 'Product not found' } };
   const basePrice = Number(product.price_ils ?? product.price ?? 0);
   let price = basePrice;
-  const { data: offer } = await getActiveOfferForProduct(productId);
-  if (offer && offer.discount_label != null && Number(offer.discount_label) > 0) {
-    const pct = Math.min(100, Math.max(0, Number(offer.discount_label)));
-    price = Math.max(0, basePrice * (1 - pct / 100));
+  const [platformRes, merchantRes] = await Promise.all([
+    getApplicableOffersForProduct(productId, product.category),
+    product.merchant_id ? getApplicableMerchantOffersForProduct(product.merchant_id, productId, product.category) : { data: [] },
+  ]);
+  const platformOffer = Array.isArray(platformRes.data) && platformRes.data.length > 0 ? platformRes.data[0] : null;
+  const merchantOffer = Array.isArray(merchantRes.data) && merchantRes.data.length > 0 ? merchantRes.data[0] : null;
+  const platformPct = platformOffer && platformOffer.discount_label != null ? Math.min(100, Math.max(0, Number(platformOffer.discount_label))) : 0;
+  const merchantPct = merchantOffer && merchantOffer.discount_label != null ? Math.min(100, Math.max(0, Number(merchantOffer.discount_label))) : 0;
+  const bestPct = Math.max(platformPct, merchantPct);
+  if (bestPct > 0) {
+    price = Math.max(0, basePrice * (1 - bestPct / 100));
   } else {
     const withDiscount = applyDiscount(product);
     price = Number(withDiscount.final_price ?? basePrice);

@@ -8,7 +8,7 @@ import { createShipmentApi, cancelShipmentApi, getShipmentStatusApi } from '../s
 import { fetchMerchantOrders, updateOrderInvoice } from '../services/checkoutApi';
 import { getMerchantDashboard, type MerchantDashboardResponse } from '../services/merchantDashboardService';
 import { translations, getAuthErrorMessage, type Language } from '../translations';
-import { Truck, Trash2, Search, LayoutDashboard, DollarSign, Box, XCircle, Receipt } from 'lucide-react';
+import { Truck, Trash2, Search, LayoutDashboard, DollarSign, Box, XCircle, Receipt, Tag } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
 import { ConfirmModal } from '../components/ConfirmModal';
 
@@ -20,6 +20,9 @@ const MerchantProductsTab = lazy(() =>
 );
 const MerchantOrdersTab = lazy(() =>
   import('./merchant/MerchantOrdersTab').then((m) => ({ default: m.MerchantOrdersTab }))
+);
+const MerchantOffersTab = lazy(() =>
+  import('./merchant/MerchantOffersTab').then((m) => ({ default: m.default }))
 );
 
 interface MerchantViewProps {
@@ -43,7 +46,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders' | 'offers'>('dashboard');
   const [dashboardData, setDashboardData] = useState<MerchantDashboardResponse | null>(null);
 
   // Product Form State (Add/Edit)
@@ -90,6 +93,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
   useEffect(() => {
     if (view === 'orders' || view === 'merchant-orders') setActiveTab('orders');
     else if (view === 'merchant_products' || view === 'products') setActiveTab('products');
+    else if (view === 'offers' || view === 'merchant-offers') setActiveTab('offers');
     else if (view === 'dashboard' || view === 'merchant-dashboard') setActiveTab('dashboard');
   }, [view]);
 
@@ -660,8 +664,9 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
         <div className="dashboard-tabs">
           {[
             { id: 'dashboard', label: t.common.dashboard, icon: LayoutDashboard },
-            { id: 'orders', label: t.common.orders, icon: Truck },
             { id: 'products', label: t.common.products, icon: Box },
+            { id: 'offers', label: lang === 'ar' ? 'عروض التخفيض' : 'Discount offers', icon: Tag },
+            { id: 'orders', label: t.common.orders, icon: Truck },
             ].map((tab) => (
             <button 
               key={tab.id}
@@ -678,6 +683,11 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
       {activeTab === 'dashboard' && (
           <Suspense fallback={tabFallback}>
             <MerchantDashboardTab lang={lang} t={t} dashboardData={dashboardData} orders={orders} products={products} />
+          </Suspense>
+        )}
+        {activeTab === 'offers' && (
+          <Suspense fallback={tabFallback}>
+            <MerchantOffersTab lang={lang} t={t} products={products} onRefresh={refreshData} />
           </Suspense>
         )}
         {activeTab === 'products' && (

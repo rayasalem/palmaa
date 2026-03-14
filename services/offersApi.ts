@@ -15,6 +15,10 @@ export interface ShopOffer {
   product_id?: string | null;
   sort_order: number;
   is_active: boolean;
+  scope?: 'product' | 'category' | 'all';
+  category?: string | null;
+  starts_at?: string | null;
+  ends_at?: string | null;
   created_at?: string;
   updated_at?: string;
 }

@@ -367,39 +367,49 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {offers.map((o) => (
-                  <div
-                    key={o.id}
-                    className="rounded-2xl border border-slate-100 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all"
-                  >
-                    <button
-                      type="button"
-                      className="w-full p-4 flex flex-col justify-between min-h-[140px] text-left"
-                      onClick={() => {
-                        if (o.type === 'product' && o.product_id) onViewProduct?.(o.product_id);
-                        else onNavigateToCatalog?.();
-                      }}
+                {offers.map((o) => {
+                  const goToCatalog = () => {
+                    if (onNavigateToCatalog) onNavigateToCatalog();
+                    else if (typeof window !== 'undefined') window.location.hash = '#/catalog';
+                  };
+                  const handleOfferClick = () => {
+                    if (o.type === 'product' && o.product_id) onViewProduct?.(o.product_id);
+                    else goToCatalog();
+                  };
+                  const isCartDiscount = (o.scope === 'all' || o.scope === 'category') && (o.discount_label ?? 0) > 0;
+                  return (
+                    <div
+                      key={o.id}
+                      className="rounded-2xl border border-slate-100 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer"
+                      role="button"
+                      tabIndex={0}
+                      onClick={handleOfferClick}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleOfferClick(); }}
                     >
-                      {o.image_url ? (
-                        <div className="aspect-square -m-4 mb-2 rounded-t-2xl overflow-hidden bg-slate-100">
-                          <img src={o.image_url} alt="" className="w-full h-full object-cover" />
-                        </div>
-                      ) : null}
-                      <p className="text-xs text-slate-600 line-clamp-2">{o.subtitle || o.title}</p>
-                      <span className="text-2xl font-black text-emerald-600 mt-1">%{o.discount_label || 0}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (o.type === 'product' && o.product_id) onViewProduct?.(o.product_id);
-                        else onNavigateToCatalog?.();
-                      }}
-                      className="w-full py-2 bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700"
-                    >
-                      {lang === 'ar' ? 'تسوق الآن' : 'Shop Now'}
-                    </button>
-                  </div>
-                ))}
+                      <div className="w-full p-4 flex flex-col justify-between min-h-[140px] text-left">
+                        {o.image_url ? (
+                          <div className="aspect-square -m-4 mb-2 rounded-t-2xl overflow-hidden bg-slate-100">
+                            <img src={o.image_url} alt="" className="w-full h-full object-cover" />
+                          </div>
+                        ) : null}
+                        <p className="text-xs text-slate-600 line-clamp-2">{o.subtitle || o.title}</p>
+                        <span className="text-2xl font-black text-emerald-600 mt-1">%{o.discount_label || 0}</span>
+                        {isCartDiscount && (
+                          <p className="text-[10px] text-emerald-600 font-bold mt-0.5">
+                            {lang === 'ar' ? 'خصم على السلة' : 'Cart discount'}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleOfferClick(); }}
+                        className="w-full py-2 bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700"
+                      >
+                        {lang === 'ar' ? 'تسوق الآن' : 'Shop Now'}
+                      </button>
+                    </div>
+                  );
+                })}
                 {discountProducts.map((p) => {
                   const basePrice = p.price ?? p.price_ils ?? 0;
                   const finalPrice = (p as any).final_price != null ? (p as any).final_price : basePrice;

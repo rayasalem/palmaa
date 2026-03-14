@@ -6,7 +6,7 @@ import Logo from '../components/Logo';
 import { ProductConditionBadge } from './ProductConditionBadge';
 import { prefetchComponent, prefetchProductData } from '../prefetch';
 import { Language, translations } from '../translations';
-import { ArrowRight, ShoppingCart, Search, Filter } from 'lucide-react';
+import { ArrowRight, ShoppingCart, Search, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { getOffers, type ShopOffer } from '../services/offersApi';
 
 const CONDITION_OPTIONS = [
@@ -50,6 +50,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(false);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 12;
   /** عروض الإدمن (قسم تخفيضات) */
@@ -291,21 +292,33 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
         </section>
 
         <div className="flex flex-col lg:flex-row gap-10">
-        {/* Sidebar — Filter Options (تصميم مشابه للصورة، كل البيانات محفوظة) */}
+        {/* Sidebar — Filter Options (قابل للطي/الإظهار) */}
         <aside className={`hidden lg:block w-80 shrink-0 sticky h-fit animate-slide-up ${embeddedInLayout ? 'top-20' : 'top-28'}`}>
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b border-slate-200 bg-slate-50/50">
               <h3 className="text-base font-bold text-palma-navy">
                 {lang === 'ar' ? 'خيارات الفلترة' : lang === 'he' ? 'אפשרויות סינון' : 'Filter Options'}
               </h3>
-              <button
-                onClick={resetFilters}
-                className="text-xs font-bold text-palma-primary hover:underline"
-              >
-                {t.common.resetFilters}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={resetFilters}
+                  className="text-xs font-bold text-palma-primary hover:underline"
+                >
+                  {t.common.resetFilters}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsFiltersCollapsed((c) => !c)}
+                  className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-600 transition"
+                  title={lang === 'ar' ? (isFiltersCollapsed ? 'إظهار الفلاتر' : 'إخفاء الفلاتر') : isFiltersCollapsed ? 'Show filters' : 'Hide filters'}
+                >
+                  {isFiltersCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+                </button>
+              </div>
             </div>
 
+            {!isFiltersCollapsed && (
+            <div className="p-6">
             {/* Category */}
             <div className="pb-5 border-b border-slate-100">
               <p className="text-xs font-bold text-slate-600 mb-3 uppercase tracking-wide">
@@ -469,6 +482,8 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                 </label>
               </div>
             </div>
+            </div>
+            )}
           </div>
         </aside>
 
