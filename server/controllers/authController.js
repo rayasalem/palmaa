@@ -14,14 +14,14 @@ function requiresMfaForRole(role) {
 }
 
 /**
- * GET /api/auth/me (protected)
- * Returns current user from JWT. req.auth set by authenticate middleware.
+ * GET /api/auth/me (optionalAuth: no cookie = 200 with user null, avoids 401 in console for guests)
+ * Returns current user from JWT when present; otherwise { success: true, user: null }.
  */
 async function getMe(req, res) {
   try {
     const userId = req.auth && req.auth.sub;
     if (!userId) {
-      return res.status(401).json({ success: false, error: 'Authentication required' });
+      return res.status(200).json({ success: true, user: null });
     }
     const { data: user, error } = await authService.getUserById(userId);
     if (error || !user) {

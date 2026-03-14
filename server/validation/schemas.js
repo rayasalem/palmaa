@@ -137,6 +137,11 @@ export const products = {
     weight: Joi.number().min(0).allow(null),
     dimensions: Joi.any(),
     tags: Joi.any(),
+    discount_type: Joi.string().valid('PERCENT', 'AMOUNT').allow(null),
+    discount_value: Joi.number().min(0).allow(null),
+    is_discount_active: Joi.boolean(),
+    discount_starts_at: Joi.string().isoDate().allow('', null),
+    discount_ends_at: Joi.string().isoDate().allow('', null),
   })
     .or('name', 'title')
     .min(1),
@@ -157,6 +162,11 @@ export const products = {
     weight: Joi.number().min(0).allow(null),
     dimensions: Joi.any(),
     tags: Joi.any(),
+    discount_type: Joi.string().valid('PERCENT', 'AMOUNT').allow(null),
+    discount_value: Joi.number().min(0).allow(null),
+    is_discount_active: Joi.boolean(),
+    discount_starts_at: Joi.string().isoDate().allow('', null),
+    discount_ends_at: Joi.string().isoDate().allow('', null),
   }).min(1),
 };
 

@@ -375,7 +375,10 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
                     <button
                       type="button"
                       className="w-full p-4 flex flex-col justify-between min-h-[140px] text-left"
-                      onClick={() => o.type === 'product' && o.product_id && onViewProduct?.(o.product_id)}
+                      onClick={() => {
+                        if (o.type === 'product' && o.product_id) onViewProduct?.(o.product_id);
+                        else onNavigateToCatalog?.();
+                      }}
                     >
                       {o.image_url ? (
                         <div className="aspect-square -m-4 mb-2 rounded-t-2xl overflow-hidden bg-slate-100">
@@ -387,7 +390,10 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
                     </button>
                     <button
                       type="button"
-                      onClick={() => o.type === 'product' && o.product_id ? onViewProduct?.(o.product_id) : undefined}
+                      onClick={() => {
+                        if (o.type === 'product' && o.product_id) onViewProduct?.(o.product_id);
+                        else onNavigateToCatalog?.();
+                      }}
                       className="w-full py-2 bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700"
                     >
                       {lang === 'ar' ? 'تسوق الآن' : 'Shop Now'}

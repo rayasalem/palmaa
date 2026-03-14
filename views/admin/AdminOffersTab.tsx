@@ -149,9 +149,14 @@ export default function AdminOffersTab() {
                 value={form.type}
                 onChange={(e) => setForm({ ...form, type: e.target.value as 'custom' | 'product' })}
               >
-                <option value="custom">{lang === 'ar' ? 'بطاقة مخصصة' : 'Custom card'}</option>
-                <option value="product">{lang === 'ar' ? 'منتج' : 'Product'}</option>
+                <option value="custom">{lang === 'ar' ? 'بطاقة مخصصة (عرض فقط)' : 'Custom card (display only)'}</option>
+                <option value="product">{lang === 'ar' ? 'منتج — الخصم يُطبّق على السلة' : 'Product — discount applies to cart'}</option>
               </select>
+              <p className="mt-1.5 text-xs text-slate-500">
+                {form.type === 'product'
+                  ? (lang === 'ar' ? 'اختر «منتج» وحدد المنتج ونسبة الخصم لتفعيل الخصم فعلياً عند إضافة المنتج للسلة.' : 'Choose "Product" and set the product + discount % to apply the discount when the item is added to cart.')
+                  : (lang === 'ar' ? 'البطاقة المخصصة للعرض في الواجهة فقط ولا تُطبّق خصماً على السلة.' : 'Custom card is for display only; no discount is applied to the cart.')}
+              </p>
             </div>
             <div>
               <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1">
@@ -180,7 +185,9 @@ export default function AdminOffersTab() {
             </div>
             <div>
               <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1">
-                {lang === 'ar' ? 'نسبة الخصم المعروضة (%)' : 'Discount label (%)'}
+                {form.type === 'product'
+                  ? (lang === 'ar' ? 'نسبة الخصم على السلة (%)' : 'Cart discount (%)')
+                  : (lang === 'ar' ? 'نسبة الخصم المعروضة (%)' : 'Discount label (%)')}
               </label>
               <input
                 type="number"
@@ -191,13 +198,19 @@ export default function AdminOffersTab() {
                 onChange={(e) => setForm({ ...form, discount_label: parseInt(e.target.value, 10) || 0 })}
                 placeholder="20"
               />
+              {form.type === 'product' && form.discount_label > 0 && (
+                <p className="mt-1 text-xs text-emerald-600 font-medium">
+                  {lang === 'ar' ? 'سيُطبّق هذا الخصم عند إضافة المنتج للسلة.' : 'This discount will be applied when the product is added to cart.'}
+                </p>
+              )}
             </div>
             {form.type === 'product' && (
               <div>
                 <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1">
-                  {lang === 'ar' ? 'المنتج' : 'Product'}
+                  {lang === 'ar' ? 'المنتج (مطلوب لتفعيل الخصم على السلة)' : 'Product (required for cart discount)'}
                 </label>
                 <select
+                  required={form.type === 'product'}
                   className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold"
                   value={form.product_id}
                   onChange={(e) => setForm({ ...form, product_id: e.target.value })}

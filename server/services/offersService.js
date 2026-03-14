@@ -35,6 +35,25 @@ export async function getById(id) {
   return { data, error: null };
 }
 
+/** عرض منتج نشط لـ product_id معيّن — يُستخدم لتطبيق خصم العرض على السلة */
+export async function getActiveOfferForProduct(productId) {
+  if (!productId) return { data: null, error: null };
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('id, discount_label')
+    .eq('product_id', productId)
+    .eq('type', 'product')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+    .limit(1);
+  if (error) {
+    logger.error('offersService getActiveOfferForProduct', { message: error.message });
+    return { data: null, error };
+  }
+  const one = Array.isArray(data) && data.length > 0 ? data[0] : null;
+  return { data: one, error: null };
+}
+
 export async function create(payload) {
   const row = {
     type: payload.type === 'product' ? 'product' : 'custom',

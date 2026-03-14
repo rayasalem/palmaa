@@ -6,6 +6,7 @@
 
 import { supabase } from '../config/supabaseClient.js';
 import { applyDiscount } from './productService.js';
+import { getActiveOfferForProduct } from './offersService.js';
 
 const CARTS_TABLE = 'carts';
 const CART_ITEMS_TABLE = 'cart_items';
@@ -83,8 +84,16 @@ async function addItem(userId, productId, quantity) {
     .eq('id', productId)
     .single();
   if (productErr || !product) return { data: null, error: { message: 'Product not found' } };
-  const withDiscount = applyDiscount(product);
-  const price = Number(withDiscount.final_price ?? product.price_ils ?? product.price ?? 0);
+  const basePrice = Number(product.price_ils ?? product.price ?? 0);
+  let price = basePrice;
+  const { data: offer } = await getActiveOfferForProduct(productId);
+  if (offer && offer.discount_label != null && Number(offer.discount_label) > 0) {
+    const pct = Math.min(100, Math.max(0, Number(offer.discount_label)));
+    price = Math.max(0, basePrice * (1 - pct / 100));
+  } else {
+    const withDiscount = applyDiscount(product);
+    price = Number(withDiscount.final_price ?? basePrice);
+  }
   const { data: existingItem } = await supabase
     .from(CART_ITEMS_TABLE)
     .select('id, quantity')

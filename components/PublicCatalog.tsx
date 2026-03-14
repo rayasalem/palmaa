@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { marketStore } from '../store';
 import { productService } from '../services/productService';
 import { Product, PRODUCT_CATEGORIES, CATEGORY_EMOJI } from '../types';
@@ -54,6 +54,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
   const PAGE_SIZE = 12;
   /** عروض الإدمن (قسم تخفيضات) */
   const [offers, setOffers] = useState<ShopOffer[]>([]);
+  const catalogProductsRef = useRef<HTMLDivElement | null>(null);
 
   // Load auxiliary static data — عرض كل التصنيفات المفصّلة مع الإيموجي
   const categories = PRODUCT_CATEGORIES;
@@ -617,7 +618,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
             )}
           </div>
 
-          <div className="relative min-h-[400px]">
+          <div className="relative min-h-[400px]" ref={catalogProductsRef}>
             {isLoading && filteredProducts.length === 0 ? (
               <div className="absolute inset-0 flex items-center justify-center rounded-3xl z-10">
                 <div className="w-10 h-10 border-4 border-palma-primary border-t-transparent rounded-full animate-spin"></div>
@@ -654,7 +655,10 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                           <button
                             key={o.id}
                             type="button"
-                            onClick={() => o.type === 'product' && o.product_id && onProductClick(o.product_id)}
+                            onClick={() => {
+                              if (o.type === 'product' && o.product_id) onProductClick(o.product_id);
+                              else catalogProductsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }}
                             className="min-w-[180px] max-w-[220px] rounded-2xl border border-slate-100 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all flex-shrink-0 text-left"
                           >
                             {o.image_url ? (

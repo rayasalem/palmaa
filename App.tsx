@@ -180,7 +180,7 @@ const AppContent: React.FC = () => {
     setPendingAuthAfterTerms(null);
     if (top === ROUTES.CATALOG) {
       setPublicState('CATALOG');
-      setCurrentView(ROUTES.HOME_APP);
+      setCurrentView('catalog');
     } else if (top === ROUTES.WELCOME) {
       setPublicState('LANDING');
       setCurrentView(ROUTES.HOME_APP);
@@ -907,7 +907,7 @@ const AppContent: React.FC = () => {
               lang={lang}
               user={user}
               productId={selectedProductId}
-              onBack={() => setCurrentView('home')}
+              onBack={() => setCurrentView(user?.role === 'CUSTOMER' ? 'home' : 'shop')}
               onLoginClick={() => {}}
               onRefresh={refreshUser}
               onViewProfile={(id) => {
@@ -1004,12 +1004,27 @@ const AppContent: React.FC = () => {
               </div>
             )}
 
-            {user.role === 'MERCHANT' && (currentView === 'shop' || currentView === 'cart') && (
+            {user.role === 'MERCHANT' && currentView === 'shop' && (
+              <div className="block">
+                <Suspense fallback={<PageLoader />}>
+                  <PublicCatalog
+                    embeddedInLayout
+                    onBack={() => { setCurrentView('dashboard'); updateHash(ROUTES.DASHBOARD); }}
+                    onLoginClick={() => setCurrentView('profile')}
+                    onProductClick={(id) => {
+                      setSelectedProductId(id);
+                      setCurrentView('product_details');
+                    }}
+                  />
+                </Suspense>
+              </div>
+            )}
+            {user.role === 'MERCHANT' && currentView === 'cart' && (
               <div className="block">
                 <Suspense fallback={<PageLoader />}>
                   <CustomerView
                     user={user}
-                    view={currentView}
+                    view="cart"
                     cart={cart}
                     addToCart={addToCart}
                     addingToCartProductId={addingToCartProductId}
@@ -1060,14 +1075,30 @@ const AppContent: React.FC = () => {
               </Suspense>
             )}
 
-            {user.role === 'ADMIN' && (currentView === 'shop' || currentView === 'cart') && (
+            {user.role === 'ADMIN' && currentView === 'shop' && (
+              <div className="block">
+                <Suspense fallback={<PageLoader />}>
+                  <PublicCatalog
+                    embeddedInLayout
+                    onBack={() => { setCurrentView('dashboard'); updateHash(ROUTES.DASHBOARD); }}
+                    onLoginClick={() => setCurrentView('profile')}
+                    onProductClick={(id) => {
+                      setSelectedProductId(id);
+                      setCurrentView('product_details');
+                    }}
+                  />
+                </Suspense>
+              </div>
+            )}
+            {user.role === 'ADMIN' && currentView === 'cart' && (
               <div className="block">
                 <Suspense fallback={<PageLoader />}>
                   <CustomerView
                     user={user}
-                    view={currentView}
+                    view="cart"
                     cart={cart}
                     addToCart={addToCart}
+                    addingToCartProductId={addingToCartProductId}
                     removeFromCart={removeFromCart}
                     updateQuantity={updateQuantity}
                     clearCart={clearCart}
@@ -1114,12 +1145,27 @@ const AppContent: React.FC = () => {
               </Suspense>
             )}
 
-            {user.role === 'BROKER' && (currentView === 'shop' || currentView === 'cart') && (
+            {user.role === 'BROKER' && currentView === 'shop' && (
+              <div className="block">
+                <Suspense fallback={<PageLoader />}>
+                  <PublicCatalog
+                    embeddedInLayout
+                    onBack={() => { setCurrentView('dashboard'); updateHash(ROUTES.DASHBOARD); }}
+                    onLoginClick={() => setCurrentView('profile')}
+                    onProductClick={(id) => {
+                      setSelectedProductId(id);
+                      setCurrentView('product_details');
+                    }}
+                  />
+                </Suspense>
+              </div>
+            )}
+            {user.role === 'BROKER' && currentView === 'cart' && (
               <div className="block">
                 <Suspense fallback={<PageLoader />}>
                   <CustomerView
                     user={user}
-                    view={currentView}
+                    view="cart"
                     cart={cart}
                     addToCart={addToCart}
                     removeFromCart={removeFromCart}

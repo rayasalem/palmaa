@@ -83,7 +83,11 @@ export const authService = {
         return { success: false, error: msg, statusCode: res.status };
       }
       const apiUser = dataObj.user;
-      if (!apiUser || typeof apiUser !== 'object') return { success: false, error: 'Invalid response' };
+      if (apiUser == null) {
+        currentUser = null;
+        return { success: true, data: { user: null } } as ActionResponse<{ user: User | null }>;
+      }
+      if (typeof apiUser !== 'object') return { success: false, error: 'Invalid response' };
       const user = mapApiUserToUser(apiUser as any);
       currentUser = user;
       return { success: true, data: { user } };

@@ -6,7 +6,7 @@ import express from 'express';
 import { getEnv, isProduction } from '../config/env.js';
 import * as authController from '../controllers/authController.js';
 import { authLimiter } from '../middlewares/security.js';
-import { authenticate } from '../middlewares/authMiddleware.js';
+import { authenticate, optionalAuth } from '../middlewares/authMiddleware.js';
 import { validate } from '../middlewares/validate.js';
 import { auth as authSchemas } from '../validation/schemas.js';
 import mfaRoutes from './mfaRoutes.js';
@@ -45,7 +45,7 @@ router.use(authLimiter());
 router.post('/login', validate(authSchemas.login, 'body', 'auth.login'), authController.login);
 router.post('/logout', authController.logout);
 router.post('/logout-all', authenticate, authController.logoutAll);
-router.get('/me', authenticate, authController.getMe);
+router.get('/me', optionalAuth, authController.getMe);
 router.post('/register', validate(authSchemas.register, 'body', 'auth.register'), authController.registerUser);
 router.post('/verify-email', validate(authSchemas.verifyEmail, 'body', 'auth.verifyEmail'), authController.verifyEmail);
 router.post(
