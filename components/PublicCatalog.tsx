@@ -126,6 +126,14 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
     }).slice(0, 8);
   }, [filteredProducts]);
 
+  /** المنتجات الشائعة — للقسم الأفقي (أفضل تقييم أو الأحدث) */
+  const popularProducts = useMemo(() => {
+    const all = marketStore.getProducts().filter((p) => p.isActive !== false);
+    return [...all]
+      .sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0) || (b.createdAt ?? 0) - (a.createdAt ?? 0))
+      .slice(0, 8);
+  }, [filteredProducts]);
+
   /** قائمة التجار من المنتجات (لفلتر العلامة/التاجر) — بدون حذف بيانات */
   const merchantsList = useMemo(() => {
     const all = marketStore.getProducts().filter((p) => p.isActive !== false);
@@ -232,30 +240,56 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
       </nav>
       )}
 
-      {/* Hero منصة التسوق — أي زائر يمكنه التصفح بدون تسجيل */}
-      <section className="relative py-8 sm:py-12 px-4 border-b border-palma-border/50 bg-gradient-to-b from-white/80 to-transparent">
+      {/* 1. Hero — منصة التسوق واحدة للجميع (زائر، زبون، تاجر، إلخ) */}
+      <section className="relative py-6 sm:py-10 px-4 border-b border-palma-border/50 bg-gradient-to-b from-palma-primaryLight/20 to-transparent">
         <div className="max-w-[1600px] mx-auto text-center">
-          <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-black text-palma-navy tracking-tight mb-2">
-            {lang === 'ar' ? 'المنتجات المميزة' : lang === 'he' ? 'מוצרים מובחרים' : 'Featured Products'}
+          <p className="text-4xl sm:text-5xl mb-3" aria-hidden>🛒</p>
+          <h1 className="font-heading text-2xl sm:text-3xl md:text-4xl font-black text-palma-navy tracking-tight mb-2">
+            {lang === 'ar' ? 'تسوق من ماركت بليس بالما' : lang === 'he' ? 'קנה ממרקט פלמה' : 'Shop Palma Marketplace'}
           </h1>
-          <p className="text-sm sm:text-base text-palma-muted font-medium max-w-xl mx-auto mb-1">
+          <p className="text-sm sm:text-base text-palma-muted font-medium max-w-xl mx-auto">
             {lang === 'ar'
               ? 'اكتشف منتجات من تجار موثوقين — تصفّح، قارن، واطلب بسهولة'
               : lang === 'he'
                 ? 'גלה מוצרים ממרכולים מהימנים'
-                : 'Discover products from trusted merchants — browse, compare, and order with ease'}
-          </p>
-          <p className="text-xs text-palma-primary font-semibold">
-            {lang === 'ar'
-              ? 'تصفّح كزائر — لا تحتاج تسجيل للتصفّح'
-              : lang === 'he'
-                ? 'גלוש כאורח — אין צורך בהרשמה'
-                : 'Browse as visitor — no sign-up required to browse'}
+                : 'Discover products from trusted merchants — browse, compare, order with ease'}
           </p>
         </div>
       </section>
 
-      <main className="pt-8 pb-20 px-4 sm:px-8 max-w-[1600px] mx-auto flex flex-col lg:flex-row gap-10">
+      <main className="pt-6 pb-20 px-4 sm:px-8 max-w-[1600px] mx-auto flex flex-col gap-8">
+        {/* 2. شريط التصنيفات الأفقي — إيموجي + اسم (واحد للجميع) */}
+        <section className="w-full" aria-label={lang === 'ar' ? 'التصنيفات' : 'Categories'}>
+          <h2 className="text-sm font-black text-slate-600 uppercase tracking-wider mb-3 px-1 flex items-center gap-2">
+            <span aria-hidden>📦</span>
+            {lang === 'ar' ? 'تصفّح حسب التصنيف' : lang === 'he' ? 'עיון לפי קטגוריה' : 'Browse by category'}
+          </h2>
+          <div className="overflow-x-auto scrollbar-hide pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <div className="flex gap-2 min-w-max">
+              <button
+                type="button"
+                onClick={() => setCategoryId('all')}
+                className={`flex-shrink-0 flex items-center gap-2 px-4 py-3 rounded-2xl border-2 font-bold text-sm transition-all whitespace-nowrap ${categoryId === 'all' ? 'bg-palma-primary border-palma-primary text-white shadow-md' : 'bg-white border-slate-200 text-slate-700 hover:border-palma-primary/50 hover:bg-palma-primaryLight/20'}`}
+              >
+                <span>📂</span>
+                {t.common.allCategories}
+              </button>
+              {categories.slice(0, 16).map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setCategoryId(categoryId === cat ? 'all' : cat)}
+                  className={`flex-shrink-0 flex items-center gap-2 px-4 py-3 rounded-2xl border-2 font-bold text-sm transition-all whitespace-nowrap ${categoryId === cat ? 'bg-palma-primary border-palma-primary text-white shadow-md' : 'bg-white border-slate-200 text-slate-700 hover:border-palma-primary/50 hover:bg-palma-primaryLight/20'}`}
+                >
+                  <span>{CATEGORY_EMOJI[cat] || '📦'}</span>
+                  {t.categories[cat as keyof typeof t.categories] || cat}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <div className="flex flex-col lg:flex-row gap-10">
         {/* Sidebar — Filter Options (تصميم مشابه للصورة، كل البيانات محفوظة) */}
         <aside className={`hidden lg:block w-80 shrink-0 sticky h-fit animate-slide-up ${embeddedInLayout ? 'top-20' : 'top-28'}`}>
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
@@ -549,7 +583,11 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
             </div>
           )}
 
-          {/* عرض النتائج + الترتيب — "Showing 1-12 of N results" + Sort */}
+          {/* 5. 📋 كل المنتجات — شبكة النتائج مع الفلترة */}
+          <h3 className="text-sm font-black uppercase tracking-widest text-palma-navy px-2 mb-3 flex items-center gap-2">
+            <span aria-hidden>📋</span>
+            {lang === 'ar' ? 'كل المنتجات' : lang === 'he' ? 'כל המוצרים' : 'All products'}
+          </h3>
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 px-2">
             <p className="text-sm font-medium text-slate-600">
               {lang === 'ar'
@@ -597,10 +635,11 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
               </div>
             ) : (
               <>
-                {/* تخفيضات — عروض الإدمن + منتجات عليها خصم */}
-                <section className="mb-8" aria-label={lang === 'ar' ? 'تخفيضات' : 'Discounts'}>
-                  <h3 className="text-lg font-black text-slate-800 mb-4">
-                    {lang === 'ar' ? 'تخفيضات' : lang === 'he' ? 'הנחות' : 'Discount Shop'}
+                {/* 3. 🏷️ تخفيضات وعروض — عروض الإدمن + منتجات عليها خصم */}
+                <section className="mb-8" aria-label={lang === 'ar' ? 'تخفيضات وعروض' : 'Discounts & Offers'}>
+                  <h3 className="text-lg font-black text-slate-800 mb-4 flex items-center gap-2">
+                    <span aria-hidden>🏷️</span>
+                    {lang === 'ar' ? 'تخفيضات وعروض' : lang === 'he' ? 'הנחות ומבצעים' : 'Discounts & Offers'}
                   </h3>
                   {offers.length === 0 && discountProducts.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/30 p-8 text-center min-h-[120px] flex flex-col items-center justify-center">
@@ -676,10 +715,106 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                   )}
                 </section>
 
-                {/* منتجات جديدة — آخر المنتجات المضافة */}
+                {/* 3b. ⭐ المنتجات الشائعة — أفقي */}
+                {popularProducts.length > 0 && (
+                  <section className="mb-8 space-y-3" aria-label={lang === 'ar' ? 'المنتجات الشائعة' : 'Popular products'}>
+                    <h3 className="text-sm font-black uppercase tracking-widest text-palma-navy px-1 flex items-center gap-2">
+                      <span aria-hidden>⭐</span>
+                      {lang === 'ar' ? 'المنتجات الشائعة' : lang === 'he' ? 'מוצרים פופולריים' : 'Popular products'}
+                    </h3>
+                    <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-300 pb-2">
+                      <div className="flex gap-4 min-w-0">
+                        {popularProducts.map((p) => {
+                          const basePrice = p.price ?? p.price_ils ?? 0;
+                          const finalPrice = (p as any).final_price != null ? (p as any).final_price : basePrice;
+                          const hasDiscount = finalPrice < basePrice;
+                          return (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => onProductClick(p.id)}
+                              onMouseEnter={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}
+                              className="min-w-[180px] max-w-[220px] bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex-shrink-0 text-left overflow-hidden group"
+                            >
+                              <div className="aspect-[4/3] overflow-hidden bg-slate-50 relative">
+                                <img
+                                  src={p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/300x200?text=No+Image'}
+                                  loading="lazy"
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                  alt={p.name}
+                                />
+                                {hasDiscount && (
+                                  <span className="absolute top-2 left-2 bg-red-600 text-white px-2 py-0.5 rounded-sm text-[10px] font-black">
+                                    %{Math.round((1 - finalPrice / basePrice) * 100)} {lang === 'ar' ? 'خصم' : 'off'}
+                                  </span>
+                                )}
+                                {(p.rating ?? 0) > 0 && (
+                                  <span className="absolute bottom-2 left-2 bg-amber-400 text-amber-900 px-2 py-0.5 rounded text-[10px] font-bold">
+                                    ★ {Number(p.rating).toFixed(1)}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="p-3 space-y-1">
+                                <p className="text-[11px] font-bold text-palma-navy line-clamp-2">{p.name}</p>
+                                <p className="text-[11px] font-semibold text-palma-primary">
+                                  {hasDiscount ? (
+                                    <><span className="text-red-600 font-bold">₪{finalPrice}</span> <span className="line-through text-slate-400">₪{basePrice}</span></>
+                                  ) : (
+                                    <>₪{basePrice}</>
+                                  )}
+                                </p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {/* 3b. ⭐ المنتجات الشائعة */}
+                {popularProducts.length > 0 && (
+                  <section className="mb-8 space-y-3" aria-label={lang === 'ar' ? 'المنتجات الشائعة' : 'Popular products'}>
+                    <h3 className="text-sm font-black uppercase tracking-widest text-palma-navy px-1 flex items-center gap-2">
+                      <span aria-hidden>⭐</span>
+                      {lang === 'ar' ? 'المنتجات الشائعة' : lang === 'he' ? 'מוצרים פופולריים' : 'Popular products'}
+                    </h3>
+                    <div className="overflow-x-auto scrollbar-thin pb-2">
+                      <div className="flex gap-4 min-w-0">
+                        {popularProducts.map((p) => {
+                          const basePrice = p.price ?? p.price_ils ?? 0;
+                          const finalPrice = (p as any).final_price != null ? (p as any).final_price : basePrice;
+                          const hasDiscount = finalPrice < basePrice;
+                          return (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => onProductClick(p.id)}
+                              onMouseEnter={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}
+                              className="min-w-[180px] max-w-[220px] bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md flex-shrink-0 text-left overflow-hidden group"
+                            >
+                              <div className="aspect-[4/3] overflow-hidden bg-slate-50 relative">
+                                <img src={p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/300x200'} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform" alt={p.name} />
+                                {hasDiscount && <span className="absolute top-2 left-2 bg-red-600 text-white px-2 py-0.5 rounded text-[10px] font-black">%{Math.round((1 - finalPrice / basePrice) * 100)}</span>}
+                                {(p.rating ?? 0) > 0 && <span className="absolute bottom-2 left-2 bg-amber-400 text-amber-900 px-2 py-0.5 rounded text-[10px] font-bold">★ {Number(p.rating).toFixed(1)}</span>}
+                              </div>
+                              <div className="p-3">
+                                <p className="text-[11px] font-bold text-palma-navy line-clamp-2">{p.name}</p>
+                                <p className="text-[11px] font-semibold text-palma-primary">{hasDiscount ? <><span className="text-red-600">₪{finalPrice}</span> <span className="line-through text-slate-400">₪{basePrice}</span></> : <>₪{basePrice}</>}</p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                {/* 4. 🆕 منتجات جديدة — آخر المنتجات المضافة */}
                 {newProducts.length > 0 && (
                   <section className="mb-8 space-y-3" aria-label={lang === 'ar' ? 'منتجات جديدة' : lang === 'he' ? 'מוצרים חדשים' : 'New arrivals'}>
-                    <h3 className="text-sm font-black uppercase tracking-widest text-palma-navy px-1">
+                    <h3 className="text-sm font-black uppercase tracking-widest text-palma-navy px-1 flex items-center gap-2">
+                      <span aria-hidden>🆕</span>
                       {lang === 'ar' ? 'منتجات جديدة' : lang === 'he' ? 'מוצרים חדשים' : 'New arrivals'}
                     </h3>
                     <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
@@ -952,7 +1087,8 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
             return (
               <section className="mt-4 space-y-3">
                 <div className="flex items-center justify-between px-2">
-                  <h3 className="text-sm font-black uppercase tracking-widest text-palma-navy">
+                  <h3 className="text-sm font-black uppercase tracking-widest text-palma-navy flex items-center gap-2">
+                    <span aria-hidden>👀</span>
                     {lang === 'ar'
                       ? 'شو شفت مؤخراً'
                       : lang === 'he'
@@ -1013,7 +1149,8 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                 </div>
               </section>
             );
-          })()}
+            })()}
+        </div>
         </div>
       </main>
 
