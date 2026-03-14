@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { productService } from '../services/productService';
 import { Product } from '../types';
 import { marketStore } from '../store';
@@ -32,6 +32,7 @@ import {
   Instagram,
   MessageCircle,
   MailCheck,
+  ArrowLeft,
 } from 'lucide-react';
 
 const LANG_LABELS: Record<Language, string> = { ar: 'العربية', en: 'English', he: 'עברית' };
@@ -83,6 +84,16 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
     };
     fetchFeatured();
   }, []);
+
+  /** منتجات جديدة — آخر المنتجات المضافة للموقع (مرتبة حسب تاريخ الإضافة) */
+  const newProducts = useMemo(
+    () =>
+      [...(products || [])]
+        .filter((p) => p.isActive !== false)
+        .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+        .slice(0, 12),
+    [products]
+  );
 
   // إعادة جلب المنتجات عند العودة للصفحة (مثلاً بعد حذف من لوحة الإدارة) لضمان عرض محدث
   useEffect(() => {
@@ -340,6 +351,119 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
           <ComingSoonHero lang={lang} onStartNow={onJoinRegister} onExploreProducts={onExploreProducts} />
         </section>
 
+        {/* 2. المنتجات المميزة — كاروسيل تمرير أفقي (الترتيب الثالث: ناف بار → هيرو → هذا القسم → ثم المنتجات) */}
+        <section id="featured-products" className="section-bg-6 py-24 sm:py-32 overflow-hidden">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="heading-block mb-6">
+              <h2 className="heading-block-title heading-block-title-creative font-heading text-4xl lg:text-5xl">
+                {t.common.featured}
+              </h2>
+              <div className="w-16 h-1.5 bg-palma-primary mx-auto rounded-full my-2" aria-hidden />
+              <p className="heading-block-sub">{t.common.featuredSub}</p>
+            </div>
+            <p className="text-center text-xs font-semibold text-palma-muted mb-6">
+              {lang === 'ar'
+                ? 'التمرير تلقائي — أو اسحبي للتصفح'
+                : lang === 'he'
+                  ? 'גלילה אוטומטית — או גרור'
+                  : 'Auto-scrolling — or drag to browse'}
+            </p>
+            <div className="relative w-full overflow-hidden">
+              <div
+                className="absolute left-0 top-0 bottom-4 w-24 sm:w-32 z-10 pointer-events-none"
+                style={{ background: 'linear-gradient(to right, #f1f5f9 0%, transparent 100%)' }}
+                aria-hidden
+              />
+              <div
+                className="absolute right-0 top-0 bottom-4 w-24 sm:w-32 z-10 pointer-events-none"
+                style={{ background: 'linear-gradient(to left, #f1f5f9 0%, transparent 100%)' }}
+                aria-hidden
+              />
+              <div
+                ref={featuredScrollRef}
+                onMouseEnter={() => setAutoScrollPaused(true)}
+                onMouseLeave={() => setAutoScrollPaused(false)}
+                className="flex gap-6 overflow-x-auto overflow-y-hidden pb-4 pt-2 scrollbar-hide w-full"
+                style={{
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
+                  direction: 'ltr',
+                  scrollBehavior: 'auto',
+                  WebkitOverflowScrolling: 'touch',
+                }}
+                role="region"
+                aria-label={lang === 'ar' ? 'المنتجات المميزة' : 'Featured products'}
+              >
+                {[...products, ...products].map((p, index) => {
+                  const mainImage =
+                    p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/400x400?text=No+Image';
+                  const mName =
+                    p.merchantName || marketStore.getMerchantNameByUserId(p.merchant_id || p.merchantId || '');
+                  const shortDesc = p.shortDescription || (p.description || '').slice(0, 50) || mName;
+                  const stock = p.stock ?? 0;
+                  return (
+                    <div
+                      key={`${p.id}-${index}`}
+                      onClick={() => onViewProduct && onViewProduct(p.id)}
+                      onMouseEnter={() => {
+                        prefetchComponent('PublicProductDetails');
+                        prefetchProductData(p.id);
+                      }}
+                      className="flex-shrink-0 w-[280px] sm:w-[300px] snap-center bg-white rounded-2xl border border-palma-border shadow-card hover:shadow-card-hover transition-all duration-300 group cursor-pointer overflow-hidden"
+                    >
+                      <div className="aspect-square overflow-hidden bg-slate-50 relative">
+                        <img
+                          src={mainImage}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          alt={p.name}
+                        />
+                        <div className="absolute top-3 left-3 bg-palma-primary text-white px-3 py-1.5 rounded-lg text-sm font-black shadow-lg">
+                          ₪{p.price ?? p.price_ils ?? 0}
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <h4 className="font-black text-palma-navy text-base mb-1 group-hover:text-palma-primary transition-colors line-clamp-2">
+                          {p.name}
+                        </h4>
+                        <p className="text-xs text-slate-500 mb-2 line-clamp-1">{shortDesc}</p>
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          {stock > 0 && (
+                            <span className="text-[10px] font-bold text-slate-600">
+                              {lang === 'ar'
+                                ? `متوفر: ${stock}`
+                                : lang === 'he'
+                                  ? `במלאי: ${stock}`
+                                  : `Available: ${stock}`}
+                            </span>
+                          )}
+                          <ProductConditionBadge condition={p.condition} lang={lang} className="shrink-0" />
+                        </div>
+                        <p className="text-[10px] font-bold text-slate-400">{mName}</p>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onViewProduct && onViewProduct(p.id);
+                          }}
+                          className="mt-3 w-full py-2.5 bg-palma-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-palma-primaryHover transition-colors"
+                        >
+                          {t.common.details}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            {products.length === 0 && (
+              <div className="text-center py-12 text-slate-400 font-medium">
+                {lang === 'ar' ? 'لا توجد منتجات مميزة حالياً' : 'No featured products yet'}
+              </div>
+            )}
+          </div>
+        </section>
+
         {/* الإحصائيات – أرقام تفاعلية تجذب الانتباه */}
         <section className="bg-white pt-4 pb-14 sm:pt-6 sm:pb-20 border-y border-palma-border relative z-10 -mt-2">
           <div className="max-w-7xl mx-auto px-6">
@@ -379,6 +503,105 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
             </div>
           </div>
         </section>
+
+        {/* قسم منتجات جديدة — آخر المنتجات المضافة للموقع */}
+        {newProducts.length > 0 && (
+          <section
+            id="new-products"
+            className="bg-palma-soft py-14 sm:py-20 border-b border-palma-border"
+            aria-label={lang === 'ar' ? 'منتجات جديدة' : lang === 'he' ? 'מוצרים חדשים' : 'New arrivals'}
+          >
+            <div className="max-w-7xl mx-auto px-6">
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+                <div>
+                  <h2 className="font-heading text-2xl sm:text-3xl font-black text-palma-navy">
+                    {lang === 'ar' ? 'منتجات جديدة' : lang === 'he' ? 'מוצרים חדשים' : 'New arrivals'}
+                  </h2>
+                  <p className="text-sm text-palma-muted mt-1">
+                    {lang === 'ar'
+                      ? 'آخر المنتجات المضافة للموقع'
+                      : lang === 'he'
+                        ? 'המוצרים האחרונים שנוספו לאתר'
+                        : 'Latest products added to the site'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={onExploreProducts}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-palma-primary text-palma-primary font-bold text-sm hover:bg-palma-primary hover:text-white transition-all duration-200"
+                >
+                  {lang === 'ar' ? 'عرض الكل' : lang === 'he' ? 'הצג הכל' : 'View all'}
+                  <ArrowLeft className="w-4 h-4 rtl:rotate-180" aria-hidden />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                {newProducts.map((p) => {
+                  const mainImage =
+                    p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/400x400?text=No+Image';
+                  const mName =
+                    p.merchantName || marketStore.getMerchantNameByUserId(p.merchant_id || p.merchantId || '');
+                  const basePrice = p.price ?? p.price_ils ?? 0;
+                  const finalPrice = (p as any).final_price != null ? (p as any).final_price : basePrice;
+                  const hasDiscount = finalPrice < basePrice;
+                  const discountPercent =
+                    (p as any).discount_percent != null
+                      ? Number((p as any).discount_percent)
+                      : basePrice > 0 && hasDiscount
+                        ? Math.round((1 - finalPrice / basePrice) * 100)
+                        : 0;
+                  return (
+                    <div
+                      key={p.id}
+                      onClick={() => onViewProduct?.(p.id)}
+                      onMouseEnter={() => {
+                        prefetchComponent('PublicProductDetails');
+                        prefetchProductData(p.id);
+                      }}
+                      className="bg-white rounded-2xl border border-palma-border shadow-card hover:shadow-card-hover transition-all duration-300 group cursor-pointer overflow-hidden"
+                    >
+                      <div className="aspect-square overflow-hidden bg-slate-50 relative">
+                        <img
+                          src={mainImage}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          alt={p.name || ''}
+                        />
+                        {hasDiscount && (
+                          <div className="absolute top-2 left-2 bg-red-600 text-white px-2.5 py-1 rounded-sm text-xs font-black shadow-lg">
+                            {discountPercent > 0 ? (
+                              <span>%{discountPercent}-</span>
+                            ) : (
+                              <span>{lang === 'ar' ? 'تخفيضات!' : lang === 'he' ? 'הנחות!' : 'Sale!'}</span>
+                            )}
+                          </div>
+                        )}
+                        <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold shadow-lg text-palma-navy border border-slate-200/80">
+                          {hasDiscount ? (
+                            <span className="flex items-baseline gap-1.5">
+                              <span className="font-bold text-red-600">₪{finalPrice}</span>
+                              <span className="line-through text-[10px] text-slate-400">₪{basePrice}</span>
+                            </span>
+                          ) : (
+                            <>₪{basePrice}</>
+                          )}
+                        </div>
+                        <span className="absolute bottom-2 right-2 bg-palma-primary text-white px-2 py-0.5 rounded-lg text-[10px] font-black">
+                          {lang === 'ar' ? 'جديد' : lang === 'he' ? 'חדש' : 'New'}
+                        </span>
+                      </div>
+                      <div className="p-3 sm:p-4">
+                        <h3 className="font-bold text-palma-navy text-sm sm:text-base line-clamp-2 group-hover:text-palma-primary transition-colors">
+                          {p.name}
+                        </h3>
+                        <p className="text-xs text-palma-muted mt-0.5 truncate">{mName}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* 2. كل ما يحتاجه عملك — داخل مساحة/منصة واحدة */}
         <section id="features" className="section-bg-1 py-24 relative overflow-hidden border-b border-palma-border">
@@ -708,119 +931,6 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
           </div>
         </section>
 
-        {/* 6. المنتجات المميزة — كاروسيل تمرير أفقي */}
-        <section id="products" className="section-bg-6 py-24 sm:py-32 overflow-hidden">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="heading-block mb-6">
-              <h2 className="heading-block-title heading-block-title-creative font-heading text-4xl lg:text-5xl">
-                {t.common.featured}
-              </h2>
-              <div className="w-16 h-1.5 bg-palma-primary mx-auto rounded-full my-2" aria-hidden />
-              <p className="heading-block-sub">{t.common.featuredSub}</p>
-            </div>
-            <p className="text-center text-xs font-semibold text-palma-muted mb-6">
-              {lang === 'ar'
-                ? 'التمرير تلقائي — أو اسحبي للتصفح'
-                : lang === 'he'
-                  ? 'גלילה אוטומטית — או גרור'
-                  : 'Auto-scrolling — or drag to browse'}
-            </p>
-            <div className="relative w-full overflow-hidden">
-              <div
-                className="absolute left-0 top-0 bottom-4 w-24 sm:w-32 z-10 pointer-events-none"
-                style={{ background: 'linear-gradient(to right, #f1f5f9 0%, transparent 100%)' }}
-                aria-hidden
-              />
-              <div
-                className="absolute right-0 top-0 bottom-4 w-24 sm:w-32 z-10 pointer-events-none"
-                style={{ background: 'linear-gradient(to left, #f1f5f9 0%, transparent 100%)' }}
-                aria-hidden
-              />
-              <div
-                ref={featuredScrollRef}
-                onMouseEnter={() => setAutoScrollPaused(true)}
-                onMouseLeave={() => setAutoScrollPaused(false)}
-                className="flex gap-6 overflow-x-auto overflow-y-hidden pb-4 pt-2 scrollbar-hide w-full"
-                style={{
-                  scrollbarWidth: 'none',
-                  msOverflowStyle: 'none',
-                  direction: 'ltr',
-                  scrollBehavior: 'auto',
-                  WebkitOverflowScrolling: 'touch',
-                }}
-                role="region"
-                aria-label={lang === 'ar' ? 'المنتجات المميزة' : 'Featured products'}
-              >
-                {/* عرض نسختين من القائمة لتمرير لا نهائي سلس */}
-                {[...products, ...products].map((p, index) => {
-                  const mainImage =
-                    p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/400x400?text=No+Image';
-                  const mName =
-                    p.merchantName || marketStore.getMerchantNameByUserId(p.merchant_id || p.merchantId || '');
-                  const shortDesc = p.shortDescription || (p.description || '').slice(0, 50) || mName;
-                  const stock = p.stock ?? 0;
-                  return (
-                    <div
-                      key={`${p.id}-${index}`}
-                      onClick={() => onViewProduct && onViewProduct(p.id)}
-                      onMouseEnter={() => {
-                        prefetchComponent('PublicProductDetails');
-                        prefetchProductData(p.id);
-                      }}
-                      className="flex-shrink-0 w-[280px] sm:w-[300px] snap-center bg-white rounded-2xl border border-palma-border shadow-card hover:shadow-card-hover transition-all duration-300 group cursor-pointer overflow-hidden"
-                    >
-                      <div className="aspect-square overflow-hidden bg-slate-50 relative">
-                        <img
-                          src={mainImage}
-                          loading="lazy"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          alt={p.name}
-                        />
-                        <div className="absolute top-3 left-3 bg-palma-primary text-white px-3 py-1.5 rounded-lg text-sm font-black shadow-lg">
-                          ₪{p.price ?? p.price_ils ?? 0}
-                        </div>
-                      </div>
-                      <div className="p-4">
-                        <h4 className="font-black text-palma-navy text-base mb-1 group-hover:text-palma-primary transition-colors line-clamp-2">
-                          {p.name}
-                        </h4>
-                        <p className="text-xs text-slate-500 mb-2 line-clamp-1">{shortDesc}</p>
-                        <div className="flex flex-wrap items-center gap-2 mb-2">
-                          {stock > 0 && (
-                            <span className="text-[10px] font-bold text-slate-600">
-                              {lang === 'ar'
-                                ? `متوفر: ${stock}`
-                                : lang === 'he'
-                                  ? `במלאי: ${stock}`
-                                  : `Available: ${stock}`}
-                            </span>
-                          )}
-                          <ProductConditionBadge condition={p.condition} lang={lang} className="shrink-0" />
-                        </div>
-                        <p className="text-[10px] font-bold text-slate-400">{mName}</p>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onViewProduct && onViewProduct(p.id);
-                          }}
-                          className="mt-3 w-full py-2.5 bg-palma-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-palma-primaryHover transition-colors"
-                        >
-                          {t.common.details}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            {products.length === 0 && (
-              <div className="text-center py-12 text-slate-400 font-medium">
-                {lang === 'ar' ? 'لا توجد منتجات مميزة حالياً' : 'No featured products yet'}
-              </div>
-            )}
-          </div>
-        </section>
         {/* Testimonials */}
         <section className="section-bg-7 py-24 border-y border-palma-border">
           <div className="max-w-7xl mx-auto px-6 space-y-10">

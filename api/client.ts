@@ -21,22 +21,14 @@ function isHttpUrl(s: string): boolean {
 
 /**
  * Resolve API base on every call (not cached).
- * - If VITE_API_URL is set to a valid http/https URL → نستخدمه كما هو.
- * - إذا كنا على localhost → نوجّه مباشرة للباكند المحلي http://localhost:5000 عشان التطوير.
- * - غير ذلك نستخدم PRODUCTION_API على Render.
+ * - If VITE_API_URL is set to a valid http/https URL → نستخدمه (مثلاً Render أو باكند محلي).
+ * - غير ذلك → PRODUCTION_API (Render). للتطوير المحلي مع الباكند على Render لا تضبط شيء.
+ * - لاستخدام باكند محلي: VITE_API_URL=http://localhost:5000
  */
 function getApiBase(): string {
   const env = (import.meta as { env?: { VITE_API_URL?: string } }).env;
   const override = (env?.VITE_API_URL ?? '').trim();
   if (isHttpUrl(override)) return override;
-
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') {
-      return 'http://localhost:5000';
-    }
-  }
-
   return PRODUCTION_API;
 }
 

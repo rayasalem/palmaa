@@ -55,7 +55,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
   const [addressDataLoaded, setAddressDataLoaded] = useState(false);
   const [useDistrictsVillagesApi, setUseDistrictsVillagesApi] = useState(false);
 
-  const totalAmount = cart.reduce((s, p) => s + (p.price || (p as any).price_ils || 0) * p.quantity, 0);
+  const totalAmount = cart.reduce((s, p) => {
+    const base = p.price || (p as any).price_ils || 0;
+    const final = (p as any).final_price != null ? (p as any).final_price : base;
+    return s + final * p.quantity;
+  }, 0);
   const suggestedWeight = Math.max(0.5, cart.reduce((s, p) => s + p.quantity, 0) * 0.5);
 
   useEffect(() => {
@@ -221,11 +225,14 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
         amount: totalAmount,
         weight: form.weight,
         ...(brokerIdFromUrl ? { broker_id: brokerIdFromUrl } : {}),
-        items: cart.map((item) => ({
-          product_id: (item as any).id,
-          quantity: item.quantity,
-          price: (item as any).price ?? (item as any).price_ils ?? 0,
-        })),
+        items: cart.map((item) => {
+          const effectivePrice = (item as any).final_price ?? (item as any).price ?? (item as any).price_ils ?? 0;
+          return {
+            product_id: (item as any).id,
+            quantity: item.quantity,
+            price: effectivePrice,
+          };
+        }),
       });
       if (!orderRes.success || !orderRes.order?.id) {
         setError((orderRes as any).error || (lang === 'ar' ? 'فشل إنشاء الطلب' : 'Failed to create order'));

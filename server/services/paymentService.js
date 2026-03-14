@@ -9,6 +9,8 @@ import * as orderService from './orderService.js';
 import * as productService from './productService.js';
 import * as profitService from './profitService.js';
 import * as transactionService from './transactionService.js';
+import * as gamificationService from './gamificationService.js';
+import * as notificationService from './notificationService.js';
 import * as shipmentService from './shipmentService.js';
 import * as cartService from './cartService.js';
 import { createCardPayment as cybersourceCreateCardPayment } from './cybersourceClient.js';
@@ -148,6 +150,33 @@ async function handlePaymentCallback(orderId, status, idempotencyKey) {
       }
     } else {
       logger.warn('paymentService clearCart skipped, no customer_id on order', { orderId });
+    }
+    // Gamification (points + referrals) and notification for paid order.
+    if (order) {
+      try {
+        await gamificationService.awardForPaidOrder(order);
+      } catch (err) {
+        logger.error('paymentService gamification awardForPaidOrder error', {
+          orderId,
+          message: err && err.message,
+        });
+      }
+      try {
+        const uid = order.customer_id || order.customerId;
+        if (uid) {
+          await notificationService.create(
+            uid,
+            'order_paid',
+            order.id || order.order_reference || orderId,
+            'تم استلام دفعتك وجاري تجهيز طلبك.'
+          );
+        }
+      } catch (err) {
+        logger.error('paymentService order_paid notification error', {
+          orderId,
+          message: err && err.message,
+        });
+      }
     }
     // ربط الطلب بالتوصيل: إنشاء شحنة تلقائياً إذا الطلب فيه عنوان توصيل كامل (cityId, villageId)
     const cityId = order && (order.shipping_city_id ?? order.shippingCityId);

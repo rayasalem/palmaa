@@ -114,29 +114,40 @@ export const MerchantProductsTab: React.FC<MerchantProductsTabProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
-                {t.common.price} *
+                {t.common.price} * ({lang === 'ar' ? 'موجب فقط' : 'Positive only'})
               </label>
               <div className="relative">
                 <input
                   type="number"
                   required
+                  min={0}
+                  step={0.01}
                   className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 pl-10 text-sm font-bold outline-none focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 transition shadow-sm"
-                  value={productForm.price || ''}
-                  onChange={(e) => setProductForm({ ...productForm, price: parseFloat(e.target.value) })}
+                  value={productForm.price !== undefined && productForm.price !== null ? productForm.price : ''}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    const safe = Number.isFinite(v) ? Math.max(0, v) : 0;
+                    setProductForm({ ...productForm, price: safe });
+                  }}
                 />
                 <span className="absolute left-4 top-3 text-slate-400 text-sm font-bold">₪</span>
               </div>
             </div>
             <div>
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
-                {t.common.stock} *
+                {t.common.stock} * ({lang === 'ar' ? 'موجب فقط' : 'Positive only'})
               </label>
               <input
                 type="number"
                 required
+                min={0}
                 className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:bg-white focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10 transition shadow-sm"
-                value={productForm.stock || ''}
-                onChange={(e) => setProductForm({ ...productForm, stock: parseInt(e.target.value) })}
+                value={productForm.stock !== undefined && productForm.stock !== null ? productForm.stock : ''}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value, 10);
+                  const safe = Number.isFinite(v) ? Math.max(0, v) : 0;
+                  setProductForm({ ...productForm, stock: safe });
+                }}
               />
             </div>
           </div>
@@ -159,6 +170,158 @@ export const MerchantProductsTab: React.FC<MerchantProductsTabProps> = ({
               </option>
               <option value="refurbished">{lang === 'ar' ? 'مجدّد' : lang === 'he' ? 'מחודש' : 'Refurbished'}</option>
             </select>
+          </div>
+          {/* خصم على المنتج */}
+          <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/50 space-y-4">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="product-discount-active"
+                checked={Boolean(productForm.is_discount_active)}
+                onChange={(e) =>
+                  setProductForm({ ...productForm, is_discount_active: e.target.checked })
+                }
+                className="w-4 h-4 rounded border-slate-300 text-palma-primary focus:ring-palma-primary"
+              />
+              <label htmlFor="product-discount-active" className="text-sm font-bold text-slate-700 cursor-pointer">
+                {lang === 'ar' ? 'تفعيل خصم على هذا المنتج' : lang === 'he' ? 'הפעל הנחה על המוצר' : 'Add discount for this product'}
+              </label>
+            </div>
+            {productForm.is_discount_active && (
+              <>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                    {lang === 'ar' ? 'نوع الخصم' : 'Discount type'}
+                  </label>
+                  <select
+                    className="w-full rounded-xl border-slate-200 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10"
+                    value={productForm.discount_type || 'PERCENT'}
+                    onChange={(e) =>
+                      setProductForm({ ...productForm, discount_type: e.target.value as 'PERCENT' | 'AMOUNT' })
+                    }
+                  >
+                    <option value="PERCENT">{lang === 'ar' ? 'نسبة مئوية %' : 'Percentage %'}</option>
+                    <option value="AMOUNT">{lang === 'ar' ? 'مبلغ ثابت (₪)' : 'Fixed amount (₪)'}</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                    {productForm.discount_type === 'AMOUNT'
+                      ? lang === 'ar'
+                        ? 'قيمة الخصم (₪)'
+                        : 'Discount amount (₪)'
+                      : lang === 'ar'
+                        ? 'نسبة الخصم (%)'
+                        : 'Discount %'}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={0}
+                      max={productForm.discount_type === 'PERCENT' ? 100 : undefined}
+                      step={productForm.discount_type === 'PERCENT' ? 1 : 0.01}
+                      className="w-full rounded-xl border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold outline-none focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10"
+                      value={productForm.discount_value ?? ''}
+                      onChange={(e) => {
+                        const v = parseFloat(e.target.value);
+                        const raw = Number.isFinite(v) ? Math.max(0, v) : 0;
+                        const capped =
+                          productForm.discount_type === 'PERCENT' ? Math.min(100, raw) : raw;
+                        setProductForm({ ...productForm, discount_value: capped });
+                      }}
+                      placeholder={productForm.discount_type === 'PERCENT' ? 'مثلاً 20' : 'مثلاً 5'}
+                    />
+                    <span className="absolute right-4 top-3 text-slate-400 text-sm font-bold">
+                      {productForm.discount_type === 'PERCENT' ? '%' : '₪'}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                    {lang === 'ar' ? 'انتهاء الخصم (اختياري)' : 'Discount ends (optional)'}
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full rounded-xl border-slate-200 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-palma-primary focus:ring-2 focus:ring-palma-primary/10"
+                    value={
+                      productForm.discount_ends_at
+                        ? String(productForm.discount_ends_at).slice(0, 10)
+                        : ''
+                    }
+                    onChange={(e) =>
+                      setProductForm({
+                        ...productForm,
+                        discount_ends_at: e.target.value ? `${e.target.value}T23:59:59Z` : undefined,
+                      })
+                    }
+                  />
+                </div>
+                {/* معاينة منظر المنتج — يتغير التصميم عند وجود خصم فعلي */}
+                {(() => {
+                  const basePrice = Math.max(0, Number(productForm.price) || 0);
+                  const dType = productForm.discount_type || 'PERCENT';
+                  const dVal = Math.max(0, Number(productForm.discount_value) || 0);
+                  const discountAmount =
+                    dType === 'PERCENT' ? (basePrice * Math.min(100, dVal)) / 100 : Math.min(basePrice, dVal);
+                  const finalPrice = Math.max(0, basePrice - discountAmount);
+                  const percentLabel =
+                    basePrice > 0 ? Math.round((discountAmount / basePrice) * 100) : 0;
+                  const hasRealDiscount = percentLabel > 0 && finalPrice < basePrice;
+                  const img =
+                    productForm.images && productForm.images.length > 0
+                      ? productForm.images[0]
+                      : 'https://placehold.co/200x200?text=صورة+المنتج';
+                  return (
+                    <div className="mt-4 pt-4 border-t border-slate-200">
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">
+                        {lang === 'ar' ? 'معاينة منظر المنتج للزبون' : 'How the product will look'}
+                      </p>
+                      {!hasRealDiscount && (
+                        <p className="text-xs text-amber-600 font-medium mb-2">
+                          {lang === 'ar'
+                            ? 'أدخل نسبة أو مبلغ الخصم أعلاه لرؤية منظر المنتج مع الخصم.'
+                            : 'Enter discount % or amount above to see the product with discount.'}
+                        </p>
+                      )}
+                      <div
+                        className={`bg-white rounded-2xl overflow-hidden max-w-[220px] shadow-sm ${
+                          hasRealDiscount ? 'border-2 border-red-200 ring-2 ring-red-100' : 'border border-slate-200'
+                        }`}
+                      >
+                        <div className="relative aspect-square bg-slate-100">
+                          <img src={img} alt="" className="w-full h-full object-cover" />
+                          {hasRealDiscount && (
+                            <span className="absolute top-2 right-2 bg-red-600 text-white px-2.5 py-1 rounded-md text-xs font-black shadow-lg">
+                              %{percentLabel} {lang === 'ar' ? 'خصم' : 'off'}
+                            </span>
+                          )}
+                          {!hasRealDiscount && basePrice > 0 && (
+                            <span className="absolute top-2 right-2 bg-slate-600 text-white px-2.5 py-1 rounded-md text-xs font-bold">
+                              {lang === 'ar' ? 'بدون خصم' : 'No discount'}
+                            </span>
+                          )}
+                        </div>
+                        <div className="p-3">
+                          <p className="text-sm font-bold text-slate-800 line-clamp-2 mb-2">
+                            {productForm.name || (lang === 'ar' ? 'اسم المنتج' : 'Product name')}
+                          </p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {hasRealDiscount ? (
+                              <>
+                                <span className="text-sm font-black text-emerald-600">₪{finalPrice.toFixed(2)}</span>
+                                <span className="text-xs text-slate-400 line-through">₪{basePrice.toFixed(2)}</span>
+                              </>
+                            ) : (
+                              <span className="text-sm font-black text-slate-800">₪{basePrice.toFixed(2)}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </>
+            )}
           </div>
           <div>
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
@@ -339,9 +502,29 @@ export const MerchantProductsTab: React.FC<MerchantProductsTabProps> = ({
                     </div>
                   </div>
                   <div className="flex flex-col sm:items-center">
-                    <span className="text-sm sm:text-base font-black text-palma-navy">
-                      {product.price || product.price_ils} ₪
-                    </span>
+                    {(() => {
+                      const baseP = Number(product.price ?? product.price_ils) || 0;
+                      const finalP = (product as any).final_price != null ? Number((product as any).final_price) : baseP;
+                      const hasDisc = finalP < baseP && baseP > 0;
+                      const pct = (product as any).discount_percent ?? (hasDisc && baseP > 0 ? Math.round((1 - finalP / baseP) * 100) : 0);
+                      return (
+                        <>
+                          {hasDisc ? (
+                            <span className="text-sm sm:text-base font-black text-emerald-600">
+                              ₪{finalP.toFixed(2)}
+                              <span className="text-xs text-slate-400 font-normal line-through mr-1">₪{baseP.toFixed(2)}</span>
+                            </span>
+                          ) : (
+                            <span className="text-sm sm:text-base font-black text-palma-navy">₪{baseP.toFixed(2)}</span>
+                          )}
+                          {hasDisc && pct > 0 && (
+                            <span className="text-[9px] font-black bg-red-100 text-red-600 px-2 py-0.5 rounded-md mt-1 inline-flex">
+                              %{pct} {lang === 'ar' ? 'خصم' : 'off'}
+                            </span>
+                          )}
+                        </>
+                      );
+                    })()}
                     <span
                       className={`text-[9px] font-bold px-2 py-0.5 rounded-md mt-1 inline-flex ${product.stock > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}
                     >

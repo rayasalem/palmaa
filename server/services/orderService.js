@@ -57,7 +57,8 @@ async function createOrder(params) {
       order_id: order.id,
       product_id: it.product_id || it.productId,
       quantity: Number(it.quantity) || 1,
-      price: Number(it.price) || 0,
+      // احفظ السعر النهائي بعد الخصم إن وُجد
+      price: Number((it as any).final_price ?? it.price) || 0,
     }));
     const { error: itemsError } = await supabase.from(ORDER_ITEMS_TABLE).insert(rows);
     if (itemsError) {

@@ -1,9 +1,11 @@
 /**
  * Cart service: per-user cart and cart_items in DB.
  * Tables: carts (user_id unique), cart_items (cart_id, product_id, quantity, price).
+ * Price stored is the effective price (after product discount when active).
  */
 
 import { supabase } from '../config/supabaseClient.js';
+import { applyDiscount } from './productService.js';
 
 const CARTS_TABLE = 'carts';
 const CART_ITEMS_TABLE = 'cart_items';
@@ -77,11 +79,12 @@ async function addItem(userId, productId, quantity) {
   if (cartErr || !cart) return { data: null, error: cartErr || new Error('Cart not found') };
   const { data: product, error: productErr } = await supabase
     .from(PRODUCTS_TABLE)
-    .select('id, price_ils, price')
+    .select('id, price_ils, price, discount_type, discount_value, is_discount_active, discount_starts_at, discount_ends_at')
     .eq('id', productId)
     .single();
   if (productErr || !product) return { data: null, error: { message: 'Product not found' } };
-  const price = Number(product.price_ils ?? product.price ?? 0);
+  const withDiscount = applyDiscount(product);
+  const price = Number(withDiscount.final_price ?? product.price_ils ?? product.price ?? 0);
   const { data: existingItem } = await supabase
     .from(CART_ITEMS_TABLE)
     .select('id, quantity')

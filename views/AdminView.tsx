@@ -11,10 +11,16 @@ import {
   updateAdminSettings,
   getAdminPlatformEarnings,
 } from '../services/adminApi';
+import {
+  getAdminOffers,
+  createOffer as createOfferApi,
+  updateOffer as updateOfferApi,
+  deleteOffer as deleteOfferApi,
+} from '../services/offersApi';
 import { translations, getAuthErrorMessage, type Language } from '../translations';
 import { logEmail } from '../services/emailService';
 import { useToast } from '../components/ToastProvider';
-import { Shield, Users, Banknote, Package, Database } from 'lucide-react';
+import { Shield, Users, Banknote, Package, Database, Tag } from 'lucide-react';
 import { AdminViewProvider, type AdminTab } from './admin/AdminViewContext';
 
 interface AdminUser extends User {
@@ -61,6 +67,7 @@ const AdminProductsTab = lazy(() => import('./admin/AdminProductsTab'));
 const AdminOrdersTab = lazy(() => import('./admin/AdminOrdersTab'));
 const AdminTreasuryTab = lazy(() => import('./admin/AdminTreasuryTab'));
 const AdminPlatformTab = lazy(() => import('./admin/AdminPlatformTab'));
+const AdminOffersTab = lazy(() => import('./admin/AdminOffersTab'));
 
 function TabSkeleton() {
   return (
@@ -83,6 +90,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
     treasury: 'treasury',
     platform: 'platform',
     settings: 'platform',
+    offers: 'offers',
   };
   const [activeTab, setActiveTab] = useState<AdminTab>(viewToTab[view] || 'users');
   const [allUsers, setAllUsers] = useState<AdminUser[]>([]);
@@ -113,6 +121,8 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
   const { userToDelete, deleteReason, deleteLoading } = deleteModal;
   const [productToDelete, setProductToDelete] = useState<{ id: string; name: string } | null>(null);
   const [productDeleteLoading, setProductDeleteLoading] = useState(false);
+  const [offers, setOffers] = useState<any[]>([]);
+  const [offersLoading, setOffersLoading] = useState(false);
 
   useEffect(() => {
     setActiveTab(viewToTab[view] || 'users');
@@ -206,11 +216,86 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
     }
   };
 
+  const loadOffers = useCallback(async () => {
+    setOffersLoading(true);
+    try {
+      const res = await getAdminOffers();
+      if (res.success && res.offers) setOffers(res.offers);
+      else setOffers([]);
+    } catch {
+      showToast(t.common.error, 'error');
+      setOffers([]);
+    } finally {
+      setOffersLoading(false);
+    }
+  }, [showToast, t.common.error]);
+
+  const createOffer = useCallback(
+    async (payload: any) => {
+      try {
+        const res = await createOfferApi(payload);
+        if (res.success) {
+          await loadOffers();
+          showToast(lang === 'ar' ? 'تمت إضافة العرض' : 'Offer added', 'success');
+          return true;
+        }
+        showToast(res.error || t.common.error, 'error');
+        return false;
+      } catch {
+        showToast(t.common.error, 'error');
+        return false;
+      }
+    },
+    [lang, loadOffers, showToast, t.common.error]
+  );
+
+  const updateOffer = useCallback(
+    async (id: string, payload: any) => {
+      try {
+        const res = await updateOfferApi(id, payload);
+        if (res.success) {
+          await loadOffers();
+          showToast(lang === 'ar' ? 'تم تحديث العرض' : 'Offer updated', 'success');
+          return true;
+        }
+        showToast(res.error || t.common.error, 'error');
+        return false;
+      } catch {
+        showToast(t.common.error, 'error');
+        return false;
+      }
+    },
+    [lang, loadOffers, showToast, t.common.error]
+  );
+
+  const deleteOffer = useCallback(
+    async (id: string) => {
+      try {
+        const res = await deleteOfferApi(id);
+        if (res.success) {
+          setOffers((prev) => prev.filter((o) => o.id !== id));
+          showToast(lang === 'ar' ? 'تم حذف العرض' : 'Offer deleted', 'success');
+          return true;
+        }
+        showToast(res.error || t.common.error, 'error');
+        return false;
+      } catch {
+        showToast(t.common.error, 'error');
+        return false;
+      }
+    },
+    [lang, showToast, t.common.error]
+  );
+
   useEffect(() => {
     if (activeTab === 'products') loadProducts();
     if (activeTab === 'orders') loadOrders();
     if (activeTab === 'platform') loadPlatform();
-  }, [activeTab]);
+    if (activeTab === 'offers') {
+      loadOffers();
+      loadProducts(); // لتحديد منتج عند إضافة عرض من نوع "منتج"
+    }
+  }, [activeTab, loadOffers]);
 
   // --- Performance: stable callback for table row actions (avoids inline arrows in .map) ---
   const handleStatusChange = useCallback(
@@ -505,6 +590,12 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
       loadPlatform,
       handleSaveSettings,
       handleWithdrawal,
+      offers,
+      offersLoading,
+      loadOffers,
+      createOffer,
+      updateOffer,
+      deleteOffer,
     }),
     [
       activeTab,
@@ -537,6 +628,12 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
       platformLoading,
       settingsForm,
       settingsSaving,
+      offers,
+      offersLoading,
+      loadOffers,
+      createOffer,
+      updateOffer,
+      deleteOffer,
     ]
   );
 
@@ -596,6 +693,12 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
             >
               <Shield className="w-3.5 h-3.5" /> {lang === 'ar' ? 'إعدادات المنصة' : 'Platform'}
             </button>
+            <button
+              onClick={() => setActiveTab('offers')}
+              className={`dashboard-tab ${activeTab === 'offers' ? 'dashboard-tab-active' : 'dashboard-tab-inactive'}`}
+            >
+              <Tag className="w-3.5 h-3.5" /> {lang === 'ar' ? 'العروض' : 'Offers'}
+            </button>
           </div>
         </div>
 
@@ -605,6 +708,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
           {activeTab === 'orders' && <AdminOrdersTab />}
           {activeTab === 'treasury' && <AdminTreasuryTab />}
           {activeTab === 'platform' && <AdminPlatformTab />}
+          {activeTab === 'offers' && <AdminOffersTab />}
         </Suspense>
       </div>
     </AdminViewProvider>

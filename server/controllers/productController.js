@@ -100,6 +100,11 @@ async function create(req, res) {
       dimensions: body.dimensions,
       tags: body.tags,
       condition: body.condition,
+      discount_type: body.discount_type,
+      discount_value: body.discount_value,
+      is_discount_active: body.is_discount_active,
+      discount_starts_at: body.discount_starts_at,
+      discount_ends_at: body.discount_ends_at,
     });
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to create product' });
@@ -134,6 +139,11 @@ async function update(req, res) {
       dimensions: body.dimensions,
       tags: body.tags,
       condition: body.condition,
+      discount_type: body.discount_type,
+      discount_value: body.discount_value,
+      is_discount_active: body.is_discount_active,
+      discount_starts_at: body.discount_starts_at,
+      discount_ends_at: body.discount_ends_at,
     });
     if (error) {
       return res.status(error.message && error.message.includes('0 rows') ? 404 : 500).json({

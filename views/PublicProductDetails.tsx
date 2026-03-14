@@ -9,15 +9,18 @@ import {
   Star,
   ShoppingBag,
   Truck,
-  ShieldCheck,
   Heart,
   MessageCircle,
   Send,
   Minus,
   Plus,
+  ChevronLeft,
+  ChevronRight,
+  CreditCard,
+  Headphones,
+  Share2,
 } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
-import { ProductConditionBadge } from '../components/ProductConditionBadge';
 import {
   getProductLikesCount,
   getProductIsLiked,
@@ -35,8 +38,11 @@ interface PublicProductDetailsProps {
   onLoginClick: () => void;
   onRefresh?: () => void;
   onViewProfile?: (profileId: string) => void;
+  onViewProduct?: (id: string) => void;
   addToCart?: (product: Product, quantity: number) => void;
   addingToCartProductId?: string | null;
+  /** عند النقر على "اشتري الآن": الانتقال مباشرة لصفحة الدفع دون إضافة للسلة */
+  onBuyNow?: (product: Product, quantity: number) => void;
 }
 
 const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
@@ -47,8 +53,10 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
   onLoginClick,
   onRefresh,
   onViewProfile,
+  onViewProduct,
   addToCart,
   addingToCartProductId,
+  onBuyNow,
 }) => {
   const t = translations[lang];
   const { showToast } = useToast();
@@ -62,6 +70,7 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
   const [quantity, setQuantity] = useState(1);
   const [activeImgIndex, setActiveImgIndex] = useState(0);
   const [isImageLoading, setIsImageLoading] = useState(false);
+  const [detailTab, setDetailTab] = useState<'description' | 'additional' | 'review'>('description');
 
   // Product state (local)
   const [product, setProduct] = useState<Product | undefined>(undefined);
@@ -123,6 +132,16 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
     }
   }, [productId, user?.id]);
 
+  // Track recently viewed (must be before any early return to keep hook order stable)
+  useEffect(() => {
+    if (!product?.id) return;
+    try {
+      marketStore.addRecentlyViewedProduct(product.id);
+    } catch {
+      // ignore storage errors
+    }
+  }, [product?.id]);
+
   const images = useMemo(() => {
     if (!product) return [];
     let imgs =
@@ -132,6 +151,12 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
     imgs = Array.from(new Set(imgs)).filter((url) => typeof url === 'string' && url.length > 0);
     return imgs.length > 0 ? imgs : ['https://placehold.co/600x600?text=No+Image'];
   }, [product]);
+
+  const relatedProducts = useMemo(() => {
+    if (!product?.category) return [];
+    const all = marketStore.getProducts().filter((p) => p.id !== product.id && p.isActive !== false);
+    return all.filter((p) => p.category === product.category).slice(0, 8);
+  }, [product?.id, product?.category]);
 
   if (isLoadingProduct) {
     return (
@@ -261,6 +286,20 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
 
   const showNav = !user;
 
+  const basePrice = Number(product?.price ?? product?.price_ils ?? 0);
+  const finalPrice =
+    (product as any)?.final_price != null ? Number((product as any).final_price) : basePrice;
+  const hasDiscount = finalPrice < basePrice;
+  const discountPercent =
+    (product as any)?.discount_percent != null
+      ? Number((product as any).discount_percent)
+      : basePrice > 0 && hasDiscount
+        ? Math.round((1 - finalPrice / basePrice) * 100)
+        : 0;
+
+  const homeLabel = lang === 'ar' ? 'الرئيسية' : 'Home';
+  const shopLabel = lang === 'ar' ? 'التسوق' : 'Shop';
+
   return (
     <div
       className={`min-h-screen bg-slate-50 font-sans text-palma-text transition-all duration-500`}
@@ -293,341 +332,355 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
       )}
 
       <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 ${showNav ? 'pt-28' : 'pt-8'} animate-slide-up`}>
-        {!showNav && (
-          <div className="mb-8 flex items-center gap-2 text-xs font-bold text-palma-muted">
+        {/* Breadcrumb — شريط رمادي مثل التصميم */}
+        <div className="bg-slate-100 rounded-xl px-4 py-3 mb-6">
+          <nav className="flex flex-wrap items-center gap-2 text-sm font-medium text-slate-600">
             <button onClick={onBack} className="hover:text-palma-navy hover:underline">
-              {t.common.products}
+              {homeLabel}
             </button>
-            <span className="text-slate-300">/</span>
-            <span className="text-palma-navy truncate max-w-[200px]">{product.name || product.title || '-'}</span>
-          </div>
-        )}
+            <span>/</span>
+            <button onClick={onBack} className="hover:text-palma-navy hover:underline">
+              {shopLabel}
+            </button>
+            <span>/</span>
+            <span className="text-palma-navy">
+              {t.categories[product.category as keyof typeof t.categories] || product.category}
+            </span>
+            <span>/</span>
+            <span className="font-bold text-palma-navy truncate max-w-[180px]">
+              {lang === 'ar' ? 'تفاصيل المنتج' : 'Product Details'}
+            </span>
+          </nav>
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16">
-          <div className="lg:col-span-7 space-y-6">
-            <div className="aspect-[4/3] sm:aspect-square bg-white rounded-3xl lg:rounded-[2.5rem] overflow-hidden shadow-card border border-slate-100 relative group cursor-zoom-in">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12">
+          {/* معرض الصور — صورة رئيسية + أسهم + مصغرات */}
+          <div className="lg:col-span-6 space-y-4">
+            <div className="aspect-square bg-white rounded-2xl overflow-hidden shadow-card border border-slate-100 relative group">
               <img
                 src={images[activeImgIndex]}
-                className={`w-full h-full object-cover transition-all duration-500 ease-in-out ${isImageLoading ? 'opacity-80 scale-95 blur-sm' : 'opacity-100 scale-100 blur-0'} group-hover:scale-110`}
+                className={`w-full h-full object-cover transition-all duration-500 ${isImageLoading ? 'opacity-80' : ''} group-hover:scale-105`}
                 alt={product.name || product.title || 'Product'}
               />
-
-              <div className="absolute top-6 left-6 flex flex-col gap-2 z-10 pointer-events-none">
-                {rating.average >= 4.5 && (
-                  <span className="bg-palma-gold text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg flex items-center gap-2">
-                    <Star className="w-3 h-3 fill-current" /> {t.common.topRated}
-                  </span>
-                )}
-                {product.discount ? (
-                  <span className="bg-rose-500 text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-lg">
-                    -{product.discount}% OFF
-                  </span>
-                ) : null}
-              </div>
-
-              {/* Like Button on Image */}
-              <div className="absolute top-6 right-6 z-20">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleToggleLike();
-                  }}
-                  disabled={likeLoading}
-                  className={`p-3 rounded-full shadow-lg transition-all disabled:opacity-70 ${isLiked ? 'bg-rose-500 text-white' : 'bg-white text-slate-300 hover:text-rose-500'}`}
-                >
-                  <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
-                </button>
-              </div>
+              {hasDiscount && (
+                <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-black">
+                  %{discountPercent}-
+                </div>
+              )}
+              {images.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handleImageChange(activeImgIndex === 0 ? images.length - 1 : activeImgIndex - 1)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-amber-400 text-amber-900 shadow-lg flex items-center justify-center hover:bg-amber-300 transition"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleImageChange(activeImgIndex === images.length - 1 ? 0 : activeImgIndex + 1)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-amber-400 text-amber-900 shadow-lg flex items-center justify-center hover:bg-amber-300 transition"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </>
+              )}
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); handleToggleLike(); }}
+                disabled={likeLoading}
+                className={`absolute top-4 right-4 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition ${isLiked ? 'bg-rose-500 text-white' : 'bg-white text-slate-400 hover:text-rose-500'}`}
+              >
+                <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
+              </button>
             </div>
-
             {images.length > 1 && (
-              <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide px-1">
+              <div className="flex gap-2 overflow-x-auto pb-2">
                 {images.map((img, i) => (
                   <button
                     key={i}
                     onClick={() => handleImageChange(i)}
-                    className={`w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 shrink-0 transition-all duration-300 ${activeImgIndex === i ? 'border-palma-navy ring-4 ring-palma-navy/10 scale-105 opacity-100 shadow-md' : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105'}`}
+                    className={`w-16 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${activeImgIndex === i ? 'border-palma-primary ring-2 ring-palma-primary/30' : 'border-slate-200 hover:border-slate-300'}`}
                   >
-                    <img src={img} className="w-full h-full object-cover" alt={`View ${i + 1}`} />
+                    <img src={img} className="w-full h-full object-cover" alt="" />
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          <div className="lg:col-span-5 flex flex-col h-full">
-            <div className="bg-white p-8 sm:p-10 rounded-3xl lg:rounded-[2.5rem] shadow-soft border border-slate-100 flex-1 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-palma-primaryLight/50 rounded-full blur-3xl -mr-32 -mt-32"></div>
+          {/* معلومات المنتج — فئة، اسم، تقييم، سعر، وصف، كمية، أزرار */}
+          <div className="lg:col-span-6">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+              {t.categories[product.category as keyof typeof t.categories] || product.category}
+            </p>
+            <h1 className="font-heading text-2xl sm:text-3xl font-black text-palma-navy mb-3">
+              {product.name || product.title || '-'}
+            </h1>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-1 text-amber-500">
+                {[1,2,3,4,5].map((s) => (
+                  <Star key={s} className={`w-4 h-4 ${s <= Math.round(rating.average) ? 'fill-current' : 'text-slate-200'}`} />
+                ))}
+              </div>
+              <span className="text-sm font-bold text-palma-navy">
+                {rating.average.toFixed(1)} ({rating.count} {lang === 'ar' ? 'تقييم' : 'Reviews'})
+              </span>
+            </div>
+            <div className="flex items-baseline gap-3 mb-4">
+              <span className="text-2xl sm:text-3xl font-black text-palma-primary">₪{finalPrice.toFixed(2)}</span>
+              {hasDiscount && (
+                <span className="text-lg font-bold text-slate-400 line-through">₪{basePrice.toFixed(2)}</span>
+              )}
+            </div>
+            <p className="text-sm text-slate-600 leading-relaxed mb-6">
+              {product.description ||
+                (lang === 'ar' ? 'منتج مميز بجودة عالية يناسب احتياجاتك.' : 'Premium quality product designed for your needs.')}
+            </p>
 
-              <div className="relative z-10 space-y-8">
-                <div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <span className="bg-slate-50 text-palma-navy px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border border-slate-100">
-                      {t.categories[product.category as keyof typeof t.categories] || product.category}
-                    </span>
-                    <ProductConditionBadge condition={product.condition || 'new'} lang={lang} />
-                    <div className="flex items-center gap-1 text-palma-gold">
-                      <Star className="w-3.5 h-3.5 fill-current" />
-                      <span className="text-xs font-black text-palma-navy mt-0.5">{rating.average.toFixed(1)}</span>
-                      <span className="text-[9px] font-bold text-slate-400 mt-0.5">({rating.count})</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-rose-500">
-                      <Heart className="w-3.5 h-3.5 fill-current" />
-                      <span className="text-xs font-black mt-0.5">{likesCount}</span>
-                    </div>
-                  </div>
-                  <h1 className="font-heading text-3xl sm:text-4xl font-black text-palma-navy leading-[1.1] mb-4 tracking-tight">
-                    {product.name || product.title || '-'}
-                  </h1>
-                  <div className="flex items-baseline gap-4">
-                    <span className="text-4xl sm:text-5xl font-black text-palma-primary tracking-tight">
-                      ₪{product.price || product.price_ils}
-                    </span>
-                    {product.discount && (
-                      <span className="text-lg font-bold text-slate-300 line-through decoration-2">
-                        ₪{((product.price || product.price_ils || 0) * 1.2).toFixed(0)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="h-px bg-slate-100"></div>
-
-                <div className="space-y-4">
-                  <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{t.product.desc}</h3>
-                  <p className="text-sm font-medium text-slate-600 leading-relaxed">
-                    {product.description ||
-                      'Experience premium quality with this exceptional product, designed to meet your needs with style and durability.'}
-                  </p>
-                  <ul className="grid grid-cols-2 gap-3 pt-2">
-                    <li className="flex items-center gap-2 text-[10px] font-bold text-palma-navy bg-slate-50 p-2 rounded-lg">
-                      <Truck className="w-3.5 h-3.5 text-palma-primary" /> Fast Delivery
-                    </li>
-                    <li className="flex items-center gap-2 text-[10px] font-bold text-palma-navy bg-slate-50 p-2 rounded-lg">
-                      <ShieldCheck className="w-3.5 h-3.5 text-palma-primary" /> Verified Seller
-                    </li>
-                  </ul>
-                </div>
-
+            <div className="flex items-center gap-4 mb-6">
+              <span className="text-xs font-bold text-slate-500">{lang === 'ar' ? 'الكمية' : 'Quantity'}</span>
+              <div className="flex items-center rounded-xl border border-slate-200 overflow-hidden">
                 <button
                   type="button"
-                  onClick={() => {
-                    const mid = product.merchant_id || product.merchantId;
-                    if (mid && onViewProfile) onViewProfile(mid);
-                  }}
-                  className="w-full bg-slate-50 rounded-2xl p-4 flex items-center gap-4 border border-slate-100 hover:border-palma-primary/30 hover:bg-palma-soft/30 transition-all text-left rtl:text-right"
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="w-10 h-10 flex items-center justify-center bg-slate-50 text-palma-navy hover:bg-slate-100"
                 >
-                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm overflow-hidden border border-slate-100 shrink-0">
-                    <img
-                      src={
-                        merchantProfile?.logo_url ||
-                        `https://ui-avatars.com/api/?name=${merchantName}&background=random`
-                      }
-                      className="w-full h-full object-cover"
-                      alt=""
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[8px] font-black uppercase text-slate-400 tracking-widest">
-                      {t.common.merchantName}
-                    </p>
-                    <p className="text-sm font-bold text-palma-navy truncate">
-                      {merchantName || (lang === 'ar' ? 'التاجر' : 'Merchant')}
-                    </p>
-                    {onViewProfile && (product.merchant_id || product.merchantId) && (
-                      <p className="text-[9px] font-bold text-palma-primary mt-0.5">
-                        {lang === 'ar' ? 'عرض صفحة التاجر ←' : 'View merchant page →'}
-                      </p>
-                    )}
-                  </div>
+                  <Minus className="w-4 h-4" />
                 </button>
-
-                <div className="space-y-4 pt-4">
-                  <div className="flex items-center bg-slate-50 rounded-xl p-1.5 w-fit border border-slate-100">
-                    <button
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="w-10 h-10 flex items-center justify-center bg-white rounded-lg shadow-sm text-palma-navy hover:text-palma-primary transition"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                    <span className="w-12 text-center font-black text-palma-navy">{quantity}</span>
-                    <button
-                      onClick={() => setQuantity(Math.max(1, quantity + 1))}
-                      className="w-10 h-10 flex items-center justify-center bg-white rounded-lg shadow-sm text-palma-navy hover:text-palma-primary transition"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <button
-                      type="button"
-                      onClick={handleAddToCart}
-                      disabled={!!(product && addingToCartProductId === product.id)}
-                      className="btn-primary flex-1 py-5 text-[11px] uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-70 disabled:pointer-events-none"
-                    >
-                      {product && addingToCartProductId === product.id ? (
-                        <>
-                          <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />{' '}
-                          {lang === 'ar' ? 'جاري الإضافة...' : lang === 'he' ? 'מוסיף...' : 'Adding...'}
-                        </>
-                      ) : (
-                        <>
-                          <ShoppingBag className="w-4 h-4" /> {t.product.addToCart}
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
+                <span className="w-12 text-center font-bold text-palma-navy border-x border-slate-200">{quantity}</span>
+                <button
+                  type="button"
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="w-10 h-10 flex items-center justify-center bg-slate-50 text-palma-navy hover:bg-slate-100"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
               </div>
             </div>
+
+            <div className="flex flex-wrap gap-3 mb-6">
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                disabled={!!(product && addingToCartProductId === product.id)}
+                className="flex-1 min-w-[140px] py-4 rounded-xl bg-palma-primary text-white font-bold text-sm hover:bg-palma-navy transition flex items-center justify-center gap-2 disabled:opacity-70"
+              >
+                {product && addingToCartProductId === product.id ? (
+                  <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <ShoppingBag className="w-4 h-4" />
+                )}
+                {product && addingToCartProductId === product.id ? (lang === 'ar' ? 'جاري الإضافة...' : 'Adding...') : t.product.addToCart}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (product && onBuyNow) {
+                    onBuyNow(product, quantity);
+                  } else {
+                    handleAddToCart();
+                  }
+                }}
+                disabled={!!(product && addingToCartProductId === product.id)}
+                className="px-6 py-4 rounded-xl bg-amber-400 text-amber-900 font-bold text-sm hover:bg-amber-300 transition disabled:opacity-70"
+              >
+                {lang === 'ar' ? 'اشتري الآن' : 'Buy Now'}
+              </button>
+            </div>
+
+            <div className="flex items-center gap-4 text-sm text-slate-500 mb-6">
+              <span>SKU: {product.id?.slice(0, 12) || '—'}</span>
+              {product.category && (
+                <span>{lang === 'ar' ? 'التصنيف:' : 'Tags:'} {product.category}</span>
+              )}
+              <button type="button" className="p-2 rounded-lg hover:bg-slate-100" title={lang === 'ar' ? 'مشاركة' : 'Share'}>
+                <Share2 className="w-4 h-4" />
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => { const mid = product.merchant_id || product.merchantId; if (mid && onViewProfile) onViewProfile(mid); }}
+              className="w-full bg-slate-50 rounded-xl p-4 flex items-center gap-3 border border-slate-100 hover:border-palma-primary/20 text-left rtl:text-right"
+            >
+              <div className="w-12 h-12 rounded-xl bg-white overflow-hidden border border-slate-100 shrink-0">
+                <img src={merchantProfile?.logo_url || `https://ui-avatars.com/api/?name=${merchantName}`} className="w-full h-full object-cover" alt="" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold text-slate-400 uppercase">{t.common.merchantName}</p>
+                <p className="font-bold text-palma-navy truncate">{merchantName || (lang === 'ar' ? 'التاجر' : 'Merchant')}</p>
+              </div>
+            </button>
           </div>
         </div>
 
-        {/* Social Comments Section */}
-        <section className="mt-24 max-w-4xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-16">
-            {/* Comments */}
+        {/* تبويبات: الوصف | معلومات إضافية | التقييمات */}
+        <div className="mt-12 border-t border-slate-200 pt-8">
+          <div className="flex gap-6 border-b border-slate-200 mb-6">
+            {[
+              { id: 'description' as const, ar: 'الوصف', en: 'Description' },
+              { id: 'additional' as const, ar: 'معلومات إضافية', en: 'Additional Information' },
+              { id: 'review' as const, ar: 'التقييمات', en: 'Review' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setDetailTab(tab.id)}
+                className={`pb-3 text-sm font-bold border-b-2 transition-colors ${detailTab === tab.id ? 'border-palma-primary text-palma-navy' : 'border-transparent text-slate-500 hover:text-palma-navy'}`}
+              >
+                {lang === 'ar' ? tab.ar : tab.en}
+              </button>
+            ))}
+          </div>
+          {detailTab === 'description' && (
+            <p className="text-slate-600 leading-relaxed">
+              {product.description ||
+                (lang === 'ar' ? 'منتج عالي الجودة من بالما. مناسب للاستخدام اليومي مع ضمان الجودة.' : 'High quality product from Palma. Suitable for daily use with quality guarantee.')}
+            </p>
+          )}
+          {detailTab === 'additional' && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <tbody>
+                  <tr className="border-b border-slate-100"><td className="py-2 font-bold text-slate-500 w-40">{lang === 'ar' ? 'نوع المنتج' : 'Product Type'}</td><td className="py-2 text-palma-navy">{product.category || '—'}</td></tr>
+                  <tr className="border-b border-slate-100"><td className="py-2 font-bold text-slate-500">{lang === 'ar' ? 'الحالة' : 'Condition'}</td><td className="py-2 text-palma-navy">{product.condition || 'new'}</td></tr>
+                  <tr className="border-b border-slate-100"><td className="py-2 font-bold text-slate-500">SKU</td><td className="py-2 text-palma-navy">{product.id || '—'}</td></tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+          {detailTab === 'review' && (
             <div className="space-y-8">
-              <h3 className="text-xl font-black text-palma-navy flex items-center gap-3">
-                <MessageCircle className="w-5 h-5" /> {lang === 'en' ? 'Comments' : 'التعليقات'} ({comments.length})
-              </h3>
-
-              {user && (
-                <form onSubmit={handleAddComment} className="flex gap-3">
-                  <input
-                    className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-palma-primary outline-none transition-all"
-                    placeholder={lang === 'en' ? 'Add a comment...' : 'أضف تعليقاً...'}
-                    value={socialCommentInput}
-                    onChange={(e) => setSocialCommentInput(e.target.value)}
-                  />
-                  <button
-                    type="submit"
-                    className="bg-palma-navy text-white p-3 rounded-xl hover:bg-palma-primary transition-all shadow-md disabled:opacity-50"
-                    disabled={!socialCommentInput.trim() || commentLoading}
-                  >
-                    <Send className="w-4 h-4 rtl:rotate-180" />
-                  </button>
+              {user && !alreadyReviewed && (
+                <form onSubmit={handleSubmitReview} className="bg-slate-50 rounded-xl p-6 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-600">{t.product.addReview}</span>
+                    <div className="flex gap-1">
+                      {[1,2,3,4,5].map((star) => (
+                        <button key={star} type="button" onClick={() => setRatingInput(star)} onMouseEnter={() => setHoverRating(star)} onMouseLeave={() => setHoverRating(0)}>
+                          <Star className={`w-5 h-5 ${star <= (hoverRating || ratingInput) ? 'fill-amber-500 text-amber-500' : 'text-slate-200'}`} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <textarea value={commentInput} onChange={(e) => setCommentInput(e.target.value)} placeholder={lang === 'ar' ? 'اكتب تجربتك...' : 'Write your experience...'} className="w-full p-3 rounded-xl border border-slate-200 text-sm resize-none h-24" />
+                  <button type="submit" disabled={isSubmitting} className="px-6 py-2.5 rounded-xl bg-palma-primary text-white text-sm font-bold">{isSubmitting ? '...' : t.common.save}</button>
                 </form>
               )}
-
-              <div className="space-y-4">
-                {comments.length === 0 ? (
-                  <p className="text-slate-400 text-xs italic">
-                    {lang === 'en' ? 'No comments yet.' : 'لا توجد تعليقات بعد.'}
-                  </p>
-                ) : (
-                  comments.map((c) => (
-                    <div key={c.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="text-xs font-black text-palma-navy">
-                          {c.userName ?? (user && c.userId === user.id ? user.name : 'User')}
-                        </span>
-                        <span className="text-[9px] text-slate-400 font-bold">
-                          {new Date(c.createdAt).toLocaleDateString()}
-                        </span>
+              <div>
+                <h4 className="font-heading font-bold text-palma-navy mb-3">{t.common.reviews} ({reviews.length})</h4>
+                <div className="space-y-3">
+                  {reviews.length === 0 ? <p className="text-slate-400 text-sm">{t.common.noData}</p> : reviews.slice().reverse().map((rev) => (
+                    <div key={rev.id} className="flex gap-3 p-4 bg-white rounded-xl border border-slate-100">
+                      <div className="w-10 h-10 rounded-full bg-palma-primaryLight flex items-center justify-center font-bold text-palma-navy text-sm shrink-0">{rev.customer_name?.charAt(0)}</div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-bold text-palma-navy text-sm">{rev.customer_name}</span>
+                          <div className="flex gap-0.5">{[1,2,3,4,5].map((s) => <Star key={s} className={`w-3 h-3 ${s <= rev.rating ? 'fill-amber-500 text-amber-500' : 'text-slate-200'}`} />)}</div>
+                        </div>
+                        <p className="text-sm text-slate-600">"{rev.comment}"</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h4 className="font-heading font-bold text-palma-navy mb-3 flex items-center gap-2">
+                  <MessageCircle className="w-4 h-4" /> {lang === 'ar' ? 'التعليقات' : 'Comments'} ({comments.length})
+                </h4>
+                {user && (
+                  <form onSubmit={handleAddComment} className="flex gap-2 mb-4">
+                    <input
+                      className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm"
+                      placeholder={lang === 'ar' ? 'أضف تعليقاً...' : 'Add a comment...'}
+                      value={socialCommentInput}
+                      onChange={(e) => setSocialCommentInput(e.target.value)}
+                    />
+                    <button type="submit" className="px-4 py-2.5 rounded-xl bg-palma-navy text-white text-sm font-bold disabled:opacity-50" disabled={!socialCommentInput.trim() || commentLoading}>
+                      <Send className="w-4 h-4 rtl:rotate-180" />
+                    </button>
+                  </form>
+                )}
+                <div className="space-y-3">
+                  {comments.length === 0 ? <p className="text-slate-400 text-sm">{lang === 'ar' ? 'لا تعليقات بعد.' : 'No comments yet.'}</p> : comments.map((c) => (
+                    <div key={c.id} className="p-4 bg-white rounded-xl border border-slate-100">
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="text-xs font-bold text-palma-navy">{c.userName ?? (user && c.userId === user.id ? user.name : 'User')}</span>
+                        <span className="text-[10px] text-slate-400">{new Date(c.createdAt).toLocaleDateString()}</span>
                       </div>
                       <p className="text-sm text-slate-600">{c.text}</p>
                     </div>
-                  ))
-                )}
+                  ))}
+                </div>
               </div>
             </div>
+          )}
+        </div>
 
-            {/* Reviews */}
-            <div className="space-y-8">
-              <h3 className="text-xl font-black text-palma-navy flex items-center gap-3">
-                <Star className="w-5 h-5" /> {t.common.reviews} ({reviews.length})
-              </h3>
-
-              {/* Review Input */}
-              <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-                {user ? (
-                  alreadyReviewed ? (
-                    <p className="text-sm font-bold text-palma-primary text-center">
-                      ✓ {lang === 'en' ? 'Thanks for your review!' : 'شكراً لتقييمك!'}
-                    </p>
-                  ) : (
-                    <form onSubmit={handleSubmitReview} className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-slate-500">{t.product.addReview}</span>
-                        <div className="flex gap-1">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <button
-                              type="button"
-                              key={star}
-                              onClick={() => setRatingInput(star)}
-                              onMouseEnter={() => setHoverRating(star)}
-                              onMouseLeave={() => setHoverRating(0)}
-                            >
-                              <Star
-                                className={`w-5 h-5 ${star <= (hoverRating || ratingInput) ? 'fill-palma-primary text-palma-primary' : 'text-slate-200'}`}
-                              />
-                            </button>
-                          ))}
-                        </div>
+        {/* منتجات ذات صلة */}
+        {relatedProducts.length > 0 && (
+          <section className="mt-16">
+            <p className="text-sm font-bold text-slate-500 mb-1">{lang === 'ar' ? 'منتجات ذات صلة' : 'Related Products'}</p>
+            <h2 className="font-heading text-xl sm:text-2xl font-black text-palma-navy mb-6">
+              {lang === 'ar' ? 'اكتشف منتجات مشابهة' : 'Explore Related Products'}
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {relatedProducts.map((p) => {
+                const img = p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/300x300?text=No+Image';
+                const bp = Number(p.price ?? p.price_ils ?? 0);
+                const fp = (p as any).final_price != null ? Number((p as any).final_price) : bp;
+                const disc = fp < bp;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => onViewProduct?.(p.id)}
+                    className="bg-white rounded-2xl border border-slate-100 overflow-hidden text-left rtl:text-right hover:shadow-lg hover:border-palma-primary/20 transition-all group"
+                  >
+                    <div className="aspect-square relative">
+                      <img src={img} className="w-full h-full object-cover group-hover:scale-105 transition-transform" alt="" />
+                      {disc && <span className="absolute top-2 left-2 bg-palma-primary text-white px-2 py-0.5 rounded text-[10px] font-black">%{Math.round((1 - fp/bp) * 100)}-</span>}
+                    </div>
+                    <div className="p-3">
+                      <p className="text-[10px] text-slate-500 uppercase font-bold truncate">{p.category}</p>
+                      <p className="font-bold text-palma-navy text-sm line-clamp-2">{p.name}</p>
+                      <div className="flex items-center gap-1 mt-1">
+                        <span className="font-black text-palma-primary text-sm">₪{fp.toFixed(2)}</span>
+                        {disc && <span className="text-[10px] text-slate-400 line-through">₪{bp.toFixed(2)}</span>}
                       </div>
-                      <textarea
-                        value={commentInput}
-                        onChange={(e) => setCommentInput(e.target.value)}
-                        placeholder={lang === 'en' ? 'Write your experience...' : 'اكتب تجربتك...'}
-                        className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-palma-primary transition-all resize-none h-24"
-                      />
-                      <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="w-full bg-palma-navy text-white py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-palma-primary transition-all disabled:opacity-50"
-                      >
-                        {isSubmitting ? '...' : t.common.save}
-                      </button>
-                    </form>
-                  )
-                ) : (
-                  <div className="text-center">
-                    <p className="text-xs text-slate-400 mb-2">
-                      {lang === 'en' ? 'Log in to write a review' : 'سجل الدخول لكتابة تقييم'}
-                    </p>
-                    <button onClick={onLoginClick} className="text-xs font-black text-palma-primary hover:underline">
-                      {t.auth.login}
-                    </button>
-                  </div>
-                )}
-              </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
-              {/* Reviews List */}
-              <div className="space-y-4">
-                {reviews.length === 0 ? (
-                  <p className="text-slate-400 text-xs italic">{t.common.noData}</p>
-                ) : (
-                  reviews
-                    .slice()
-                    .reverse()
-                    .map((rev) => (
-                      <div key={rev.id} className="bg-white p-4 rounded-2xl border border-slate-100 flex gap-3">
-                        <div className="w-8 h-8 bg-palma-soft rounded-full flex items-center justify-center font-black text-palma-navy shrink-0 text-xs">
-                          {rev.customer_name?.charAt(0)}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex justify-between items-start">
-                            <h5 className="font-bold text-palma-navy text-xs">{rev.customer_name}</h5>
-                            <div className="flex gap-0.5">
-                              {[1, 2, 3, 4, 5].map((s) => (
-                                <Star
-                                  key={s}
-                                  className={`w-3 h-3 ${s <= rev.rating ? 'fill-palma-primary text-palma-primary' : 'text-slate-200'}`}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                          <p className="mt-1 text-xs text-slate-600 font-medium">"{rev.comment}"</p>
-                        </div>
-                      </div>
-                    ))
-                )}
-              </div>
+        {/* شحن مجاني، دفع مرن، دعم */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-12">
+          <div className="flex items-center gap-4 p-5 rounded-2xl bg-amber-50/80 border border-amber-100">
+            <div className="w-12 h-12 rounded-xl bg-amber-200/80 flex items-center justify-center shrink-0"><Truck className="w-6 h-6 text-amber-800" /></div>
+            <div>
+              <p className="font-heading font-bold text-palma-navy">{lang === 'ar' ? 'شحن مجاني' : 'Free Shipping'}</p>
+              <p className="text-xs text-slate-500">{lang === 'ar' ? 'شحن مجاني للطلبات فوق حد معين' : 'Free shipping for order above threshold'}</p>
             </div>
           </div>
-        </section>
+          <div className="flex items-center gap-4 p-5 rounded-2xl bg-amber-50/80 border border-amber-100">
+            <div className="w-12 h-12 rounded-xl bg-amber-200/80 flex items-center justify-center shrink-0"><CreditCard className="w-6 h-6 text-amber-800" /></div>
+            <div>
+              <p className="font-heading font-bold text-palma-navy">{lang === 'ar' ? 'دفع مرن' : 'Flexible Payment'}</p>
+              <p className="text-xs text-slate-500">{lang === 'ar' ? 'خيارات دفع آمنة متعددة' : 'Multiple secure payment options'}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 p-5 rounded-2xl bg-palma-primaryLight/50 border border-palma-primary/20">
+            <div className="w-12 h-12 rounded-xl bg-palma-primary/20 flex items-center justify-center shrink-0"><Headphones className="w-6 h-6 text-palma-navy" /></div>
+            <div>
+              <p className="font-heading font-bold text-palma-navy">{lang === 'ar' ? 'دعم 24/7' : '24x7 Support'}</p>
+              <p className="text-xs text-slate-500">{lang === 'ar' ? 'ندعمك أونلاين كل الأيام' : 'We support online all days'}</p>
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   );

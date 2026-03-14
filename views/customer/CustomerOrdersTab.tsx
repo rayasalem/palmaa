@@ -8,8 +8,38 @@ import { Order, OrderItem, CartItem } from '../../types';
 import { marketStore } from '../../store';
 import { mapFlashlineStatus } from '../../services/flashlineService';
 import type { Language } from '../../translations';
-import { Package, Truck, RefreshCw } from 'lucide-react';
+import { Package, Truck, RefreshCw, Check, ChevronLeft, Download } from 'lucide-react';
 import { ProductConditionBadge } from '../../components/ProductConditionBadge';
+
+const TRACK_STEPS = [
+  { key: 'placed', ar: 'تم الطلب', en: 'Order Placed' },
+  { key: 'accepted', ar: 'مقبول', en: 'Accepted' },
+  { key: 'progress', ar: 'قيد التجهيز', en: 'In Progress' },
+  { key: 'onway', ar: 'في الطريق', en: 'On the Way' },
+  { key: 'delivered', ar: 'تم التوصيل', en: 'Delivered' },
+];
+
+function getStepIndex(status: string): number {
+  const s = (status || '').toUpperCase();
+  if (s === 'CANCELLED') return -1;
+  if (s === 'DELIVERED') return 4;
+  if (s === 'ON_THE_WAY' || s === 'SHIPPED') return 3;
+  if (s === 'IN_PROGRESS' || s === 'PROCESSING' || s === 'READY_FOR_PICKUP') return 2;
+  if (s === 'PAID' || s === 'ACCEPTED') return 1;
+  return 0;
+}
+
+function formatOrderDate(date: string | number | undefined, lang: string): string {
+  if (!date) return '—';
+  const d = typeof date === 'number' ? new Date(date) : new Date(date);
+  return d.toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
 export interface TrackingDisplay {
   orderId: string;
@@ -46,6 +76,14 @@ export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
 }) => {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
+      {/* Breadcrumb — طراز Plant Shop */}
+      <nav className="flex items-center gap-2 text-sm text-slate-500 mb-2" aria-label="Breadcrumb">
+        <span>{lang === 'ar' ? 'الرئيسية' : 'Home'}</span>
+        <ChevronLeft className="w-4 h-4 rtl:rotate-180" aria-hidden />
+        <span className="font-bold text-slate-800">
+          {lang === 'ar' ? 'تتبع الطلب' : 'Track Your Order'}
+        </span>
+      </nav>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h2 className="font-heading text-2xl font-black text-palma-navy tracking-tight">{t.nav.orders}</h2>
         <button
@@ -72,6 +110,10 @@ export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
             const orderItemsFromApi = Array.isArray(o.order_items) ? o.order_items : [];
             const orderItemsFromLocal = marketStore.getOrderItems().filter((oi) => oi.order_id === o.id);
             const orderItems = orderItemsFromApi.length > 0 ? orderItemsFromApi : orderItemsFromLocal;
+            const stepIndex = getStepIndex(o.delivery_status || o.status);
+            const orderDate = o.created_at ?? (o as any).createdAt;
+            const deliveryDate = o.expected_delivery_date ?? (o as any).expected_delivery_date;
+
             return (
               <div key={o.id} className="dashboard-card overflow-hidden hover:shadow-md transition-all group">
                 <div className="p-6 border-b border-slate-50 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
@@ -91,8 +133,100 @@ export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
                   </span>
                 </div>
 
+                {/* Order Completed — طراز Grocery (للطلبات المستلمة) */}
+                {isDelivered && (
+                  <div className="p-6 bg-amber-50/50 border-b border-slate-100">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center">
+                          <Check className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <p className="font-black text-slate-800">
+                            {lang === 'ar' ? 'تم استلام طلبك!' : 'Your order is completed!'}
+                          </p>
+                          <p className="text-sm text-slate-600">
+                            {lang === 'ar' ? 'شكراً. تم استلام الطلب.' : 'Thank you. Your order has been received.'}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition"
+                      >
+                        <Download className="w-4 h-4" />
+                        {lang === 'ar' ? 'تحميل الفاتورة' : 'Download Invoice'}
+                      </button>
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs text-slate-500">{lang === 'ar' ? 'رقم الطلب' : 'Order ID'}</p>
+                        <p className="font-mono font-bold text-emerald-700">#{String(o.order_reference || o.id).slice(-8)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500">{lang === 'ar' ? 'طريقة الدفع' : 'Payment'}</p>
+                        <p className="font-bold text-slate-800">{String(o.payment_method || (o as any).payment_method || '—').toUpperCase()}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500">{lang === 'ar' ? 'تاريخ التوصيل' : 'Delivery'}</p>
+                        <p className="font-bold text-slate-800">{formatOrderDate(deliveryDate, lang)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500">{lang === 'ar' ? 'المجموع' : 'Total'}</p>
+                        <p className="font-bold text-slate-800">₪{o.total_amount ?? (o as any).amount ?? '—'}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Order Status — شريط التتبع (طراز Plant Shop) */}
+                {!isCancelled && (
+                  <div className="px-6 py-5 border-b border-slate-100">
+                    <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-4">
+                      {lang === 'ar' ? 'حالة الطلب' : 'Order Status'} — {lang === 'ar' ? 'رقم' : 'ID'}: #{String(o.order_reference || o.id).slice(-8)}
+                    </p>
+                    <div className="flex items-start justify-between gap-2 overflow-x-auto pb-2">
+                      {TRACK_STEPS.map((step, idx) => {
+                        const done = stepIndex >= idx;
+                        const isLast = idx === TRACK_STEPS.length - 1;
+                        const label = lang === 'ar' ? step.ar : step.en;
+                        let dateStr = '—';
+                        if (idx === 0) dateStr = formatOrderDate(orderDate, lang);
+                        else if (idx === 4 && deliveryDate) dateStr = formatOrderDate(deliveryDate, lang);
+                        else if (done && idx > 0) dateStr = formatOrderDate(orderDate, lang);
+                        return (
+                          <React.Fragment key={step.key}>
+                            <div className="flex flex-col items-center min-w-[80px] sm:min-w-0">
+                              <div
+                                className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                                  done ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-500'
+                                }`}
+                              >
+                                {done ? <Check className="w-5 h-5" /> : <span className="text-xs font-bold">{idx + 1}</span>}
+                              </div>
+                              <p className="text-[10px] font-bold text-slate-700 mt-2 text-center">{label}</p>
+                              <p className="text-[9px] text-slate-500 mt-0.5 text-center">{dateStr}</p>
+                            </div>
+                            {!isLast && (
+                              <div
+                                className={`flex-1 min-w-[20px] h-0.5 mt-5 shrink-0 ${
+                                  stepIndex > idx ? 'bg-emerald-600' : 'bg-slate-200'
+                                }`}
+                                aria-hidden
+                              />
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <div className="p-6 sm:p-8 grid md:grid-cols-2 gap-8">
                   <div className="space-y-4">
+                    <p className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                      {lang === 'ar' ? 'المنتجات' : 'Products'}
+                    </p>
                     {orderItems.length > 0 ? (
                       orderItems.map((item: OrderItem | CartItem, idx: number) => {
                         const productId = item.product_id ?? item.productId;

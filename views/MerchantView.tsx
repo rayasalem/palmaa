@@ -64,6 +64,10 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
     images: [],
     isActive: true,
     condition: 'new',
+    is_discount_active: false,
+    discount_type: 'PERCENT',
+    discount_value: 0,
+    discount_ends_at: undefined,
   });
   const [tagsInput, setTagsInput] = useState('');
   const [uploadQueue, setUploadQueue] = useState<File[]>([]);
@@ -163,6 +167,10 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
       isActive: true,
       images: [],
       condition: 'new',
+      is_discount_active: false,
+      discount_type: 'PERCENT',
+      discount_value: 0,
+      discount_ends_at: undefined,
     });
     setTagsInput('');
     setUploadQueue([]);
@@ -170,19 +178,37 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
     setEditingId(null);
   };
 
-  const handleEditClick = (product: Product) => {
-    setProductForm({
-      ...product,
-      // Ensure numeric values
-      price: product.price || product.price_ils,
-      // Ensure images array exists
-      images: product.images && product.images.length > 0 ? product.images : product.imageUrl ? [product.imageUrl] : [],
-      condition: product.condition || 'new',
-    });
-    setTagsInput(product.tags ? product.tags.join(', ') : '');
+  const handleEditClick = async (product: Product) => {
     setEditingId(product.id);
     setIsEditing(true);
-    // Scroll to form
+    // جلب أحدث بيانات المنتج من الـ API (بما فيها الخصم) لضمان ظهورها في النموذج
+    try {
+      const fresh = await productService.fetchById(product.id, true);
+      const p = fresh ?? product;
+      setProductForm({
+        ...p,
+        price: p.price ?? p.price_ils,
+        images: p.images && p.images.length > 0 ? p.images : p.imageUrl ? [p.imageUrl] : [],
+        condition: p.condition || 'new',
+        is_discount_active: Boolean(p.is_discount_active),
+        discount_type: p.discount_type || 'PERCENT',
+        discount_value: p.discount_value ?? undefined,
+        discount_ends_at: p.discount_ends_at ?? undefined,
+      });
+      setTagsInput(p.tags ? p.tags.join(', ') : '');
+    } catch {
+      setProductForm({
+        ...product,
+        price: product.price || product.price_ils,
+        images: product.images && product.images.length > 0 ? product.images : product.imageUrl ? [product.imageUrl] : [],
+        condition: product.condition || 'new',
+        is_discount_active: Boolean(product.is_discount_active),
+        discount_type: product.discount_type || 'PERCENT',
+        discount_value: product.discount_value ?? undefined,
+        discount_ends_at: product.discount_ends_at ?? undefined,
+      });
+      setTagsInput(product.tags ? product.tags.join(', ') : '');
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -196,6 +222,16 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
 
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const price = Number(productForm.price);
+    const stock = Number(productForm.stock);
+    if (Number.isFinite(price) && price < 0) {
+      showToast(lang === 'ar' ? 'السعر يجب أن يكون موجباً أو صفراً.' : 'Price must be zero or positive.', 'error');
+      return;
+    }
+    if (Number.isFinite(stock) && stock < 0) {
+      showToast(lang === 'ar' ? 'الكمية يجب أن تكون موجبة أو صفراً.' : 'Stock must be zero or positive.', 'error');
+      return;
+    }
     setLoading(true);
     setIsUploading(true);
 
@@ -267,9 +303,13 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
         images: uploadedUrls,
         image_url: uploadedUrls[0],
         imageUrl: uploadedUrls[0],
-        price_ils: productForm.price, // Ensure DB field mapping
-        stock: Number(productForm.stock), // Ensure number
+        price_ils: Math.max(0, Number(productForm.price) || 0),
+        stock: Math.max(0, Number(productForm.stock) || 0),
         condition: productForm.condition || 'new',
+        is_discount_active: Boolean(productForm.is_discount_active),
+        discount_type: productForm.is_discount_active ? (productForm.discount_type || 'PERCENT') : undefined,
+        discount_value: productForm.is_discount_active && Number(productForm.discount_value) > 0 ? Number(productForm.discount_value) : undefined,
+        discount_ends_at: productForm.discount_ends_at || undefined,
       };
 
       if (isEditing && editingId) {
@@ -277,6 +317,11 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
         const res = await productService.update(editingId, payload);
         if (res.success) {
           showToast(lang === 'ar' ? 'تم تحديث المنتج' : lang === 'he' ? 'המוצר עודכן' : 'Product updated', 'success');
+          if (res.data) {
+            setProducts((prev) =>
+              prev.map((p) => (p.id === editingId ? { ...p, ...res.data } : p))
+            );
+          }
         } else {
           throw new Error(res.error);
         }

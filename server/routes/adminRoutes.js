@@ -5,6 +5,7 @@
 
 import express from 'express';
 import * as adminController from '../controllers/adminController.js';
+import * as offersController from '../controllers/offersController.js';
 import { authenticate, requireRole } from '../middlewares/authMiddleware.js';
 import { validate } from '../middlewares/validate.js';
 import { admin as adminSchemas } from '../validation/schemas.js';
@@ -44,5 +45,10 @@ router.patch(
   adminController.updateSettings
 );
 router.get('/platform-earnings', adminController.getPlatformEarnings);
+// العروض — إدارة قسم العروض في المتجر
+router.get('/offers', offersController.getOffersAdmin);
+router.post('/offers', offersController.createOffer);
+router.put('/offers/:id', offersController.updateOffer);
+router.delete('/offers/:id', offersController.deleteOffer);
 
 export default router;

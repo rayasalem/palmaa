@@ -23,9 +23,11 @@
  * | admin            | لوحة الأدمن         |
  */
 export const ROUTES = {
-  /** الصفحة الرئيسية (لاندينغ) */
+  /** الصفحة الرئيسية (لاندينغ) — عن الموقع والانضمام */
   HOME: '',
-  /** تصفّح المنتجات (كتالوج) */
+  /** صفحة الترحيب/عن بالما (لاندينغ كامل) */
+  WELCOME: 'welcome',
+  /** تصفّح المنتجات (كتالوج) — الصفحة الافتراضية للزائر والزبون */
   CATALOG: 'catalog',
   /** الصفحة الرئيسية للمستخدم المسجّل (زبون) */
   HOME_APP: 'home',
@@ -82,12 +84,15 @@ export const ROUTES = {
   USERS: 'users',
   /** إعدادات/إيرادات المنصة (أدمن) */
   PLATFORM: 'platform',
+  /** العروض — إدارة قسم العروض (أدمن) */
+  OFFERS: 'offers',
 } as const;
 
 /** مسارات عامة — لا تتطلب تسجيل دخول */
 export const PUBLIC_TOP_ROUTES = new Set([
   '',
   ROUTES.CATALOG,
+  ROUTES.WELCOME,
   ROUTES.LOGIN,
   ROUTES.JOIN,
   ROUTES.REGISTER_MERCHANT,
@@ -123,6 +128,7 @@ export const ADMIN_ONLY_TOP_ROUTES = new Set([
   ROUTES.USERS,
   ROUTES.WITHDRAWALS,
   ROUTES.PLATFORM,
+  ROUTES.OFFERS,
 ]);
 
 /** مسارات لوحة التاجر/الوسيط — الزبون يُحوَّل للرئيسية */

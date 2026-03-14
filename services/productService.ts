@@ -32,7 +32,37 @@ async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   return data as T;
 }
 
+/** يحسب السعر النهائي ونسبة الخصم من حقول الخصم إن لم يُرسَل من الباكند */
+function computeDiscountDisplay(row: any, basePrice: number): { final_price: number; discount_percent?: number } {
+  const finalFromApi = row.final_price != null ? Number(row.final_price) : null;
+  const percentFromApi = row.discount_percent != null ? Number(row.discount_percent) : null;
+  if (finalFromApi != null && finalFromApi < basePrice && basePrice > 0) {
+    const pct = percentFromApi ?? Math.round((1 - finalFromApi / basePrice) * 100);
+    return { final_price: finalFromApi, discount_percent: pct };
+  }
+  const active = Boolean(row.is_discount_active) && row.discount_value != null && Number(row.discount_value) > 0;
+  const now = new Date();
+  const startsAt = row.discount_starts_at ? new Date(row.discount_starts_at) : null;
+  const endsAt = row.discount_ends_at ? new Date(row.discount_ends_at) : null;
+  const within =
+    (!startsAt || startsAt.getTime() <= now.getTime()) &&
+    (!endsAt || endsAt.getTime() > now.getTime());
+  if (!active || basePrice <= 0 || !within) {
+    return { final_price: basePrice };
+  }
+  const value = Number(row.discount_value) || 0;
+  const type = row.discount_type === 'AMOUNT' ? 'AMOUNT' : 'PERCENT';
+  let amount = 0;
+  if (type === 'PERCENT') amount = (basePrice * Math.min(100, value)) / 100;
+  else amount = Math.min(basePrice, value);
+  const final_price = Math.max(0, basePrice - amount);
+  const discount_percent = basePrice > 0 ? Math.round((amount / basePrice) * 100) : 0;
+  return { final_price, discount_percent };
+}
+
 function mapDbToProduct(row: any): Product {
+  const basePrice = Number(row.price ?? row.price_ils) || 0;
+  const { final_price, discount_percent } = computeDiscountDisplay(row, basePrice);
   return {
     id: row.id,
     merchant_id: row.merchant_id,
@@ -40,8 +70,8 @@ function mapDbToProduct(row: any): Product {
     merchantName: row.merchant_name || 'Loading...',
     name: row.title || row.name,
     description: row.description,
-    price: Number(row.price ?? row.price_ils),
-    price_ils: Number(row.price ?? row.price_ils),
+    price: basePrice,
+    price_ils: basePrice,
     stock: row.stock,
     category: row.category,
     image_url: row.image_url || (row.images && row.images[0]),
@@ -54,6 +84,13 @@ function mapDbToProduct(row: any): Product {
     createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
     created_at: row.created_at,
     condition: row.condition,
+    discount_type: row.discount_type,
+    discount_value: row.discount_value != null ? Number(row.discount_value) : undefined,
+    is_discount_active: Boolean(row.is_discount_active),
+    discount_starts_at: row.discount_starts_at,
+    discount_ends_at: row.discount_ends_at,
+    final_price,
+    discount_percent: discount_percent && discount_percent > 0 ? discount_percent : undefined,
   };
 }
 
@@ -80,9 +117,11 @@ export const productService = {
     }
   },
 
-  async fetchById(id: string): Promise<Product | undefined> {
-    const local = db.products.find((p) => p.id === id);
-    if (local) return local;
+  async fetchById(id: string, forceRefresh = false): Promise<Product | undefined> {
+    if (!forceRefresh) {
+      const local = db.products.find((p) => p.id === id);
+      if (local) return local;
+    }
     try {
       const data = await api<{ success: boolean; product: any }>(`/api/products/${id}`);
       const p = (data as any).product;
@@ -137,6 +176,11 @@ export const productService = {
         dimensions: data.dimensions,
         tags: data.tags,
         condition: data.condition || 'new',
+        discount_type: data.discount_type,
+        discount_value: data.discount_value,
+        is_discount_active: data.is_discount_active,
+        discount_starts_at: data.discount_starts_at,
+        discount_ends_at: data.discount_ends_at,
       };
       const res = await api<{ success: boolean; product: any }>('/api/products', {
         method: 'POST',
@@ -170,6 +214,11 @@ export const productService = {
       if (data.image_url !== undefined) body.image_url = data.image_url;
       if (data.tags !== undefined) body.tags = data.tags;
       if (data.condition !== undefined) body.condition = data.condition;
+      if (data.discount_type !== undefined) body.discount_type = data.discount_type;
+      if (data.discount_value !== undefined) body.discount_value = data.discount_value;
+      if (data.is_discount_active !== undefined) body.is_discount_active = data.is_discount_active;
+      if (data.discount_starts_at !== undefined) body.discount_starts_at = data.discount_starts_at;
+      if (data.discount_ends_at !== undefined) body.discount_ends_at = data.discount_ends_at;
       const res = await api<{ success: boolean; product: any }>(`/api/products/${productId}`, {
         method: 'PUT',
         body: JSON.stringify(body),

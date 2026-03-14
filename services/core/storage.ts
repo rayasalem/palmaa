@@ -29,6 +29,8 @@ class StorageService {
   public sharedProducts: SharedProduct[] = [];
   public reviews: Review[] = [];
   public notifications: Notification[] = [];
+  /** Recently viewed products for public catalog/product pages (local, per-browser) */
+  public recentlyViewedProducts: { productId: string; viewedAt: number }[] = [];
   public commissions: CommissionRecord[] = [];
   public withdrawals: WithdrawalRequest[] = [];
   public transactions: Transaction[] = [];
@@ -49,6 +51,7 @@ class StorageService {
     this.load('orderItems', []);
     this.load('sharedProducts', []);
     this.load('notifications', []);
+    this.load('recentlyViewedProducts', []);
     this.load('commissions', []);
     this.load('withdrawals', []);
     this.load('transactions', []);

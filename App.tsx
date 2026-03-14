@@ -181,6 +181,9 @@ const AppContent: React.FC = () => {
     if (top === ROUTES.CATALOG) {
       setPublicState('CATALOG');
       setCurrentView(ROUTES.HOME_APP);
+    } else if (top === ROUTES.WELCOME) {
+      setPublicState('LANDING');
+      setCurrentView(ROUTES.HOME_APP);
     } else if (top === ROUTES.LOGIN) {
       setPublicState('AUTH');
       setAuthView('LOGIN');
@@ -224,16 +227,24 @@ const AppContent: React.FC = () => {
         ROUTES.NOTIFICATIONS,
         ROUTES.PROFILE,
         ROUTES.ORDERS,
+        ROUTES.USERS,
+        ROUTES.WITHDRAWALS,
+        ROUTES.PLATFORM,
+        ROUTES.OFFERS,
       ].includes(top)
     ) {
       setCurrentView(top === ROUTES.ORDERS ? 'orders_customer' : top);
       if (top !== 'product_details') setSelectedProductId(null);
       if (top !== 'public_profile') setSelectedProfileId(null);
     } else {
-      setPublicState('LANDING');
+      // الزائر أو من يريد التسوق يرى الكتالوج أولاً (مثل متجر إلكتروني — sdclubs style)
+      setPublicState('CATALOG');
       setCurrentView(ROUTES.HOME_APP);
       setSelectedProductId(null);
       setSelectedProfileId(null);
+      if (typeof window !== 'undefined' && raw === '') {
+        updateHash(ROUTES.CATALOG);
+      }
     }
     setTimeout(() => {
       isApplyingHashRef.current = false;
@@ -390,6 +401,28 @@ const AppContent: React.FC = () => {
     })();
   }, [user, localCart.length]);
 
+  // بعد تسجيل الدخول: إذا كان الضيف ضغط "اشتري الآن" نفتح الدفع مباشرة بذلك المنتج
+  useEffect(() => {
+    if (!user) return;
+    const raw = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('palma_pending_buy_now') : null;
+    if (!raw) return;
+    try {
+      const { productId, quantity } = JSON.parse(raw) as { productId: string; quantity: number };
+      sessionStorage.removeItem('palma_pending_buy_now');
+      if (!productId || !Number.isFinite(quantity) || quantity < 1) return;
+      (async () => {
+        const p = await productService.fetchById(productId);
+        if (!p) return;
+        const price = (p as any).final_price ?? p.price_ils ?? p.price ?? 0;
+        const item: CartItem = { ...p, quantity, price };
+        setCheckoutCart([item]);
+        setShowApiCheckout(true);
+      })();
+    } catch {
+      sessionStorage.removeItem('palma_pending_buy_now');
+    }
+  }, [user]);
+
   const refreshUser = () => {
     if (!user) return;
     const u = marketStore.getUserById(user.id);
@@ -454,10 +487,10 @@ const AppContent: React.FC = () => {
     } else {
       setLocalCart((prev) => {
         const existing = prev.find((p) => p.id === product.id);
-        const price = product.price ?? product.price_ils ?? 0;
+        const effectivePrice = (product as any).final_price ?? product.price_ils ?? product.price ?? 0;
         const newCart = existing
           ? prev.map((p) => (p.id === product.id ? { ...p, quantity: p.quantity + quantity } : p))
-          : [...prev, { ...product, quantity, price } as CartItem];
+          : [...prev, { ...product, quantity, price: effectivePrice } as CartItem];
         localStorage.setItem('palma_cart', JSON.stringify(newCart));
         return newCart;
       });
@@ -646,7 +679,12 @@ const AppContent: React.FC = () => {
                 updateHash(ROUTES.CATALOG);
               }}
               onLoginClick={() => openAuth('LOGIN')}
+              onViewProduct={(id) => setSelectedProductId(id)}
               addToCart={addToCart}
+              onBuyNow={(product, qty) => {
+                sessionStorage.setItem('palma_pending_buy_now', JSON.stringify({ productId: product.id, quantity: qty }));
+                openAuth('LOGIN');
+              }}
             />
           </Suspense>
           <SupportChat lang={lang} user={user} />
@@ -754,7 +792,7 @@ const AppContent: React.FC = () => {
             <PublicCatalog
               onBack={() => {
                 setPublicState('LANDING');
-                updateHash(ROUTES.HOME);
+                updateHash(ROUTES.WELCOME);
               }}
               onLoginClick={() => openAuth('LOGIN')}
               onProductClick={handleViewProduct}
@@ -828,7 +866,22 @@ const AppContent: React.FC = () => {
         }}
         cartCount={cart.reduce((a, b) => a + b.quantity, 0)}
       >
-        {currentView === 'profile' ? (
+        {currentView === 'catalog' ? (
+          <Suspense fallback={<PageLoader />}>
+            <PublicCatalog
+              embeddedInLayout
+              onBack={() => {
+                setCurrentView(user.role === 'CUSTOMER' ? 'home' : 'shop');
+                updateHash(user.role === 'CUSTOMER' ? ROUTES.HOME_APP : ROUTES.SHOP);
+              }}
+              onLoginClick={() => setCurrentView('profile')}
+              onProductClick={(id) => {
+                setSelectedProductId(id);
+                setCurrentView('product_details');
+              }}
+            />
+          </Suspense>
+        ) : currentView === 'profile' ? (
           <Suspense fallback={<PageLoader />}>
             <ProfileView
               lang={lang}
@@ -838,6 +891,14 @@ const AppContent: React.FC = () => {
                 setSelectedProductId(id);
                 setCurrentView('product_details');
               }}
+              onNavigateToOrders={
+                user.role === 'CUSTOMER'
+                  ? () => {
+                      setCurrentView('orders_customer');
+                      updateHash(ROUTES.ORDERS);
+                    }
+                  : undefined
+              }
             />
           </Suspense>
         ) : currentView === 'product_details' && selectedProductId ? (
@@ -853,8 +914,18 @@ const AppContent: React.FC = () => {
                 setSelectedProfileId(id);
                 setCurrentView('public_profile');
               }}
+              onViewProduct={(id) => {
+                setSelectedProductId(id);
+                setCurrentView('product_details');
+              }}
               addToCart={addToCart}
               addingToCartProductId={addingToCartProductId}
+              onBuyNow={(product, quantity) => {
+                const price = (product as any).final_price ?? product.price_ils ?? product.price ?? 0;
+                const item: CartItem = { ...product, quantity, price };
+                setCheckoutCart([item]);
+                setShowApiCheckout(true);
+              }}
             />
           </Suspense>
         ) : currentView === 'public_profile' && selectedProfileId ? (
@@ -883,36 +954,52 @@ const AppContent: React.FC = () => {
             {user.role === 'CUSTOMER' && (
               <div className={'block'}>
                 <Suspense fallback={<PageLoader />}>
-                  <CustomerView
-                    user={user}
-                    view={currentView === 'orders_customer' ? 'orders' : currentView}
-                    cart={cart}
-                    addToCart={addToCart}
-                    addingToCartProductId={addingToCartProductId}
-                    removeFromCart={removeFromCart}
-                    updateQuantity={updateQuantity}
-                    clearCart={clearCart}
-                    lang={lang}
-                    onRefresh={refreshUser}
-                    onViewProduct={(id) => {
-                      setSelectedProductId(id);
-                      setCurrentView('product_details');
-                    }}
-                    onViewProfile={(id) => {
-                      setSelectedProfileId(id);
-                      setCurrentView('public_profile');
-                    }}
-                    onTabChange={(tab) => {
-                      if (tab === 'home' || tab === 'shop') setCurrentView('home');
-                      else if (tab === 'cart') setCurrentView('cart');
-                      else if (tab === 'orders') setCurrentView('orders_customer');
-                      else setCurrentView(tab);
-                    }}
-                    onProceedToApiCheckout={(items) => {
-                      setCheckoutCart(items);
-                      setShowApiCheckout(true);
-                    }}
-                  />
+                  {currentView === 'home' ? (
+                    <PublicCatalog
+                      embeddedInLayout
+                      onBack={() => updateHash(ROUTES.WELCOME)}
+                      onLoginClick={() => setCurrentView('profile')}
+                      onProductClick={(id) => {
+                        setSelectedProductId(id);
+                        setCurrentView('product_details');
+                      }}
+                    />
+                  ) : (
+                    <CustomerView
+                      user={user}
+                      view={currentView === 'orders_customer' ? 'orders' : currentView}
+                      cart={cart}
+                      addToCart={addToCart}
+                      addingToCartProductId={addingToCartProductId}
+                      removeFromCart={removeFromCart}
+                      updateQuantity={updateQuantity}
+                      clearCart={clearCart}
+                      lang={lang}
+                      onRefresh={refreshUser}
+                      onViewProduct={(id) => {
+                        setSelectedProductId(id);
+                        setCurrentView('product_details');
+                      }}
+                      onViewProfile={(id) => {
+                        setSelectedProfileId(id);
+                        setCurrentView('public_profile');
+                      }}
+                      onTabChange={(tab) => {
+                        if (tab === 'home' || tab === 'shop') setCurrentView('home');
+                        else if (tab === 'cart') setCurrentView('cart');
+                        else if (tab === 'orders') setCurrentView('orders_customer');
+                        else setCurrentView(tab);
+                      }}
+                      onProceedToApiCheckout={(items) => {
+                        setCheckoutCart(items);
+                        setShowApiCheckout(true);
+                      }}
+                      onNavigateToCatalog={() => {
+                        setCurrentView('catalog');
+                        updateHash(ROUTES.CATALOG);
+                      }}
+                    />
+                  )}
                 </Suspense>
               </div>
             )}
@@ -946,6 +1033,10 @@ const AppContent: React.FC = () => {
                     onProceedToApiCheckout={(items) => {
                       setCheckoutCart(items);
                       setShowApiCheckout(true);
+                    }}
+                    onNavigateToCatalog={() => {
+                      setCurrentView('catalog');
+                      updateHash(ROUTES.CATALOG);
                     }}
                   />
                 </Suspense>
@@ -998,6 +1089,10 @@ const AppContent: React.FC = () => {
                       setCheckoutCart(items);
                       setShowApiCheckout(true);
                     }}
+                    onNavigateToCatalog={() => {
+                      setCurrentView('catalog');
+                      updateHash(ROUTES.CATALOG);
+                    }}
                   />
                 </Suspense>
               </div>
@@ -1047,6 +1142,10 @@ const AppContent: React.FC = () => {
                     onProceedToApiCheckout={(items) => {
                       setCheckoutCart(items);
                       setShowApiCheckout(true);
+                    }}
+                    onNavigateToCatalog={() => {
+                      setCurrentView('catalog');
+                      updateHash(ROUTES.CATALOG);
                     }}
                   />
                 </Suspense>

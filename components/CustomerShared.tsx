@@ -263,6 +263,8 @@ export interface ShopProductCardProps {
   onViewProfile?: (profileId: string) => void;
   onAddToCart: (product: Product) => void;
   isAddingToCart?: boolean;
+   /** اختياري: فتح نافذة عرض سريع بدون تغيير التنقل */
+  onQuickView?: (product: Product) => void;
 }
 export const ShopProductCard = React.memo(function ShopProductCard({
   product: p,
@@ -272,10 +274,55 @@ export const ShopProductCard = React.memo(function ShopProductCard({
   onViewProfile,
   onAddToCart,
   isAddingToCart,
+  onQuickView,
 }: ShopProductCardProps) {
   const merchantId = p.merchant_id || p.merchantId || '';
   const merchantName = marketStore.getMerchantNameByUserId(merchantId);
   const displayImage = p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/400x400?text=No+Image';
+  const basePrice = p.price || p.price_ils || 0;
+  const finalPrice = (p as any).final_price != null ? (p as any).final_price : basePrice;
+  const hasDiscount = finalPrice < basePrice;
+  const discountPercent =
+    (p as any).discount_percent != null
+      ? Number((p as any).discount_percent)
+      : basePrice > 0 && finalPrice < basePrice
+        ? Math.round((1 - finalPrice / basePrice) * 100)
+        : undefined;
+  const discountEndsAt =
+    (p as any).discount_ends_at || (p as any).discountEndsAt || (p as any).flash_sale_ends_at;
+  let flashLabel: string | null = null;
+  if (discountEndsAt && hasDiscount) {
+    const end = new Date(discountEndsAt);
+    const now = new Date();
+    if (end.getTime() > now.getTime()) {
+      const diffMs = end.getTime() - now.getTime();
+      const diffMinutes = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMinutes / 60);
+      const diffDays = Math.floor(diffHours / 24);
+      if (diffDays > 0) {
+        flashLabel =
+          lang === 'ar'
+            ? `عرض لفترة محدودة • ينتهي خلال ${diffDays} يوم`
+            : lang === 'he'
+              ? `הטבה לזמן מוגבל • מסתיים בעוד ${diffDays} ימים`
+              : `Limited time offer • Ends in ${diffDays} days`;
+      } else if (diffHours > 0) {
+        flashLabel =
+          lang === 'ar'
+            ? `عرض اليوم فقط • ينتهي خلال ${diffHours} ساعة`
+            : lang === 'he'
+              ? `מבצע להיום בלבד • מסתיים בעוד ${diffHours} שעות`
+              : `Today only • Ends in ${diffHours} hours`;
+      } else if (diffMinutes > 0) {
+        flashLabel =
+          lang === 'ar'
+            ? `عرض سريع • ينتهي خلال ${diffMinutes} دقيقة`
+            : lang === 'he'
+              ? `מבצע מהיר • מסתיים בעוד ${diffMinutes} דקות`
+              : `Flash deal • Ends in ${diffMinutes} minutes`;
+      }
+    }
+  }
   return (
     <div className="dashboard-card flex flex-col p-0 overflow-hidden group hover:shadow-md hover:-translate-y-1 transition-all duration-300">
       <div
@@ -288,11 +335,36 @@ export const ShopProductCard = React.memo(function ShopProductCard({
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           alt={p.name}
         />
+        {/* شارة الخصم بأسلوب sdclubs — مستطيل أحمر واضح */}
+        {hasDiscount && (
+          <div
+            className={`absolute top-3 ${lang === 'en' ? 'right-3' : 'left-3'} bg-red-600 text-white px-2.5 py-1 rounded-sm text-xs font-black shadow-lg`}
+          >
+            {discountPercent != null && discountPercent > 0 ? (
+              <span>%{discountPercent}-</span>
+            ) : (
+              <span>{lang === 'ar' ? 'تخفيضات!' : lang === 'he' ? 'הנחות!' : 'Sale!'}</span>
+            )}
+          </div>
+        )}
         <div
-          className={`absolute top-3 ${lang === 'en' ? 'right-3' : 'left-3'} bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm text-palma-navy border border-slate-200/80`}
+          className={`absolute top-3 ${lang === 'en' ? 'left-3' : 'right-3'} bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm text-palma-navy border border-slate-200/80`}
         >
-          ₪{p.price || p.price_ils}
+          {hasDiscount ? (
+            <span className="flex items-baseline gap-1.5">
+              <span className="text-sm font-bold text-red-600">₪{finalPrice}</span>
+              <span className="line-through text-[11px] text-slate-400">₪{basePrice}</span>
+            </span>
+          ) : (
+            <>₪{basePrice}</>
+          )}
         </div>
+        {flashLabel && (
+          <div className="absolute bottom-3 left-3 right-3 bg-red-600/95 text-white px-3 py-1.5 rounded-xl text-[10px] font-black shadow-lg flex items-center justify-between gap-2">
+            <span className="truncate">{flashLabel}</span>
+            <span className="text-xs">⏳</span>
+          </div>
+        )}
       </div>
       <div className="p-4 space-y-3 flex-1 flex flex-col">
         <div className="flex-1">
@@ -316,6 +388,18 @@ export const ShopProductCard = React.memo(function ShopProductCard({
             {p.name}
           </h4>
         </div>
+        {onQuickView && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onQuickView(p);
+            }}
+            className="w-full mb-2 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl border border-slate-200 text-slate-700 bg-slate-50 hover:bg-slate-100 transition-colors"
+          >
+            {lang === 'ar' ? 'عرض سريع' : lang === 'he' ? 'תצוגה מהירה' : 'Quick View'}
+          </button>
+        )}
         <button
           type="button"
           onClick={() => onAddToCart(p)}

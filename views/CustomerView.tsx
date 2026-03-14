@@ -67,6 +67,8 @@ interface Props {
   onProceedToApiCheckout?: (items: CartItem[]) => void;
   /** When true (e.g. for MERCHANT/BROKER), show only shop + cart in a dedicated section with sub-tabs */
   shopOnlySection?: boolean;
+  /** الانتقال لصفحة كل المنتجات مع الفلترة (الكتالوج) */
+  onNavigateToCatalog?: () => void;
 }
 
 export const CustomerView: React.FC<Props> = ({
@@ -85,6 +87,7 @@ export const CustomerView: React.FC<Props> = ({
   onViewProfile,
   onProceedToApiCheckout,
   shopOnlySection,
+  onNavigateToCatalog,
 }) => {
   const t = translations[lang];
   const { showToast } = useToast();
@@ -104,6 +107,7 @@ export const CustomerView: React.FC<Props> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingCancelId, setProcessingCancelId] = useState<string | null>(null);
   const [cancelConfirmOrderId, setCancelConfirmOrderId] = useState<string | null>(null);
+  const [showClearCartConfirm, setShowClearCartConfirm] = useState(false);
   const [checkingStatusId, setCheckingStatusId] = useState<string | null>(null);
   const [trackingDisplay, setTrackingDisplay] = useState<{ orderId: string; status: string } | null>(null);
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
@@ -260,7 +264,12 @@ export const CustomerView: React.FC<Props> = ({
   const selectedCartItems = useMemo(() => cart.filter((c) => selectedCartIds.has(c.id)), [cart, selectedCartIds]);
   // --- Performance: memoize cart total so it is not recalculated every render ---
   const totalAmount = useMemo(
-    () => selectedCartItems.reduce((s, p) => s + (p.price || p.price_ils || 0) * p.quantity, 0),
+    () =>
+      selectedCartItems.reduce((s, p) => {
+        const base = p.price || p.price_ils || 0;
+        const final = (p as any).final_price != null ? (p as any).final_price : base;
+        return s + final * p.quantity;
+      }, 0),
     [selectedCartItems]
   );
   const myOrders = marketStore.getOrders().filter((o) => o.customer_id === user.id || o.customerId === user.id);
@@ -450,7 +459,11 @@ export const CustomerView: React.FC<Props> = ({
   };
 
   const finalizeCheckout = async () => {
-    const total = selectedCartItems.reduce((s, p) => s + (p.price || p.price_ils || 0), 0);
+    const total = selectedCartItems.reduce((s, p) => {
+      const base = p.price || p.price_ils || 0;
+      const final = (p as any).final_price != null ? (p as any).final_price : base;
+      return s + final;
+    }, 0);
     setIsProcessing(true);
 
     try {
@@ -680,6 +693,23 @@ export const CustomerView: React.FC<Props> = ({
         }}
         onCancel={() => setCancelConfirmOrderId(null)}
         isLoading={!!cancelConfirmOrderId && processingCancelId === cancelConfirmOrderId}
+        variant="danger"
+      />
+      <ConfirmModal
+        isOpen={showClearCartConfirm}
+        title={lang === 'ar' ? 'إفراغ السلة' : 'Clear cart'}
+        message={
+          lang === 'ar'
+            ? 'هل تريد إزالة كل المنتجات من السلة؟'
+            : 'Do you want to remove all items from your cart?'
+        }
+        confirmLabel={lang === 'ar' ? 'نعم، إفراغ السلة' : 'Yes, clear cart'}
+        cancelLabel={lang === 'ar' ? 'إلغاء' : 'Cancel'}
+        onConfirm={() => {
+          clearCart();
+          setShowClearCartConfirm(false);
+        }}
+        onCancel={() => setShowClearCartConfirm(false)}
         variant="danger"
       />
       {/* Shop/Cart/Orders sub-tabs (تظهر لكل الأدوار) */}
@@ -1021,6 +1051,7 @@ export const CustomerView: React.FC<Props> = ({
             addingToCartProductId={addingToCartProductId}
             onViewProduct={onViewProduct}
             onViewProfile={onViewProfile}
+            onNavigateToCatalog={onNavigateToCatalog}
           />
         </Suspense>
       )}
@@ -1039,6 +1070,7 @@ export const CustomerView: React.FC<Props> = ({
             onUpdateQuantity={updateQuantity}
             onRemove={handleRemoveFromCart}
             onProceedToCheckout={onProceedToApiCheckout}
+            onClearCart={() => setShowClearCartConfirm(true)}
           />
         </Suspense>
       )}

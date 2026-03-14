@@ -24,6 +24,7 @@ import {
   ChevronDown,
   FileText,
   ChevronLeft,
+  Tag,
 } from 'lucide-react';
 
 const LANG_LABELS: Record<Language, string> = { ar: 'العربية', en: 'English', he: 'עברית' };
@@ -42,10 +43,12 @@ function getCurrentStepLabel(activeTab: string, t: ReturnType<typeof translation
     stats: t.common.stats,
     users: t.common.users,
     withdrawals: t.common.withdrawals,
+    offers: lang === 'ar' ? 'العروض' : 'Offers',
     home: t.nav.home,
     notifications: t.nav.notifications,
     orders_customer: t.nav.orders,
     cart: t.nav.cart,
+    catalog: lang === 'ar' ? 'كل المنتجات' : lang === 'he' ? 'כל המוצרים' : 'All Products',
   };
   return stepLabels[activeTab] || activeTab;
 }
@@ -98,6 +101,7 @@ const Layout: React.FC<LayoutProps> = ({
       TrendingUp: <TrendingUp size={size} />,
       Bell: <Bell size={size} />,
       FileText: <FileText size={size} />,
+      Tag: <Tag size={size} />,
     };
     return icons[iconName] || <LayoutDashboard size={size} />;
   };
@@ -131,6 +135,7 @@ const Layout: React.FC<LayoutProps> = ({
               { id: 'products', label: t.common.products, icon: 'Package' },
               { id: 'orders', label: t.common.orders, icon: 'ShoppingBag' },
               { id: 'withdrawals', label: t.common.withdrawals, icon: 'Wallet' },
+              { id: 'offers', label: lang === 'ar' ? 'العروض' : 'Offers', icon: 'Tag' },
             ]
           : [
               { id: 'home', label: t.nav.home, icon: 'Home' },
@@ -286,44 +291,49 @@ const Layout: React.FC<LayoutProps> = ({
       </header>
 
       <div className="flex flex-1 max-w-[1800px] mx-auto w-full">
-        {/* Desktop Sidebar */}
-        {isProfessional && (
-          <aside
-            className={`hidden lg:block w-72 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto py-8 pr-6 rtl:pr-0 rtl:pl-6`}
-          >
-            <div className="bg-white rounded-2xl shadow-card border border-palma-border h-full flex flex-col p-4 hover:shadow-card-hover transition-shadow duration-300">
-              <div className="px-3 py-3 mb-1 border-b border-palma-border/50 pb-4">
-                <h3 className="text-xs font-black text-palma-navy uppercase tracking-widest">{t.common.dashboard}</h3>
-                <p className="text-[10px] font-bold text-palma-muted mt-1.5">
-                  {lang === 'ar' ? 'أنت هنا: ' : lang === 'he' ? 'אתה כאן: ' : 'You are: '}
-                  <span className="text-palma-primary">{currentStep}</span>
-                </p>
-              </div>
-              <nav className="space-y-0.5 flex-1">
-                {userMenuItems.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => onTabChange(item.id)}
-                    onMouseEnter={() => prefetchForTab(item.id, user.role as string)}
-                    onFocus={() => prefetchForTab(item.id, user.role as string)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 group relative overflow-hidden ${
-                      activeTab === item.id
-                        ? 'bg-palma-primaryLight text-palma-primary shadow-soft ring-1 ring-palma-primary/20'
-                        : 'text-palma-muted hover:bg-slate-50 hover:text-palma-navy hover:rounded-2xl'
-                    }`}
+        {/* Desktop Sidebar — للشاشات الكبيرة (لابتوب وما فوق): يظهر للجميع (زبون + تاجر + أدمن) */}
+        <aside
+          className="hidden lg:block w-72 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto py-8 pr-6 rtl:pr-0 rtl:pl-6 shrink-0"
+        >
+          <div className="bg-white rounded-2xl shadow-card border border-palma-border h-full flex flex-col p-4 hover:shadow-card-hover transition-shadow duration-300">
+            <div className="px-3 py-3 mb-1 border-b border-palma-border/50 pb-4">
+              <h3 className="text-xs font-black text-palma-navy uppercase tracking-widest">
+                {user.role === Role.CUSTOMER
+                  ? (lang === 'ar' ? 'القائمة' : lang === 'he' ? 'תפריט' : 'Menu')
+                  : t.common.dashboard}
+              </h3>
+              <p className="text-[10px] font-bold text-palma-muted mt-1.5">
+                {lang === 'ar' ? 'أنت هنا: ' : lang === 'he' ? 'אתה כאן: ' : 'You are: '}
+                <span className="text-palma-primary">{currentStep}</span>
+              </p>
+            </div>
+            <nav className="space-y-0.5 flex-1">
+              {userMenuItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => onTabChange(item.id)}
+                  onMouseEnter={() => prefetchForTab(item.id, user.role as string)}
+                  onFocus={() => prefetchForTab(item.id, user.role as string)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 group relative overflow-hidden ${
+                    activeTab === item.id
+                      ? 'bg-palma-primaryLight text-palma-primary shadow-soft ring-1 ring-palma-primary/20'
+                      : 'text-palma-muted hover:bg-slate-50 hover:text-palma-navy hover:rounded-2xl'
+                  }`}
+                >
+                  {activeTab === item.id && (
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-palma-primary rounded-r-full rtl:left-auto rtl:right-0 rtl:rounded-r-none rtl:rounded-l-full" />
+                  )}
+                  <span
+                    className={`inline-flex items-center justify-center w-5 h-5 shrink-0 transition-colors duration-200 ${activeTab === item.id ? 'text-palma-primary' : 'text-slate-400 group-hover:text-palma-navy'}`}
                   >
-                    {activeTab === item.id && (
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-palma-primary rounded-r-full rtl:left-auto rtl:right-0 rtl:rounded-r-none rtl:rounded-l-full" />
-                    )}
-                    <span
-                      className={`inline-flex items-center justify-center w-5 h-5 shrink-0 transition-colors duration-200 ${activeTab === item.id ? 'text-palma-primary' : 'text-slate-400 group-hover:text-palma-navy'}`}
-                    >
-                      {getIcon(item.icon, 20)}
-                    </span>
-                    {item.label}
-                  </button>
-                ))}
-              </nav>
+                    {getIcon(item.icon, 20)}
+                  </span>
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+            {/* صندوق Palma Business يظهر للتاجر/وسيط/أدمن فقط */}
+            {isProfessional && (
               <div className="mt-auto p-4 bg-slate-50/80 rounded-xl border border-palma-border">
                 <div className="flex items-center gap-3">
                   <div className="bg-white p-2.5 rounded-xl shadow-soft border border-palma-border">
@@ -335,9 +345,9 @@ const Layout: React.FC<LayoutProps> = ({
                   </div>
                 </div>
               </div>
-            </div>
-          </aside>
-        )}
+            )}
+          </div>
+        </aside>
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (

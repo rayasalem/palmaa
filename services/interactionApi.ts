@@ -104,7 +104,7 @@ export async function getProductComments(
 export interface ApiNotification {
   id: string;
   user_id: string;
-  type: 'new_product' | 'like' | 'comment' | 'follow';
+  type: 'new_product' | 'like' | 'comment' | 'follow' | 'order_paid' | 'loyalty_level_up' | 'referral_reward' | string;
   reference_id: string;
   message?: string;
   is_read: boolean;

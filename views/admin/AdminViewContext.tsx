@@ -25,7 +25,7 @@ export interface WithdrawalRequest {
   date: string;
 }
 
-export type AdminTab = 'users' | 'products' | 'orders' | 'treasury' | 'platform';
+export type AdminTab = 'users' | 'products' | 'orders' | 'treasury' | 'platform' | 'offers';
 
 export interface AdminViewContextValue {
   activeTab: AdminTab;
@@ -90,6 +90,13 @@ export interface AdminViewContextValue {
   handleSaveSettings: () => Promise<void>;
   // Treasury
   handleWithdrawal: (id: string, status: 'APPROVED' | 'REJECTED') => void;
+  // Offers (العروض)
+  offers: any[];
+  offersLoading: boolean;
+  loadOffers: () => Promise<void>;
+  createOffer: (payload: any) => Promise<boolean>;
+  updateOffer: (id: string, payload: any) => Promise<boolean>;
+  deleteOffer: (id: string) => Promise<boolean>;
 }
 
 const AdminViewContext = createContext<AdminViewContextValue | null>(null);

@@ -43,6 +43,9 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({ lang, onVi
     if (type === 'like') return lang === 'en' ? 'Like' : 'إعجاب';
     if (type === 'comment') return lang === 'en' ? 'Comment' : 'تعليق';
     if (type === 'follow') return lang === 'en' ? 'New follower' : 'متابع جديد';
+    if (type === 'order_paid') return lang === 'en' ? 'Order paid' : 'تم دفع الطلب';
+    if (type === 'loyalty_level_up') return lang === 'en' ? 'Loyalty level' : 'مستوى الولاء';
+    if (type === 'referral_reward') return lang === 'en' ? 'Referral reward' : 'مكافأة إحالة';
     return type;
   };
 
@@ -51,6 +54,9 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({ lang, onVi
     if (type === 'like') return <Heart className="w-4 h-4" />;
     if (type === 'comment') return <MessageCircle className="w-4 h-4" />;
     if (type === 'follow') return <UserPlus className="w-4 h-4" />;
+    if (type === 'order_paid') return <Package className="w-4 h-4" />;
+    if (type === 'loyalty_level_up') return <Bell className="w-4 h-4" />;
+    if (type === 'referral_reward') return <Bell className="w-4 h-4" />;
     return <Bell className="w-4 h-4" />;
   };
 
@@ -119,6 +125,21 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({ lang, onVi
                     {n.type === 'comment' && (lang === 'en' ? 'New comment on a product.' : 'تعليق جديد على منتج.')}
                     {n.type === 'follow' &&
                       (n.message || (lang === 'en' ? 'A customer started following you.' : 'زبون بدأ بمتابعتك.'))}
+                    {n.type === 'order_paid' &&
+                      (n.message ||
+                        (lang === 'en'
+                          ? 'Your payment was received and your order is being prepared.'
+                          : 'تم استلام دفعتك وجاري تجهيز طلبك.'))}
+                    {n.type === 'loyalty_level_up' &&
+                      (n.message ||
+                        (lang === 'en'
+                          ? 'Your loyalty level has been updated.'
+                          : 'تم ترقية مستوى ولائك في النظام.'))}
+                    {n.type === 'referral_reward' &&
+                      (n.message ||
+                        (lang === 'en'
+                          ? 'You received extra points for a successful referral.'
+                          : 'حصلت على نقاط إضافية مقابل إحالة ناجحة.'))}
                   </p>
                   <p className="text-[10px] text-slate-400 mt-1">
                     {new Date(n.created_at).toLocaleString(lang === 'en' ? 'en-US' : 'ar-EG')}

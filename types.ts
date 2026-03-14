@@ -83,6 +83,20 @@ export interface Product {
   updatedAt?: number;
   /** Product condition (e.g. new, used_like_new, used_good, used_fair, refurbished, open_box, vintage) */
   condition?: string;
+  /** خصم: PERCENT = نسبة مئوية، AMOUNT = مبلغ ثابت */
+  discount_type?: 'PERCENT' | 'AMOUNT';
+  /** قيمة الخصم (نسبة أو مبلغ حسب discount_type) */
+  discount_value?: number;
+  /** هل الخصم مفعّل */
+  is_discount_active?: boolean;
+  /** تاريخ بداية الخصم (اختياري) */
+  discount_starts_at?: string;
+  /** تاريخ انتهاء الخصم (اختياري) */
+  discount_ends_at?: string;
+  /** السعر بعد الخصم (يُحسب من الباكند أو من discount_* عند العرض) */
+  final_price?: number;
+  /** نسبة الخصم المعروضة (مثل 20 لـ 20%) */
+  discount_percent?: number;
 }
 
 export interface SharedProduct {

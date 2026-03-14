@@ -10,6 +10,44 @@ import { parsePagination } from '../utils/pagination.js';
 
 const PRODUCTS_TABLE = 'products';
 
+function applyDiscount(product) {
+  if (!product) return product;
+  const now = new Date();
+  const startsAt = product.discount_starts_at ? new Date(product.discount_starts_at) : null;
+  const endsAt = product.discount_ends_at ? new Date(product.discount_ends_at) : null;
+  const withinWindow =
+    (!startsAt || startsAt <= now) &&
+    (!endsAt || endsAt > now);
+  const active =
+    product.is_discount_active &&
+    product.discount_value != null &&
+    withinWindow;
+
+  const price = Number(product.price) || 0;
+  if (!active || price <= 0) {
+    return { ...product, final_price: price, discount_amount: 0, discount_percent: 0 };
+  }
+
+  const value = Number(product.discount_value) || 0;
+  let discountAmount = 0;
+  if (product.discount_type === 'PERCENT') {
+    discountAmount = (price * value) / 100;
+  } else if (product.discount_type === 'AMOUNT') {
+    discountAmount = value;
+  }
+  if (discountAmount < 0) discountAmount = 0;
+  if (discountAmount > price) discountAmount = price;
+  const final = Math.max(0, price - discountAmount);
+  const discountPercent = price > 0 ? Math.round((discountAmount / price) * 100) : 0;
+
+  return {
+    ...product,
+    final_price: final,
+    discount_amount: discountAmount,
+    discount_percent: discountPercent,
+  };
+}
+
 /**
  * Fetch display names for merchant user ids (business_name || company_name || name).
  */
@@ -38,7 +76,7 @@ async function getMerchantNamesMap(merchantIds) {
 function attachMerchantNames(products, namesMap) {
   if (!products || !namesMap) return products;
   return products.map((p) => ({
-    ...p,
+    ...applyDiscount(p),
     merchant_name: p.merchant_id ? namesMap[p.merchant_id] || null : null,
   }));
 }
@@ -147,6 +185,11 @@ async function createProduct(merchantId, payload) {
     weight: payload.weight,
     dimensions: payload.dimensions,
     tags: payload.tags,
+    discount_type: payload.discount_type ?? null,
+    discount_value: payload.discount_value != null ? Number(payload.discount_value) : null,
+    is_discount_active: Boolean(payload.is_discount_active),
+    discount_starts_at: payload.discount_starts_at ?? null,
+    discount_ends_at: payload.discount_ends_at ?? null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -155,7 +198,7 @@ async function createProduct(merchantId, payload) {
     logger.error('productService createProduct error', { message: error.message });
     return { data: null, error };
   }
-  return { data, error: null };
+  return { data: data ? applyDiscount(data) : null, error: null };
 }
 
 async function updateProduct(productId, merchantId, payload) {
@@ -187,6 +230,11 @@ async function updateProduct(productId, merchantId, payload) {
   if (payload.weight !== undefined) updates.weight = payload.weight;
   if (payload.dimensions !== undefined) updates.dimensions = payload.dimensions;
   if (payload.tags !== undefined) updates.tags = payload.tags;
+  if (payload.discount_type !== undefined) updates.discount_type = payload.discount_type;
+  if (payload.discount_value !== undefined) updates.discount_value = payload.discount_value;
+  if (payload.is_discount_active !== undefined) updates.is_discount_active = payload.is_discount_active;
+  if (payload.discount_starts_at !== undefined) updates.discount_starts_at = payload.discount_starts_at;
+  if (payload.discount_ends_at !== undefined) updates.discount_ends_at = payload.discount_ends_at;
 
   const { data, error } = await supabase
     .from(PRODUCTS_TABLE)
@@ -199,7 +247,7 @@ async function updateProduct(productId, merchantId, payload) {
     logger.error('productService updateProduct error', { message: error.message });
     return { data: null, error };
   }
-  return { data, error: null };
+  return { data: data ? applyDiscount(data) : null, error: null };
 }
 
 /**
@@ -240,6 +288,7 @@ async function deleteProduct(productId, merchantId) {
 }
 
 export {
+  applyDiscount,
   getActiveProducts,
   getProductById,
   getProductsByMerchantId,

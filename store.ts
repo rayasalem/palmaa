@@ -182,4 +182,41 @@ export const marketStore = {
   updateWithdrawalStatus: (id: string, status: 'APPROVED' | 'REJECTED') => {
     db.updateItem<WithdrawalRequest>('withdrawals', id, { status });
   },
+
+  // --- Recently Viewed Products (per-browser, non-auth, safe) ---
+  addRecentlyViewedProduct: (productId: string) => {
+    const id = String(productId || '').trim();
+    if (!id) return;
+    const now = Date.now();
+    const existingIndex = db.recentlyViewedProducts.findIndex((x) => x.productId === id);
+    if (existingIndex >= 0) {
+      db.recentlyViewedProducts[existingIndex].viewedAt = now;
+    } else {
+      db.recentlyViewedProducts.push({ productId: id, viewedAt: now });
+    }
+    db.recentlyViewedProducts = db.recentlyViewedProducts
+      .slice()
+      .sort((a, b) => b.viewedAt - a.viewedAt)
+      .slice(0, 30);
+    db.persist('recentlyViewedProducts');
+  },
+  getRecentlyViewedProducts: (): Product[] => {
+    const ids = db.recentlyViewedProducts
+      .slice()
+      .sort((a, b) => b.viewedAt - a.viewedAt)
+      .map((x) => x.productId);
+    if (!ids.length) return [];
+    const byId = new Map<string, Product>();
+    for (const p of db.products) {
+      if (ids.includes(p.id)) {
+        byId.set(p.id, p);
+      }
+    }
+    const result: Product[] = [];
+    for (const id of ids) {
+      const p = byId.get(id);
+      if (p) result.push(p);
+    }
+    return result;
+  },
 };

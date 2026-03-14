@@ -503,6 +503,127 @@ ALTER TABLE public.orders
   ADD COLUMN IF NOT EXISTS shipping_village_id TEXT;
 
 -- =============================================================================
+-- 3.b خصومات المنتجات (015) — أعمدة الخصم على جدول products
+-- =============================================================================
+ALTER TABLE public.products
+  ADD COLUMN IF NOT EXISTS discount_type TEXT CHECK (discount_type IN ('PERCENT', 'AMOUNT')) NULL,
+  ADD COLUMN IF NOT EXISTS discount_value NUMERIC(10,2) NULL,
+  ADD COLUMN IF NOT EXISTS is_discount_active BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS discount_starts_at TIMESTAMPTZ NULL,
+  ADD COLUMN IF NOT EXISTS discount_ends_at TIMESTAMPTZ NULL;
+
+COMMENT ON COLUMN public.products.discount_type IS 'Discount type: PERCENT or AMOUNT.';
+COMMENT ON COLUMN public.products.discount_value IS 'Discount value (percent or fixed amount).';
+COMMENT ON COLUMN public.products.is_discount_active IS 'Whether the discount is active for this product.';
+COMMENT ON COLUMN public.products.discount_starts_at IS 'Optional UTC datetime when discount becomes active.';
+COMMENT ON COLUMN public.products.discount_ends_at IS 'Optional UTC datetime when discount ends.';
+
+-- =============================================================================
+-- 3.c عروض المتجر (018) — جدول shop_offers (الإدمن يضيف عروضاً)
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS public.shop_offers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  type TEXT NOT NULL CHECK (type IN ('custom', 'product')),
+  title TEXT NOT NULL DEFAULT '',
+  subtitle TEXT NULL,
+  discount_label INT NOT NULL DEFAULT 0,
+  image_url TEXT NULL,
+  product_id TEXT NULL REFERENCES public.products(id) ON DELETE SET NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_shop_offers_active_order ON public.shop_offers(is_active, sort_order);
+COMMENT ON TABLE public.shop_offers IS 'عروض المتجر: يديرها الإدمن (بطاقة مخصصة أو منتج).';
+ALTER TABLE public.shop_offers DISABLE ROW LEVEL SECURITY;
+GRANT ALL ON public.shop_offers TO anon, authenticated, service_role;
+
+-- =============================================================================
+-- 3.d جماليات/إحالة (017) — user_points و referrals
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS public.user_points (
+  user_id UUID PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
+  total_points INTEGER NOT NULL DEFAULT 0,
+  loyalty_level TEXT NOT NULL DEFAULT 'BRONZE',
+  referred_by UUID NULL REFERENCES public.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+COMMENT ON TABLE public.user_points IS 'Points and loyalty level per user (gamification).';
+
+CREATE TABLE IF NOT EXISTS public.referrals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  referrer_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  referred_user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  order_id TEXT NULL REFERENCES public.orders(id) ON DELETE SET NULL,
+  reward_points INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'PENDING',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  rewarded_at TIMESTAMPTZ NULL
+);
+
+COMMENT ON TABLE public.referrals IS 'Referral rewards (referrer/referred), optionally tied to an order.';
+CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON public.referrals(referrer_id);
+CREATE INDEX IF NOT EXISTS idx_referrals_order ON public.referrals(order_id);
+
+ALTER TABLE public.user_points DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.referrals DISABLE ROW LEVEL SECURITY;
+GRANT ALL ON public.user_points TO anon, authenticated, service_role;
+GRANT ALL ON public.referrals TO anon, authenticated, service_role;
+
+-- =============================================================================
+-- 3.e إعجابات المنتجات، التعليقات، الإشعارات (مطلوبة للـ API)
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS public.product_likes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id TEXT NOT NULL,
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(product_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_product_likes_product_id ON public.product_likes(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_likes_user_id ON public.product_likes(user_id);
+
+CREATE TABLE IF NOT EXISTS public.product_comments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id TEXT NOT NULL,
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_product_comments_product_id ON public.product_comments(product_id);
+
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL CHECK (type IN ('new_product', 'like', 'comment', 'follow', 'order_paid', 'loyalty_level_up', 'referral_reward')),
+  reference_id TEXT NOT NULL,
+  message TEXT NULL,
+  is_read BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON public.notifications(user_id, is_read);
+
+ALTER TABLE public.product_likes DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.product_comments DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notifications DISABLE ROW LEVEL SECURITY;
+GRANT ALL ON public.product_likes TO anon, authenticated, service_role;
+GRANT ALL ON public.product_comments TO anon, authenticated, service_role;
+GRANT ALL ON public.notifications TO anon, authenticated, service_role;
+
+-- =============================================================================
+-- 3.f أعمدة إضافية من migrations (009, 011)
+-- =============================================================================
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS guest_access_token UUID UNIQUE DEFAULT NULL;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS token_version integer NOT NULL DEFAULT 0;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS mfa_enabled boolean NOT NULL DEFAULT false;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS mfa_secret text;
+
+-- =============================================================================
 -- 4. CRITICAL: RELOAD SCHEMA CACHE (Fixes PGRST204)
 -- =============================================================================
 NOTIFY pgrst, 'reload schema';
