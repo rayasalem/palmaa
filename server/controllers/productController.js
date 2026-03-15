@@ -15,14 +15,20 @@ async function list(req, res) {
     const opts = {
       limit: query.limit,
       offset: query.offset,
+      cursor_created_at: query.cursor_created_at,
+      cursor_id: query.cursor_id,
       q: query.q,
       category: query.category,
+      sort: query.sort,
     };
-    const { data, error } = await productService.getActiveProducts(opts);
+    const { data, error, next_cursor_created_at, next_cursor_id } = await productService.getActiveProducts(opts);
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to fetch products' });
     }
-    return res.status(200).json({ success: true, products: data });
+    const payload = { success: true, products: data };
+    if (next_cursor_created_at != null) payload.next_cursor_created_at = next_cursor_created_at;
+    if (next_cursor_id != null) payload.next_cursor_id = next_cursor_id;
+    return res.status(200).json(payload);
   } catch (err) {
     logger.error('product list unexpected', { message: err.message });
     return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
@@ -42,12 +48,17 @@ async function getById(req, res) {
   }
 }
 
+const MAX_PRODUCT_LIST_ROWS = 1000;
+
 async function listByMerchant(req, res) {
   try {
     const { merchantId } = req.params;
     if (!merchantId) return res.status(400).json({ success: false, error: 'Merchant id is required' });
     const limit = req.query.limit != null ? parseInt(req.query.limit, 10) : undefined;
     const offset = req.query.offset != null ? parseInt(req.query.offset, 10) : undefined;
+    if (Number.isInteger(limit) && limit > MAX_PRODUCT_LIST_ROWS) {
+      return res.status(400).json({ success: false, error: `Limit cannot exceed ${MAX_PRODUCT_LIST_ROWS} rows. Use pagination.` });
+    }
     const opts = {
       limit: Number.isInteger(limit) ? limit : undefined,
       offset: Number.isInteger(offset) ? offset : undefined,
@@ -118,6 +129,36 @@ async function create(req, res) {
   }
 }
 
+async function bulkCreate(req, res) {
+  try {
+    const merchantId = req.auth && req.auth.sub;
+    if (!merchantId) return res.status(401).json({ success: false, error: 'Authentication required' });
+    const { allowed, reason } = await subscriptionService.canAddProducts(merchantId);
+    if (!allowed) {
+      const msg =
+        reason === 'MERCHANT_SUSPENDED'
+          ? 'Your store has been suspended. Contact support.'
+          : 'Subscription expired. Please renew to add new products.';
+      return res.status(403).json({ success: false, error: msg, code: reason });
+    }
+    const items = Array.isArray(req.body) ? req.body : (req.body && req.body.items) || [];
+    if (items.length === 0) {
+      return res.status(400).json({ success: false, error: 'At least one product is required' });
+    }
+    const { created, errors } = await productService.bulkCreateProducts(merchantId, items);
+    if (created.length > 0) await invalidateProductsCache();
+    return res.status(201).json({
+      success: true,
+      created: created.length,
+      products: created,
+      errors: errors.length > 0 ? errors : undefined,
+    });
+  } catch (err) {
+    logger.error('product bulkCreate unexpected', { message: err.message });
+    return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
+  }
+}
+
 async function update(req, res) {
   try {
     const merchantId = req.auth && req.auth.sub;
@@ -177,4 +218,4 @@ async function remove(req, res) {
   }
 }
 
-export { list, getById, listByMerchant, create, update, remove };
+export { list, getById, listByMerchant, create, bulkCreate, update, remove };

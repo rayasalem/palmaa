@@ -9,6 +9,7 @@ import crypto from 'node:crypto';
 import axios from 'axios';
 import { getEnv } from '../../../config/env.js';
 import logger, { sanitizeForLog } from '../../../utils/logger.js';
+import { withCircuitBreaker } from '../../../utils/circuitBreaker.js';
 
 function getRestConfig() {
   const host = getEnv('CYBS_REST_HOST', 'https://apitest.cybersource.com');
@@ -116,41 +117,37 @@ async function restRequest(method, resourcePath, body) {
 
   const headers = buildHttpSignatureHeaders(method, resourcePath, body, cfg);
 
-  try {
-    const response = await axios({
-      method,
-      url,
-      headers,
-      data: body ? JSON.stringify(body) : undefined,
-      timeout: 30000,
+  const { data: response, error: cbError } = await withCircuitBreaker(
+    'cybersource',
+    () =>
+      axios({
+        method,
+        url,
+        headers,
+        data: body ? JSON.stringify(body) : undefined,
+        timeout: 30000,
+      }),
+    { timeoutMs: 15000, failureThreshold: 3, resetAfterMs: 30000 }
+  );
+
+  if (cbError) {
+    // Circuit open or timeout/axios error wrapped by circuit breaker.
+    logger.error('[cybersource-rest] circuit breaker error', {
+      message: cbError.message,
     });
-    logger.info('[cybersource-rest] response', {
-      status: response.status,
-      data: sanitizeForLog(response.data),
-    });
-    return { data: response.data, status: response.status, error: null };
-  } catch (err) {
-    const res = err.response;
-    const status = res && res.status;
-    const data = res && res.data;
-    logger.error('[cybersource-rest] error response', {
-      status,
-      data: sanitizeForLog(data),
-      message: err.message,
-    });
-    if (status === 401) {
-      logger.warn(
-        '[cybersource-rest] 401 Unauthorized: check CYBS_REST_MERCHANT_ID, CYBS_REST_KEY_ID, CYBS_REST_SECRET_KEY. Secret must be Base64-decoded for HMAC per Cybersource doc.'
-      );
-    }
     return {
-      data: data || null,
-      status: status || 500,
-      error: new Error(
-        (data && data.message) || (data && data.reason) || err.message || 'Cybersource REST request failed'
-      ),
+      data: null,
+      status: 503,
+      error: new Error(cbError.message || 'Cybersource REST request failed'),
     };
   }
+
+  const res = response;
+  logger.info('[cybersource-rest] response', {
+    status: res.status,
+    data: sanitizeForLog(res.data),
+  });
+  return { data: res.data, status: res.status, error: null };
 }
 
 /**

@@ -369,12 +369,17 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {offers.map((o) => {
                   const goToCatalog = () => {
-                    if (onNavigateToCatalog) onNavigateToCatalog();
-                    else if (typeof window !== 'undefined') window.location.hash = '#/catalog';
+                    onNavigateToCatalog?.();
+                    if (typeof window !== 'undefined' && window.location.hash !== '#/catalog') {
+                      window.location.hash = '#/catalog';
+                    }
                   };
                   const handleOfferClick = () => {
-                    if (o.type === 'product' && o.product_id) onViewProduct?.(o.product_id);
-                    else goToCatalog();
+                    if (o.type === 'product' && o.product_id) {
+                      onViewProduct?.(o.product_id);
+                    } else {
+                      goToCatalog();
+                    }
                   };
                   const isCartDiscount = (o.scope === 'all' || o.scope === 'category') && (o.discount_label ?? 0) > 0;
                   return (

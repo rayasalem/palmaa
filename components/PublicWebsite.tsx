@@ -79,8 +79,8 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
 
   useEffect(() => {
     const fetchFeatured = async () => {
-      const all = await productService.getAll();
-      setProducts((all || []).slice(0, 24));
+      const res = await productService.getCatalogPage({ limit: 24 });
+      setProducts(res.products || []);
     };
     fetchFeatured();
   }, []);
@@ -88,7 +88,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
   // إعادة جلب المنتجات عند العودة للصفحة (مثلاً بعد حذف من لوحة الإدارة) لضمان عرض محدث
   useEffect(() => {
     const onFocus = () => {
-      productService.getAll().then((all) => setProducts((all || []).slice(0, 24)));
+      productService.getCatalogPage({ limit: 24 }).then((res) => setProducts(res.products || []));
     };
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
@@ -335,13 +335,14 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
       </nav>
 
       {/* Main Content - padding-top يطابق ارتفاع الناف بار */}
+      {/* ترتيب الأقسام: 1 هيرو، 2 الأرقام/الإحصائيات، 3 المنتجات المميزة — لا قسم «منتجات جديدة» */}
       <main className="flex-1 w-full pt-14 sm:pt-16">
         {/* 1. Hero Section */}
         <section id="hero" aria-label={lang === 'ar' ? 'الرئيسية' : 'Hero'}>
           <ComingSoonHero lang={lang} onStartNow={onJoinRegister} onExploreProducts={onExploreProducts} />
         </section>
 
-        {/* الإحصائيات – أرقام تفاعلية (تاجر، منتجات، زبائن، زوار) */}
+        {/* 2. الإحصائيات – أرقام تفاعلية (تاجر، منتجات، زبائن، زوار) */}
         <section className="bg-white pt-4 pb-14 sm:pt-6 sm:pb-20 border-y border-palma-border relative z-10 -mt-2">
           <div className="max-w-7xl mx-auto px-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
@@ -381,7 +382,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
           </div>
         </section>
 
-        {/* 2. المنتجات المميزة — كاروسيل تمرير أفقي */}
+        {/* 3. المنتجات المميزة — كاروسيل تمرير أفقي */}
         <section id="featured-products" className="section-bg-6 py-24 sm:py-32 overflow-hidden">
           <div className="max-w-7xl mx-auto px-6">
             <div className="heading-block mb-6">
@@ -1038,6 +1039,56 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
           </div>
         </section>
       </main>
+
+      {/* الشركات الداعمة — قبل الفوتر */}
+      <section
+        id="supporting-companies"
+        className="bg-gradient-to-b from-slate-50 to-white border-t border-slate-200/80 py-14"
+        aria-label={lang === 'ar' ? 'الشركات الداعمة' : 'Supporting companies'}
+      >
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
+            <a
+              href="https://cnem.ps"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex flex-col items-center justify-center rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md hover:border-palma-primary/20 px-8 py-10 transition-all duration-300"
+              title="شركة سانيم للتدريب الإلكتروني"
+            >
+              <div className="min-h-[100px] flex items-center justify-center mb-4">
+                <img
+                  src="/partners/sanim-logo.png"
+                  alt={lang === 'ar' ? 'شركة سانيم للتدريب الإلكتروني' : 'Sanim Company for Electronic Training'}
+                  className="max-h-20 w-auto max-w-[180px] object-contain group-hover:scale-105 transition-transform"
+                  onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
+                />
+              </div>
+              <span className="text-center text-sm font-bold text-palma-muted leading-snug">
+                {lang === 'ar' ? 'إدارة الموقع — شركة سانيم للتدريب الإلكتروني' : 'Site management — Sanim Co. for E‑Training'}
+              </span>
+            </a>
+            <a
+              href="https://flashline.ps"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex flex-col items-center justify-center rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md hover:border-palma-primary/20 px-8 py-10 transition-all duration-300"
+              title="فلاش لاين اكسبريس"
+            >
+              <div className="min-h-[100px] flex items-center justify-center mb-4">
+                <img
+                  src="/partners/flashline-logo.png"
+                  alt={lang === 'ar' ? 'فلاش لاين اكسبريس — إدارة الشحن' : 'Flash Line Express — Logistics'}
+                  className="max-h-20 w-auto max-w-[200px] object-contain group-hover:scale-105 transition-transform"
+                  onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
+                />
+              </div>
+              <span className="text-center text-sm font-bold text-palma-muted leading-snug">
+                {lang === 'ar' ? 'إدارة الشحن — فلاش لاين اكسبريس' : 'Logistics — Flash Line Express'}
+              </span>
+            </a>
+          </div>
+        </div>
+      </section>
 
       {/* Footer — تنسيق موحّد: أعمدة بمحاذاة واحدة وسطر سفلي واحد */}
       <footer id="contact" className="footer-pattern border-t border-slate-200/80 pt-14 pb-8">

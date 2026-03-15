@@ -1,0 +1,52 @@
+/**
+ * Reusable card for shop offers (admin offers) in catalog and customer shop.
+ */
+
+import React from 'react';
+import type { ShopOffer } from '../services/offersApi';
+import type { Language } from '../translations';
+
+export interface OfferCardProps {
+  offer: ShopOffer;
+  lang: Language;
+  onShopNow: () => void;
+  className?: string;
+}
+
+export const OfferCard = React.memo(function OfferCard({
+  offer: o,
+  lang,
+  onShopNow,
+  className = '',
+}: OfferCardProps) {
+  return (
+    <button
+      type="button"
+      onClick={onShopNow}
+      className={`min-w-[180px] max-w-[220px] rounded-2xl border border-slate-100 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all flex-shrink-0 text-left ${className}`}
+    >
+      {o.image_url ? (
+        <div className="aspect-square overflow-hidden bg-slate-100">
+          <img
+            src={o.image_url}
+            alt=""
+            className="w-full h-full object-cover"
+            loading="lazy"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = 'https://placehold.co/400x400?text=Offer';
+            }}
+          />
+        </div>
+      ) : null}
+      <div className="p-3">
+        <p className="text-xs text-slate-600 line-clamp-2">{o.subtitle || o.title}</p>
+        <span className="text-xl font-black text-emerald-600">%{o.discount_label ?? 0}</span>
+      </div>
+      <div className="px-3 pb-3">
+        <span className="inline-block w-full py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold text-center">
+          {lang === 'ar' ? 'تسوق الآن' : 'Shop Now'}
+        </span>
+      </div>
+    </button>
+  );
+});

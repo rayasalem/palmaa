@@ -6,6 +6,7 @@
 import express from 'express';
 import { authenticate, requireRole } from '../middlewares/authMiddleware.js';
 import { validate } from '../middlewares/validate.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 import { cart as cartSchemas } from '../validation/schemas.js';
 import * as cartController from '../controllers/cartController.js';
 
@@ -14,14 +15,14 @@ const router = express.Router();
 router.use(authenticate);
 router.use(requireRole('CUSTOMER', 'MERCHANT', 'BROKER', 'ADMIN'));
 
-router.get('/', cartController.getCart);
-router.post('/items', validate(cartSchemas.addItem, 'body', 'cart.addItem'), cartController.addItem);
+router.get('/', asyncHandler(cartController.getCart));
+router.post('/items', validate(cartSchemas.addItem, 'body', 'cart.addItem'), asyncHandler(cartController.addItem));
 router.patch(
   '/items/:productId',
   validate(cartSchemas.updateQuantity, 'body', 'cart.updateQuantity'),
-  cartController.updateItem
+  asyncHandler(cartController.updateItem)
 );
-router.delete('/items/:productId', cartController.removeItem);
-router.delete('/', cartController.clearCart);
+router.delete('/items/:productId', asyncHandler(cartController.removeItem));
+router.delete('/', asyncHandler(cartController.clearCart));
 
 export default router;

@@ -244,11 +244,14 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
       
       // Upload new files if any using Storage Service
       if (uploadQueue.length > 0) {
+        const productKey =
+          (isEditing && editingId) || (productForm as any).id || `${user.id}-${Date.now()}`;
         for (const file of uploadQueue) {
           try {
-            // Generate a unique path for the file: merchantId/timestamp_cleanfilename
-            const path = `${user.id}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-            const url = await storageService.uploadFile(file, 'products', path);
+            // Path structure inside bucket: merchant_id/product_key/filename.webp
+            const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, '_').replace(/\.[^.]+$/, '') || 'image';
+            const path = `${user.id}/${productKey}/${safeName}_${Date.now()}.webp`;
+            const url = await storageService.uploadFile(file, 'product-images', path);
             uploadedUrls.push(url);
           } catch (err: any) {
             let msg = err?.message || '';

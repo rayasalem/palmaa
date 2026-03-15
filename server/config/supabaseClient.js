@@ -20,10 +20,10 @@ const supabaseUrl = (
   process.env.VITE_SUPABASE_URL ||
   ''
 ).trim();
+// Server must use service role only; never anon key for DB access.
 const supabaseServiceKey = (
   process.env.SUPABASE_SERVICE_KEY ||
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  process.env.VITE_SUPABASE_ANON_KEY ||
   ''
 ).trim();
 

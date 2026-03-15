@@ -98,34 +98,68 @@ async function getOrderById(orderId) {
 
 async function getOrdersByCustomerId(customerId, opts = {}) {
   const { limit, offset } = parsePagination(opts);
+  const cursorCreatedAt = typeof opts.cursor_created_at === 'string' ? opts.cursor_created_at.trim() : '';
+  const useCursor = cursorCreatedAt.length > 0;
+
   let query = supabase
     .from(ORDERS_TABLE)
     .select('*, order_items(*)')
     .eq('customer_id', customerId)
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
+    .order('created_at', { ascending: false });
+
+  if (useCursor) {
+    query = query.lt('created_at', cursorCreatedAt).limit(limit);
+  } else {
+    query = query.range(offset, offset + limit - 1);
+  }
+
   const { data, error } = await query;
   if (error) {
     logger.error('orderService getOrdersByCustomerId error', { message: error.message });
-    return { data: [], error };
+    return { data: [], error, next_cursor_created_at: null, next_cursor_id: null };
   }
-  return { data: data || [], error: null };
+  const list = data || [];
+  let next_cursor_created_at = null;
+  let next_cursor_id = null;
+  if (list.length === limit && list.length > 0) {
+    const last = list[list.length - 1];
+    next_cursor_created_at = last.created_at || null;
+    next_cursor_id = last.id || null;
+  }
+  return { data: list, error: null, next_cursor_created_at, next_cursor_id };
 }
 
 async function getOrdersByMerchantId(merchantId, opts = {}) {
   const { limit, offset } = parsePagination(opts);
+  const cursorCreatedAt = typeof opts.cursor_created_at === 'string' ? opts.cursor_created_at.trim() : '';
+  const useCursor = cursorCreatedAt.length > 0;
+
   let query = supabase
     .from(ORDERS_TABLE)
     .select('*, order_items(*)')
     .eq('merchant_id', merchantId)
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
+    .order('created_at', { ascending: false });
+
+  if (useCursor) {
+    query = query.lt('created_at', cursorCreatedAt).limit(limit);
+  } else {
+    query = query.range(offset, offset + limit - 1);
+  }
+
   const { data, error } = await query;
   if (error) {
     logger.error('orderService getOrdersByMerchantId error', { message: error.message });
-    return { data: [], error };
+    return { data: [], error, next_cursor_created_at: null, next_cursor_id: null };
   }
-  return { data: data || [], error: null };
+  const list = data || [];
+  let next_cursor_created_at = null;
+  let next_cursor_id = null;
+  if (list.length === limit && list.length > 0) {
+    const last = list[list.length - 1];
+    next_cursor_created_at = last.created_at || null;
+    next_cursor_id = last.id || null;
+  }
+  return { data: list, error: null, next_cursor_created_at, next_cursor_id };
 }
 
 async function cancelOrder(orderId, customerId) {

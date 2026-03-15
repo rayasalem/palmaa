@@ -8,6 +8,7 @@
 import axios from 'axios';
 import { supabase } from '../config/supabaseClient.js';
 import logger from '../utils/logger.js';
+import { withCircuitBreaker } from '../utils/circuitBreaker.js';
 
 const ORDERS_TABLE = 'orders';
 const SHIPMENT_API_BASE = process.env.SHIPMENT_API_BASE || 'https://apisv2.logestechs.com/api';
@@ -91,26 +92,23 @@ async function callCreateShipmentApi(body) {
   const base = SHIPMENT_API_BASE.replace(/\/$/, '');
   const url = path.startsWith('http') ? path : `${base}${path.startsWith('/') ? path : `/${path}`}`;
   safeLog('CREATE SHIPMENT REQUEST', { url, headers: { 'company-id': COMPANY_ID }, body });
-  try {
-    const response = await axios.post(url, body, {
-      headers: {
-        'company-id': COMPANY_ID,
-        'Content-Type': 'application/json',
-      },
-      timeout: 20000,
-    });
-    console.log('[shipmentService] LogesTechs API create-shipment success', { status: response.status });
-    safeLog('CREATE SHIPMENT RESPONSE', { status: response.status, data: response.data });
-    return { data: response.data, error: null };
-  } catch (err) {
-    const res = err.response;
-    const resData = res && res.data;
-    const msg =
-      (resData && resData.message) || (typeof resData === 'string' ? resData : JSON.stringify(resData || err.message));
-    safeLog('CREATE SHIPMENT ERROR', { status: res && res.status, data: resData, message: msg });
-    logger.error('shipmentService Create shipment API error', { message: msg });
-    return { data: null, error: { message: typeof msg === 'string' ? msg : msg } };
+  const { data, error } = await withCircuitBreaker(
+    'shipment',
+    () =>
+      axios.post(url, body, {
+        headers: { 'company-id': COMPANY_ID, 'Content-Type': 'application/json' },
+        timeout: 8000,
+      }),
+    { timeoutMs: 8000 }
+  );
+  if (error) {
+    safeLog('CREATE SHIPMENT ERROR', { message: error.message });
+    logger.error('shipmentService Create shipment API error', { message: error.message });
+    return { data: null, error: { message: error.message } };
   }
+  console.log('[shipmentService] LogesTechs API create-shipment success', { status: data?.status });
+  safeLog('CREATE SHIPMENT RESPONSE', { status: data?.status, data: data?.data });
+  return { data, error: null };
 }
 
 async function updateOrderShipment(orderId, shipmentId, shipmentStatus) {

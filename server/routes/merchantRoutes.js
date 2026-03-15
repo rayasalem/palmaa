@@ -1,39 +1,39 @@
 /**
  * Merchant routes: public profile, followers count, optional auth for is-following.
  * GET /dashboard: merchant-only dashboard (subscription + stats).
+ * Offers are mounted at /api/merchant/offers via merchantOffersRoutes (see server.js).
+ * Use UUID constraint on :id so only real UUIDs match.
  */
 
 import express from 'express';
 import * as followController from '../controllers/followController.js';
 import * as merchantController from '../controllers/merchantController.js';
-import * as merchantOffersController from '../controllers/merchantOffersController.js';
 import { authenticate, optionalAuth } from '../middlewares/authMiddleware.js';
 import { requireRole } from '../middlewares/authMiddleware.js';
 import { validate } from '../middlewares/validate.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 import { merchant as merchantSchemas } from '../validation/schemas.js';
 
 const router = express.Router();
 
-router.get('/dashboard', authenticate, requireRole('MERCHANT'), merchantController.getDashboard);
-router.get('/offers', authenticate, requireRole('MERCHANT'), merchantOffersController.list);
-router.post('/offers', authenticate, requireRole('MERCHANT'), merchantOffersController.create);
-router.put('/offers/:id', authenticate, requireRole('MERCHANT'), merchantOffersController.update);
-router.delete('/offers/:id', authenticate, requireRole('MERCHANT'), merchantOffersController.remove);
+const UUID = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89ab][0-9a-fA-F]{3}-[0-9a-fA-F]{12}';
+
+router.get('/dashboard', authenticate, requireRole('MERCHANT'), asyncHandler(merchantController.getDashboard));
 router.get(
-  '/:id/followers-count',
+  `/:id(${UUID})/followers-count`,
   validate(merchantSchemas.idParam, 'params', 'merchant.followersCount'),
-  followController.getFollowersCount
+  asyncHandler(followController.getFollowersCount)
 );
 router.get(
-  '/:id/following',
+  `/:id(${UUID})/following`,
   validate(merchantSchemas.idParam, 'params', 'merchant.following'),
   optionalAuth,
-  followController.getIsFollowing
+  asyncHandler(followController.getIsFollowing)
 );
 router.get(
-  '/:id',
+  `/:id(${UUID})`,
   validate(merchantSchemas.idParam, 'params', 'merchant.publicProfile'),
-  merchantController.getPublicProfile
+  asyncHandler(merchantController.getPublicProfile)
 );
 
 export default router;

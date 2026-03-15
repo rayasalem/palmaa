@@ -8,6 +8,7 @@ import * as authController from '../controllers/authController.js';
 import { authLimiter } from '../middlewares/security.js';
 import { authenticate, optionalAuth } from '../middlewares/authMiddleware.js';
 import { validate } from '../middlewares/validate.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 import { auth as authSchemas } from '../validation/schemas.js';
 import mfaRoutes from './mfaRoutes.js';
 
@@ -42,26 +43,26 @@ router.get('/check-key', (req, res) => {
   });
 });
 router.use(authLimiter());
-router.post('/login', validate(authSchemas.login, 'body', 'auth.login'), authController.login);
-router.post('/logout', authController.logout);
-router.post('/logout-all', authenticate, authController.logoutAll);
-router.get('/me', optionalAuth, authController.getMe);
-router.post('/register', validate(authSchemas.register, 'body', 'auth.register'), authController.registerUser);
-router.post('/verify-email', validate(authSchemas.verifyEmail, 'body', 'auth.verifyEmail'), authController.verifyEmail);
+router.post('/login', validate(authSchemas.login, 'body', 'auth.login'), asyncHandler(authController.login));
+router.post('/logout', asyncHandler(authController.logout));
+router.post('/logout-all', authenticate, asyncHandler(authController.logoutAll));
+router.get('/me', optionalAuth, asyncHandler(authController.getMe));
+router.post('/register', validate(authSchemas.register, 'body', 'auth.register'), asyncHandler(authController.registerUser));
+router.post('/verify-email', validate(authSchemas.verifyEmail, 'body', 'auth.verifyEmail'), asyncHandler(authController.verifyEmail));
 router.post(
   '/forgot-password',
   validate(authSchemas.forgotPassword, 'body', 'auth.forgotPassword'),
-  authController.forgotPassword
+  asyncHandler(authController.forgotPassword)
 );
 router.post(
   '/reset-password',
   validate(authSchemas.resetPassword, 'body', 'auth.resetPassword'),
-  authController.resetPassword
+  asyncHandler(authController.resetPassword)
 );
 router.post(
   '/resend-verification',
   validate(authSchemas.resendVerification, 'body', 'auth.resendVerification'),
-  authController.resendVerification
+  asyncHandler(authController.resendVerification)
 );
 
 router.use('/mfa', mfaRoutes);

@@ -132,6 +132,50 @@ export const productService = {
     }
   },
 
+  /** Server-side catalog page: filtering, sorting, pagination (offset or cursor). Use for public catalog to avoid loading all products. */
+  async getCatalogPage(params: {
+    limit?: number;
+    offset?: number;
+    cursor_created_at?: string | null;
+    cursor_id?: string | null;
+    q?: string | null;
+    category?: string | null;
+    sort?: 'newest' | 'price_asc' | 'price_desc' | null;
+  }): Promise<{
+    products: Product[];
+    next_cursor_created_at?: string | null;
+    next_cursor_id?: string | null;
+  }> {
+    const sp = new URLSearchParams();
+    if (params.limit != null) sp.set('limit', String(params.limit));
+    if (params.offset != null) sp.set('offset', String(params.offset));
+    if (params.cursor_created_at) sp.set('cursor_created_at', params.cursor_created_at);
+    if (params.cursor_id) sp.set('cursor_id', params.cursor_id);
+    if (params.q) sp.set('q', params.q);
+    if (params.category) sp.set('category', params.category);
+    if (params.sort) sp.set('sort', params.sort);
+    const query = sp.toString();
+    const url = query ? `/api/products?${query}` : '/api/products';
+    try {
+      const data = await api<{
+        success: boolean;
+        products: any[];
+        next_cursor_created_at?: string | null;
+        next_cursor_id?: string | null;
+      }>(url);
+      const list = (data as any).products || [];
+      const products = list.map(mapDbToProduct);
+      return {
+        products,
+        next_cursor_created_at: (data as any).next_cursor_created_at ?? null,
+        next_cursor_id: (data as any).next_cursor_id ?? null,
+      };
+    } catch (e) {
+      logger.error('productService.getCatalogPage', { message: e instanceof Error ? e.message : String(e) });
+      return { products: [], next_cursor_created_at: null, next_cursor_id: null };
+    }
+  },
+
   async getByMerchantId(merchantId: string): Promise<Product[]> {
     const now = Date.now();
     const cached = getByMerchantCache.get(merchantId);

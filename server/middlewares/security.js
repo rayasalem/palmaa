@@ -132,6 +132,62 @@ export function cartLimiter() {
   });
 }
 
+/** Per-minute limiter for GET /api/products catalog (default 120 req/min). */
+export function productListMinuteLimiter() {
+  const max = Number(getEnv('RATE_LIMIT_PRODUCTS_LIST_PER_MIN')) || 120;
+  return rateLimit({
+    windowMs: 60 * 1000,
+    max,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => req.ip || req.socket?.remoteAddress || 'unknown',
+    handler: createRateLimitHandler('GET /api/products per-minute'),
+    ...getStore(),
+  });
+}
+
+/** Per-minute limiter for cart APIs (default 60 req/min). */
+export function cartMinuteLimiter() {
+  const max = Number(getEnv('RATE_LIMIT_CART_PER_MIN')) || 60;
+  return rateLimit({
+    windowMs: 60 * 1000,
+    max,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => req.ip || req.socket?.remoteAddress || 'unknown',
+    handler: createRateLimitHandler('cart per-minute', 'Too many cart requests'),
+    ...getStore(),
+  });
+}
+
+/** Per-minute limiter for orders APIs (default 30 req/min). */
+export function ordersMinuteLimiter() {
+  const max = Number(getEnv('RATE_LIMIT_ORDERS_PER_MIN')) || 30;
+  return rateLimit({
+    windowMs: 60 * 1000,
+    max,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => req.ip || req.socket?.remoteAddress || 'unknown',
+    handler: createRateLimitHandler('orders per-minute', 'Too many order requests'),
+    ...getStore(),
+  });
+}
+
+/** Merchant product create (single + bulk): per merchant, env RATE_LIMIT_MERCHANT_PRODUCTS_CREATE, default 50 / 15 min. */
+export function merchantProductCreateLimiter() {
+  const max = Number(getEnv('RATE_LIMIT_MERCHANT_PRODUCTS_CREATE')) || 50;
+  return rateLimit({
+    windowMs: WINDOW_MS,
+    max,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => (req.auth && req.auth.sub) || req.ip || 'anonymous',
+    handler: createRateLimitHandler('merchant_products_create', 'Too many product create requests. Try again later.'),
+    ...getStore(),
+  });
+}
+
 export default {
   helmetMiddleware,
   generalLimiter,
@@ -141,4 +197,8 @@ export default {
   productListLimiter,
   productByIdLimiter,
   cartLimiter,
+  productListMinuteLimiter,
+  cartMinuteLimiter,
+  ordersMinuteLimiter,
+  merchantProductCreateLimiter,
 };

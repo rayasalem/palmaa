@@ -66,10 +66,12 @@ export const cart = {
   }),
 };
 
-/** Query for GET /api/orders and GET /api/orders/merchant (limit/offset). */
+/** Query for GET /api/orders and GET /api/orders/merchant (limit/offset or cursor). */
 const orderListQuery = Joi.object({
   limit: Joi.number().integer().min(1).max(100).default(50),
   offset: Joi.number().integer().min(0).default(0),
+  cursor_created_at: Joi.string().isoDate().allow('', null).trim(),
+  cursor_id: Joi.string().max(64).allow('', null).trim(),
 });
 
 export const orders = {
@@ -107,12 +109,15 @@ export const productComment = {
   }),
 };
 
-/** Catalog list query: pagination + optional search and category filter. */
+/** Catalog list query: pagination (offset or cursor) + optional search, category, sort. Max 1000 rows per request. */
 export const catalogListQuery = Joi.object({
-  limit: Joi.number().integer().min(1).max(100).default(24),
+  limit: Joi.number().integer().min(1).max(1000).default(24),
   offset: Joi.number().integer().min(0).default(0),
+  cursor_created_at: Joi.string().isoDate().allow('', null).trim(),
+  cursor_id: Joi.string().max(64).allow('', null).trim(),
   q: Joi.string().max(150).allow('', null).trim(),
   category: Joi.string().max(100).allow('', null).trim(),
+  sort: Joi.string().valid('newest', 'price_asc', 'price_desc').allow('', null).trim(),
 });
 
 export const products = {
@@ -168,6 +173,30 @@ export const products = {
     discount_starts_at: Joi.string().isoDate().allow('', null),
     discount_ends_at: Joi.string().isoDate().allow('', null),
   }).min(1),
+  /** Bulk create: array of product create payloads, max 50. */
+  bulk: Joi.array()
+    .items(
+      Joi.object({
+        name: Joi.string().max(300),
+        title: Joi.string().max(300).allow('', null),
+        description: Joi.string().allow('', null),
+        price: Joi.number().min(0),
+        price_ils: Joi.number().min(0),
+        stock: Joi.number().integer().min(0),
+        category: Joi.string().max(100),
+        condition: Joi.string().max(50),
+        image_url: Joi.string().uri().allow('', null),
+        images: Joi.array().items(Joi.string().uri()).allow(null),
+        isActive: Joi.boolean(),
+        discount_type: Joi.string().valid('PERCENT', 'AMOUNT').allow(null),
+        discount_value: Joi.number().min(0).allow(null),
+        is_discount_active: Joi.boolean(),
+        discount_starts_at: Joi.string().isoDate().allow('', null),
+        discount_ends_at: Joi.string().isoDate().allow('', null),
+      }).or('name', 'title')
+    )
+    .max(50)
+    .min(1),
 };
 
 const mfaCode = Joi.string().length(6).pattern(/^\d+$/);

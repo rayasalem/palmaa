@@ -15,6 +15,7 @@ const PRODUCT_KEYS_SET = 'palma:product-keys';
 /** In-memory cache for single-instance when Redis is not configured. Key -> { body, expires }. */
 const memoryCache = new Map();
 const memoryProductKeys = new Set();
+const MEMORY_CACHE_MAX_ENTRIES = 500;
 
 function fullKey(key) {
   return KEY_PREFIX + key;
@@ -108,12 +109,21 @@ function attachJsonInterceptor(req, res, key, ttlSeconds, redis, memoryKey) {
               logger.warn('cache store failed', { path: req.path, message: err && err.message });
             });
         } else if (memoryKey) {
+          // Simple LRU-style eviction: if we exceed max entries, delete the oldest key.
+          if (memoryCache.size >= MEMORY_CACHE_MAX_ENTRIES) {
+            const oldestKey = memoryCache.keys().next().value;
+            if (oldestKey) {
+              memoryCache.delete(oldestKey);
+              memoryProductKeys.delete(oldestKey);
+              logger.debug('cache evict (memory)', { evictedKey: oldestKey });
+            }
+          }
           memoryCache.set(memoryKey, {
             body,
             expires: Date.now() + ttlSeconds * 1000,
           });
           if (isProductListKey(key)) memoryProductKeys.add(memoryKey);
-          logger.debug('cache store (memory)', { requestId: req.id, path: req.path, key });
+          logger.debug('cache store (memory)', { requestId: req.id, path: req.path, key, size: memoryCache.size });
         }
       }
     } catch (err) {

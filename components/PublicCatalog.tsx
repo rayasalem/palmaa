@@ -8,6 +8,8 @@ import { prefetchComponent, prefetchProductData } from '../prefetch';
 import { Language, translations } from '../translations';
 import { ArrowRight, ShoppingCart, Search, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { getOffers, type ShopOffer } from '../services/offersApi';
+import { ProductCard } from './ProductCard';
+import { OfferCard } from './OfferCard';
 
 const CONDITION_OPTIONS = [
   'new',
@@ -46,13 +48,17 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
   const [merchantId, setMerchantId] = useState<string>('all');
   const [availability, setAvailability] = useState<'all' | 'in_stock' | 'out_of_stock'>('all');
 
-  // List States
+  // List States — server-side page only (no client "load all then filter")
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<{ cursor_created_at: string; cursor_id: string } | null>(null);
+  const nextCursorRef = useRef<{ cursor_created_at: string; cursor_id: string } | null>(null);
+  nextCursorRef.current = nextCursor;
   const [isLoading, setIsLoading] = useState(true);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(false);
   const [page, setPage] = useState(1);
-  const PAGE_SIZE = 12;
+  const PAGE_SIZE = 24;
   /** عروض الإدمن (قسم تخفيضات) */
   const [offers, setOffers] = useState<ShopOffer[]>([]);
   const catalogProductsRef = useRef<HTMLDivElement | null>(null);
@@ -71,41 +77,50 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
     if (params.get('category')) setCategoryId(params.get('category')!);
     if (params.get('condition')) setConditionId(params.get('condition')!);
   }, []);
-  useEffect(() => setPage(1), [categoryId, conditionId, merchantId, availability, minPrice, maxPrice, minRating, searchTerm]);
+  useEffect(() => {
+    setPage(1);
+    setNextCursor(null);
+  }, [categoryId, conditionId, merchantId, availability, minPrice, maxPrice, minRating, searchTerm]);
 
-  // Fetch and Filter — كل الفلاتر محفوظة + توفر + تاجر
-  const fetchAndFilterProducts = useCallback(async () => {
+  // Server-side catalog page: filtering, sorting, pagination (no "load all then filter")
+  const fetchAndFilterProducts = useCallback(async (pageNum = 1, append = false) => {
     setIsLoading(true);
-
     try {
-      await productService.getAll();
-
-      let data = marketStore.getFilteredProducts({
-        searchTerm,
-        minPrice: minPrice ? parseFloat(minPrice) : undefined,
-        maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
-        minRating,
-        sortBy,
-        merchantId: merchantId !== 'all' ? merchantId : 'all',
-        categoryId,
-        conditionId: conditionId !== 'all' ? conditionId : undefined,
+      const offset = (pageNum - 1) * PAGE_SIZE;
+      const cursor = pageNum > 1 && sortBy === 'newest' && nextCursorRef.current ? nextCursorRef.current : null;
+      const res = await productService.getCatalogPage({
+        limit: PAGE_SIZE,
+        offset: cursor ? undefined : offset,
+        cursor_created_at: cursor?.cursor_created_at,
+        cursor_id: cursor?.cursor_id,
+        q: searchTerm || undefined,
+        category: categoryId && categoryId !== 'all' ? categoryId : undefined,
+        sort: sortBy === 'newest' ? 'newest' : sortBy === 'price_asc' ? 'price_asc' : 'price_desc',
       });
-
+      let data = res.products;
       if (availability === 'in_stock') data = data.filter((p) => (p.stock ?? 0) > 0);
       if (availability === 'out_of_stock') data = data.filter((p) => (p.stock ?? 0) <= 0);
-
-      setFilteredProducts(data);
+      if (minPrice || maxPrice) {
+        const min = minPrice ? parseFloat(minPrice) : undefined;
+        const max = maxPrice ? parseFloat(maxPrice) : undefined;
+        if (min != null && !Number.isNaN(min)) data = data.filter((p) => (p.price ?? p.price_ils ?? 0) >= min);
+        if (max != null && !Number.isNaN(max)) data = data.filter((p) => (p.price ?? p.price_ils ?? 0) <= max);
+      }
+      setFilteredProducts(append ? (prev) => [...prev, ...data] : data);
+      setHasMore(!!(res.next_cursor_created_at && res.next_cursor_id));
+      setNextCursor(res.next_cursor_created_at && res.next_cursor_id ? { cursor_created_at: res.next_cursor_created_at, cursor_id: res.next_cursor_id } : null);
     } catch (e) {
       console.error('Error fetching catalog', e);
+      if (!append) setFilteredProducts([]);
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, minPrice, maxPrice, minRating, sortBy, categoryId, conditionId, merchantId, availability]);
+  }, [searchTerm, minPrice, maxPrice, sortBy, categoryId, availability]);
 
-  // Execute fetch on state change
+  // Execute fetch when filters or page change (page 1 when filters change)
   useEffect(() => {
-    fetchAndFilterProducts();
-  }, [fetchAndFilterProducts]);
+    fetchAndFilterProducts(page, page > 1);
+  }, [page, fetchAndFilterProducts]);
 
   useEffect(() => {
     getOffers().then((res) => {
@@ -113,10 +128,9 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
     });
   }, []);
 
-  /** منتجات جديدة — آخر المنتجات المضافة (للعرض في سكشن مستقل) */
+  /** منتجات جديدة — من الصفحة الحالية (server-side list) */
   const newProducts = useMemo(() => {
-    const all = marketStore.getProducts().filter((p) => p.isActive !== false);
-    return [...all].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)).slice(0, 8);
+    return [...filteredProducts].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)).slice(0, 8);
   }, [filteredProducts]);
 
   /** منتجات عليها خصم — تظهر في قسم العروض مع عروض الإدمن */
@@ -128,34 +142,29 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
     }).slice(0, 8);
   }, [filteredProducts]);
 
-  /** المنتجات الشائعة — للقسم الأفقي (أفضل تقييم أو الأحدث) */
+  /** المنتجات الشائعة — من الصفحة الحالية (أفضل تقييم أو الأحدث) */
   const popularProducts = useMemo(() => {
-    const all = marketStore.getProducts().filter((p) => p.isActive !== false);
-    return [...all]
+    return [...filteredProducts]
       .sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0) || (b.createdAt ?? 0) - (a.createdAt ?? 0))
       .slice(0, 8);
   }, [filteredProducts]);
 
-  /** قائمة التجار من المنتجات (لفلتر العلامة/التاجر) — بدون حذف بيانات */
+  /** قائمة التجار من الصفحة الحالية (لفلتر العلامة/التاجر) */
   const merchantsList = useMemo(() => {
-    const all = marketStore.getProducts().filter((p) => p.isActive !== false);
-    const ids = [...new Set(all.map((p) => p.merchant_id || p.merchantId).filter(Boolean))] as string[];
+    const ids = [...new Set(filteredProducts.map((p) => p.merchant_id || p.merchantId).filter(Boolean))] as string[];
     return ids.map((id) => ({ id, name: marketStore.getMerchantNameByUserId(id) || id.slice(0, 8) }));
   }, [filteredProducts]);
 
-  /** نطاق الأسعار من البيانات (للعرض على السلايدر) */
+  /** نطاق الأسعار من الصفحة الحالية (للعرض على السلايدر) */
   const priceRange = useMemo(() => {
-    const all = marketStore.getProducts().filter((p) => p.isActive !== false);
-    const prices = all.map((p) => Number(p.price ?? p.price_ils ?? 0)).filter((n) => n > 0);
+    const prices = filteredProducts.map((p) => Number(p.price ?? p.price_ils ?? 0)).filter((n) => n > 0);
     if (prices.length === 0) return { min: 0, max: 500 };
     return { min: Math.floor(Math.min(...prices)), max: Math.ceil(Math.max(...prices)) };
   }, [filteredProducts]);
 
   const totalFiltered = filteredProducts.length;
-  const paginatedProducts = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE;
-    return filteredProducts.slice(start, start + PAGE_SIZE);
-  }, [filteredProducts, page]);
+  // Server-side page: show accumulated pages (no client slice)
+  const paginatedProducts = filteredProducts;
 
   const resetFilters = () => {
     setSearchTerm('');
@@ -607,8 +616,8 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 px-2">
             <p className="text-sm font-medium text-slate-600">
               {lang === 'ar'
-                ? `عرض ${(page - 1) * PAGE_SIZE + 1}-${Math.min(page * PAGE_SIZE, totalFiltered)} من ${totalFiltered} نتيجة`
-                : `Showing ${(page - 1) * PAGE_SIZE + 1}-${Math.min(page * PAGE_SIZE, totalFiltered)} of ${totalFiltered} results`}
+                ? `${totalFiltered} نتيجة${hasMore ? ' — المزيد متوفر' : ''}`
+                : `${totalFiltered} result${totalFiltered !== 1 ? 's' : ''}${hasMore ? ' — more available' : ''}`}
             </p>
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-slate-500">{lang === 'ar' ? 'ترتيب:' : 'Sort by:'}</span>
@@ -667,68 +676,26 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                     <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-300 pb-2">
                       <div className="flex gap-4 min-w-0">
                         {offers.map((o) => (
-                          <button
+                          <OfferCard
                             key={o.id}
-                            type="button"
-                            onClick={() => {
+                            offer={o}
+                            lang={lang}
+                            onShopNow={() => {
                               if (o.type === 'product' && o.product_id) onProductClick(o.product_id);
                               else catalogProductsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                             }}
-                            className="min-w-[180px] max-w-[220px] rounded-2xl border border-slate-100 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all flex-shrink-0 text-left"
-                          >
-                            {o.image_url ? (
-                              <div className="aspect-square overflow-hidden bg-slate-100">
-                                <img src={o.image_url} alt="" className="w-full h-full object-cover" />
-                              </div>
-                            ) : null}
-                            <div className="p-3">
-                              <p className="text-xs text-slate-600 line-clamp-2">{o.subtitle || o.title}</p>
-                              <span className="text-xl font-black text-emerald-600">%{o.discount_label || 0}</span>
-                            </div>
-                            <div className="px-3 pb-3">
-                              <span className="inline-block w-full py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold text-center">
-                                {lang === 'ar' ? 'تسوق الآن' : 'Shop Now'}
-                              </span>
-                            </div>
-                          </button>
+                          />
                         ))}
-                        {discountProducts.map((p) => {
-                          const basePrice = p.price ?? p.price_ils ?? 0;
-                          const finalPrice = (p as any).final_price != null ? (p as any).final_price : basePrice;
-                          const pct = (p as any).discount_percent ?? (basePrice > 0 ? Math.round((1 - finalPrice / basePrice) * 100) : 0);
-                          return (
-                            <button
-                              key={p.id}
-                              type="button"
-                              onClick={() => onProductClick(p.id)}
-                              onMouseEnter={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}
-                              className="min-w-[180px] max-w-[220px] rounded-2xl border border-slate-100 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all flex-shrink-0 text-left"
-                            >
-                              <div className="aspect-square overflow-hidden bg-slate-100 relative">
-                                <img
-                                  src={p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/300x200?text=No+Image'}
-                                  alt=""
-                                  className="w-full h-full object-cover"
-                                />
-                                <span className="absolute top-2 left-2 bg-red-600 text-white px-2 py-0.5 rounded text-[10px] font-black">
-                                  %{pct} {lang === 'ar' ? 'خصم' : 'off'}
-                                </span>
-                              </div>
-                              <div className="p-3">
-                                <p className="text-xs font-bold text-slate-800 line-clamp-2">{p.name}</p>
-                                <p className="text-sm font-black text-emerald-600 mt-1">
-                                  ₪{finalPrice.toFixed(2)}
-                                  <span className="text-xs text-slate-400 line-through mr-1">₪{basePrice.toFixed(2)}</span>
-                                </p>
-                              </div>
-                              <div className="px-3 pb-3">
-                                <span className="inline-block w-full py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold text-center">
-                                  {lang === 'ar' ? 'تسوق الآن' : 'Shop Now'}
-                                </span>
-                              </div>
-                            </button>
-                          );
-                        })}
+                        {discountProducts.map((p) => (
+                          <ProductCard
+                            key={p.id}
+                            product={p}
+                            lang={lang}
+                            variant="compact"
+                            onProductClick={onProductClick}
+                            onMouseEnter={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}
+                          />
+                        ))}
                       </div>
                     </div>
                   )}
@@ -743,87 +710,16 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                     </h3>
                     <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-300 pb-2">
                       <div className="flex gap-4 min-w-0">
-                        {popularProducts.map((p) => {
-                          const basePrice = p.price ?? p.price_ils ?? 0;
-                          const finalPrice = (p as any).final_price != null ? (p as any).final_price : basePrice;
-                          const hasDiscount = finalPrice < basePrice;
-                          return (
-                            <button
-                              key={p.id}
-                              type="button"
-                              onClick={() => onProductClick(p.id)}
-                              onMouseEnter={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}
-                              className="min-w-[180px] max-w-[220px] bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex-shrink-0 text-left overflow-hidden group"
-                            >
-                              <div className="aspect-[4/3] overflow-hidden bg-slate-50 relative">
-                                <img
-                                  src={p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/300x200?text=No+Image'}
-                                  loading="lazy"
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                  alt={p.name}
-                                />
-                                {hasDiscount && (
-                                  <span className="absolute top-2 left-2 bg-red-600 text-white px-2 py-0.5 rounded-sm text-[10px] font-black">
-                                    %{Math.round((1 - finalPrice / basePrice) * 100)} {lang === 'ar' ? 'خصم' : 'off'}
-                                  </span>
-                                )}
-                                {(p.rating ?? 0) > 0 && (
-                                  <span className="absolute bottom-2 left-2 bg-amber-400 text-amber-900 px-2 py-0.5 rounded text-[10px] font-bold">
-                                    ★ {Number(p.rating).toFixed(1)}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="p-3 space-y-1">
-                                <p className="text-[11px] font-bold text-palma-navy line-clamp-2">{p.name}</p>
-                                <p className="text-[11px] font-semibold text-palma-primary">
-                                  {hasDiscount ? (
-                                    <><span className="text-red-600 font-bold">₪{finalPrice}</span> <span className="line-through text-slate-400">₪{basePrice}</span></>
-                                  ) : (
-                                    <>₪{basePrice}</>
-                                  )}
-                                </p>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </section>
-                )}
-
-                {/* 3b. ⭐ المنتجات الشائعة */}
-                {popularProducts.length > 0 && (
-                  <section className="mb-8 space-y-3" aria-label={lang === 'ar' ? 'المنتجات الشائعة' : 'Popular products'}>
-                    <h3 className="text-sm font-black uppercase tracking-widest text-palma-navy px-1 flex items-center gap-2">
-                      <span aria-hidden>⭐</span>
-                      {lang === 'ar' ? 'المنتجات الشائعة' : lang === 'he' ? 'מוצרים פופולריים' : 'Popular products'}
-                    </h3>
-                    <div className="overflow-x-auto scrollbar-thin pb-2">
-                      <div className="flex gap-4 min-w-0">
-                        {popularProducts.map((p) => {
-                          const basePrice = p.price ?? p.price_ils ?? 0;
-                          const finalPrice = (p as any).final_price != null ? (p as any).final_price : basePrice;
-                          const hasDiscount = finalPrice < basePrice;
-                          return (
-                            <button
-                              key={p.id}
-                              type="button"
-                              onClick={() => onProductClick(p.id)}
-                              onMouseEnter={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}
-                              className="min-w-[180px] max-w-[220px] bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md flex-shrink-0 text-left overflow-hidden group"
-                            >
-                              <div className="aspect-[4/3] overflow-hidden bg-slate-50 relative">
-                                <img src={p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/300x200'} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform" alt={p.name} />
-                                {hasDiscount && <span className="absolute top-2 left-2 bg-red-600 text-white px-2 py-0.5 rounded text-[10px] font-black">%{Math.round((1 - finalPrice / basePrice) * 100)}</span>}
-                                {(p.rating ?? 0) > 0 && <span className="absolute bottom-2 left-2 bg-amber-400 text-amber-900 px-2 py-0.5 rounded text-[10px] font-bold">★ {Number(p.rating).toFixed(1)}</span>}
-                              </div>
-                              <div className="p-3">
-                                <p className="text-[11px] font-bold text-palma-navy line-clamp-2">{p.name}</p>
-                                <p className="text-[11px] font-semibold text-palma-primary">{hasDiscount ? <><span className="text-red-600">₪{finalPrice}</span> <span className="line-through text-slate-400">₪{basePrice}</span></> : <>₪{basePrice}</>}</p>
-                              </div>
-                            </button>
-                          );
-                        })}
+                        {popularProducts.map((p) => (
+                          <ProductCard
+                            key={p.id}
+                            product={p}
+                            lang={lang}
+                            variant="compact"
+                            onProductClick={onProductClick}
+                            onMouseEnter={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}
+                          />
+                        ))}
                       </div>
                     </div>
                   </section>
@@ -838,263 +734,58 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                     </h3>
                     <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
                       <div className="flex gap-4 min-w-0 pb-2">
-                        {newProducts.map((p) => {
-                          const basePrice = p.price ?? p.price_ils ?? 0;
-                          const finalPrice = (p as any).final_price != null ? (p as any).final_price : basePrice;
-                          const hasDiscount = finalPrice < basePrice;
-                          const discountPercent =
-                            (p as any).discount_percent != null
-                              ? Number((p as any).discount_percent)
-                              : basePrice > 0
-                                ? Math.round((1 - finalPrice / basePrice) * 100)
-                                : 0;
-                          return (
-                            <button
-                              key={p.id}
-                              type="button"
-                              onClick={() => onProductClick(p.id)}
-                              onMouseEnter={() => {
-                                prefetchComponent('PublicProductDetails');
-                                prefetchProductData(p.id);
-                              }}
-                              className="min-w-[180px] max-w-[220px] bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex-shrink-0 text-left overflow-hidden group"
-                            >
-                              <div className="aspect-[4/3] overflow-hidden bg-slate-50 relative">
-                                <img
-                                  src={
-                                    p.images?.[0] ||
-                                    p.imageUrl ||
-                                    p.image_url ||
-                                    'https://placehold.co/300x200?text=No+Image'
-                                  }
-                                  loading="lazy"
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                  alt={p.name}
-                                />
-                                {hasDiscount && (
-                                  <span className="absolute top-2 left-2 bg-red-600 text-white px-2 py-0.5 rounded-sm text-[10px] font-black">
-                                    {discountPercent > 0 ? `%${discountPercent}-` : (lang === 'ar' ? 'تخفيضات!' : 'Sale!')}
-                                  </span>
-                                )}
-                                <span className="absolute top-2 right-2 bg-palma-primary text-white px-2 py-0.5 rounded-lg text-[9px] font-black">
-                                  {lang === 'ar' ? 'جديد' : lang === 'he' ? 'חדש' : 'New'}
-                                </span>
-                              </div>
-                              <div className="p-3 space-y-1">
-                                <p className="text-[11px] font-bold text-palma-navy line-clamp-2">{p.name}</p>
-                                <p className="text-[11px] font-semibold text-palma-primary">
-                                  {hasDiscount ? (
-                                    <>
-                                      <span className="text-red-600 font-bold">₪{finalPrice}</span>
-                                      <span className="line-through text-[10px] text-slate-400 mr-1">₪{basePrice}</span>
-                                    </>
-                                  ) : (
-                                    <>₪{basePrice}</>
-                                  )}
-                                </p>
-                              </div>
-                            </button>
-                          );
-                        })}
+                        {newProducts.map((p) => (
+                          <ProductCard
+                            key={p.id}
+                            product={p}
+                            lang={lang}
+                            variant="compact"
+                            onProductClick={onProductClick}
+                            onMouseEnter={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}
+                          />
+                        ))}
                       </div>
                     </div>
                   </section>
                 )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8 pb-8">
-                {paginatedProducts.map((p) => {
-                  const mName = marketStore.getMerchantNameByUserId(p.merchant_id || '');
-                  const { average, count } = marketStore.getProductRating(p.id);
-                  const displayImage =
-                    p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/400x400?text=No+Image';
-                  const shortDesc = p.shortDescription || (p.description || '').slice(0, 60) || mName;
-                  const stock = p.stock ?? 0;
-                  const basePrice = p.price ?? p.price_ils ?? 0;
-                  const finalPrice = (p as any).final_price != null ? (p as any).final_price : basePrice;
-                  const hasDiscount = finalPrice < basePrice;
-                  const discountPercent =
-                    (p as any).discount_percent != null
-                      ? Number((p as any).discount_percent)
-                      : basePrice > 0 && hasDiscount
-                        ? Math.round((1 - finalPrice / basePrice) * 100)
-                        : undefined;
-                  const discountEndsAt =
-                    (p as any).discount_ends_at || (p as any).discountEndsAt || (p as any).flash_sale_ends_at;
-                  let flashLabel: string | null = null;
-                  if (discountEndsAt && hasDiscount) {
-                    const end = new Date(discountEndsAt);
-                    const now = new Date();
-                    if (end.getTime() > now.getTime()) {
-                      const diffMs = end.getTime() - now.getTime();
-                      const diffMinutes = Math.floor(diffMs / 60000);
-                      const diffHours = Math.floor(diffMinutes / 60);
-                      const diffDays = Math.floor(diffHours / 24);
-                      if (diffDays > 0) {
-                        flashLabel =
-                          lang === 'ar'
-                            ? `عرض لفترة محدودة • ينتهي خلال ${diffDays} يوم`
-                            : lang === 'he'
-                              ? `הטבה לזמן מוגבל • מסתיים בעוד ${diffDays} ימים`
-                              : `Limited time offer • Ends in ${diffDays} days`;
-                      } else if (diffHours > 0) {
-                        flashLabel =
-                          lang === 'ar'
-                            ? `عرض اليوم فقط • ينتهي خلال ${diffHours} ساعة`
-                            : lang === 'he'
-                              ? `מבצע להיום בלבד • מסתיים בעוד ${diffHours} שעות`
-                              : `Today only • Ends in ${diffHours} hours`;
-                      } else if (diffMinutes > 0) {
-                        flashLabel =
-                          lang === 'ar'
-                            ? `عرض سريع • ينتهي خلال ${diffMinutes} دقيقة`
-                            : lang === 'he'
-                              ? `מבצע מהיר • מסתיים בעוד ${diffMinutes} דקות`
-                              : `Flash deal • Ends in ${diffMinutes} minutes`;
-                      }
-                    }
-                  }
-                  return (
-                    <div
-                      key={p.id}
-                      onClick={() => onProductClick(p.id)}
-                      onMouseEnter={() => {
-                        prefetchComponent('PublicProductDetails');
-                        prefetchProductData(p.id);
-                      }}
-                      onFocus={() => {
-                        prefetchComponent('PublicProductDetails');
-                        prefetchProductData(p.id);
-                      }}
-                      className="bg-white rounded-2xl overflow-hidden border border-palma-border shadow-card hover:shadow-card-hover transition-all duration-300 group cursor-pointer flex flex-col h-full hover:-translate-y-1 card-hover-lift"
-                    >
-                      <div className="aspect-square overflow-hidden bg-slate-50 relative">
-                        <img
-                          src={displayImage}
-                          loading="lazy"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          alt={p.name}
-                        />
-                        {/* شارة الخصم بأسلوب sdclubs — مستطيل أحمر واضح */}
-                        {hasDiscount && (
-                          <div className="absolute top-3 left-3 bg-red-600 text-white px-2.5 py-1 rounded-sm text-xs font-black shadow-lg">
-                            {discountPercent != null && discountPercent > 0 ? (
-                              <span>%{discountPercent}-</span>
-                            ) : (
-                              <span>{lang === 'ar' ? 'تخفيضات!' : lang === 'he' ? 'הנחות!' : 'Sale!'}</span>
-                            )}
-                          </div>
-                        )}
-                        <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-bold shadow-lg text-palma-navy border border-slate-200/80">
-                          {hasDiscount ? (
-                            <span className="flex items-baseline gap-1.5 flex-wrap">
-                              <span className="text-sm font-bold text-red-600">₪{finalPrice}</span>
-                              <span className="line-through text-[11px] text-slate-400">₪{basePrice}</span>
-                            </span>
-                          ) : (
-                            <>₪{basePrice}</>
-                          )}
-                        </div>
-                        {flashLabel && (
-                          <div className="absolute bottom-3 left-3 right-3 bg-red-600/95 text-white px-3 py-1.5 rounded-xl text-[10px] font-black shadow-lg flex items-center justify-between gap-2">
-                            <span className="truncate">{flashLabel}</span>
-                            <span className="text-xs">⏳</span>
-                          </div>
-                        )}
-                        {average >= 4.5 && count >= 1 && (
-                          <div className="absolute top-3 right-3 bg-amber-400 text-amber-900 px-2 py-0.5 rounded-lg text-[9px] font-black">
-                            ⭐
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-4 flex-1 flex flex-col">
-                        <h4 className="font-black text-palma-navy text-base mb-1 group-hover:text-palma-primary transition-colors line-clamp-2">
-                          {p.name}
-                        </h4>
-                        <p className="text-xs text-slate-500 mb-2 line-clamp-1">{shortDesc}</p>
-                        <div className="flex flex-wrap items-center gap-2 mb-3">
-                          {stock > 0 && (
-                            <span className="text-[10px] font-bold text-slate-600">
-                              {lang === 'ar'
-                                ? `متوفر: ${stock}`
-                                : lang === 'he'
-                                  ? `במלאי: ${stock}`
-                                  : `Available: ${stock}`}
-                            </span>
-                          )}
-                          <ProductConditionBadge condition={p.condition} lang={lang} className="shrink-0" />
-                        </div>
-                        <div className="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between gap-2 min-h-0">
-                          <span
-                            className="text-xs sm:text-[10px] font-bold text-slate-400 truncate min-w-0"
-                            title={mName}
-                          >
-                            {mName}
-                          </span>
-                          <span className="w-8 h-8 rounded-full bg-palma-navy text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow">
-                            <ArrowRight className="w-4 h-4 rtl:rotate-180" />
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                {paginatedProducts.map((p) => (
+                  <ProductCard
+                    key={p.id}
+                    product={p}
+                    lang={lang}
+                    variant="grid"
+                    onProductClick={onProductClick}
+                    onMouseEnter={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}
+                  />
+                ))}
               </div>
 
-              {/* Pagination — مثل التصميم < 1 2 3 ... 10 > */}
-              {totalFiltered > PAGE_SIZE && (
-                <div className="flex flex-wrap items-center justify-center gap-2 pt-8 pb-4">
+              {/* Load more — server-side cursor/offset */}
+              {hasMore && (
+                <div className="flex justify-center pt-8 pb-4">
                   <button
                     type="button"
-                    onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                    disabled={page <= 1}
-                    className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none"
+                    onClick={() => setPage((prev) => prev + 1)}
+                    disabled={isLoading}
+                    className="px-8 py-3 rounded-2xl border-2 border-palma-primary text-palma-primary font-bold hover:bg-palma-primary hover:text-white disabled:opacity-50 transition"
                   >
-                    ‹
-                  </button>
-                  {(() => {
-                    const totalPages = Math.ceil(totalFiltered / PAGE_SIZE);
-                    const showPages: (number | 'ellipsis')[] = [];
-                    if (totalPages <= 7) {
-                      for (let i = 1; i <= totalPages; i++) showPages.push(i);
-                    } else {
-                      showPages.push(1);
-                      if (page > 3) showPages.push('ellipsis');
-                      const start = Math.max(2, page - 1);
-                      const end = Math.min(totalPages - 1, page + 1);
-                      for (let i = start; i <= end; i++) if (!showPages.includes(i)) showPages.push(i);
-                      if (page < totalPages - 2) showPages.push('ellipsis');
-                      if (totalPages > 1) showPages.push(totalPages);
-                    }
-                    return showPages.map((n, i) =>
-                      n === 'ellipsis' ? (
-                        <span key={`e-${i}`} className="px-2 text-slate-400">…</span>
-                      ) : (
-                        <button
-                          key={n}
-                          type="button"
-                          onClick={() => setPage(n)}
-                          className={`w-10 h-10 rounded-xl border flex items-center justify-center font-bold transition ${
-                            page === n
-                              ? 'bg-palma-primary text-white border-palma-primary'
-                              : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                          }`}
-                        >
-                          {n}
-                        </button>
-                      )
-                    );
-                  })()}
-                  <button
-                    type="button"
-                    onClick={() => setPage((prev) => Math.min(Math.ceil(totalFiltered / PAGE_SIZE), prev + 1))}
-                    disabled={page >= Math.ceil(totalFiltered / PAGE_SIZE)}
-                    className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none"
-                  >
-                    ›
+                    {isLoading ? (lang === 'ar' ? 'جاري التحميل...' : 'Loading...') : lang === 'ar' ? 'عرض المزيد' : 'Load more'}
                   </button>
                 </div>
               )}
-
+              {totalFiltered > PAGE_SIZE && !hasMore && page > 1 && (
+                <div className="flex justify-center gap-2 pt-4 pb-4">
+                  <button
+                    type="button"
+                    onClick={() => { setPage(1); setNextCursor(null); }}
+                    className="px-4 py-2 rounded-xl border border-slate-200 font-medium text-slate-600 hover:bg-slate-50"
+                  >
+                    {lang === 'ar' ? 'العودة للصفحة الأولى' : 'Back to first page'}
+                  </button>
+                </div>
+              )}
               </>
             )}
           </div>

@@ -117,12 +117,17 @@ async function listMyOrders(req, res) {
     const opts = {
       limit: Number.isInteger(limit) ? limit : undefined,
       offset: Number.isInteger(offset) ? offset : undefined,
+      cursor_created_at: req.query.cursor_created_at,
+      cursor_id: req.query.cursor_id,
     };
-    const { data, error } = await orderService.getOrdersByCustomerId(customerId, opts);
+    const { data, error, next_cursor_created_at, next_cursor_id } = await orderService.getOrdersByCustomerId(customerId, opts);
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to fetch orders' });
     }
-    return res.status(200).json({ success: true, orders: data });
+    const payload = { success: true, orders: data };
+    if (next_cursor_created_at != null) payload.next_cursor_created_at = next_cursor_created_at;
+    if (next_cursor_id != null) payload.next_cursor_id = next_cursor_id;
+    return res.status(200).json(payload);
   } catch (err) {
     logger.error('orderController listMyOrders unexpected', { message: err.message });
     return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
@@ -138,12 +143,17 @@ async function listMerchantOrders(req, res) {
     const opts = {
       limit: Number.isInteger(limit) ? limit : undefined,
       offset: Number.isInteger(offset) ? offset : undefined,
+      cursor_created_at: req.query.cursor_created_at,
+      cursor_id: req.query.cursor_id,
     };
-    const { data, error } = await orderService.getOrdersByMerchantId(merchantId, opts);
+    const { data, error, next_cursor_created_at, next_cursor_id } = await orderService.getOrdersByMerchantId(merchantId, opts);
     if (error) {
       return res.status(500).json({ success: false, error: error.message || 'Failed to fetch orders' });
     }
-    return res.status(200).json({ success: true, orders: data });
+    const payload = { success: true, orders: data };
+    if (next_cursor_created_at != null) payload.next_cursor_created_at = next_cursor_created_at;
+    if (next_cursor_id != null) payload.next_cursor_id = next_cursor_id;
+    return res.status(200).json(payload);
   } catch (err) {
     logger.error('orderController listMerchantOrders unexpected', { message: err.message });
     return res.status(500).json({ success: false, error: err.message || 'Internal server error' });

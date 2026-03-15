@@ -9,6 +9,7 @@ import logger from '../utils/logger.js';
 import { parsePagination } from '../utils/pagination.js';
 
 const PRODUCTS_TABLE = 'products';
+const CATALOG_VIEW = 'catalog_products_view';
 
 function applyDiscount(product) {
   if (!product) return product;
@@ -87,75 +88,135 @@ function escapeForLike(s) {
   return s.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_').replace(/'/g, "''");
 }
 
+/** Max rows per product list request; queries requesting more are rejected. */
+const MAX_PRODUCT_LIST_ROWS = 1000;
+/** Log product list queries slower than this (ms). */
+const SLOW_QUERY_MS = 800;
+
 /**
- * Catalog list: pagination (default 24, max 100), optional search (q) and category filter.
- * Uses parsePagination with catalog defaults; filters applied server-side.
+ * Catalog list: pagination (default 24, max 1000) via offset or cursor; optional search (q) and category filter.
+ * When cursor_created_at is provided, uses keyset pagination for stable performance at scale (no large OFFSET).
  */
 async function getActiveProducts(opts = {}) {
-  const { limit, offset } = parsePagination(opts, 24, 100);
+  const { limit, offset } = parsePagination(opts, 24, MAX_PRODUCT_LIST_ROWS);
   const q = typeof opts.q === 'string' ? opts.q.trim() : '';
   const category = typeof opts.category === 'string' ? opts.category.trim() : '';
+  const sort = (typeof opts.sort === 'string' ? opts.sort.trim() : '') || 'newest';
+  const cursorCreatedAt = typeof opts.cursor_created_at === 'string' ? opts.cursor_created_at.trim() : '';
+  const useCursor = cursorCreatedAt.length > 0 && sort === 'newest';
 
+  const orderBy = sort === 'price_asc' ? 'price' : sort === 'price_desc' ? 'price' : 'created_at';
+  const orderAsc = sort === 'price_asc';
+
+  const useFts = q && q.length > 0 && (process.env.USE_PRODUCT_FTS === 'true' || process.env.USE_PRODUCT_FTS === '1');
+
+  const queryStart = Date.now();
   let query = supabase
-    .from(PRODUCTS_TABLE)
+    .from(CATALOG_VIEW)
     .select('*')
-    .or('status.eq.active,is_active.eq.true')
-    .order('created_at', { ascending: false });
+    .eq('is_active', true)
+    .in('status', ['active', 'APPROVED'])
+    .order(orderBy, { ascending: orderAsc });
 
   if (category) {
     query = query.eq('category', category);
   }
   if (q && q.length > 0) {
+    if (useFts) {
+      query = query.textSearch('tsv', q, { type: 'plain', config: 'simple' });
+    } else {
+      const escaped = escapeForLike(q);
+      const pattern = `%${escaped}%`;
+      query = query.or(`name.ilike.'${pattern}',title.ilike.'${pattern}',description.ilike.'${pattern}'`);
+    }
+  }
+
+  if (useCursor) {
+    query = query.lt('created_at', cursorCreatedAt).limit(limit);
+  } else {
+    query = query.range(offset, offset + limit - 1);
+  }
+
+  let result = await query;
+  const queryMs = Date.now() - queryStart;
+  if (queryMs > SLOW_QUERY_MS) {
+    logger.warn('slow_query', { query: 'getActiveProducts', durationMs: queryMs, limit, hasCategory: !!category, hasSearch: !!q });
+  }
+  let { data: products, error } = result;
+  if (error && useFts && q && (error.message || '').toLowerCase().includes('tsv')) {
+    const fallbackStart = Date.now();
+    query = supabase
+      .from(CATALOG_VIEW)
+      .select('*')
+      .or('status.eq.active,is_active.eq.true')
+      .order(orderBy, { ascending: orderAsc });
+    if (category) query = query.eq('category', category);
     const escaped = escapeForLike(q);
     const pattern = `%${escaped}%`;
     query = query.or(`name.ilike.'${pattern}',title.ilike.'${pattern}',description.ilike.'${pattern}'`);
+    if (useCursor) query = query.lt('created_at', cursorCreatedAt).limit(limit);
+    else query = query.range(offset, offset + limit - 1);
+    result = await query;
+    if (Date.now() - fallbackStart > SLOW_QUERY_MS) {
+      logger.warn('slow_query', { query: 'getActiveProducts_fallback', durationMs: Date.now() - fallbackStart });
+    }
+    products = result.data;
+    error = result.error;
   }
-
-  query = query.range(offset, offset + limit - 1);
-  const { data: products, error } = await query;
   if (error) {
     logger.error('productService getActiveProducts error', { message: error.message });
-    return { data: [], error };
+    return { data: [], error, next_cursor_created_at: null, next_cursor_id: null };
   }
-  const list = products || [];
-  const merchantIds = [...new Set(list.map((p) => p.merchant_id).filter(Boolean))];
-  if (merchantIds.length === 0) return { data: list, error: null };
-  const { data: suspended } = await supabase.from('users').select('id').in('id', merchantIds).eq('status', 'SUSPENDED');
-  const suspendedSet = new Set((suspended || []).map((u) => u.id));
-  const filtered = list.filter((p) => !suspendedSet.has(p.merchant_id));
-  const namesMap = await getMerchantNamesMap(filtered.map((p) => p.merchant_id));
-  const enriched = attachMerchantNames(filtered, namesMap);
-  return { data: enriched, error: null };
+  const rawList = products || [];
+  const filteredRaw = rawList.filter((p) => p.merchant_status !== 'SUSPENDED');
+  const enriched = filteredRaw.map((p) => {
+    const { merchant_status, ...rest } = p;
+    return applyDiscount(rest);
+  });
+  let next_cursor_created_at = null;
+  let next_cursor_id = null;
+  if (enriched.length === limit && enriched.length > 0) {
+    const last = enriched[enriched.length - 1];
+    next_cursor_created_at = last.created_at || null;
+    next_cursor_id = last.id || null;
+  }
+  return { data: enriched, error: null, next_cursor_created_at, next_cursor_id };
 }
 
 async function getProductById(id) {
-  const { data, error } = await supabase.from(PRODUCTS_TABLE).select('*').eq('id', id).single();
+  const { data, error } = await supabase.from(CATALOG_VIEW).select('*').eq('id', id).single();
   if (error) {
     logger.error('productService getProductById error', { message: error.message });
     return { data: null, error };
   }
   if (!data) return { data: null, error: null };
-  const namesMap = await getMerchantNamesMap(data.merchant_id ? [data.merchant_id] : []);
-  const [enriched] = attachMerchantNames([data], namesMap);
-  return { data: enriched, error: null };
+  const { merchant_status, ...rest } = data;
+  return { data: applyDiscount(rest), error: null };
 }
 
 async function getProductsByMerchantId(merchantId, opts = {}) {
-  const { limit, offset } = parsePagination(opts);
+  // Merchant product listing: default 24, max 1000; pagination forced to avoid heavy queries.
+  const { limit, offset } = parsePagination(opts, 24, MAX_PRODUCT_LIST_ROWS);
+  const queryStart = Date.now();
   const { data, error } = await supabase
-    .from(PRODUCTS_TABLE)
+    .from(CATALOG_VIEW)
     .select('*')
     .eq('merchant_id', merchantId)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
+  if (Date.now() - queryStart > SLOW_QUERY_MS) {
+    logger.warn('slow_query', { query: 'getProductsByMerchantId', durationMs: Date.now() - queryStart, limit });
+  }
   if (error) {
     logger.error('productService getProductsByMerchantId error', { message: error.message });
     return { data: [], error };
   }
   const list = data || [];
   if (list.length === 0) return { data: list, error: null };
-  const namesMap = await getMerchantNamesMap([merchantId]);
-  const enriched = attachMerchantNames(list, namesMap);
+  const enriched = list.map((p) => {
+    const { merchant_status, ...rest } = p;
+    return applyDiscount(rest);
+  });
   return { data: enriched, error: null };
 }
 
@@ -199,6 +260,63 @@ async function createProduct(merchantId, payload) {
     return { data: null, error };
   }
   return { data: data ? applyDiscount(data) : null, error: null };
+}
+
+const BULK_MAX = 50;
+const BULK_BATCH = 10;
+
+/**
+ * Bulk create products for a merchant. Processes in batches to avoid overload.
+ * Returns { created: Product[], errors: { index: number, message: string }[] }.
+ */
+async function bulkCreateProducts(merchantId, items) {
+  if (!Array.isArray(items) || items.length === 0) {
+    return { created: [], errors: [] };
+  }
+  const toProcess = items.slice(0, BULK_MAX);
+  const created = [];
+  const errors = [];
+  for (let i = 0; i < toProcess.length; i += BULK_BATCH) {
+    const batch = toProcess.slice(i, i + BULK_BATCH);
+    const results = await Promise.all(
+      batch.map((payload, j) => {
+        const idx = i + j;
+        const name = payload.name ?? payload.title;
+        if (!name || String(name).trim() === '') {
+          return Promise.resolve({ index: idx, error: 'name is required' });
+        }
+        const numPrice = Number(payload.price ?? payload.price_ils);
+        if (Number.isNaN(numPrice) || numPrice < 0) {
+          return Promise.resolve({ index: idx, error: 'price must be a non-negative number' });
+        }
+        return createProduct(merchantId, {
+          name: String(name).trim(),
+          description: payload.description,
+          price: numPrice,
+          price_ils: numPrice,
+          stock: payload.stock,
+          category: payload.category,
+          isActive: payload.isActive,
+          images: payload.images,
+          image_url: payload.image_url,
+          condition: payload.condition,
+          discount_type: payload.discount_type,
+          discount_value: payload.discount_value,
+          is_discount_active: payload.is_discount_active,
+          discount_starts_at: payload.discount_starts_at,
+          discount_ends_at: payload.discount_ends_at,
+        }).then(({ data, error }) => {
+          if (error) return { index: idx, error: error.message || 'Create failed' };
+          if (data) created.push(data);
+          return null;
+        });
+      })
+    );
+    results.forEach((r) => {
+      if (r && r.index != null && r.error) errors.push({ index: r.index, message: r.error });
+    });
+  }
+  return { created, errors };
 }
 
 async function updateProduct(productId, merchantId, payload) {
@@ -293,6 +411,7 @@ export {
   getProductById,
   getProductsByMerchantId,
   createProduct,
+  bulkCreateProducts,
   updateProduct,
   deleteProduct,
   decrementStock,

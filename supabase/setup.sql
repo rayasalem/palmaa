@@ -1,287 +1,15 @@
 -- =============================================================================
--- PALMA MVP DATABASE SETUP SCRIPT
+-- Palma Marketplace — كل تعديلات الداتابيس (migrations) في ملف واحد
+-- =============================================================================
+-- الاستخدام:
+--   - قاعدة جديدة: شغّل الملف كاملاً بعد إنشاء الجداول الأساسية (users, products, orders, ...).
+--   - قاعدة موجودة: آمن التشغيل؛ معظم الأوامر تستخدم IF NOT EXISTS / ADD COLUMN IF NOT EXISTS.
+--   - إن ظهر خطأ على CREATE INDEX CONCURRENTLY: شغّل جمل الـ indexes لوحدها في Supabase SQL Editor.
 -- =============================================================================
 
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
--- Enable pgcrypto for bcrypt password hashing
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
 -- =============================================================================
--- 1. TABLE CREATION & MIGRATION
+-- 002 — Multi-user: carts, cart_items, admin_product_messages
 -- =============================================================================
-
--- USERS
-CREATE TABLE IF NOT EXISTS public.users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    email TEXT UNIQUE NOT NULL,
-    name TEXT NOT NULL,
-    phone TEXT,
-    role TEXT NOT NULL CHECK (role IN ('ADMIN', 'MERCHANT', 'BROKER', 'CUSTOMER')),
-    status TEXT DEFAULT 'PENDING',
-    is_approved BOOLEAN DEFAULT FALSE,
-    password TEXT,
-    verification_code TEXT, 
-    verification_code_expiry BIGINT,
-    email_verified BOOLEAN DEFAULT FALSE,
-    city TEXT,
-    company_name TEXT,
-    university TEXT,
-    logo_url TEXT,
-    profile_image TEXT,
-    bio TEXT,
-    balance NUMERIC DEFAULT 0,
-    clicks INT DEFAULT 0,
-    registration_date TIMESTAMPTZ DEFAULT NOW(),
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
-    approved_at TIMESTAMPTZ,
-    terms_accepted BOOLEAN DEFAULT FALSE,
-    terms_accepted_at TIMESTAMPTZ,
-    terms_version TEXT
-);
-
--- MIGRATION: Ensure columns exist if table already exists
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'email_verified') THEN
-        ALTER TABLE public.users ADD COLUMN email_verified BOOLEAN DEFAULT FALSE;
-    END IF;
-
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'verification_code') THEN
-        ALTER TABLE public.users ADD COLUMN verification_code TEXT;
-    END IF;
-
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'verification_code_expiry') THEN
-        ALTER TABLE public.users ADD COLUMN verification_code_expiry BIGINT;
-    END IF;
-
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'terms_accepted') THEN
-        ALTER TABLE public.users ADD COLUMN terms_accepted BOOLEAN DEFAULT FALSE;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'terms_accepted_at') THEN
-        ALTER TABLE public.users ADD COLUMN terms_accepted_at TIMESTAMPTZ;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'terms_version') THEN
-        ALTER TABLE public.users ADD COLUMN terms_version TEXT;
-    END IF;
-    -- Subscription (اشتراك فعلي للمتاجر)
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'subscription_type') THEN
-        ALTER TABLE public.users ADD COLUMN subscription_type TEXT DEFAULT 'free';
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'subscription_start_date') THEN
-        ALTER TABLE public.users ADD COLUMN subscription_start_date TIMESTAMPTZ;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'subscription_end_date') THEN
-        ALTER TABLE public.users ADD COLUMN subscription_end_date TIMESTAMPTZ;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'subscription_status') THEN
-        ALTER TABLE public.users ADD COLUMN subscription_status TEXT DEFAULT 'active';
-    END IF;
-    -- Soft delete support (إلغاء تنشيط المستخدم مع إمكانية الاسترجاع خلال فترة محددة)
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'deleted_at') THEN
-        ALTER TABLE public.users ADD COLUMN deleted_at TIMESTAMPTZ;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'deleted_reason') THEN
-        ALTER TABLE public.users ADD COLUMN deleted_reason TEXT;
-    END IF;
-END $$;
-
--- Orders: فاتورة ضريبية (لاحتساب خصم 16% عند الدفع الإلكتروني بدون فاتورة)
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS invoice_uploaded BOOLEAN DEFAULT FALSE;
-
--- Transactions: أعمدة تسوية الطلبات (عمولة المنصة + غرامة ضريبية + صافي التاجر)
-ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS merchant_id UUID REFERENCES public.users(id) ON DELETE SET NULL;
-ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS total_amount NUMERIC;
-ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS commission_amount NUMERIC;
-ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS tax_penalty_amount NUMERIC;
-ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS merchant_net_amount NUMERIC;
-ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS payment_method TEXT;
-ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS invoice_uploaded BOOLEAN DEFAULT FALSE;
-ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS gateway_transaction_id TEXT;
-ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS currency TEXT;
-
--- إعدادات المنصة (عمولة % وغرامة ضريبية % - للأدمن)
-CREATE TABLE IF NOT EXISTS public.platform_settings (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL,
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-INSERT INTO public.platform_settings (key, value) VALUES
-  ('commission_rate', '0.15'),
-  ('tax_penalty_rate', '0.16')
-ON CONFLICT (key) DO NOTHING;
-
--- MERCHANT PROFILES
-CREATE TABLE IF NOT EXISTS public.merchant_profiles (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-    business_name TEXT,
-    phone TEXT,
-    city TEXT,
-    city_id INT,
-    village_id INT,
-    region_id INT,
-    business_address TEXT,
-    business_description TEXT,
-    logo_url TEXT
-);
-
--- Add Unique Constraint to user_id for Upsert capability (Fixes 409 Errors)
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'merchant_profiles_user_id_key') THEN
-        ALTER TABLE public.merchant_profiles ADD CONSTRAINT merchant_profiles_user_id_key UNIQUE (user_id);
-    END IF;
-END $$;
-
--- PRODUCTS
-CREATE TABLE IF NOT EXISTS public.products (
-    id TEXT PRIMARY KEY DEFAULT ('PRD-' || substring(uuid_generate_v4()::text, 1, 8)),
-    merchant_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Ensure all product columns exist
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS title TEXT;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS description TEXT;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS price NUMERIC DEFAULT 0;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS category TEXT;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS stock INT DEFAULT 0;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS images TEXT[];
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS name TEXT; 
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS price_ils NUMERIC DEFAULT 0;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS image_url TEXT;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS is_bestseller BOOLEAN DEFAULT FALSE;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS rating NUMERIC DEFAULT 0;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS review_count INT DEFAULT 0;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS sku TEXT;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS weight NUMERIC;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS dimensions TEXT;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS tags TEXT[];
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS condition TEXT NOT NULL DEFAULT 'new';
-
--- ORDERS
-CREATE TABLE IF NOT EXISTS public.orders (
-    id TEXT PRIMARY KEY DEFAULT ('ORD-' || substring(uuid_generate_v4()::text, 1, 8)),
-    customer_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
-    merchant_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
-    total_amount NUMERIC NOT NULL,
-    status TEXT DEFAULT 'PENDING',
-    shipping_name TEXT,
-    shipping_phone TEXT,
-    shipping_address TEXT,
-    payment_method TEXT,
-    date TIMESTAMPTZ DEFAULT NOW(),
-    delivery_id TEXT,
-    delivery_status TEXT,
-    barcode_image TEXT,
-    shipment_cost NUMERIC,
-    tracking_number TEXT,
-    expected_delivery_date TIMESTAMPTZ,
-    awb_url TEXT,
-    destination_city_id INT,
-    destination_village_id INT,
-    destination_region_id INT,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- ORDER ITEMS
-CREATE TABLE IF NOT EXISTS public.order_items (
-    id TEXT PRIMARY KEY DEFAULT ('ITM-' || substring(uuid_generate_v4()::text, 1, 8)),
-    order_id TEXT REFERENCES public.orders(id) ON DELETE CASCADE,
-    product_id TEXT REFERENCES public.products(id) ON DELETE SET NULL,
-    quantity INT NOT NULL,
-    price NUMERIC NOT NULL
-);
-
--- WITHDRAWALS
-CREATE TABLE IF NOT EXISTS public.withdrawals (
-    id TEXT PRIMARY KEY DEFAULT ('WTH-' || substring(uuid_generate_v4()::text, 1, 8)),
-    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-    amount NUMERIC NOT NULL,
-    status TEXT DEFAULT 'PENDING',
-    date TIMESTAMPTZ DEFAULT NOW()
-);
-
--- COMMISSIONS
-CREATE TABLE IF NOT EXISTS public.commissions (
-    id TEXT PRIMARY KEY DEFAULT ('COM-' || substring(uuid_generate_v4()::text, 1, 8)),
-    broker_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-    order_id TEXT REFERENCES public.orders(id) ON DELETE SET NULL,
-    amount NUMERIC NOT NULL,
-    status TEXT DEFAULT 'PENDING',
-    date TIMESTAMPTZ DEFAULT NOW()
-);
-
--- SHARED PRODUCTS
-CREATE TABLE IF NOT EXISTS public.shared_products (
-    id TEXT PRIMARY KEY DEFAULT ('SHR-' || substring(uuid_generate_v4()::text, 1, 8)),
-    broker_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-    product_id TEXT REFERENCES public.products(id) ON DELETE CASCADE,
-    marketing_title TEXT,
-    marketing_description TEXT,
-    custom_discount_text TEXT,
-    clicks INT DEFAULT 0,
-    sales INT DEFAULT 0,
-    is_featured BOOLEAN DEFAULT FALSE,
-    shared_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- REVIEWS
-CREATE TABLE IF NOT EXISTS public.reviews (
-    id TEXT PRIMARY KEY DEFAULT ('REV-' || substring(uuid_generate_v4()::text, 1, 8)),
-    product_id TEXT REFERENCES public.products(id) ON DELETE CASCADE,
-    customer_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
-    customer_name TEXT,
-    rating NUMERIC NOT NULL,
-    comment TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- TRANSACTIONS
-CREATE TABLE IF NOT EXISTS public.transactions (
-    id TEXT PRIMARY KEY DEFAULT ('TRX-' || substring(uuid_generate_v4()::text, 1, 8)),
-    order_id TEXT REFERENCES public.orders(id) ON DELETE SET NULL,
-    amount NUMERIC NOT NULL,
-    type TEXT NOT NULL,
-    status TEXT DEFAULT 'COMPLETED',
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- FOLLOWS
-CREATE TABLE IF NOT EXISTS public.follows (
-    id TEXT PRIMARY KEY DEFAULT ('FLW-' || substring(uuid_generate_v4()::text, 1, 8)),
-    follower_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-    following_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(follower_id, following_id)
-);
-
--- LIKES
-CREATE TABLE IF NOT EXISTS public.likes (
-    id TEXT PRIMARY KEY DEFAULT ('LKE-' || substring(uuid_generate_v4()::text, 1, 8)),
-    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-    product_id TEXT REFERENCES public.products(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(user_id, product_id)
-);
-
--- COMMENTS
-CREATE TABLE IF NOT EXISTS public.comments (
-    id TEXT PRIMARY KEY DEFAULT ('CMT-' || substring(uuid_generate_v4()::text, 1, 8)),
-    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-    product_id TEXT REFERENCES public.products(id) ON DELETE CASCADE,
-    text TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- CARTS (one per user for logged-in cart persistence)
 CREATE TABLE IF NOT EXISTS public.carts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
@@ -291,7 +19,6 @@ CREATE TABLE IF NOT EXISTS public.carts (
 );
 CREATE INDEX IF NOT EXISTS idx_carts_user_id ON public.carts(user_id);
 
--- CART ITEMS (product + quantity + price per cart)
 CREATE TABLE IF NOT EXISTS public.cart_items (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     cart_id UUID NOT NULL REFERENCES public.carts(id) ON DELETE CASCADE,
@@ -304,150 +31,6 @@ CREATE TABLE IF NOT EXISTS public.cart_items (
 CREATE INDEX IF NOT EXISTS idx_cart_items_cart_id ON public.cart_items(cart_id);
 CREATE INDEX IF NOT EXISTS idx_cart_items_product_id ON public.cart_items(product_id);
 
--- =============================================================================
--- 1.b PERFORMANCE INDEXES (تسريع الاستعلامات الأكثر استخداماً)
--- =============================================================================
-
--- USERS: للإدارة (تصفية حسب الدور والحالة)
-CREATE INDEX IF NOT EXISTS idx_users_role_status ON public.users(role, status);
-
--- PRODUCTS: لوحات التاجر / التصفية حسب التاجر والحالة
-CREATE INDEX IF NOT EXISTS idx_products_merchant_status ON public.products(merchant_id, status);
-CREATE INDEX IF NOT EXISTS idx_products_category_active ON public.products(category, is_active);
-
--- ORDERS: استعلام طلبات الزبون / التاجر مرتبة بالتاريخ
-CREATE INDEX IF NOT EXISTS idx_orders_customer_date ON public.orders(customer_id, date DESC);
-CREATE INDEX IF NOT EXISTS idx_orders_merchant_date ON public.orders(merchant_id, date DESC);
-CREATE INDEX IF NOT EXISTS idx_orders_delivery_id ON public.orders(delivery_id);
-
--- ORDER ITEMS: للربط السريع بين الطلب والعناصر / تقرير المبيعات
-CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON public.order_items(order_id);
-CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON public.order_items(product_id);
-
--- WITHDRAWALS: طلبات سحب الرصيد لكل مستخدم
-CREATE INDEX IF NOT EXISTS idx_withdrawals_user_date ON public.withdrawals(user_id, date DESC);
-
--- COMMISSIONS: عمولات الوسيط حسب الوسيط والطلب
-CREATE INDEX IF NOT EXISTS idx_commissions_broker_date ON public.commissions(broker_id, date DESC);
-CREATE INDEX IF NOT EXISTS idx_commissions_order_id ON public.commissions(order_id);
-
--- SHARED PRODUCTS: منتجات الوسيط
-CREATE INDEX IF NOT EXISTS idx_shared_products_broker ON public.shared_products(broker_id);
-CREATE INDEX IF NOT EXISTS idx_shared_products_product ON public.shared_products(product_id);
-
--- REVIEWS: تقييمات المنتج
-CREATE INDEX IF NOT EXISTS idx_reviews_product_id ON public.reviews(product_id);
-
--- TRANSACTIONS: تسويات الطلبات والتقارير المالية
-CREATE INDEX IF NOT EXISTS idx_transactions_order_id ON public.transactions(order_id);
-CREATE INDEX IF NOT EXISTS idx_transactions_merchant_id ON public.transactions(merchant_id);
-
--- FOLLOWS / LIKES / COMMENTS: إحصائيات المتابعة والإعجابات والتعليقات
-CREATE INDEX IF NOT EXISTS idx_follows_following_id ON public.follows(following_id);
-CREATE INDEX IF NOT EXISTS idx_likes_product_id ON public.likes(product_id);
-CREATE INDEX IF NOT EXISTS idx_comments_product_id ON public.comments(product_id);
-
--- =============================================================================
--- 2. SECURITY & PERMISSIONS
--- =============================================================================
-
--- Disable RLS for Tables (Custom Auth via Table)
-ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.products DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.orders DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.order_items DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.merchant_profiles DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.withdrawals DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.commissions DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.shared_products DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.reviews DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.transactions DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.follows DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.likes DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.comments DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.carts DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.cart_items DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.platform_settings DISABLE ROW LEVEL SECURITY;
-
-GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
-
--- =============================================================================
--- 3. STORAGE SETUP
--- =============================================================================
-
--- Attempt to create the 'products' bucket if it doesn't exist
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('products', 'products', true)
-ON CONFLICT (id) DO UPDATE SET public = true;
-
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('profiles', 'profiles', true)
-ON CONFLICT (id) DO UPDATE SET public = true;
-
--- Storage Policies
-DO $$
-BEGIN
-    -- PRODUCTS BUCKET POLICIES
-    BEGIN DROP POLICY "Public Access Products" ON storage.objects; EXCEPTION WHEN OTHERS THEN NULL; END;
-    BEGIN DROP POLICY "Authenticated Upload Products" ON storage.objects; EXCEPTION WHEN OTHERS THEN NULL; END;
-    
-    CREATE POLICY "Public Access Products" ON storage.objects FOR SELECT USING ( bucket_id = 'products' );
-    CREATE POLICY "Authenticated Upload Products" ON storage.objects FOR INSERT WITH CHECK ( bucket_id = 'products' );
-    
-    -- PROFILES BUCKET POLICIES
-    BEGIN DROP POLICY "Public Access Profiles" ON storage.objects; EXCEPTION WHEN OTHERS THEN NULL; END;
-    BEGIN DROP POLICY "Authenticated Upload Profiles" ON storage.objects; EXCEPTION WHEN OTHERS THEN NULL; END;
-
-    CREATE POLICY "Public Access Profiles" ON storage.objects FOR SELECT USING ( bucket_id = 'profiles' );
-    CREATE POLICY "Authenticated Upload Profiles" ON storage.objects FOR INSERT WITH CHECK ( bucket_id = 'profiles' );
-END $$;
-
--- =============================================================================
--- OTP CODES (لتحقق البريد وكلمة المرور عند التسجيل)
--- =============================================================================
-CREATE TABLE IF NOT EXISTS public.otp_codes (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  email TEXT NOT NULL,
-  code TEXT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('email_verification', 'password_reset')),
-  expires_at TIMESTAMPTZ NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_otp_codes_email_type ON public.otp_codes(email, type);
-ALTER TABLE public.otp_codes DISABLE ROW LEVEL SECURITY;
-GRANT ALL ON public.otp_codes TO anon, authenticated, service_role;
-
--- =============================================================================
--- CARTS, ADMIN MESSAGES, ORDER PROFITS, ORDER REFERENCE, SHIPPING CITY/VILLAGE
--- (مجمّعة من 002 و003 و012 و013 لسهولة التشغيل من ملف واحد)
--- =============================================================================
-
--- One cart per user (customer); used for logged-in cart persistence
-CREATE TABLE IF NOT EXISTS public.carts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(user_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_carts_user_id ON public.carts(user_id);
-
--- Cart items: product + quantity + price snapshot per cart
-CREATE TABLE IF NOT EXISTS public.cart_items (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    cart_id UUID NOT NULL REFERENCES public.carts(id) ON DELETE CASCADE,
-    product_id TEXT NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
-    quantity INT NOT NULL CHECK (quantity > 0),
-    price NUMERIC NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(cart_id, product_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_cart_items_cart_id ON public.cart_items(cart_id);
-CREATE INDEX IF NOT EXISTS idx_cart_items_product_id ON public.cart_items(product_id);
-
--- Optional: admin/merchant messages about a product (e.g. approval notes, questions)
 CREATE TABLE IF NOT EXISTS public.admin_product_messages (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     product_id TEXT NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
@@ -456,54 +39,190 @@ CREATE TABLE IF NOT EXISTS public.admin_product_messages (
     message TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 CREATE INDEX IF NOT EXISTS idx_admin_product_messages_product_id ON public.admin_product_messages(product_id);
 CREATE INDEX IF NOT EXISTS idx_admin_product_messages_from_user ON public.admin_product_messages(from_user_id);
 CREATE INDEX IF NOT EXISTS idx_admin_product_messages_to_user ON public.admin_product_messages(to_user_id);
 
--- Allow linking order to broker when sale came through broker referral
+-- =============================================================================
+-- 003 — Order profits: broker_id on orders, order_profits table
+-- =============================================================================
 ALTER TABLE public.orders
   ADD COLUMN IF NOT EXISTS broker_id UUID REFERENCES public.users(id) ON DELETE SET NULL;
-
 CREATE INDEX IF NOT EXISTS idx_orders_broker_id ON public.orders(broker_id);
 
--- Profit records per order: نصيب التاجر، المتجر، الوسيط
--- party_type: 'merchant' | 'store' | 'broker'
--- party_id: user id for merchant/broker; NULL for store (platform)
 CREATE TABLE IF NOT EXISTS public.order_profits (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    order_id TEXT NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
-    order_item_id TEXT NULL,
+    order_id UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+    order_item_id UUID NULL,
     party_type TEXT NOT NULL CHECK (party_type IN ('merchant', 'store', 'broker')),
     party_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
     amount_ils NUMERIC NOT NULL CHECK (amount_ils >= 0),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 CREATE INDEX IF NOT EXISTS idx_order_profits_order_id ON public.order_profits(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_profits_party ON public.order_profits(party_type, party_id);
 CREATE INDEX IF NOT EXISTS idx_order_profits_created_at ON public.order_profits(created_at);
+COMMENT ON TABLE public.order_profits IS 'تسجيل أرباح التاجر (85%)، المتجر (15% أو 12% مع وسيط)، الوسيط (3%) عند إتمام الدفع';
 
--- Orders: short reference for Cybersource receipt (ORD-xxxxxxxx).
-ALTER TABLE public.orders
-  ADD COLUMN IF NOT EXISTS order_reference TEXT;
+-- =============================================================================
+-- 004 — Merchant: subscriptions, order settlements, transactions, invoices
+-- =============================================================================
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'subscription_type') THEN
+    ALTER TABLE public.users ADD COLUMN subscription_type TEXT DEFAULT 'free' CHECK (subscription_type IN ('free', 'paid'));
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'subscription_start_date') THEN
+    ALTER TABLE public.users ADD COLUMN subscription_start_date TIMESTAMPTZ DEFAULT NOW();
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'subscription_end_date') THEN
+    ALTER TABLE public.users ADD COLUMN subscription_end_date TIMESTAMPTZ;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'users' AND column_name = 'subscription_status') THEN
+    ALTER TABLE public.users ADD COLUMN subscription_status TEXT DEFAULT 'active' CHECK (subscription_status IN ('active', 'expired'));
+  END IF;
+END $$;
 
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS merchant_id UUID REFERENCES public.users(id) ON DELETE SET NULL;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS invoice_uploaded BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS invoice_verified_at TIMESTAMPTZ;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS invoice_file_url TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS delivery_confirmed_at TIMESTAMPTZ;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;
+CREATE INDEX IF NOT EXISTS idx_orders_merchant_id ON public.orders(merchant_id);
+
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS merchant_id UUID REFERENCES public.users(id) ON DELETE SET NULL;
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS total_amount NUMERIC;
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS commission_amount NUMERIC DEFAULT 0;
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS tax_penalty_amount NUMERIC DEFAULT 0;
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS merchant_net_amount NUMERIC;
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS payment_method TEXT CHECK (payment_method IS NULL OR payment_method IN ('cash', 'online'));
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS invoice_uploaded BOOLEAN DEFAULT FALSE;
+CREATE INDEX IF NOT EXISTS idx_transactions_merchant_id ON public.transactions(merchant_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_order_id ON public.transactions(order_id);
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('invoices', 'invoices', false)
+ON CONFLICT (id) DO NOTHING;
+
+COMMENT ON COLUMN public.users.subscription_type IS 'free | paid';
+COMMENT ON COLUMN public.users.subscription_status IS 'active | expired';
+COMMENT ON COLUMN public.orders.invoice_uploaded IS 'Tax invoice uploaded for this order (electronic payment)';
+COMMENT ON COLUMN public.orders.completed_at IS 'Order completed: delivery + product match confirmed; merchant eligible for payout';
+
+-- =============================================================================
+-- 005 — Product condition
+-- =============================================================================
+ALTER TABLE public.products
+  ADD COLUMN IF NOT EXISTS condition TEXT NOT NULL DEFAULT 'new'
+  CHECK (condition IN (
+    'new', 'used_like_new', 'used_good', 'used_fair', 'refurbished', 'open_box', 'vintage'
+  ));
+CREATE INDEX IF NOT EXISTS idx_products_condition ON public.products(condition);
+
+-- =============================================================================
+-- 006 — Cybersource payments: gateway_transaction_id, currency on transactions
+-- =============================================================================
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS gateway_transaction_id TEXT;
+ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS currency TEXT;
+
+-- =============================================================================
+-- 007 — Backfill merchant & broker subscription fields
+-- =============================================================================
+DO $$
+DECLARE
+  v_now TIMESTAMPTZ := NOW();
+BEGIN
+  UPDATE public.users
+  SET
+    subscription_type        = 'free',
+    subscription_start_date  = COALESCE(subscription_start_date, v_now),
+    subscription_end_date    = NULL,
+    subscription_status      = 'active'
+  WHERE UPPER(role::text) = 'MERCHANT';
+
+  UPDATE public.users
+  SET
+    subscription_type        = COALESCE(subscription_type, 'free'),
+    subscription_start_date  = COALESCE(subscription_start_date, v_now),
+    subscription_end_date    = COALESCE(subscription_end_date, v_now + INTERVAL '30 days'),
+    subscription_status      = COALESCE(subscription_status, 'active')
+  WHERE UPPER(role::text) = 'BROKER';
+END $$;
+
+-- =============================================================================
+-- 008 — (اختياري) إزالة البيانات التجريبية — شغّله مرة واحدة فقط إن احتجت
+-- =============================================================================
+-- DELETE FROM public.commissions;
+-- DELETE FROM public.transactions;
+-- DELETE FROM public.order_items;
+-- DELETE FROM public.orders;
+-- DELETE FROM public.cart_items;
+-- DELETE FROM public.carts;
+-- DELETE FROM public.shared_products;
+-- DELETE FROM public.likes;
+-- DELETE FROM public.comments;
+-- DELETE FROM public.reviews;
+-- DELETE FROM public.products;
+-- DELETE FROM public.withdrawals WHERE user_id IN (SELECT id FROM public.users WHERE email IN ('merchant@palma.demo', 'broker@palma.demo', 'customer@palma.demo'));
+-- DELETE FROM public.follows WHERE follower_id IN (SELECT id FROM public.users WHERE email IN ('merchant@palma.demo', 'broker@palma.demo', 'customer@palma.demo')) OR following_id IN (SELECT id FROM public.users WHERE email IN ('merchant@palma.demo', 'broker@palma.demo', 'customer@palma.demo'));
+-- DELETE FROM public.merchant_profiles WHERE user_id IN (SELECT id FROM public.users WHERE email IN ('merchant@palma.demo', 'broker@palma.demo', 'customer@palma.demo'));
+-- DELETE FROM public.users WHERE email IN ('merchant@palma.demo', 'broker@palma.demo', 'customer@palma.demo');
+
+-- =============================================================================
+-- 009 — Guest order access token
+-- =============================================================================
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS guest_access_token UUID UNIQUE DEFAULT NULL;
+CREATE INDEX IF NOT EXISTS idx_orders_guest_access_token ON public.orders(guest_access_token) WHERE guest_access_token IS NOT NULL;
+
+-- =============================================================================
+-- 010 — Performance indexes (CONCURRENTLY: إن فشل التشغيل الكامل، شغّل جمل الـ index لوحدها)
+-- =============================================================================
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_status ON public.users (status);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_email ON public.users (email);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_merchant_id ON public.products (merchant_id);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_is_active_status ON public.products (is_active, status);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_orders_customer_id ON public.orders (customer_id);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_orders_merchant_id ON public.orders (merchant_id);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_orders_created_at_desc ON public.orders (created_at DESC);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_order_items_order_id ON public.order_items (order_id);
+CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS idx_carts_user_id_unique ON public.carts (user_id);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_notifications_user_id_created_at ON public.notifications (user_id, created_at DESC);
+
+-- =============================================================================
+-- 011 — token_version and MFA
+-- =============================================================================
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS token_version integer NOT NULL DEFAULT 0;
+COMMENT ON COLUMN public.users.token_version IS 'Incremented on logout-all; JWT ver claim must match to be valid.';
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS mfa_enabled boolean NOT NULL DEFAULT false;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS mfa_secret text;
+COMMENT ON COLUMN public.users.mfa_enabled IS 'When true, login requires MFA challenge after password.';
+COMMENT ON COLUMN public.users.mfa_secret IS 'TOTP secret; null when mfa_enabled is false.';
+
+-- =============================================================================
+-- 012 — Orders: shipping city/village for shipment
+-- =============================================================================
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS shipping_city_id TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS shipping_village_id TEXT;
+
+-- =============================================================================
+-- 013 — Orders: order_reference (ORD-xxxxxxxx)
+-- =============================================================================
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS order_reference TEXT;
 CREATE INDEX IF NOT EXISTS idx_orders_order_reference ON public.orders (order_reference) WHERE order_reference IS NOT NULL;
-
--- Backfill: ORD- + last 8 chars of id
 UPDATE public.orders
 SET order_reference = 'ORD-' || LOWER(SUBSTRING(REPLACE(id::text, '-', '') FROM 25 FOR 8))
 WHERE order_reference IS NULL AND id IS NOT NULL;
 
--- Orders: store city/village for automatic shipment creation after payment.
-ALTER TABLE public.orders
-  ADD COLUMN IF NOT EXISTS shipping_city_id TEXT;
-
-ALTER TABLE public.orders
-  ADD COLUMN IF NOT EXISTS shipping_village_id TEXT;
+-- =============================================================================
+-- 014 — order_profits.order_item_id as TEXT
+-- =============================================================================
+ALTER TABLE public.order_profits
+  ALTER COLUMN order_item_id TYPE TEXT USING order_item_id::text;
+COMMENT ON COLUMN public.order_profits.order_item_id IS 'References order_items.id (e.g. ITM-xxxxxxxx) when present; NULL allowed.';
 
 -- =============================================================================
--- 3.b خصومات المنتجات (015) — أعمدة الخصم على جدول products
+-- 015 — Product discounts
 -- =============================================================================
 ALTER TABLE public.products
   ADD COLUMN IF NOT EXISTS discount_type TEXT CHECK (discount_type IN ('PERCENT', 'AMOUNT')) NULL,
@@ -511,15 +230,39 @@ ALTER TABLE public.products
   ADD COLUMN IF NOT EXISTS is_discount_active BOOLEAN NOT NULL DEFAULT FALSE,
   ADD COLUMN IF NOT EXISTS discount_starts_at TIMESTAMPTZ NULL,
   ADD COLUMN IF NOT EXISTS discount_ends_at TIMESTAMPTZ NULL;
-
-COMMENT ON COLUMN public.products.discount_type IS 'Discount type: PERCENT or AMOUNT.';
-COMMENT ON COLUMN public.products.discount_value IS 'Discount value (percent or fixed amount).';
-COMMENT ON COLUMN public.products.is_discount_active IS 'Whether the discount is active for this product.';
+COMMENT ON COLUMN public.products.discount_type IS 'PERCENT or AMOUNT.';
+COMMENT ON COLUMN public.products.discount_value IS 'Percent or fixed amount.';
+COMMENT ON COLUMN public.products.is_discount_active IS 'Whether the discount is currently active.';
 COMMENT ON COLUMN public.products.discount_starts_at IS 'Optional UTC datetime when discount becomes active.';
-COMMENT ON COLUMN public.products.discount_ends_at IS 'Optional UTC datetime when discount ends.';
+COMMENT ON COLUMN public.products.discount_ends_at IS 'Optional UTC datetime when discount stops.';
 
 -- =============================================================================
--- 3.c عروض المتجر (018) — جدول shop_offers (الإدمن يضيف عروضاً)
+-- 017 — Gamification: user_points, referrals
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS public.user_points (
+  user_id UUID PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
+  total_points INTEGER NOT NULL DEFAULT 0,
+  loyalty_level TEXT NOT NULL DEFAULT 'BRONZE',
+  referred_by UUID NULL REFERENCES public.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+COMMENT ON TABLE public.user_points IS 'Accumulated points and loyalty level per user (for gamification).';
+
+CREATE TABLE IF NOT EXISTS public.referrals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  referrer_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  referred_user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  order_id TEXT NULL REFERENCES public.orders(id) ON DELETE SET NULL,
+  reward_points INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'PENDING',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  rewarded_at TIMESTAMPTZ NULL
+);
+COMMENT ON TABLE public.referrals IS 'Referral rewards per referrer/referred pair.';
+
+-- =============================================================================
+-- 018 — shop_offers
 -- =============================================================================
 CREATE TABLE IF NOT EXISTS public.shop_offers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -534,544 +277,105 @@ CREATE TABLE IF NOT EXISTS public.shop_offers (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
 CREATE INDEX IF NOT EXISTS idx_shop_offers_active_order ON public.shop_offers(is_active, sort_order);
 COMMENT ON TABLE public.shop_offers IS 'عروض المتجر: يديرها الإدمن (بطاقة مخصصة أو منتج).';
-ALTER TABLE public.shop_offers DISABLE ROW LEVEL SECURITY;
-GRANT ALL ON public.shop_offers TO anon, authenticated, service_role;
 
 -- =============================================================================
--- 3.d جماليات/إحالة (017) — user_points و referrals
+-- 019 — shop_offers: scope, category, starts_at, ends_at
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS public.user_points (
-  user_id UUID PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
-  total_points INTEGER NOT NULL DEFAULT 0,
-  loyalty_level TEXT NOT NULL DEFAULT 'BRONZE',
-  referred_by UUID NULL REFERENCES public.users(id) ON DELETE SET NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
+ALTER TABLE public.shop_offers
+  ADD COLUMN IF NOT EXISTS scope TEXT NOT NULL DEFAULT 'product' CHECK (scope IN ('product', 'category', 'all'));
+ALTER TABLE public.shop_offers ADD COLUMN IF NOT EXISTS category TEXT NULL;
+ALTER TABLE public.shop_offers ADD COLUMN IF NOT EXISTS starts_at TIMESTAMPTZ NULL;
+ALTER TABLE public.shop_offers ADD COLUMN IF NOT EXISTS ends_at TIMESTAMPTZ NULL;
+COMMENT ON COLUMN public.shop_offers.scope IS 'نطاق الخصم: product | category | all';
+COMMENT ON COLUMN public.shop_offers.category IS 'تصنيف المنتجات عند scope=category';
 
-COMMENT ON TABLE public.user_points IS 'Points and loyalty level per user (gamification).';
-
-CREATE TABLE IF NOT EXISTS public.referrals (
+-- =============================================================================
+-- 020 — merchant_offers
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS public.merchant_offers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  referrer_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  referred_user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  order_id TEXT NULL REFERENCES public.orders(id) ON DELETE SET NULL,
-  reward_points INTEGER NOT NULL DEFAULT 0,
-  status TEXT NOT NULL DEFAULT 'PENDING',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  rewarded_at TIMESTAMPTZ NULL
+  merchant_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  scope TEXT NOT NULL DEFAULT 'product' CHECK (scope IN ('product', 'category', 'all')),
+  product_id TEXT NULL REFERENCES public.products(id) ON DELETE SET NULL,
+  category TEXT NULL,
+  discount_label INT NOT NULL DEFAULT 0,
+  title TEXT NOT NULL DEFAULT '',
+  starts_at TIMESTAMPTZ NULL,
+  ends_at TIMESTAMPTZ NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
-COMMENT ON TABLE public.referrals IS 'Referral rewards (referrer/referred), optionally tied to an order.';
-CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON public.referrals(referrer_id);
-CREATE INDEX IF NOT EXISTS idx_referrals_order ON public.referrals(order_id);
-
-ALTER TABLE public.user_points DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.referrals DISABLE ROW LEVEL SECURITY;
-GRANT ALL ON public.user_points TO anon, authenticated, service_role;
-GRANT ALL ON public.referrals TO anon, authenticated, service_role;
+CREATE INDEX IF NOT EXISTS idx_merchant_offers_merchant ON public.merchant_offers(merchant_id);
+CREATE INDEX IF NOT EXISTS idx_merchant_offers_active ON public.merchant_offers(merchant_id, is_active, sort_order);
+COMMENT ON TABLE public.merchant_offers IS 'عروض التاجر: خصم على منتج/تصنيف/كل المنتجات مع مدة اختيارية.';
 
 -- =============================================================================
--- 3.e إعجابات المنتجات، التعليقات، الإشعارات (مطلوبة للـ API)
+-- 021 — products catalog index
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS public.product_likes (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  product_id TEXT NOT NULL,
-  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE(product_id, user_id)
-);
-CREATE INDEX IF NOT EXISTS idx_product_likes_product_id ON public.product_likes(product_id);
-CREATE INDEX IF NOT EXISTS idx_product_likes_user_id ON public.product_likes(user_id);
-
-CREATE TABLE IF NOT EXISTS public.product_comments (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  product_id TEXT NOT NULL,
-  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  content TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-CREATE INDEX IF NOT EXISTS idx_product_comments_product_id ON public.product_comments(product_id);
-
-CREATE TABLE IF NOT EXISTS public.notifications (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  type TEXT NOT NULL CHECK (type IN ('new_product', 'like', 'comment', 'follow', 'order_paid', 'loyalty_level_up', 'referral_reward')),
-  reference_id TEXT NOT NULL,
-  message TEXT NULL,
-  is_read BOOLEAN NOT NULL DEFAULT false,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(user_id);
-CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON public.notifications(user_id, is_read);
-
-ALTER TABLE public.product_likes DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.product_comments DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.notifications DISABLE ROW LEVEL SECURITY;
-GRANT ALL ON public.product_likes TO anon, authenticated, service_role;
-GRANT ALL ON public.product_comments TO anon, authenticated, service_role;
-GRANT ALL ON public.notifications TO anon, authenticated, service_role;
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_catalog_list
+  ON public.products (is_active, status, created_at DESC NULLS LAST);
 
 -- =============================================================================
--- 3.f أعمدة إضافية من migrations (009, 011)
+-- 022 — Full-Text Search on products
 -- =============================================================================
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS guest_access_token UUID UNIQUE DEFAULT NULL;
-ALTER TABLE public.users ADD COLUMN IF NOT EXISTS token_version integer NOT NULL DEFAULT 0;
-ALTER TABLE public.users ADD COLUMN IF NOT EXISTS mfa_enabled boolean NOT NULL DEFAULT false;
-ALTER TABLE public.users ADD COLUMN IF NOT EXISTS mfa_secret text;
-
--- =============================================================================
--- 4. CRITICAL: RELOAD SCHEMA CACHE (Fixes PGRST204)
--- =============================================================================
-NOTIFY pgrst, 'reload schema';
+ALTER TABLE public.products
+  ADD COLUMN IF NOT EXISTS tsv tsvector
+  GENERATED ALWAYS AS (
+    to_tsvector('simple', coalesce(name, '') || ' ' || coalesce(title, '') || ' ' || coalesce(description, ''))
+  ) STORED;
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_tsv ON public.products USING GIN (tsv);
 
 -- =============================================================================
--- 5. SEED: أدمن فقط (بدون تاجر/وسيط/زبون تجريبي)
+-- 023 — Additional products indexes
 -- =============================================================================
--- كلمة السر الافتراضية: Admin@123456
-INSERT INTO public.users (email, name, role, status, email_verified, terms_accepted, password)
-VALUES
-  ('info@palma.ps', 'أدمن بالما', 'ADMIN', 'ACTIVE', TRUE, TRUE, crypt('Admin@123456', gen_salt('bf')))
-ON CONFLICT (email) DO UPDATE SET
-  name = EXCLUDED.name,
-  role = EXCLUDED.role,
-  status = EXCLUDED.status,
-  email_verified = EXCLUDED.email_verified,
-  terms_accepted = EXCLUDED.terms_accepted,
-  password = EXCLUDED.password,
-  updated_at = NOW();
-
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_created_at_desc ON public.products (created_at DESC);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_price ON public.products (price);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_status_is_active_created_at_desc
+  ON public.products (status, is_active, created_at DESC);
 
 -- =============================================================================
--- PALMA MVP DATABASE SETUP SCRIPT
+-- 024 — View: products_with_merchant
 -- =============================================================================
-
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
--- Enable pgcrypto for bcrypt password hashing
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
--- =============================================================================
--- 1. TABLE CREATION & MIGRATION
--- =============================================================================
-
--- USERS
-CREATE TABLE IF NOT EXISTS public.users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    email TEXT UNIQUE NOT NULL,
-    name TEXT NOT NULL,
-    phone TEXT,
-    role TEXT NOT NULL CHECK (role IN ('ADMIN', 'MERCHANT', 'BROKER', 'CUSTOMER')),
-    status TEXT DEFAULT 'PENDING',
-    is_approved BOOLEAN DEFAULT FALSE,
-    password TEXT,
-    verification_code TEXT, 
-    verification_code_expiry BIGINT,
-    email_verified BOOLEAN DEFAULT FALSE,
-    city TEXT,
-    company_name TEXT,
-    university TEXT,
-    logo_url TEXT,
-    profile_image TEXT,
-    bio TEXT,
-    balance NUMERIC DEFAULT 0,
-    clicks INT DEFAULT 0,
-    registration_date TIMESTAMPTZ DEFAULT NOW(),
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
-    approved_at TIMESTAMPTZ,
-    terms_accepted BOOLEAN DEFAULT FALSE,
-    terms_accepted_at TIMESTAMPTZ,
-    terms_version TEXT
-);
-
--- MIGRATION: Ensure columns exist if table already exists
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'email_verified') THEN
-        ALTER TABLE public.users ADD COLUMN email_verified BOOLEAN DEFAULT FALSE;
-    END IF;
-
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'verification_code') THEN
-        ALTER TABLE public.users ADD COLUMN verification_code TEXT;
-    END IF;
-
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'verification_code_expiry') THEN
-        ALTER TABLE public.users ADD COLUMN verification_code_expiry BIGINT;
-    END IF;
-
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'terms_accepted') THEN
-        ALTER TABLE public.users ADD COLUMN terms_accepted BOOLEAN DEFAULT FALSE;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'terms_accepted_at') THEN
-        ALTER TABLE public.users ADD COLUMN terms_accepted_at TIMESTAMPTZ;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'terms_version') THEN
-        ALTER TABLE public.users ADD COLUMN terms_version TEXT;
-    END IF;
-    -- Subscription (اشتراك فعلي للمتاجر)
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'subscription_type') THEN
-        ALTER TABLE public.users ADD COLUMN subscription_type TEXT DEFAULT 'free';
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'subscription_start_date') THEN
-        ALTER TABLE public.users ADD COLUMN subscription_start_date TIMESTAMPTZ;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'subscription_end_date') THEN
-        ALTER TABLE public.users ADD COLUMN subscription_end_date TIMESTAMPTZ;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'subscription_status') THEN
-        ALTER TABLE public.users ADD COLUMN subscription_status TEXT DEFAULT 'active';
-    END IF;
-END $$;
-
--- Orders: فاتورة ضريبية (لاحتساب خصم 16% عند الدفع الإلكتروني بدون فاتورة)
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS invoice_uploaded BOOLEAN DEFAULT FALSE;
-
--- Transactions: أعمدة تسوية الطلبات (عمولة المنصة + غرامة ضريبية + صافي التاجر)
-ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS merchant_id UUID REFERENCES public.users(id) ON DELETE SET NULL;
-ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS total_amount NUMERIC;
-ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS commission_amount NUMERIC;
-ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS tax_penalty_amount NUMERIC;
-ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS merchant_net_amount NUMERIC;
-ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS payment_method TEXT;
-ALTER TABLE public.transactions ADD COLUMN IF NOT EXISTS invoice_uploaded BOOLEAN DEFAULT FALSE;
-
--- إعدادات المنصة (عمولة % وغرامة ضريبية % - للأدمن)
-CREATE TABLE IF NOT EXISTS public.platform_settings (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL,
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-INSERT INTO public.platform_settings (key, value) VALUES
-  ('commission_rate', '0.15'),
-  ('tax_penalty_rate', '0.16')
-ON CONFLICT (key) DO NOTHING;
-
--- MERCHANT PROFILES
-CREATE TABLE IF NOT EXISTS public.merchant_profiles (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-    business_name TEXT,
-    phone TEXT,
-    city TEXT,
-    city_id INT,
-    village_id INT,
-    region_id INT,
-    business_address TEXT,
-    business_description TEXT,
-    logo_url TEXT
-);
-
--- Add Unique Constraint to user_id for Upsert capability (Fixes 409 Errors)
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'merchant_profiles_user_id_key') THEN
-        ALTER TABLE public.merchant_profiles ADD CONSTRAINT merchant_profiles_user_id_key UNIQUE (user_id);
-    END IF;
-END $$;
-
--- PRODUCTS
-CREATE TABLE IF NOT EXISTS public.products (
-    id TEXT PRIMARY KEY DEFAULT ('PRD-' || substring(uuid_generate_v4()::text, 1, 8)),
-    merchant_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Ensure all product columns exist
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS title TEXT;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS description TEXT;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS price NUMERIC DEFAULT 0;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS category TEXT;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS stock INT DEFAULT 0;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS images TEXT[];
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS name TEXT; 
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS price_ils NUMERIC DEFAULT 0;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS image_url TEXT;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS is_bestseller BOOLEAN DEFAULT FALSE;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS rating NUMERIC DEFAULT 0;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS review_count INT DEFAULT 0;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS sku TEXT;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS weight NUMERIC;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS dimensions TEXT;
-ALTER TABLE public.products ADD COLUMN IF NOT EXISTS tags TEXT[];
-
--- ORDERS
-CREATE TABLE IF NOT EXISTS public.orders (
-    id TEXT PRIMARY KEY DEFAULT ('ORD-' || substring(uuid_generate_v4()::text, 1, 8)),
-    customer_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
-    merchant_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
-    total_amount NUMERIC NOT NULL,
-    status TEXT DEFAULT 'PENDING',
-    shipping_name TEXT,
-    shipping_phone TEXT,
-    shipping_address TEXT,
-    payment_method TEXT,
-    date TIMESTAMPTZ DEFAULT NOW(),
-    delivery_id TEXT,
-    delivery_status TEXT,
-    barcode_image TEXT,
-    shipment_cost NUMERIC,
-    tracking_number TEXT,
-    expected_delivery_date TIMESTAMPTZ,
-    awb_url TEXT,
-    destination_city_id INT,
-    destination_village_id INT,
-    destination_region_id INT,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- ORDER ITEMS
-CREATE TABLE IF NOT EXISTS public.order_items (
-    id TEXT PRIMARY KEY DEFAULT ('ITM-' || substring(uuid_generate_v4()::text, 1, 8)),
-    order_id TEXT REFERENCES public.orders(id) ON DELETE CASCADE,
-    product_id TEXT REFERENCES public.products(id) ON DELETE SET NULL,
-    quantity INT NOT NULL,
-    price NUMERIC NOT NULL
-);
-
--- WITHDRAWALS
-CREATE TABLE IF NOT EXISTS public.withdrawals (
-    id TEXT PRIMARY KEY DEFAULT ('WTH-' || substring(uuid_generate_v4()::text, 1, 8)),
-    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-    amount NUMERIC NOT NULL,
-    status TEXT DEFAULT 'PENDING',
-    date TIMESTAMPTZ DEFAULT NOW()
-);
-
--- COMMISSIONS
-CREATE TABLE IF NOT EXISTS public.commissions (
-    id TEXT PRIMARY KEY DEFAULT ('COM-' || substring(uuid_generate_v4()::text, 1, 8)),
-    broker_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-    order_id TEXT REFERENCES public.orders(id) ON DELETE SET NULL,
-    amount NUMERIC NOT NULL,
-    status TEXT DEFAULT 'PENDING',
-    date TIMESTAMPTZ DEFAULT NOW()
-);
-
--- SHARED PRODUCTS
-CREATE TABLE IF NOT EXISTS public.shared_products (
-    id TEXT PRIMARY KEY DEFAULT ('SHR-' || substring(uuid_generate_v4()::text, 1, 8)),
-    broker_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-    product_id TEXT REFERENCES public.products(id) ON DELETE CASCADE,
-    marketing_title TEXT,
-    marketing_description TEXT,
-    custom_discount_text TEXT,
-    clicks INT DEFAULT 0,
-    sales INT DEFAULT 0,
-    is_featured BOOLEAN DEFAULT FALSE,
-    shared_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- REVIEWS
-CREATE TABLE IF NOT EXISTS public.reviews (
-    id TEXT PRIMARY KEY DEFAULT ('REV-' || substring(uuid_generate_v4()::text, 1, 8)),
-    product_id TEXT REFERENCES public.products(id) ON DELETE CASCADE,
-    customer_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
-    customer_name TEXT,
-    rating NUMERIC NOT NULL,
-    comment TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- TRANSACTIONS
-CREATE TABLE IF NOT EXISTS public.transactions (
-    id TEXT PRIMARY KEY DEFAULT ('TRX-' || substring(uuid_generate_v4()::text, 1, 8)),
-    order_id TEXT REFERENCES public.orders(id) ON DELETE SET NULL,
-    amount NUMERIC NOT NULL,
-    type TEXT NOT NULL,
-    status TEXT DEFAULT 'COMPLETED',
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- FOLLOWS
-CREATE TABLE IF NOT EXISTS public.follows (
-    id TEXT PRIMARY KEY DEFAULT ('FLW-' || substring(uuid_generate_v4()::text, 1, 8)),
-    follower_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-    following_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(follower_id, following_id)
-);
-
--- LIKES
-CREATE TABLE IF NOT EXISTS public.likes (
-    id TEXT PRIMARY KEY DEFAULT ('LKE-' || substring(uuid_generate_v4()::text, 1, 8)),
-    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-    product_id TEXT REFERENCES public.products(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(user_id, product_id)
-);
-
--- COMMENTS
-CREATE TABLE IF NOT EXISTS public.comments (
-    id TEXT PRIMARY KEY DEFAULT ('CMT-' || substring(uuid_generate_v4()::text, 1, 8)),
-    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
-    product_id TEXT REFERENCES public.products(id) ON DELETE CASCADE,
-    text TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- CARTS (one per user for logged-in cart persistence)
-CREATE TABLE IF NOT EXISTS public.carts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(user_id)
-);
-CREATE INDEX IF NOT EXISTS idx_carts_user_id ON public.carts(user_id);
-
--- CART ITEMS (product + quantity + price per cart)
-CREATE TABLE IF NOT EXISTS public.cart_items (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    cart_id UUID NOT NULL REFERENCES public.carts(id) ON DELETE CASCADE,
-    product_id TEXT NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
-    quantity INT NOT NULL CHECK (quantity > 0),
-    price NUMERIC NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(cart_id, product_id)
-);
-CREATE INDEX IF NOT EXISTS idx_cart_items_cart_id ON public.cart_items(cart_id);
-CREATE INDEX IF NOT EXISTS idx_cart_items_product_id ON public.cart_items(product_id);
+CREATE OR REPLACE VIEW public.products_with_merchant AS
+SELECT
+  p.*,
+  u.status AS merchant_status,
+  COALESCE(mp.business_name, u.company_name, u.name, 'Merchant') AS merchant_name
+FROM public.products AS p
+LEFT JOIN public.users AS u ON u.id = p.merchant_id
+LEFT JOIN public.merchant_profiles AS mp ON mp.user_id = p.merchant_id;
 
 -- =============================================================================
--- 1.b PERFORMANCE INDEXES (تسريع الاستعلامات الأكثر استخداماً)
+-- 025 — View: catalog_products_view
 -- =============================================================================
-
--- USERS: للإدارة (تصفية حسب الدور والحالة)
-CREATE INDEX IF NOT EXISTS idx_users_role_status ON public.users(role, status);
-
--- PRODUCTS: لوحات التاجر / التصفية حسب التاجر والحالة
-CREATE INDEX IF NOT EXISTS idx_products_merchant_status ON public.products(merchant_id, status);
-CREATE INDEX IF NOT EXISTS idx_products_category_active ON public.products(category, is_active);
-
--- ORDERS: استعلام طلبات الزبون / التاجر مرتبة بالتاريخ
-CREATE INDEX IF NOT EXISTS idx_orders_customer_date ON public.orders(customer_id, date DESC);
-CREATE INDEX IF NOT EXISTS idx_orders_merchant_date ON public.orders(merchant_id, date DESC);
-CREATE INDEX IF NOT EXISTS idx_orders_delivery_id ON public.orders(delivery_id);
-
--- ORDER ITEMS: للربط السريع بين الطلب والعناصر / تقرير المبيعات
-CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON public.order_items(order_id);
-CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON public.order_items(product_id);
-
--- WITHDRAWALS: طلبات سحب الرصيد لكل مستخدم
-CREATE INDEX IF NOT EXISTS idx_withdrawals_user_date ON public.withdrawals(user_id, date DESC);
-
--- COMMISSIONS: عمولات الوسيط حسب الوسيط والطلب
-CREATE INDEX IF NOT EXISTS idx_commissions_broker_date ON public.commissions(broker_id, date DESC);
-CREATE INDEX IF NOT EXISTS idx_commissions_order_id ON public.commissions(order_id);
-
--- SHARED PRODUCTS: منتجات الوسيط
-CREATE INDEX IF NOT EXISTS idx_shared_products_broker ON public.shared_products(broker_id);
-CREATE INDEX IF NOT EXISTS idx_shared_products_product ON public.shared_products(product_id);
-
--- REVIEWS: تقييمات المنتج
-CREATE INDEX IF NOT EXISTS idx_reviews_product_id ON public.reviews(product_id);
-
--- TRANSACTIONS: تسويات الطلبات والتقارير المالية
-CREATE INDEX IF NOT EXISTS idx_transactions_order_id ON public.transactions(order_id);
-CREATE INDEX IF NOT EXISTS idx_transactions_merchant_id ON public.transactions(merchant_id);
-
--- FOLLOWS / LIKES / COMMENTS: إحصائيات المتابعة والإعجابات والتعليقات
-CREATE INDEX IF NOT EXISTS idx_follows_following_id ON public.follows(following_id);
-CREATE INDEX IF NOT EXISTS idx_likes_product_id ON public.likes(product_id);
-CREATE INDEX IF NOT EXISTS idx_comments_product_id ON public.comments(product_id);
+CREATE OR REPLACE VIEW public.catalog_products_view AS
+SELECT
+  p.*,
+  u.status AS merchant_status,
+  COALESCE(mp.business_name, u.company_name, u.name, 'Merchant') AS merchant_name,
+  COALESCE(mp.logo_url, u.logo_url, u.profile_image) AS merchant_avatar
+FROM public.products AS p
+LEFT JOIN public.users AS u ON u.id = p.merchant_id
+LEFT JOIN public.merchant_profiles AS mp ON mp.user_id = p.merchant_id;
 
 -- =============================================================================
--- 2. SECURITY & PERMISSIONS
+-- add_indexes_safe (تكرار آمن مع IF NOT EXISTS)
 -- =============================================================================
-
--- Disable RLS for Tables (Custom Auth via Table)
-ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.products DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.orders DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.order_items DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.merchant_profiles DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.withdrawals DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.commissions DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.shared_products DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.reviews DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.transactions DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.follows DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.likes DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.comments DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.carts DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.cart_items DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.platform_settings DISABLE ROW LEVEL SECURITY;
-
-GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_status ON public.users (status);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_email ON public.users (email);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_merchant_id ON public.products (merchant_id);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_is_active_status ON public.products (is_active, status);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_orders_customer_id ON public.orders (customer_id);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_orders_merchant_id ON public.orders (merchant_id);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_orders_created_at_desc ON public.orders (created_at DESC);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_order_items_order_id ON public.order_items (order_id);
+CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS unique_carts_user_id ON public.carts (user_id);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_notifications_user_id_created_at ON public.notifications (user_id, created_at DESC);
 
 -- =============================================================================
--- 3. STORAGE SETUP
+-- نهاية setup.sql
 -- =============================================================================
-
--- Attempt to create the 'products' bucket if it doesn't exist
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('products', 'products', true)
-ON CONFLICT (id) DO UPDATE SET public = true;
-
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('profiles', 'profiles', true)
-ON CONFLICT (id) DO UPDATE SET public = true;
-
--- Storage Policies
-DO $$
-BEGIN
-    -- PRODUCTS BUCKET POLICIES
-    BEGIN DROP POLICY "Public Access Products" ON storage.objects; EXCEPTION WHEN OTHERS THEN NULL; END;
-    BEGIN DROP POLICY "Authenticated Upload Products" ON storage.objects; EXCEPTION WHEN OTHERS THEN NULL; END;
-    
-    CREATE POLICY "Public Access Products" ON storage.objects FOR SELECT USING ( bucket_id = 'products' );
-    CREATE POLICY "Authenticated Upload Products" ON storage.objects FOR INSERT WITH CHECK ( bucket_id = 'products' );
-    
-    -- PROFILES BUCKET POLICIES
-    BEGIN DROP POLICY "Public Access Profiles" ON storage.objects; EXCEPTION WHEN OTHERS THEN NULL; END;
-    BEGIN DROP POLICY "Authenticated Upload Profiles" ON storage.objects; EXCEPTION WHEN OTHERS THEN NULL; END;
-
-    CREATE POLICY "Public Access Profiles" ON storage.objects FOR SELECT USING ( bucket_id = 'profiles' );
-    CREATE POLICY "Authenticated Upload Profiles" ON storage.objects FOR INSERT WITH CHECK ( bucket_id = 'profiles' );
-END $$;
-
--- =============================================================================
--- OTP CODES (لتحقق البريد وكلمة المرور عند التسجيل)
--- =============================================================================
-CREATE TABLE IF NOT EXISTS public.otp_codes (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  email TEXT NOT NULL,
-  code TEXT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('email_verification', 'password_reset')),
-  expires_at TIMESTAMPTZ NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_otp_codes_email_type ON public.otp_codes(email, type);
-ALTER TABLE public.otp_codes DISABLE ROW LEVEL SECURITY;
-GRANT ALL ON public.otp_codes TO anon, authenticated, service_role;
-
--- =============================================================================
--- 4. CRITICAL: RELOAD SCHEMA CACHE (Fixes PGRST204)
--- =============================================================================
-NOTIFY pgrst, 'reload schema';
-
--- =============================================================================
--- 5. SEED: أدمن فقط (بدون تاجر/وسيط/زبون تجريبي)
--- =============================================================================
--- كلمة السر الافتراضية: Admin@123456
-INSERT INTO public.users (email, name, role, status, email_verified, terms_accepted, password)
-VALUES
-  ('info@palma.ps', 'أدمن بالما', 'ADMIN', 'ACTIVE', TRUE, TRUE, crypt('Admin@123456', gen_salt('bf')))
-ON CONFLICT (email) DO UPDATE SET
-  name = EXCLUDED.name,
-  role = EXCLUDED.role,
-  status = EXCLUDED.status,
-  email_verified = EXCLUDED.email_verified,
-  terms_accepted = EXCLUDED.terms_accepted,
-  password = EXCLUDED.password,
-  updated_at = NOW();
-

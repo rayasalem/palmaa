@@ -6,19 +6,20 @@ import express from 'express';
 import * as brokerController from '../controllers/brokerController.js';
 import { authenticate, requireRole } from '../middlewares/authMiddleware.js';
 import { validate } from '../middlewares/validate.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 import { broker as brokerSchemas } from '../validation/schemas.js';
 
 const router = express.Router();
 router.use(authenticate);
 router.use(requireRole('BROKER'));
 
-router.get('/shared-products', brokerController.listSharedProducts);
+router.get('/shared-products', asyncHandler(brokerController.listSharedProducts));
 router.put(
   '/shared-products/:productId',
   validate(brokerSchemas.upsertSharedProduct, 'body', 'broker.upsertSharedProduct'),
-  brokerController.upsertSharedProduct
+  asyncHandler(brokerController.upsertSharedProduct)
 );
-router.delete('/shared-products/:productId', brokerController.removeSharedProduct);
-router.patch('/shared-products/featured/:shareId', brokerController.toggleFeatured);
+router.delete('/shared-products/:productId', asyncHandler(brokerController.removeSharedProduct));
+router.patch('/shared-products/featured/:shareId', asyncHandler(brokerController.toggleFeatured));
 
 export default router;

@@ -7,6 +7,8 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import cluster from 'cluster';
+import os from 'os';
 
 const _dir = path.dirname(fileURLToPath(import.meta.url));
 // تحميل .env: مسار مخصّص إن وُجد، ثم جذر المشروع و server/ (لا نستبدل قيم process.env)
@@ -15,9 +17,9 @@ dotenv.config({ path: path.join(_dir, '..', '.env'), override: false });
 dotenv.config({ path: path.join(_dir, '.env'), override: false });
 dotenv.config({ override: false });
 
-// على Render قد لا تصل VITE_* وقت التشغيل؛ ننسخها إلى SUPABASE_* إن وُجدت
+// على Render قد لا تصل VITE_* وقت التشغيل؛ ننسخ فقط عنوان Supabase (لا نستخدم ANON_KEY كـ SERVICE_KEY أبداً)
 if (process.env.VITE_SUPABASE_URL && !process.env.SUPABASE_URL) process.env.SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-if (process.env.VITE_SUPABASE_ANON_KEY && !process.env.SUPABASE_SERVICE_KEY) process.env.SUPABASE_SERVICE_KEY = process.env.VITE_SUPABASE_ANON_KEY;
+// SUPABASE_SERVICE_KEY must be set explicitly in server env; never fallback to VITE_SUPABASE_ANON_KEY for security.
 
 // Log uncaught errors so Render/PM2 show the real cause of exit 1
 process.on('uncaughtException', (err) => {
@@ -36,7 +38,15 @@ import cookieParser from 'cookie-parser';
 
 import { validateEnv, getEnv, isProduction } from './config/env.js';
 import { corsMiddleware } from './middlewares/corsMiddleware.js';
-import { helmetMiddleware, generalLimiter, paymentLimiter, cartLimiter } from './middlewares/security.js';
+import {
+  helmetMiddleware,
+  generalLimiter,
+  paymentLimiter,
+  cartLimiter,
+  productListMinuteLimiter,
+  cartMinuteLimiter,
+  ordersMinuteLimiter,
+} from './middlewares/security.js';
 import cacheMiddleware from './middlewares/cacheMiddleware.js';
 import httpsEnforce from './middlewares/httpsEnforce.js';
 import requestIdMiddleware from './middlewares/requestId.js';
@@ -62,6 +72,7 @@ import brokerRoutes from './routes/brokerRoutes.js';
 import sharedProductsRoutes from './routes/sharedProductsRoutes.js';
 import followRoutes from './routes/followRoutes.js';
 import merchantRoutes from './routes/merchantRoutes.js';
+import merchantOffersRoutes from './routes/merchantOffersRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import healthRoutes from './routes/healthRoutes.js';
@@ -88,8 +99,13 @@ app.use(helmetMiddleware());
 if (isProduction()) app.use(httpsEnforce);
 app.use(compression());
 app.use(cookieParser(getEnv('COOKIE_SECRET')));
-// Allow larger payloads for product create/update (e.g. images as URLs or base64)
-app.use(express.json({ limit: '15mb' }));
+// Default JSON body limit for most routes: 2MB to protect memory.
+app.use((req, res, next) => {
+  if (req.path && req.path.startsWith('/api/products')) {
+    return next();
+  }
+  return express.json({ limit: '2mb' })(req, res, next);
+});
 app.use(csrfHeaderMiddleware);
 
 // requestId before limiters so 429 logs include requestId
@@ -118,13 +134,31 @@ logger.info('Request timeout middleware active', { timeoutMs: requestTimeoutMs }
 app.use(sanitizeErrorResponse);
 
 // API routes BEFORE static so /api/* never returns 404 when this server is hit
-// Cybersource REST process – أول مسار لضمان عدم 404 (برودكشن)
-app.post('/api/payments/cybersource/rest/process', paymentLimiter(), (req, res, next) =>
-  processRestPaymentHandler(req, res).catch(next)
-);
+// Cybersource REST process – أول مسار لضمان عدم 404 (برودكشن). Timeout 15s so slow external API does not hang the request.
+const cybersourceTimeoutMs = Number(getEnv('CYBERSOURCE_REQUEST_TIMEOUT_MS')) || 15000;
+app.post('/api/payments/cybersource/rest/process', paymentLimiter(), (req, res, next) => {
+  let settled = false;
+  const timer = setTimeout(() => {
+    if (settled) return;
+    settled = true;
+    if (!res.headersSent) {
+      logger.warn('cybersource_rest_timeout', { requestId: req.id, timeoutMs: cybersourceTimeoutMs });
+      res.status(503).json({ success: false, error: 'Payment request timeout. Please try again.' });
+    }
+  }, cybersourceTimeoutMs);
+  res.once('finish', () => { settled = true; clearTimeout(timer); });
+  processRestPaymentHandler(req, res).catch(next);
+});
 logger.info('Cybersource route registered: POST /api/payments/cybersource/rest/process');
-app.use('/api/orders', orderRoutes);
-app.use('/api/products', cacheMiddleware(600), productRoutes);
+app.use('/api/orders', ordersMinuteLimiter(), orderRoutes);
+// Product routes: allow larger JSON payloads (15MB) for product upload/edit, then apply rate limits and cache.
+app.use(
+  '/api/products',
+  express.json({ limit: '15mb' }),
+  productListMinuteLimiter(),
+  cacheMiddleware(60),
+  productRoutes
+);
 
 const paymentRouter = express.Router();
 paymentRouter.use(paymentLimiter());
@@ -148,13 +182,15 @@ app.use('/api/payments', paymentsApiRouter);
 app.use('/api/shipment', shipmentRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/addresses', addressRoutes);
-app.use('/api/cart', cartLimiter(), cartRoutes);
+app.use('/api/cart', cartLimiter(), cartMinuteLimiter(), cartRoutes);
 app.use('/api/offers', cacheMiddleware(60), offersRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/broker', brokerRoutes);
 app.use('/api/shared-products', sharedProductsRoutes);
 app.use('/api/follow', followRoutes);
+// Mount offers before /api/merchant so GET /api/merchant/offers is not matched as /api/merchant/:id (id="offers")
+app.use('/api/merchant/offers', merchantOffersRoutes);
 app.use('/api/merchant', merchantRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/chat', chatRoutes);
@@ -167,26 +203,46 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use((req, res) => res.status(404).json({ error: 'Not found' }));
 app.use(errorHandler);
 
-const server = app.listen(PORT, () => {
-  logger.info('Server listening', {
-    port: PORT,
-    nodeEnv: getEnv('NODE_ENV') || 'development',
+function startHttpServer() {
+  const server = app.listen(PORT, () => {
+    logger.info('Server listening', {
+      port: PORT,
+      nodeEnv: getEnv('NODE_ENV') || 'development',
+      pid: process.pid,
+    });
   });
-});
 
-function gracefulShutdown(signal) {
-  logger.info('Received', { signal });
-  server.close(() => {
-    logger.info('Server closed');
-    process.exit(0);
-  });
-  setTimeout(() => {
-    logger.error('Forced shutdown');
-    process.exit(1);
-  }, 10000);
+  function gracefulShutdown(signal) {
+    logger.info('Received', { signal, pid: process.pid });
+    server.close(() => {
+      logger.info('Server closed', { pid: process.pid });
+      process.exit(0);
+    });
+    setTimeout(() => {
+      logger.error('Forced shutdown', { pid: process.pid });
+      process.exit(1);
+    }, 10000);
+  }
+
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 }
 
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+if (cluster.isPrimary) {
+  const cpuCount = os.cpus().length || 1;
+  logger.info('Starting primary cluster process', { pid: process.pid, cpuCount });
+  for (let i = 0; i < cpuCount; i += 1) {
+    cluster.fork();
+  }
+  cluster.on('exit', (worker, code, signal) => {
+    logger.error('Worker exited', { pid: worker.process.pid, code, signal });
+    if (!worker.exitedAfterDisconnect) {
+      logger.info('Restarting worker', {});
+      cluster.fork();
+    }
+  });
+} else {
+  startHttpServer();
+}
 
 export default app;

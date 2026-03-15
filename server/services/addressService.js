@@ -5,6 +5,7 @@
 
 import axios from 'axios';
 import logger from '../utils/logger.js';
+import { withCircuitBreaker } from '../utils/circuitBreaker.js';
 
 const SHIPMENT_API_BASE = process.env.SHIPMENT_API_BASE || process.env.LOGESTECHS_API_URL || '';
 const CACHE_TTL_MS = Number(process.env.ADDRESS_CACHE_TTL_MS) || 5 * 60 * 1000; // 5 min
@@ -37,14 +38,17 @@ async function fetchFromApi(path, params = {}) {
     });
     return u.toString();
   };
-  try {
-    const url = tryUrl(path, params);
-    const response = await axios.get(url, { headers, timeout: 10000 });
-    return response.data;
-  } catch (err) {
-    logger.error('addressService API error', { path, message: (err.response && err.response.data) || err.message });
+  const url = tryUrl(path, params);
+  const { data, error } = await withCircuitBreaker(
+    'address',
+    () => axios.get(url, { headers, timeout: 8000 }),
+    { timeoutMs: 8000 }
+  );
+  if (error) {
+    logger.error('addressService API error', { path, message: error.message });
     return null;
   }
+  return data?.data ?? data;
 }
 
 /** Extract array from API response (multiple common shapes). */

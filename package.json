@@ -9,6 +9,7 @@
     "format": "prettier --write \"**/*.{js,ts,tsx,json,css,md}\" --ignore-path .prettierignore",
     "format:check": "prettier --check \"**/*.{js,ts,tsx,json,css,md}\" --ignore-path .prettierignore",
     "report:large-files": "node scripts/report-large-files.cjs",
+    "verify": "node scripts/verify.cjs",
     "db:migrate": "npx supabase db push",
     "dev": "vite",
     "build": "node node_modules/vite/bin/vite.js build",

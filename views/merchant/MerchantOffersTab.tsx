@@ -46,6 +46,10 @@ export default function MerchantOffersTab({ lang, t, products, onRefresh }: Merc
     try {
       const res = await getMerchantOffers();
       if (res.success && res.offers) setOffers(res.offers);
+      else setOffers([]);
+    } catch (_err) {
+      setOffers([]);
+      showToast(lang === 'ar' ? 'تعذّر تحميل العروض' : 'Could not load offers', 'error');
     } finally {
       setLoading(false);
     }

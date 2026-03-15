@@ -5,10 +5,11 @@
 
 const required = [{ key: 'JWT_SECRET', allowEmpty: false }];
 
+/** Server must use SUPABASE_SERVICE_KEY or SUPABASE_SERVICE_ROLE_KEY; never anon key for DB access. */
 function hasSupabaseEnv() {
-  const a = process.env.SUPABASE_URL && (process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY);
-  const b = process.env.VITE_SUPABASE_URL && process.env.VITE_SUPABASE_ANON_KEY;
-  return (a && String(process.env.SUPABASE_URL).trim()) || (b && String(process.env.VITE_SUPABASE_URL).trim());
+  const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim();
+  const serviceKey = (process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  return !!url && !!serviceKey;
 }
 
 const optionalButRecommended = [
@@ -34,7 +35,7 @@ function validateEnv() {
     }
   }
   if (!hasSupabaseEnv()) {
-    console.warn('[config] Supabase env missing (VITE_SUPABASE_URL+VITE_SUPABASE_ANON_KEY or SUPABASE_*). Server will start but DB routes will fail. Set them in Render Environment.');
+    console.warn('[config] Supabase env missing: set SUPABASE_URL and SUPABASE_SERVICE_KEY (or SUPABASE_SERVICE_ROLE_KEY) in server environment. Do not use anon key. Server will start but DB routes will fail.');
   }
   if (missing.length > 0) {
     throw new Error(`Missing required env: ${missing.join(', ')}. Check .env and Render Environment.`);

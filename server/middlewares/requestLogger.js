@@ -24,6 +24,7 @@ export function requestLogger(req, res, next) {
   res.on('finish', () => {
     const duration = Date.now() - start;
     const status = res.statusCode;
+    const path = (url || '').split('?')[0];
     const { orderId, productId } = getRouteIds(req);
     const meta = {
       requestId: req.id,
@@ -37,6 +38,13 @@ export function requestLogger(req, res, next) {
     if (orderId) meta.orderId = orderId;
     if (productId) meta.productId = productId;
     logger.info('request', meta);
+    if (req.method === 'GET' && (path === '/api/products' || path === '/api/cart' || path.startsWith('/api/orders'))) {
+      logger.info('api_timing', { path, durationMs: duration, status, requestId: req.id });
+    }
+    // Log slow requests (>800ms) for monitoring. Admin routes are not blocked, only logged.
+    if (duration > 800) {
+      logger.warn('slow_request', { path, durationMs: duration, method, status, requestId: req.id });
+    }
   });
   next();
 }
