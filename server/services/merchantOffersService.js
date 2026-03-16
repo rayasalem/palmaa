@@ -52,6 +52,24 @@ export async function getApplicableMerchantOffersForProduct(merchantId, productI
   return { data: byPriority, error: null };
 }
 
+/** كل العروض النشطة (ضمن المدة) لعدد من التجار — لاستخدامها عند حساب أسعار الكتالوج */
+export async function listActiveByMerchantIds(merchantIds) {
+  if (!merchantIds || merchantIds.length === 0) return { data: [], error: null };
+  const ids = [...new Set(merchantIds.filter(Boolean))];
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('id, merchant_id, discount_label, scope, product_id, category, starts_at, ends_at')
+    .in('merchant_id', ids)
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true });
+  if (error) {
+    logger.error('merchantOffersService listActiveByMerchantIds', { message: error.message });
+    return { data: [], error };
+  }
+  const list = (data || []).filter(isOfferWithinDates);
+  return { data: list, error: null };
+}
+
 export async function create(merchantId, payload) {
   const scope = payload.scope === 'category' || payload.scope === 'all' ? payload.scope : 'product';
   const row = {

@@ -240,6 +240,13 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
             </div>
             <div className="w-px h-4 bg-palma-border self-stretch" aria-hidden />
             <button
+              onClick={onExploreProducts}
+              className="text-sm font-semibold text-palma-primary hover:text-palma-navy transition py-2 flex items-center gap-1.5"
+            >
+              <ShoppingBag className="w-4 h-4 shrink-0" />
+              {lang === 'ar' ? 'تسوق الآن' : lang === 'he' ? 'קנה עכשיו' : 'Shop Now'}
+            </button>
+            <button
               onClick={onLoginClick}
               className="text-sm font-semibold text-palma-navy hover:text-palma-primary transition py-2"
             >
@@ -282,6 +289,14 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                     </button>
                   ))}
                 </nav>
+                <button
+                  type="button"
+                  onClick={() => { onExploreProducts(); setMobileMenuOpen(false); }}
+                  className="w-full py-3.5 rounded-xl bg-palma-primary text-white font-bold text-sm flex items-center justify-center gap-2"
+                >
+                  <ShoppingBag className="w-5 h-5" />
+                  {lang === 'ar' ? 'تسوق الآن' : lang === 'he' ? 'קנה עכשיו' : 'Shop Now'}
+                </button>
                 <div className="w-full h-px bg-palma-border" />
                 <div className="relative w-full flex justify-center">
                   <button
@@ -342,10 +357,21 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
           <ComingSoonHero lang={lang} onStartNow={onJoinRegister} onExploreProducts={onExploreProducts} />
         </section>
 
-        {/* 2. الإحصائيات – أرقام تفاعلية (تاجر، منتجات، زبائن، زوار) */}
-        <section className="bg-white pt-4 pb-14 sm:pt-6 sm:pb-20 border-y border-palma-border relative z-10 -mt-2">
+        {/* 2. الإحصائيات – أرقام تفاعلية + رابط واضح للتسوق */}
+        <section className="bg-white pt-2 pb-8 sm:pt-4 sm:pb-10 border-y border-palma-border relative z-10 -mt-2">
           <div className="max-w-7xl mx-auto px-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
+            {/* زر الانتقال للتسوق — واضح ومرتب */}
+            <div className="flex justify-center mb-4 sm:mb-6">
+              <button
+                type="button"
+                onClick={onExploreProducts}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-palma-primary text-white font-bold text-sm shadow-md hover:bg-palma-primaryHover hover:shadow-lg transition-all"
+              >
+                <ShoppingBag className="w-5 h-5" />
+                {lang === 'ar' ? 'تسوق الآن من بالما' : lang === 'he' ? 'קנה עכשיו מפלמה' : 'Shop Now at Palma'}
+              </button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
               <div className="text-center group cursor-default card-hover-lift rounded-2xl p-4 hover:bg-palma-soft/50 transition-colors duration-300">
                 <div className="font-heading text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">
                   +500
@@ -392,12 +418,12 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
               <div className="w-16 h-1.5 bg-palma-primary mx-auto rounded-full my-2" aria-hidden />
               <p className="heading-block-sub">{t.common.featuredSub}</p>
             </div>
-            <p className="text-center text-xs font-semibold text-palma-muted mb-6">
+            <p className="text-center text-xs font-semibold text-palma-muted mb-2">
               {lang === 'ar'
-                ? 'التمرير تلقائي — أو اسحبي للتصفح'
+                ? 'التمرير تلقائي — أو اسحبي للتسوق'
                 : lang === 'he'
-                  ? 'גלילה אוטומטית — או גרור'
-                  : 'Auto-scrolling — or drag to browse'}
+                  ? 'גלילה אוטומטית — או גרור לקנות'
+                  : 'Auto-scroll — or drag to shop'}
             </p>
             <div className="relative w-full overflow-hidden">
               <div
@@ -414,7 +440,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                 ref={featuredScrollRef}
                 onMouseEnter={() => setAutoScrollPaused(true)}
                 onMouseLeave={() => setAutoScrollPaused(false)}
-                className="flex gap-6 overflow-x-auto overflow-y-hidden pb-4 pt-2 scrollbar-hide w-full"
+                className="flex gap-6 overflow-x-auto overflow-y-hidden pb-4 pt-0 scrollbar-hide w-full"
                 style={{
                   scrollbarWidth: 'none',
                   msOverflowStyle: 'none',

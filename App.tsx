@@ -170,6 +170,9 @@ const AppContent: React.FC = () => {
     }
   }, []);
 
+  /** الصفحة الأولى للزائر — تُستخدم عند المسار الفارغ أو غير المعروف */
+  const defaultPublicRoute = ROUTES.WELCOME;
+
   /** Read hash and apply to state — مسارات محددة في routes.ts */
   const applyHashToState = useCallback(() => {
     const raw = window.location.hash.replace(/^#\/?/, '').trim() || '';
@@ -178,12 +181,24 @@ const AppContent: React.FC = () => {
     isApplyingHashRef.current = true;
     setShowMerchantTermsPage(false);
     setPendingAuthAfterTerms(null);
+
+    // مسار فارغ أو welcome → لاندينغ (الصفحة الأولى للزائر)
+    if (top === ROUTES.HOME || top === ROUTES.WELCOME) {
+      setPublicState('LANDING');
+      setCurrentView(ROUTES.HOME_APP);
+      setSelectedProductId(null);
+      setSelectedProfileId(null);
+      setPublicBrokerId(null);
+      if (typeof window !== 'undefined' && (raw === '' || raw === ROUTES.HOME)) {
+        updateHash(defaultPublicRoute);
+      }
+      setTimeout(() => { isApplyingHashRef.current = false; }, 0);
+      return;
+    }
+
     if (top === ROUTES.CATALOG) {
       setPublicState('CATALOG');
       setCurrentView('catalog');
-    } else if (top === ROUTES.WELCOME) {
-      setPublicState('LANDING');
-      setCurrentView(ROUTES.HOME_APP);
     } else if (top === ROUTES.LOGIN) {
       setPublicState('AUTH');
       setAuthView('LOGIN');
@@ -237,13 +252,14 @@ const AppContent: React.FC = () => {
       if (top !== 'product_details') setSelectedProductId(null);
       if (top !== 'public_profile') setSelectedProfileId(null);
     } else {
-      // الزائر أو من يريد التسوق يرى الكتالوج أولاً (مثل متجر إلكتروني — sdclubs style)
-      setPublicState('CATALOG');
+      // مسار غير معروف أو قديم → توجيه إلى الصفحة الأولى (welcome)
+      setPublicState('LANDING');
       setCurrentView(ROUTES.HOME_APP);
       setSelectedProductId(null);
       setSelectedProfileId(null);
-      if (typeof window !== 'undefined' && raw === '') {
-        updateHash(ROUTES.CATALOG);
+      setPublicBrokerId(null);
+      if (typeof window !== 'undefined') {
+        updateHash(defaultPublicRoute);
       }
     }
     setTimeout(() => {
@@ -339,11 +355,11 @@ const AppContent: React.FC = () => {
         }
         authService.setCurrentUser(null);
         setUser(null);
-        // إعادة توجيه المسار والـ view للصفحة العامة حتى لا يبقى #/dashboard في الرابط فيظهر وكأن المستخدم داخل
+        // إعادة توجيه المسار للصفحة الأولى: welcome (لاندينغ بالما)
         setCurrentView(ROUTES.HOME_APP);
         setPublicState('LANDING');
         setAuthView('LOGIN');
-        updateHash(ROUTES.HOME);
+        updateHash(ROUTES.WELCOME);
       }
 
       // 3. Load products (for CustomerView shop; productService populates db.products)
@@ -457,7 +473,7 @@ const AppContent: React.FC = () => {
     setCurrentView('home');
     setPublicState('LANDING');
     setAuthView('LOGIN');
-    updateHash(ROUTES.HOME);
+    updateHash(ROUTES.WELCOME);
   };
 
   /** Add to cart: uses backend when user is set, else local state + localStorage (multi-user safe) */
@@ -701,7 +717,7 @@ const AppContent: React.FC = () => {
             profileId={selectedProfileId}
             onBack={() => {
               setPublicState('LANDING');
-              updateHash(ROUTES.HOME);
+              updateHash(ROUTES.WELCOME);
             }}
             onProductClick={handleViewProduct}
             onLoginClick={() => openAuth('LOGIN')}
@@ -720,7 +736,7 @@ const AppContent: React.FC = () => {
             brokerId={publicBrokerId}
             onBack={() => {
               setPublicState('LANDING');
-              updateHash(ROUTES.HOME);
+              updateHash(ROUTES.WELCOME);
             }}
             onProductClick={handleViewProduct}
             onLoginClick={() => openAuth('LOGIN')}
@@ -739,7 +755,7 @@ const AppContent: React.FC = () => {
             onBack={() => {
               setShowMerchantTermsPage(false);
               setPendingAuthAfterTerms(null);
-              updateHash(ROUTES.HOME);
+              updateHash(ROUTES.WELCOME);
             }}
             onAccept={() => {
               // دائماً نسمح بالتسجيل كتاجر بعد الموافقة، سواء جاؤوا من صفحة الانضمام أو مباشرةً
@@ -995,7 +1011,7 @@ const AppContent: React.FC = () => {
                         setShowApiCheckout(true);
                       }}
                       onNavigateToCatalog={() => {
-                        setCurrentView('catalog');
+                        setCurrentView('home');
                         updateHash(ROUTES.CATALOG);
                       }}
                     />
@@ -1007,13 +1023,36 @@ const AppContent: React.FC = () => {
             {user.role === 'MERCHANT' && currentView === 'shop' && (
               <div className="block">
                 <Suspense fallback={<PageLoader />}>
-                  <PublicCatalog
-                    embeddedInLayout
-                    onBack={() => { setCurrentView('dashboard'); updateHash(ROUTES.DASHBOARD); }}
-                    onLoginClick={() => setCurrentView('profile')}
-                    onProductClick={(id) => {
+                  <CustomerView
+                    user={user}
+                    view="shop"
+                    cart={cart}
+                    addToCart={addToCart}
+                    addingToCartProductId={addingToCartProductId}
+                    removeFromCart={removeFromCart}
+                    updateQuantity={updateQuantity}
+                    clearCart={clearCart}
+                    lang={lang}
+                    onRefresh={refreshUser}
+                    onViewProduct={(id) => {
                       setSelectedProductId(id);
                       setCurrentView('product_details');
+                    }}
+                    onViewProfile={(id) => {
+                      setSelectedProfileId(id);
+                      setCurrentView('public_profile');
+                    }}
+                    onTabChange={(tab) => {
+                      if (tab === 'shop' || tab === 'cart') setCurrentView(tab);
+                      updateHash(tab);
+                    }}
+                    onProceedToApiCheckout={(items) => {
+                      setCheckoutCart(items);
+                      setShowApiCheckout(true);
+                    }}
+                    onNavigateToCatalog={() => {
+                      setCurrentView('home');
+                      updateHash(ROUTES.CATALOG);
                     }}
                   />
                 </Suspense>
@@ -1050,7 +1089,7 @@ const AppContent: React.FC = () => {
                       setShowApiCheckout(true);
                     }}
                     onNavigateToCatalog={() => {
-                      setCurrentView('catalog');
+                      setCurrentView('home');
                       updateHash(ROUTES.CATALOG);
                     }}
                   />
@@ -1078,13 +1117,36 @@ const AppContent: React.FC = () => {
             {user.role === 'ADMIN' && currentView === 'shop' && (
               <div className="block">
                 <Suspense fallback={<PageLoader />}>
-                  <PublicCatalog
-                    embeddedInLayout
-                    onBack={() => { setCurrentView('dashboard'); updateHash(ROUTES.DASHBOARD); }}
-                    onLoginClick={() => setCurrentView('profile')}
-                    onProductClick={(id) => {
+                  <CustomerView
+                    user={user}
+                    view="shop"
+                    cart={cart}
+                    addToCart={addToCart}
+                    addingToCartProductId={addingToCartProductId}
+                    removeFromCart={removeFromCart}
+                    updateQuantity={updateQuantity}
+                    clearCart={clearCart}
+                    lang={lang}
+                    onRefresh={refreshUser}
+                    onViewProduct={(id) => {
                       setSelectedProductId(id);
                       setCurrentView('product_details');
+                    }}
+                    onViewProfile={(id) => {
+                      setSelectedProfileId(id);
+                      setCurrentView('public_profile');
+                    }}
+                    onTabChange={(tab) => {
+                      if (tab === 'shop' || tab === 'cart') setCurrentView(tab);
+                      updateHash(tab);
+                    }}
+                    onProceedToApiCheckout={(items) => {
+                      setCheckoutCart(items);
+                      setShowApiCheckout(true);
+                    }}
+                    onNavigateToCatalog={() => {
+                      setCurrentView('home');
+                      updateHash(ROUTES.CATALOG);
                     }}
                   />
                 </Suspense>
@@ -1121,7 +1183,7 @@ const AppContent: React.FC = () => {
                       setShowApiCheckout(true);
                     }}
                     onNavigateToCatalog={() => {
-                      setCurrentView('catalog');
+                      setCurrentView('home');
                       updateHash(ROUTES.CATALOG);
                     }}
                   />
@@ -1148,13 +1210,36 @@ const AppContent: React.FC = () => {
             {user.role === 'BROKER' && currentView === 'shop' && (
               <div className="block">
                 <Suspense fallback={<PageLoader />}>
-                  <PublicCatalog
-                    embeddedInLayout
-                    onBack={() => { setCurrentView('dashboard'); updateHash(ROUTES.DASHBOARD); }}
-                    onLoginClick={() => setCurrentView('profile')}
-                    onProductClick={(id) => {
+                  <CustomerView
+                    user={user}
+                    view="shop"
+                    cart={cart}
+                    addToCart={addToCart}
+                    addingToCartProductId={addingToCartProductId}
+                    removeFromCart={removeFromCart}
+                    updateQuantity={updateQuantity}
+                    clearCart={clearCart}
+                    lang={lang}
+                    onRefresh={refreshUser}
+                    onViewProduct={(id) => {
                       setSelectedProductId(id);
                       setCurrentView('product_details');
+                    }}
+                    onViewProfile={(id) => {
+                      setSelectedProfileId(id);
+                      setCurrentView('public_profile');
+                    }}
+                    onTabChange={(tab) => {
+                      if (tab === 'shop' || tab === 'cart') setCurrentView(tab);
+                      updateHash(tab);
+                    }}
+                    onProceedToApiCheckout={(items) => {
+                      setCheckoutCart(items);
+                      setShowApiCheckout(true);
+                    }}
+                    onNavigateToCatalog={() => {
+                      setCurrentView('home');
+                      updateHash(ROUTES.CATALOG);
                     }}
                   />
                 </Suspense>
@@ -1189,14 +1274,14 @@ const AppContent: React.FC = () => {
                       setCheckoutCart(items);
                       setShowApiCheckout(true);
                     }}
-                    onNavigateToCatalog={() => {
-                      setCurrentView('catalog');
-                      updateHash(ROUTES.CATALOG);
-                    }}
-                  />
-                </Suspense>
-              </div>
-            )}
+onNavigateToCatalog={() => {
+                    setCurrentView('home');
+                    updateHash(ROUTES.CATALOG);
+                  }}
+                />
+              </Suspense>
+            </div>
+          )}
 
             {user.role === 'BROKER' && currentView !== 'shop' && currentView !== 'cart' && (
               <BrokerView

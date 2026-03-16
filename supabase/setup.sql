@@ -4,7 +4,7 @@
 -- الاستخدام:
 --   - قاعدة جديدة: شغّل الملف كاملاً بعد إنشاء الجداول الأساسية (users, products, orders, ...).
 --   - قاعدة موجودة: آمن التشغيل؛ معظم الأوامر تستخدم IF NOT EXISTS / ADD COLUMN IF NOT EXISTS.
---   - إن ظهر خطأ على CREATE INDEX CONCURRENTLY: شغّل جمل الـ indexes لوحدها في Supabase SQL Editor.
+--   - هذا الملف يستخدم CREATE INDEX (بدون CONCURRENTLY) ليعمل داخل Supabase SQL Editor دون خطأ transaction.
 -- =============================================================================
 
 -- =============================================================================
@@ -176,18 +176,18 @@ ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS guest_access_token UUID UNIQU
 CREATE INDEX IF NOT EXISTS idx_orders_guest_access_token ON public.orders(guest_access_token) WHERE guest_access_token IS NOT NULL;
 
 -- =============================================================================
--- 010 — Performance indexes (CONCURRENTLY: إن فشل التشغيل الكامل، شغّل جمل الـ index لوحدها)
+-- 010 — Performance indexes
 -- =============================================================================
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_status ON public.users (status);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_email ON public.users (email);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_merchant_id ON public.products (merchant_id);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_is_active_status ON public.products (is_active, status);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_orders_customer_id ON public.orders (customer_id);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_orders_merchant_id ON public.orders (merchant_id);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_orders_created_at_desc ON public.orders (created_at DESC);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_order_items_order_id ON public.order_items (order_id);
-CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS idx_carts_user_id_unique ON public.carts (user_id);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_notifications_user_id_created_at ON public.notifications (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_users_status ON public.users (status);
+CREATE INDEX IF NOT EXISTS idx_users_email ON public.users (email);
+CREATE INDEX IF NOT EXISTS idx_products_merchant_id ON public.products (merchant_id);
+CREATE INDEX IF NOT EXISTS idx_products_is_active_status ON public.products (is_active, status);
+CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON public.orders (customer_id);
+CREATE INDEX IF NOT EXISTS idx_orders_merchant_id ON public.orders (merchant_id);
+CREATE INDEX IF NOT EXISTS idx_orders_created_at_desc ON public.orders (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON public.order_items (order_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_carts_user_id_unique ON public.carts (user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id_created_at ON public.notifications (user_id, created_at DESC);
 
 -- =============================================================================
 -- 011 — token_version and MFA
@@ -316,7 +316,7 @@ COMMENT ON TABLE public.merchant_offers IS 'عروض التاجر: خصم على
 -- =============================================================================
 -- 021 — products catalog index
 -- =============================================================================
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_catalog_list
+CREATE INDEX IF NOT EXISTS idx_products_catalog_list
   ON public.products (is_active, status, created_at DESC NULLS LAST);
 
 -- =============================================================================
@@ -327,14 +327,14 @@ ALTER TABLE public.products
   GENERATED ALWAYS AS (
     to_tsvector('simple', coalesce(name, '') || ' ' || coalesce(title, '') || ' ' || coalesce(description, ''))
   ) STORED;
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_tsv ON public.products USING GIN (tsv);
+CREATE INDEX IF NOT EXISTS idx_products_tsv ON public.products USING GIN (tsv);
 
 -- =============================================================================
 -- 023 — Additional products indexes
 -- =============================================================================
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_created_at_desc ON public.products (created_at DESC);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_price ON public.products (price);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_status_is_active_created_at_desc
+CREATE INDEX IF NOT EXISTS idx_products_created_at_desc ON public.products (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_products_price ON public.products (price);
+CREATE INDEX IF NOT EXISTS idx_products_status_is_active_created_at_desc
   ON public.products (status, is_active, created_at DESC);
 
 -- =============================================================================
@@ -365,16 +365,54 @@ LEFT JOIN public.merchant_profiles AS mp ON mp.user_id = p.merchant_id;
 -- =============================================================================
 -- add_indexes_safe (تكرار آمن مع IF NOT EXISTS)
 -- =============================================================================
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_status ON public.users (status);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_email ON public.users (email);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_merchant_id ON public.products (merchant_id);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_products_is_active_status ON public.products (is_active, status);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_orders_customer_id ON public.orders (customer_id);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_orders_merchant_id ON public.orders (merchant_id);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_orders_created_at_desc ON public.orders (created_at DESC);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_order_items_order_id ON public.order_items (order_id);
-CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS unique_carts_user_id ON public.carts (user_id);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_notifications_user_id_created_at ON public.notifications (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_users_status ON public.users (status);
+CREATE INDEX IF NOT EXISTS idx_users_email ON public.users (email);
+CREATE INDEX IF NOT EXISTS idx_products_merchant_id ON public.products (merchant_id);
+CREATE INDEX IF NOT EXISTS idx_products_is_active_status ON public.products (is_active, status);
+CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON public.orders (customer_id);
+CREATE INDEX IF NOT EXISTS idx_orders_merchant_id ON public.orders (merchant_id);
+CREATE INDEX IF NOT EXISTS idx_orders_created_at_desc ON public.orders (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON public.order_items (order_id);
+CREATE UNIQUE INDEX IF NOT EXISTS unique_carts_user_id ON public.carts (user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id_created_at ON public.notifications (user_id, created_at DESC);
+
+-- =============================================================================
+-- تعليقات المنتجات + إعجابات + إشعارات (للتعليق وإشعار التاجر)
+-- =============================================================================
+-- product_comments: تعليقات الزبون على المنتج (يُشعر التاجر عند الإضافة)
+CREATE TABLE IF NOT EXISTS public.product_comments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id TEXT NOT NULL,
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_product_comments_product_id ON public.product_comments(product_id);
+
+-- product_likes: إعجاب بمنتج
+CREATE TABLE IF NOT EXISTS public.product_likes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id TEXT NOT NULL,
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(product_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_product_likes_product_id ON public.product_likes(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_likes_user_id ON public.product_likes(user_id);
+
+-- notifications: إشعارات (reference_id = product_id أو user_id حسب النوع؛ TEXT يدعم UUID و product_id)
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  reference_id TEXT,
+  message TEXT,
+  is_read BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- إذا كان الجدول موجوداً مسبقاً و reference_id من نوع UUID، شغّل: ALTER TABLE public.notifications ALTER COLUMN reference_id TYPE TEXT USING reference_id::text;
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id_created_at ON public.notifications (user_id, created_at DESC);
 
 -- =============================================================================
 -- نهاية setup.sql

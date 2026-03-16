@@ -7,6 +7,8 @@
 import { supabase } from '../config/supabaseClient.js';
 import logger from '../utils/logger.js';
 import { parsePagination } from '../utils/pagination.js';
+import * as offersService from './offersService.js';
+import { listActiveByMerchantIds } from './merchantOffersService.js';
 
 const PRODUCTS_TABLE = 'products';
 const CATALOG_VIEW = 'catalog_products_view';
@@ -47,6 +49,63 @@ function applyDiscount(product) {
     discount_amount: discountAmount,
     discount_percent: discountPercent,
   };
+}
+
+/**
+ * Best offer % for a product from shop offers and merchant offers (in-memory match).
+ */
+function bestOfferPercentForProduct(product, shopOffers, merchantOffersByMerchant) {
+  const productId = product.id;
+  const category = product.category || '';
+  const merchantId = product.merchant_id || null;
+  let bestPct = 0;
+  for (const o of shopOffers) {
+    const scope = o.scope || 'product';
+    if (scope === 'all') bestPct = Math.max(bestPct, Number(o.discount_label) || 0);
+    else if (scope === 'category' && String(o.category || '').trim() === String(category).trim()) bestPct = Math.max(bestPct, Number(o.discount_label) || 0);
+    else if (scope === 'product' && o.product_id === productId) bestPct = Math.max(bestPct, Number(o.discount_label) || 0);
+  }
+  const merchantOffers = merchantId ? (merchantOffersByMerchant[merchantId] || []) : [];
+  for (const o of merchantOffers) {
+    const scope = o.scope || 'product';
+    if (scope === 'all') bestPct = Math.max(bestPct, Number(o.discount_label) || 0);
+    else if (scope === 'category' && String(o.category || '').trim() === String(category).trim()) bestPct = Math.max(bestPct, Number(o.discount_label) || 0);
+    else if (scope === 'product' && o.product_id === productId) bestPct = Math.max(bestPct, Number(o.discount_label) || 0);
+  }
+  return Math.min(100, Math.max(0, bestPct));
+}
+
+/**
+ * Apply shop + merchant offers to product list: set final_price to the best price (product discount vs offer %).
+ */
+async function applyOfferPrices(products) {
+  if (!products || products.length === 0) return products;
+  const [{ data: shopList }, { data: merchantList }] = await Promise.all([
+    offersService.listActive(),
+    listActiveByMerchantIds([...new Set(products.map((p) => p.merchant_id).filter(Boolean))]),
+  ]);
+  const shopOffers = shopList || [];
+  const merchantByMerchant = {};
+  for (const o of merchantList || []) {
+    if (!merchantByMerchant[o.merchant_id]) merchantByMerchant[o.merchant_id] = [];
+    merchantByMerchant[o.merchant_id].push(o);
+  }
+  return products.map((p) => {
+    const withProductDiscount = applyDiscount(p);
+    const basePrice = Number(p.price_ils ?? p.price ?? 0);
+    const offerPct = bestOfferPercentForProduct(p, shopOffers, merchantByMerchant);
+    const offerPrice = offerPct > 0 ? Math.max(0, basePrice * (1 - offerPct / 100)) : basePrice;
+    const productFinal = Number(withProductDiscount.final_price ?? basePrice);
+    const finalPrice = Math.min(productFinal, offerPrice);
+    const discountAmount = basePrice - finalPrice;
+    const discountPercent = basePrice > 0 ? Math.round((discountAmount / basePrice) * 100) : 0;
+    return {
+      ...withProductDiscount,
+      final_price: finalPrice,
+      discount_amount: discountAmount,
+      discount_percent: discountPercent,
+    };
+  });
 }
 
 /**
@@ -169,10 +228,11 @@ async function getActiveProducts(opts = {}) {
   }
   const rawList = products || [];
   const filteredRaw = rawList.filter((p) => p.merchant_status !== 'SUSPENDED');
-  const enriched = filteredRaw.map((p) => {
+  const stripped = filteredRaw.map((p) => {
     const { merchant_status, ...rest } = p;
-    return applyDiscount(rest);
+    return rest;
   });
+  const enriched = await applyOfferPrices(stripped);
   let next_cursor_created_at = null;
   let next_cursor_id = null;
   if (enriched.length === limit && enriched.length > 0) {
@@ -191,7 +251,8 @@ async function getProductById(id) {
   }
   if (!data) return { data: null, error: null };
   const { merchant_status, ...rest } = data;
-  return { data: applyDiscount(rest), error: null };
+  const [withOffers] = await applyOfferPrices([rest]);
+  return { data: withOffers || applyDiscount(rest), error: null };
 }
 
 async function getProductsByMerchantId(merchantId, opts = {}) {
@@ -213,10 +274,11 @@ async function getProductsByMerchantId(merchantId, opts = {}) {
   }
   const list = data || [];
   if (list.length === 0) return { data: list, error: null };
-  const enriched = list.map((p) => {
+  const stripped = list.map((p) => {
     const { merchant_status, ...rest } = p;
-    return applyDiscount(rest);
+    return rest;
   });
+  const enriched = await applyOfferPrices(stripped);
   return { data: enriched, error: null };
 }
 

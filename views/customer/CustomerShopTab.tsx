@@ -42,6 +42,8 @@ const MAIN_GROUP_ICONS: Record<string, string> = {
   services: '🔧',
 };
 const MOST_POPULAR_CATEGORY_IDS = ['fruits', 'vegetables', 'dairy', 'phones', 'men_clothing', 'snacks'];
+/** عدد المنتجات المعروضة في قسم «كل المنتجات» قبل زر المزيد */
+const ALL_PRODUCTS_PREVIEW_SIZE = 8;
 
 export interface CustomerShopTabProps {
   lang: Language;
@@ -141,16 +143,16 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
 
   return (
     <div
-      className="min-h-screen rounded-2xl"
+      className="rounded-2xl"
       style={{
         background: 'linear-gradient(180deg, rgba(236, 253, 245, 0.5) 0%, rgba(255,255,255,0.9) 30%)',
       }}
     >
-      <div className="space-y-6 sm:space-y-8 p-4 sm:p-6">
-        {/* ——— شريط البحث (طراز SíMi) ——— */}
-        <div className="relative max-w-2xl">
+      <div className="space-y-4 sm:space-y-6 p-3 sm:p-5">
+        {/* ——— شريط البحث (مضغوط) ——— */}
+        <div className="relative max-w-xl">
           <Search
-            className="absolute top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-600 left-4 rtl:left-auto rtl:right-4"
+            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600 left-3 rtl:left-auto rtl:right-3"
             aria-hidden
           />
           <input
@@ -162,7 +164,7 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
                   ? 'חפש מוצרים...'
                   : 'Search your grocery products etc....'
             }
-            className="w-full pl-12 rtl:pl-4 pr-4 rtl:pr-12 py-3.5 rounded-2xl border border-slate-200 bg-white text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none shadow-sm transition"
+            className="w-full pl-10 rtl:pl-4 pr-4 rtl:pr-10 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none shadow-sm transition"
             value={shopSearch || categorySearch}
             onChange={(e) => {
               setShopSearch(e.target.value);
@@ -171,43 +173,35 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
           />
         </div>
 
-        {/* ——— التصنيفات (قائمة أفقية + زر فلتر + أسهم) ——— */}
-        <section>
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <h3 className="text-lg font-black text-slate-800">
+        {/* ——— التصنيفات + فلترة (حجم مضغوط) ——— */}
+        <section className="space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <h3 className="text-sm font-black text-slate-800">
               {lang === 'ar' ? 'التصنيفات' : lang === 'he' ? 'קטגוריות' : 'Categories'}
             </h3>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => setFilterOpen(!filterOpen)}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold shadow-md hover:bg-emerald-700 transition"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold shadow-sm hover:bg-emerald-700 transition"
               >
-                <Filter className="w-4 h-4" />
+                <Filter className="w-3.5 h-3.5" />
                 {lang === 'ar' ? 'فلتر' : 'Filter'}
               </button>
               <div className="flex rounded-full bg-white border border-slate-200 overflow-hidden shadow-sm">
-                <button
-                  type="button"
-                  onClick={() => scroll(categoriesScrollRef, lang === 'en' ? 'left' : 'right')}
-                  className="p-2 text-slate-600 hover:bg-slate-50"
-                >
-                  <ChevronLeft className="w-5 h-5" />
+                <button type="button" onClick={() => scroll(categoriesScrollRef, lang === 'en' ? 'left' : 'right')} className="p-1.5 text-slate-600 hover:bg-slate-50">
+                  <ChevronLeft className="w-4 h-4" />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => scroll(categoriesScrollRef, lang === 'en' ? 'right' : 'left')}
-                  className="p-2 text-slate-600 hover:bg-slate-50"
-                >
-                  <ChevronRight className="w-5 h-5" />
+                <button type="button" onClick={() => scroll(categoriesScrollRef, lang === 'en' ? 'right' : 'left')} className="p-1.5 text-slate-600 hover:bg-slate-50">
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
           </div>
           {filterOpen && (
-            <div className="flex flex-wrap gap-2 mb-4 p-3 bg-white rounded-xl border border-slate-100">
+            <div className="flex flex-wrap gap-2 mb-2 p-2 bg-white rounded-lg border border-slate-100">
               <select
-                className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600 outline-none focus:border-emerald-500"
+                className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-bold text-slate-600 outline-none focus:border-emerald-500"
                 value={shopConditionFilter}
                 onChange={(e) => setShopConditionFilter(e.target.value)}
               >
@@ -221,7 +215,7 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
           )}
           <div
             ref={categoriesScrollRef}
-            className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide"
+            className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {MOST_POPULAR_CATEGORY_IDS.map((catId) => {
@@ -233,28 +227,28 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
                   key={catId}
                   type="button"
                   onClick={() => onCategorySelect(shopCategoryId === catId ? 'all' : catId)}
-                  className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border-2 min-w-[100px] shrink-0 transition-all ${
+                  className={`flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border-2 min-w-[80px] shrink-0 transition-all ${
                     isActive
-                      ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg'
+                      ? 'bg-emerald-600 border-emerald-600 text-white shadow-md'
                       : 'bg-white border-slate-100 text-slate-700 hover:border-emerald-200 hover:bg-emerald-50'
                   }`}
                 >
-                  <span className="text-2xl">{emoji}</span>
-                  <span className="text-xs font-bold text-center line-clamp-2">{label}</span>
+                  <span className="text-xl">{emoji}</span>
+                  <span className="text-[10px] font-bold text-center line-clamp-2">{label}</span>
                 </button>
               );
             })}
             <button
               type="button"
               onClick={() => onCategorySelect('all')}
-              className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border-2 min-w-[100px] shrink-0 transition-all ${
+              className={`flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border-2 min-w-[80px] shrink-0 transition-all ${
                 shopCategoryId === 'all'
-                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg'
+                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-md'
                   : 'bg-white border-slate-100 text-slate-700 hover:border-emerald-200'
               }`}
             >
-              <span className="text-2xl">📦</span>
-              <span className="text-xs font-bold text-center">{t.common.allCategories}</span>
+              <span className="text-xl">📦</span>
+              <span className="text-[10px] font-bold text-center">{t.common.allCategories}</span>
             </button>
           </div>
         </section>
@@ -577,11 +571,32 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
           </div>
         </section>
 
-        {/* ——— كل المنتجات (شبكة) ——— */}
+        {/* ——— كل المنتجات: عرض جزء منها + زر المزيد ينتقل لصفحة الكتالوج ——— */}
         <section>
-          <h3 className="text-lg font-black text-slate-800 mb-4">
-            {lang === 'ar' ? `كل المنتجات (${filteredShopProducts.length})` : `All Products (${filteredShopProducts.length})`}
-          </h3>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
+            <h3 className="text-lg font-black text-slate-800">
+              {lang === 'ar' ? 'كل المنتجات' : lang === 'he' ? 'כל המוצרים' : 'All Products'}
+            </h3>
+            {onNavigateToCatalog && filteredShopProducts.length > 0 && (
+              <button
+                type="button"
+                onClick={onNavigateToCatalog}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-palma-primary text-white font-bold text-sm shadow-md hover:bg-palma-primaryHover transition"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                {lang === 'ar' ? 'عرض المزيد — كل المنتجات' : lang === 'he' ? 'עוד — כל המוצרים' : 'Show more — all products'}
+              </button>
+            )}
+          </div>
+          <p className="text-sm text-slate-500 mb-4">
+            {filteredShopProducts.length === 0
+              ? (lang === 'ar' ? 'لا توجد منتجات تطابق البحث أو التصنيف.' : lang === 'he' ? 'אין מוצרים תואמים.' : 'No products match your filters.')
+              : lang === 'ar'
+                ? `عرض جزء من المنتجات (${Math.min(ALL_PRODUCTS_PREVIEW_SIZE, filteredShopProducts.length)} ${filteredShopProducts.length > ALL_PRODUCTS_PREVIEW_SIZE ? `من ${filteredShopProducts.length}` : ''})`
+                : lang === 'he'
+                  ? `מציג חלק מהמוצרים (${Math.min(ALL_PRODUCTS_PREVIEW_SIZE, filteredShopProducts.length)}${filteredShopProducts.length > ALL_PRODUCTS_PREVIEW_SIZE ? ` מתוך ${filteredShopProducts.length}` : ''})`
+                  : `Showing part of products (${Math.min(ALL_PRODUCTS_PREVIEW_SIZE, filteredShopProducts.length)}${filteredShopProducts.length > ALL_PRODUCTS_PREVIEW_SIZE ? ` of ${filteredShopProducts.length}` : ''})`}
+          </p>
           {filteredShopProducts.length === 0 ? (
             <div className="py-16 rounded-2xl bg-white border border-slate-100 text-center">
               <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto mb-3" />
@@ -590,28 +605,42 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredShopProducts.map((p) => (
-                <div
-                  key={p.id}
-                  onMouseEnter={() => {
-                    prefetchComponent('PublicProductDetails');
-                    prefetchProductData(p.id);
-                  }}
-                >
-                  <ShopProductCard
-                    product={p}
-                    lang={lang}
-                    t={t}
-                    onViewProduct={onViewProduct}
-                    onViewProfile={onViewProfile}
-                    onAddToCart={onAddToCart}
-                    isAddingToCart={addingToCartProductId === p.id}
-                    onQuickView={setQuickViewProduct}
-                  />
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {filteredShopProducts.slice(0, ALL_PRODUCTS_PREVIEW_SIZE).map((p) => (
+                  <div
+                    key={p.id}
+                    onMouseEnter={() => {
+                      prefetchComponent('PublicProductDetails');
+                      prefetchProductData(p.id);
+                    }}
+                  >
+                    <ShopProductCard
+                      product={p}
+                      lang={lang}
+                      t={t}
+                      onViewProduct={onViewProduct}
+                      onViewProfile={onViewProfile}
+                      onAddToCart={onAddToCart}
+                      isAddingToCart={addingToCartProductId === p.id}
+                      onQuickView={setQuickViewProduct}
+                    />
+                  </div>
+                ))}
+              </div>
+              {onNavigateToCatalog && (
+                <div className="mt-6 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={onNavigateToCatalog}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-palma-primary text-white font-bold text-sm shadow-md hover:bg-palma-primaryHover transition"
+                  >
+                    <ShoppingBag className="w-5 h-5" />
+                    {lang === 'ar' ? 'المزيد — عرض كل المنتجات' : lang === 'he' ? 'עוד — כל המוצרים' : 'More — view all products'}
+                  </button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </section>
       </div>

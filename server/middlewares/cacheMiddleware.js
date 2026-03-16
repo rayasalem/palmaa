@@ -12,10 +12,12 @@ import { getRedis, isRedisConfigured } from '../config/redisClient.js';
 const KEY_PREFIX = 'palma:cache:';
 const PRODUCT_KEYS_SET = 'palma:product-keys';
 
-/** In-memory cache for single-instance when Redis is not configured. Key -> { body, expires }. */
+/** In-memory cache for single-instance when Redis is not configured. Key -> { body, expires }. Kept small to avoid exceeding memory on Render. */
 const memoryCache = new Map();
 const memoryProductKeys = new Set();
-const MEMORY_CACHE_MAX_ENTRIES = 500;
+const MEMORY_CACHE_MAX_ENTRIES = parseInt(process.env.MEMORY_CACHE_MAX_ENTRIES || '200', 10) || 200;
+/** Skip storing response body in memory if larger than this (bytes) to avoid memory spikes. */
+const MEMORY_CACHE_MAX_BODY_BYTES = parseInt(process.env.MEMORY_CACHE_MAX_BODY_BYTES || '524288', 10) || 524288; // 512KB
 
 function fullKey(key) {
   return KEY_PREFIX + key;
@@ -109,21 +111,25 @@ function attachJsonInterceptor(req, res, key, ttlSeconds, redis, memoryKey) {
               logger.warn('cache store failed', { path: req.path, message: err && err.message });
             });
         } else if (memoryKey) {
-          // Simple LRU-style eviction: if we exceed max entries, delete the oldest key.
-          if (memoryCache.size >= MEMORY_CACHE_MAX_ENTRIES) {
-            const oldestKey = memoryCache.keys().next().value;
-            if (oldestKey) {
-              memoryCache.delete(oldestKey);
-              memoryProductKeys.delete(oldestKey);
-              logger.debug('cache evict (memory)', { evictedKey: oldestKey });
+          const bodyStr = typeof body === 'string' ? body : JSON.stringify(body);
+          if (bodyStr.length > MEMORY_CACHE_MAX_BODY_BYTES) {
+            logger.debug('cache skip (body too large)', { requestId: req.id, path: req.path, bytes: bodyStr.length });
+          } else {
+            if (memoryCache.size >= MEMORY_CACHE_MAX_ENTRIES) {
+              const oldestKey = memoryCache.keys().next().value;
+              if (oldestKey) {
+                memoryCache.delete(oldestKey);
+                memoryProductKeys.delete(oldestKey);
+                logger.debug('cache evict (memory)', { evictedKey: oldestKey });
+              }
             }
+            memoryCache.set(memoryKey, {
+              body,
+              expires: Date.now() + ttlSeconds * 1000,
+            });
+            if (isProductListKey(key)) memoryProductKeys.add(memoryKey);
+            logger.debug('cache store (memory)', { requestId: req.id, path: req.path, key, size: memoryCache.size });
           }
-          memoryCache.set(memoryKey, {
-            body,
-            expires: Date.now() + ttlSeconds * 1000,
-          });
-          if (isProductListKey(key)) memoryProductKeys.add(memoryKey);
-          logger.debug('cache store (memory)', { requestId: req.id, path: req.path, key, size: memoryCache.size });
         }
       }
     } catch (err) {

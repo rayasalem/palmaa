@@ -181,12 +181,12 @@ export default function AdminOffersTab() {
                 value={form.scope}
                 onChange={(e) => setForm({ ...form, scope: e.target.value as 'product' | 'category' | 'all' })}
               >
-                <option value="all">{lang === 'ar' ? 'كل المنتجات' : 'All products'}</option>
+                <option value="all">{lang === 'ar' ? 'كل السلة — خصم على أي منتج يُضاف' : 'Entire cart — discount on any product added'}</option>
                 <option value="category">{lang === 'ar' ? 'تصنيف معيّن' : 'Specific category'}</option>
                 <option value="product">{lang === 'ar' ? 'منتج معيّن' : 'Specific product'}</option>
               </select>
               <p className="mt-1.5 text-xs text-slate-500">
-                {form.scope === 'all' && (lang === 'ar' ? 'الخصم يُطبّق على أي منتج يُضاف للسلة.' : 'Discount applies to any product added to the cart.')}
+                {form.scope === 'all' && (lang === 'ar' ? 'الخصم يُطبّق تلقائياً على كل المنتجات في السلة (مثلاً 10% على المجموع).' : 'Discount applies automatically to all products in the cart (e.g. 10% off total).')}
                 {form.scope === 'category' && (lang === 'ar' ? 'الخصم يُطبّق على منتجات التصنيف المحدد فقط.' : 'Discount applies only to products in the selected category.')}
                 {form.scope === 'product' && (lang === 'ar' ? 'الخصم يُطبّق على المنتج المحدد فقط.' : 'Discount applies only to the selected product.')}
               </p>

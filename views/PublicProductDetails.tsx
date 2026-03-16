@@ -229,17 +229,21 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
     try {
       const res = await addProductComment(product.id, socialCommentInput);
       if (res.success && res.comment) {
-        const newComment: Comment = {
-          id: res.comment.id,
-          userId: res.comment.user_id,
-          productId: product.id,
-          text: res.comment.content,
-          createdAt: new Date(res.comment.created_at).getTime(),
-          userName: user.name,
-        };
-        setComments([newComment, ...comments]);
         setSocialCommentInput('');
         showToast(lang === 'en' ? 'Comment added' : 'تم إضافة التعليق', 'success');
+        // إعادة جلب التعليقات من السيرفر لضمان ظهور التعليق وإشعار التاجر
+        const listRes = await getProductComments(product.id);
+        const list = (listRes.comments || []).map((c) => ({
+          id: c.id,
+          userId: c.user_id,
+          productId: product.id,
+          text: c.content,
+          createdAt: new Date(c.created_at).getTime(),
+          userName: user.id === c.user_id ? user.name : undefined,
+        }));
+        setComments(list);
+      } else {
+        showToast(lang === 'en' ? 'Comment could not be saved' : 'لم يتم حفظ التعليق', 'error');
       }
     } catch (e: any) {
       showToast(

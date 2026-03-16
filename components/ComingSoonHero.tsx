@@ -18,7 +18,7 @@ const ComingSoonHero: React.FC<Props> = ({ lang, onStartNow, onExploreProducts }
   const isAr = lang === 'ar';
 
   return (
-    <section className="relative w-full min-h-0 flex flex-col lg:flex-row items-stretch overflow-hidden bg-[#f8f7fa] border-b border-slate-200/80 lg:min-h-[420px]">
+    <section className="relative w-full min-h-0 flex flex-col lg:flex-row items-stretch overflow-hidden bg-[#f8f7fa] border-b border-slate-200/80 lg:min-h-[320px]">
       {/* خلفية خفيفة شبكية */}
       <div className="absolute inset-0 z-0 opacity-[0.4]" aria-hidden>
         <div
@@ -33,7 +33,7 @@ const ComingSoonHero: React.FC<Props> = ({ lang, onStartNow, onExploreProducts }
 
       {/* جنب النص — على الجوال يظهر فقط (بدون صورة)، على الديسكتوب بجانب الصورة */}
       <div
-        className={`relative z-10 flex-1 flex flex-col justify-center px-4 sm:px-8 lg:px-12 xl:px-20 py-6 sm:py-8 lg:py-12 min-w-0 order-1 lg:order-none ${isAr ? 'lg:order-1 lg:text-right' : 'lg:order-2 lg:text-left'}`}
+        className={`relative z-10 flex-1 flex flex-col justify-center px-4 sm:px-8 lg:px-12 xl:px-20 py-4 sm:py-6 lg:py-8 min-w-0 order-1 lg:order-none ${isAr ? 'lg:order-1 lg:text-right' : 'lg:order-2 lg:text-left'}`}
       >
         <div
           className={`max-w-xl w-full mx-auto lg:mx-0 max-lg:animate-fade-in lg:opacity-100 ${isAr ? 'lg:ml-auto' : ''}`}

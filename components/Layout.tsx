@@ -113,7 +113,8 @@ const Layout: React.FC<LayoutProps> = ({
           { id: 'products', label: t.common.products, icon: 'Package' },
           { id: 'orders', label: t.common.orders, icon: 'ShoppingBag' },
           { id: 'earnings', label: t.common.earnings, icon: 'Banknote' },
-          { id: 'shop', label: t.nav.shop, icon: 'ShoppingCart' },
+          { id: 'shop', label: t.nav.shop, icon: 'Package' },
+          { id: 'cart', label: t.nav.cart, icon: 'ShoppingCart' },
           { id: 'profile', label: t.common.profile, icon: 'User' },
         ]
       : user.role === Role.BROKER
@@ -199,16 +200,16 @@ const Layout: React.FC<LayoutProps> = ({
                 user.role === Role.BROKER ||
                 user.role === Role.ADMIN) && (
                 <button
-                  onClick={() => onTabChange(user.role === Role.CUSTOMER || user.role === Role.ADMIN ? 'cart' : 'shop')}
+                  onClick={() => onTabChange(user.role === Role.CUSTOMER || user.role === Role.ADMIN || user.role === Role.MERCHANT ? 'cart' : 'shop')}
                   onMouseEnter={() =>
                     prefetchForTab(
-                      user.role === Role.CUSTOMER || user.role === Role.ADMIN ? 'cart' : 'shop',
+                      user.role === Role.CUSTOMER || user.role === Role.ADMIN || user.role === Role.MERCHANT ? 'cart' : 'shop',
                       user.role as string
                     )
                   }
                   onFocus={() =>
                     prefetchForTab(
-                      user.role === Role.CUSTOMER || user.role === Role.ADMIN ? 'cart' : 'shop',
+                      user.role === Role.CUSTOMER || user.role === Role.ADMIN || user.role === Role.MERCHANT ? 'cart' : 'shop',
                       user.role as string
                     )
                   }
@@ -291,7 +292,8 @@ const Layout: React.FC<LayoutProps> = ({
       </header>
 
       <div className="flex flex-1 max-w-[1800px] mx-auto w-full">
-        {/* Desktop Sidebar — للشاشات الكبيرة (لابتوب وما فوق): يظهر للجميع (زبون + تاجر + أدمن) */}
+        {/* Desktop Sidebar — يخفى في صفحة التسوق ليكون المتجر بعرض كامل */}
+        {activeTab !== 'shop' && (
         <aside
           className="hidden lg:block w-72 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto py-8 pr-6 rtl:pr-0 rtl:pl-6 shrink-0"
         >
@@ -348,6 +350,7 @@ const Layout: React.FC<LayoutProps> = ({
             )}
           </div>
         </aside>
+        )}
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
@@ -405,8 +408,8 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
         )}
 
-        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto animate-fade-in min-h-[60vh]">{children}</div>
+        <main className={`flex-1 min-w-0 p-4 sm:p-6 lg:p-8 ${activeTab === 'shop' ? 'max-w-full' : ''}`}>
+          <div className={`mx-auto animate-fade-in min-h-[60vh] ${activeTab === 'shop' ? 'max-w-[1600px]' : 'max-w-7xl'}`}>{children}</div>
         </main>
       </div>
 

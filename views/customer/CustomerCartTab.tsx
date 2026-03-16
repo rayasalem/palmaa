@@ -21,7 +21,12 @@ export interface CustomerCartTabProps {
   onRemove: (productId: string, productName?: string) => void;
   onProceedToCheckout?: (items: CartItem[]) => void;
   onClearCart?: () => void;
+  /** عند تطبيق القسيمة (نجاح/فشل) — اختياري لعرض رسالة */
+  onCouponResult?: (success: boolean, message: string) => void;
 }
+
+/** أكواد قسائم معتمدة ونسبة الخصم (مثال: PALMA10 = 10%) */
+const COUPON_CODES: Record<string, number> = { PALMA10: 10, WELCOME5: 5 };
 
 function unitPrice(item: CartItem): number {
   const base = (item as any).final_price ?? item.price ?? item.price_ils ?? 0;
@@ -172,10 +177,16 @@ export const CustomerCartTab: React.FC<CustomerCartTabProps> = ({
                 />
                 <button
                   type="button"
+                  onClick={handleApplyCoupon}
                   className="px-5 py-2.5 rounded-xl bg-palma-primary text-white text-sm font-bold hover:bg-palma-navy transition"
                 >
                   {lang === 'ar' ? 'تطبيق القسيمة' : 'Apply Coupon'}
                 </button>
+                {appliedCoupon && (
+                  <span className="text-sm font-bold text-emerald-600">
+                    {appliedCoupon.code} -{appliedCoupon.percent}%
+                  </span>
+                )}
               </div>
               {onClearCart && (
                 <button
@@ -196,6 +207,9 @@ export const CustomerCartTab: React.FC<CustomerCartTabProps> = ({
             <h3 className="font-heading text-lg font-black text-palma-navy mb-4 border-b border-slate-200 pb-3">
               {lang === 'ar' ? 'ملخص الطلب' : lang === 'he' ? 'סיכום הזמנה' : 'Order Summary'}
             </h3>
+            <p className="text-xs font-semibold text-emerald-600 mb-2">
+              {lang === 'ar' ? 'خصم العروض (مثل 10% على السلة) مُطبّق تلقائياً على الأسعار أدناه.' : lang === 'he' ? 'הנחת מבצעים (למשל 10%) מחושבת במחירי הפריטים.' : 'Offer discounts (e.g. 10% on cart) are already applied to the prices below.'}
+            </p>
             <ul className="space-y-2 text-sm">
               <li className="flex justify-between">
                 <span className="text-slate-500">{lang === 'ar' ? 'عدد القطع' : 'Items'}</span>

@@ -228,10 +228,18 @@ function startHttpServer() {
   process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 }
 
-if (cluster.isPrimary) {
-  const cpuCount = os.cpus().length || 1;
-  logger.info('Starting primary cluster process', { pid: process.pid, cpuCount });
-  for (let i = 0; i < cpuCount; i += 1) {
+// On Render/small instances, multiple workers can exceed memory. Use DISABLE_CLUSTER=1 or NODE_CLUSTER_WORKERS=1 to run single process.
+const disableCluster = process.env.DISABLE_CLUSTER === '1' || process.env.DISABLE_CLUSTER === 'true';
+const maxWorkers = disableCluster ? 0 : Math.min(
+  parseInt(process.env.NODE_CLUSTER_WORKERS || '', 10) || (isProduction() ? 1 : os.cpus().length || 1),
+  os.cpus().length || 1
+);
+
+if (maxWorkers <= 0 || !cluster.isPrimary) {
+  startHttpServer();
+} else {
+  logger.info('Starting primary cluster process', { pid: process.pid, workerCount: maxWorkers });
+  for (let i = 0; i < maxWorkers; i += 1) {
     cluster.fork();
   }
   cluster.on('exit', (worker, code, signal) => {
@@ -241,8 +249,6 @@ if (cluster.isPrimary) {
       cluster.fork();
     }
   });
-} else {
-  startHttpServer();
 }
 
 export default app;

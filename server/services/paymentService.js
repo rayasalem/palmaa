@@ -18,12 +18,19 @@ import logger from '../utils/logger.js';
 
 const ORDERS_TABLE = 'orders';
 const IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000;
+const IDEMPOTENCY_MAX_ENTRIES = parseInt(process.env.IDEMPOTENCY_MAX_ENTRIES || '500', 10) || 500;
 const idempotencyCache = new Map();
 
 function pruneIdempotency() {
   const now = Date.now();
   for (const [k, v] of idempotencyCache.entries()) {
     if (now - v.at > IDEMPOTENCY_TTL_MS) idempotencyCache.delete(k);
+  }
+  // Cap size to avoid unbounded memory growth (e.g. on Render)
+  if (idempotencyCache.size > IDEMPOTENCY_MAX_ENTRIES) {
+    const byAge = [...idempotencyCache.entries()].sort((a, b) => a[1].at - b[1].at);
+    const toRemove = byAge.length - IDEMPOTENCY_MAX_ENTRIES;
+    for (let i = 0; i < toRemove && i < byAge.length; i++) idempotencyCache.delete(byAge[i][0]);
   }
 }
 
@@ -203,6 +210,10 @@ async function handlePaymentCallback(orderId, status, idempotencyKey) {
     }
   }
   if (idempotencyKey) {
+    if (idempotencyCache.size >= IDEMPOTENCY_MAX_ENTRIES) {
+      const oldest = [...idempotencyCache.entries()].sort((a, b) => a[1].at - b[1].at)[0];
+      if (oldest) idempotencyCache.delete(oldest[0]);
+    }
     idempotencyCache.set(idempotencyKey, { result, at: Date.now() });
   }
   return result;

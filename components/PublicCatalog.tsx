@@ -251,32 +251,48 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
       </nav>
       )}
 
-      {/* 1. Hero — منصة التسوق واحدة للجميع (زائر، زبون، تاجر، إلخ) */}
-      <section className="relative py-6 sm:py-10 px-4 border-b border-palma-border/50 bg-gradient-to-b from-palma-primaryLight/20 to-transparent">
-        <div className="max-w-[1600px] mx-auto text-center">
-          <p className="text-4xl sm:text-5xl mb-3" aria-hidden>🛒</p>
-          <h1 className="font-heading text-2xl sm:text-3xl md:text-4xl font-black text-palma-navy tracking-tight mb-2">
-            {lang === 'ar' ? 'تسوق من ماركت بليس بالما' : lang === 'he' ? 'קנה ממרקט פלמה' : 'Shop Palma Marketplace'}
+      {/* 1. Hero — تسوق من بالما */}
+      <section className="relative py-8 sm:py-12 px-4 border-b border-palma-border/50 bg-gradient-to-br from-palma-primary/10 via-palma-primaryLight/25 to-amber-50/40 overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, var(--palma-primary) 1px, transparent 1px)', backgroundSize: '24px 24px' }} aria-hidden />
+        <div className="max-w-[1600px] mx-auto text-center relative">
+          <p className="text-5xl sm:text-6xl mb-4 drop-shadow-sm" aria-hidden>🛒</p>
+          <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-black text-palma-navy tracking-tight mb-3">
+            {lang === 'ar' ? 'تسوق من بالما' : lang === 'he' ? 'קנה מפלמה' : 'Shop from Palma'}
           </h1>
-          <p className="text-sm sm:text-base text-palma-muted font-medium max-w-xl mx-auto">
+          <p className="text-base sm:text-lg text-palma-muted font-medium max-w-xl mx-auto mb-8">
             {lang === 'ar'
               ? 'اكتشف منتجات من تجار موثوقين — تصفّح، قارن، واطلب بسهولة'
               : lang === 'he'
                 ? 'גלה מוצרים ממרכולים מהימנים'
                 : 'Discover products from trusted merchants — browse, compare, order with ease'}
           </p>
+          {/* شريط ثقة سريع */}
+          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-sm font-bold text-palma-navy/80">
+            <span className="flex items-center gap-2">
+              <span className="text-lg">✓</span>
+              {lang === 'ar' ? 'تجار موثوقون' : 'Trusted merchants'}
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="text-lg">✓</span>
+              {lang === 'ar' ? 'دفع آمن' : 'Secure payment'}
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="text-lg">✓</span>
+              {lang === 'ar' ? 'توصيل لجميع المناطق' : 'Delivery nationwide'}
+            </span>
+          </div>
         </div>
       </section>
 
-      <main className="pt-6 pb-20 px-4 sm:px-8 max-w-[1600px] mx-auto flex flex-col gap-8">
-        {/* 2. شريط التصنيفات الأفقي — إيموجي + اسم (واحد للجميع) */}
-        <section className="w-full" aria-label={lang === 'ar' ? 'التصنيفات' : 'Categories'}>
-          <h2 className="text-sm font-black text-slate-600 uppercase tracking-wider mb-3 px-1 flex items-center gap-2">
+      <main className="pt-8 pb-20 px-4 sm:px-8 max-w-[1600px] mx-auto flex flex-col gap-8 bg-gradient-to-b from-white to-slate-50/50 min-h-[60vh]">
+        {/* 2. شريط التصنيفات الأفقي */}
+        <section className="w-full rounded-2xl bg-white/80 backdrop-blur-sm border border-slate-100 p-4 shadow-sm" aria-label={lang === 'ar' ? 'التصنيفات' : 'Categories'}>
+          <h2 className="text-sm font-black text-palma-navy uppercase tracking-wider mb-4 px-1 flex items-center gap-2">
             <span aria-hidden>📦</span>
             {lang === 'ar' ? 'تصفّح حسب التصنيف' : lang === 'he' ? 'עיון לפי קטגוריה' : 'Browse by category'}
           </h2>
           <div className="overflow-x-auto scrollbar-hide pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-            <div className="flex gap-2 min-w-max">
+            <div className="flex gap-3 min-w-max">
               <button
                 type="button"
                 onClick={() => setCategoryId('all')}
@@ -499,7 +515,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
         {/* Catalog Content */}
         <div className="flex-1 space-y-8 min-w-0 animate-fade-in">
           {/* Top Bar (Search + Sort) */}
-          <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-card flex flex-col md:flex-row items-center gap-4">
+          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-md shadow-slate-200/50 flex flex-col md:flex-row items-center gap-4">
             <div className="relative flex-1 w-full">
               <Search
                 className={`absolute top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 rtl:right-6 rtl:left-auto ltr:left-6 ltr:right-auto`}
@@ -608,8 +624,9 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
             </div>
           )}
 
-          {/* 5. 📋 كل المنتجات — شبكة النتائج مع الفلترة */}
-          <h3 className="text-sm font-black uppercase tracking-widest text-palma-navy px-2 mb-3 flex items-center gap-2">
+          {/* 5. كل المنتجات */}
+          <div className="rounded-2xl bg-white/90 border border-slate-100 p-4 sm:p-5 shadow-sm">
+          <h3 className="text-base font-black uppercase tracking-widest text-palma-navy px-2 mb-4 flex items-center gap-2">
             <span aria-hidden>📋</span>
             {lang === 'ar' ? 'كل المنتجات' : lang === 'he' ? 'כל המוצרים' : 'All products'}
           </h3>
@@ -648,13 +665,13 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                 <div className="w-10 h-10 border-4 border-palma-primary border-t-transparent rounded-full animate-spin"></div>
               </div>
             ) : filteredProducts.length === 0 ? (
-              <div className="bg-white p-32 rounded-[3rem] text-center border-2 border-dashed border-slate-200">
-                <span className="text-6xl block mb-6 grayscale opacity-50">🏜️</span>
-                <h3 className="text-2xl font-black text-palma-navy mb-3">{t.common.noProducts}</h3>
-                <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mb-8">
+              <div className="bg-gradient-to-b from-slate-50 to-white p-12 sm:p-16 rounded-3xl text-center border border-slate-200 shadow-inner">
+                <span className="text-7xl block mb-6 opacity-90">🛍️</span>
+                <h3 className="text-xl sm:text-2xl font-black text-palma-navy mb-2">{t.common.noProducts}</h3>
+                <p className="text-slate-500 font-medium text-sm mb-8 max-w-sm mx-auto">
                   {t.common.tryAdjusting}
                 </p>
-                <button onClick={resetFilters} className="btn-primary px-10 py-4 text-[10px] uppercase tracking-widest">
+                <button onClick={resetFilters} className="btn-primary px-8 py-3 rounded-2xl text-sm font-bold uppercase tracking-wider shadow-md hover:shadow-lg transition">
                   {t.common.clearFilters}
                 </button>
               </div>
@@ -749,7 +766,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                   </section>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8 pb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6 pb-8">
                 {paginatedProducts.map((p) => (
                   <ProductCard
                     key={p.id}
@@ -788,6 +805,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
               )}
               </>
             )}
+          </div>
           </div>
 
           {/* Recently Viewed Strip (based on local history) */}

@@ -1071,6 +1071,7 @@ export const CustomerView: React.FC<Props> = ({
             onRemove={handleRemoveFromCart}
             onProceedToCheckout={onProceedToApiCheckout}
             onClearCart={() => setShowClearCartConfirm(true)}
+            onCouponResult={(success, message) => showToast(message, success ? 'success' : 'error')}
           />
         </Suspense>
       )}

@@ -270,7 +270,15 @@ async function getOrderByDeliveryId(deliveryId) {
   const { data: order, error } = await supabase.from(ORDERS_TABLE).select('*').eq('delivery_id', id).limit(1).single();
   if (error || !order) return { data: null, error: error || { message: 'Order not found' } };
   const { data: orderItems } = await supabase.from(ORDER_ITEMS_TABLE).select('*').eq('order_id', order.id);
-  return { data: { ...order, items: orderItems || [] }, error: null };
+  let merchantId = order.merchant_id;
+  if (!merchantId && orderItems && orderItems.length > 0) {
+    const firstProductId = orderItems[0].product_id;
+    if (firstProductId) {
+      const { data: product } = await productService.getProductById(firstProductId);
+      if (product && product.merchant_id) merchantId = product.merchant_id;
+    }
+  }
+  return { data: { ...order, merchant_id: merchantId || order.merchant_id, items: orderItems || [] }, error: null };
 }
 
 export {

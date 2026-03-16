@@ -13,7 +13,9 @@ function canAccessOrder(order, req) {
   const role = (req.auth && (req.auth.role || req.auth.role_id || '')) || '';
   if (role.toUpperCase() === 'ADMIN') return true;
   if (!userId) return false;
-  return order.customer_id === userId || order.merchant_id === userId;
+  const uid = String(userId).trim();
+  return (order.customer_id && String(order.customer_id).trim() === uid) ||
+    (order.merchant_id && String(order.merchant_id).trim() === uid);
 }
 
 async function createShipment(req, res) {

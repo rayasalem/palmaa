@@ -26,10 +26,16 @@ async function addComment(req, res) {
 
     const { data: product } = await productService.getProductById(productId);
     if (product && product.merchant_id) {
-      await notificationService.notifyMerchantComment(product.merchant_id, productId);
+      notificationService.notifyMerchantComment(product.merchant_id, productId).catch((err) => {
+        logger.warn('notifyMerchantComment failed', { merchantId: product.merchant_id, productId, message: err?.message });
+      });
     }
-    await notificationService.notifyAdminComment(productId);
-    await notificationService.notifyBrokersSharedProductComment(productId);
+    notificationService.notifyAdminComment(productId).catch((err) => {
+      logger.warn('notifyAdminComment failed', { productId, message: err?.message });
+    });
+    notificationService.notifyBrokersSharedProductComment(productId).catch((err) => {
+      logger.warn('notifyBrokersSharedProductComment failed', { productId, message: err?.message });
+    });
     return res.status(201).json({
       success: true,
       comment: {
