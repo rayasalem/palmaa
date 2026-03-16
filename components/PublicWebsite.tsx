@@ -408,9 +408,20 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
           </div>
         </section>
 
-        {/* 3. المنتجات المميزة — كاروسيل تمرير أفقي */}
+        {/* 3. المنتجات المميزة — زر تسوق الآن فوق المنتجات ثم كاروسيل */}
         <section id="featured-products" className="section-bg-6 py-24 sm:py-32 overflow-hidden">
           <div className="max-w-7xl mx-auto px-6">
+            {/* تسوق الآن — مباشرة فوق المنتجات */}
+            <div className="flex justify-center mb-8">
+              <button
+                type="button"
+                onClick={onExploreProducts}
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-palma-primary text-white font-bold text-base shadow-lg hover:bg-palma-primaryHover hover:shadow-xl transition-all hover:scale-[1.02]"
+              >
+                <ShoppingBag className="w-6 h-6" />
+                {lang === 'ar' ? 'تسوق الآن من بالما' : lang === 'he' ? 'קנה עכשיו מפלמה' : 'Shop Now at Palma'}
+              </button>
+            </div>
             <div className="heading-block mb-6">
               <h2 className="heading-block-title heading-block-title-creative font-heading text-4xl lg:text-5xl">
                 {t.common.featured}

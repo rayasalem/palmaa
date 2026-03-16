@@ -50,16 +50,42 @@ export const CustomerCartTab: React.FC<CustomerCartTabProps> = ({
   onRemove,
   onProceedToCheckout,
   onClearCart,
+  onCouponResult,
 }) => {
   const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; percent: number } | null>(null);
   const itemCount = cart.reduce((s, i) => s + (i.quantity || 1), 0);
   const shipping = 0;
   const taxes = 0;
-  const couponDiscount = 0;
+  const couponPercent = appliedCoupon?.percent ?? 0;
+  const couponDiscount = couponPercent > 0 ? (totalAmount * couponPercent) / 100 : 0;
   const displayTotal = totalAmount - couponDiscount + shipping + taxes;
 
   const homeLabel = lang === 'ar' ? 'الرئيسية' : lang === 'he' ? 'בית' : 'Home';
   const cartLabel = t.cart?.title || (lang === 'ar' ? 'السلة' : 'Shopping Cart');
+
+  const handleApplyCoupon = () => {
+    const trimmed = couponCode.trim().toUpperCase();
+    if (!trimmed) {
+      onCouponResult?.(false, lang === 'ar' ? 'أدخل كود القسيمة' : 'Enter a coupon code');
+      return;
+    }
+    const percent = COUPON_CODES[trimmed];
+    if (!percent) {
+      setAppliedCoupon(null);
+      onCouponResult?.(false, lang === 'ar' ? 'كود القسيمة غير صالح' : 'Invalid coupon code');
+      return;
+    }
+    setAppliedCoupon({ code: trimmed, percent });
+    onCouponResult?.(
+      true,
+      lang === 'ar'
+        ? `تم تطبيق خصم ${percent}% على السلة.`
+        : lang === 'he'
+          ? `הנחה של ${percent}% הופעלה על הסל.`
+          : `A ${percent}% discount has been applied to your cart.`
+    );
+  };
 
   if (cart.length === 0) {
     return (

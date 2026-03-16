@@ -120,7 +120,12 @@ async function updateOrderShipment(orderId, shipmentId, shipmentStatus) {
   const id = order.id;
   console.log('[shipmentService] Updating order shipment:', { orderId, id, shipmentId, shipmentStatus });
   const now = new Date().toISOString();
-  const isDelivered = String(shipmentStatus || '').toLowerCase() === 'delivered';
+  const normalized = String(shipmentStatus || '').toLowerCase();
+  const isDelivered = normalized === 'delivered';
+  const isCancelled =
+    normalized === 'cancelled' ||
+    normalized === 'canceled' ||
+    normalized === 'cancel';
   const updatePayload = {
     delivery_id: shipmentId,
     delivery_status: shipmentStatus,
@@ -130,6 +135,9 @@ async function updateOrderShipment(orderId, shipmentId, shipmentStatus) {
     updatePayload.completed_at = now;
     updatePayload.delivery_confirmed_at = now;
     updatePayload.status = 'completed';
+  } else if (isCancelled) {
+    updatePayload.status = 'CANCELLED';
+    updatePayload.cancelled_at = now;
   }
   const { data, error } = await supabase.from(ORDERS_TABLE).update(updatePayload).eq('id', id).select().single();
   if (error) {

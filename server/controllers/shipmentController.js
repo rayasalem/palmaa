@@ -162,6 +162,19 @@ async function getStatus(req, res) {
     if (error) {
       return res.status(400).json({ success: false, error: error.message });
     }
+    // مزامنة حالة الشحنة مع الطلب داخلياً عندما تُجلب الحالة من LogesTechs
+    try {
+      const statusObj = data || {};
+      const externalStatus =
+        (typeof statusObj === 'string' && statusObj) ||
+        (typeof statusObj === 'object' && (statusObj.status || statusObj.Status || statusObj.currentStatus)) ||
+        null;
+      if (orderByDelivery && externalStatus) {
+        await shipmentService.updateOrderShipment(orderByDelivery.id, sid, externalStatus);
+      }
+    } catch (syncErr) {
+      logger.warn('shipmentController getStatus sync failed', { message: syncErr && syncErr.message });
+    }
     return res.status(200).json({ success: true, status: data });
   } catch (err) {
     logger.error('shipmentController getStatus', { message: err.message });
@@ -205,6 +218,14 @@ async function cancel(req, res) {
     const { data, error } = await shipmentService.cancelShipment(shipmentId);
     if (error) {
       return res.status(400).json({ success: false, error: error.message });
+    }
+    // بعد نجاح الإلغاء من LogesTechs، حدّث الطلب داخلياً ليظهر كملغي
+    if (!orderErr && orderByDelivery && orderByDelivery.id) {
+      try {
+        await shipmentService.updateOrderShipment(orderByDelivery.id, shipmentId, 'cancelled');
+      } catch (syncErr) {
+        logger.warn('shipmentController cancel sync failed', { message: syncErr && syncErr.message });
+      }
     }
     return res.status(200).json({ success: true, result: data });
   } catch (err) {

@@ -4,6 +4,7 @@ import { productService } from './services/productService';
 import { orderService } from './services/orderService';
 import { userService } from './services/userService';
 import { socialService } from './services/socialService';
+import { uploadImage as cloudinaryUploadImage } from './services/cloudinaryService';
 import { Review, WithdrawalRequest, CommissionRecord, SharedProduct, User, Product } from './types';
 
 // Mock Payment Processor for Customer View
@@ -70,11 +71,8 @@ export const marketStore = {
     return { average: p?.rating || 0, count: p?.reviewCount || 0 };
   },
   uploadImage: async (file: File, folder?: string) => {
-    // In a real implementation, this would call cloudinaryService.
-    // For mock, returning a base64 string via a promise.
-    const { uploadImage } = await import('./services/cloudinaryService');
     try {
-      const url = await uploadImage(file);
+      const url = await cloudinaryUploadImage(file);
       return { url };
     } catch (e: any) {
       return { error: e.message };
