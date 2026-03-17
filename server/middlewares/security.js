@@ -14,6 +14,30 @@ import { maskIp } from '../utils/maskIp.js';
 const isProd = getEnv('NODE_ENV') === 'production';
 const WINDOW_MS = 15 * 60 * 1000;
 
+// Paths that يجب ألا تضرب الـ general rate limiter (عشان ما يمنع الدخول الأساسي أو الـ health).
+// ملاحظات:
+// - / و /api/health و /api/status و /api/ready و /api/metrics: تستخدمها الـ load balancer/الواجهة.
+// - GET /api/products و /api/products/:id: عليها limiters متخصصة أصلاً، فلا نريد double limiting.
+const GENERAL_LIMIT_SKIP_PATHS = new Set([
+  '/',
+  '/favicon.ico',
+  '/api/health',
+  '/health',
+  '/api/status',
+  '/api/ready',
+  '/api/metrics',
+]);
+
+function shouldSkipGeneralLimit(req) {
+  const path = req.path || req.url || '';
+  if (GENERAL_LIMIT_SKIP_PATHS.has(path)) return true;
+  // تخفيف الضغط عن كتالوج المنتجات (اللي عليه limiters خاصة أصلاً)
+  if (req.method === 'GET' && path.startsWith('/api/products')) return true;
+  // مسار ping الخاص بالـ auth يستخدم لفحص الباكند من الواجهة
+  if (req.method === 'GET' && path === '/api/auth/ping') return true;
+  return false;
+}
+
 /** Shared Redis store for all limiters when REDIS_URL is set (multi-instance support). */
 function getStore() {
   const s = getRateLimitStore();
@@ -49,6 +73,7 @@ export function generalLimiter() {
     max,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: shouldSkipGeneralLimit,
     handler: createRateLimitHandler('general', 'Too many requests'),
     ...getStore(),
   });
