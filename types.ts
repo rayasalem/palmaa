@@ -159,12 +159,24 @@ export interface CartItem extends Product {
 
 export enum OrderStatus {
   PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  ON_THE_WAY = 'ON_THE_WAY',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+  /** Legacy / shipment display */
   PAID = 'PAID',
   SHIPPED = 'SHIPPED',
   DELIVERED = 'DELIVERED',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
 }
+
+/** Allowed next status for merchant (order flow). */
+export const ORDER_STATUS_NEXT: Record<string, string> = {
+  PENDING: 'ACCEPTED',
+  ACCEPTED: 'IN_PROGRESS',
+  IN_PROGRESS: 'ON_THE_WAY',
+  ON_THE_WAY: 'COMPLETED',
+};
 
 export enum PaymentMethod {
   COD = 'COD',

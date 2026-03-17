@@ -30,6 +30,9 @@ export interface CreateOrderBody {
   phone: string;
   amount: number;
   weight: number;
+  payment_method?: string;
+  cityId?: string | number;
+  villageId?: string | number;
   /** عند الشراء عبر رابط الوسيط: يُمرَّر لاحتساب 3% للوسيط و 12% للمتجر */
   broker_id?: string;
   items?: { product_id: string; quantity: number; price: number }[];
@@ -110,6 +113,17 @@ export async function getOrder(orderId: string): Promise<{ success: boolean; ord
 export async function cancelOrder(orderId: string): Promise<{ success: boolean; order?: Order }> {
   return request<{ success: boolean; order?: Order }>(`/api/orders/${orderId}/cancel`, {
     method: 'PATCH',
+  });
+}
+
+/** تحديث حالة الطلب (للتاجر فقط): ACCEPTED | IN_PROGRESS | ON_THE_WAY | COMPLETED */
+export async function updateOrderStatus(
+  orderId: string,
+  status: 'ACCEPTED' | 'IN_PROGRESS' | 'ON_THE_WAY' | 'COMPLETED'
+): Promise<{ success: boolean; order?: Order }> {
+  return request<{ success: boolean; order?: Order }>(`/api/orders/${orderId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
   });
 }
 

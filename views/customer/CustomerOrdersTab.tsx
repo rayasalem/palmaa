@@ -22,11 +22,51 @@ const TRACK_STEPS = [
 function getStepIndex(status: string): number {
   const s = (status || '').toUpperCase();
   if (s === 'CANCELLED') return -1;
-  if (s === 'DELIVERED') return 4;
+  if (s === 'COMPLETED' || s === 'DELIVERED') return 4;
   if (s === 'ON_THE_WAY' || s === 'SHIPPED') return 3;
   if (s === 'IN_PROGRESS' || s === 'PROCESSING' || s === 'READY_FOR_PICKUP') return 2;
   if (s === 'PAID' || s === 'ACCEPTED') return 1;
   return 0;
+}
+
+export function getOrderStatusLabel(status: string, lang: string): string {
+  const s = (status || '').toUpperCase();
+  const labelsAr: Record<string, string> = {
+    PENDING: 'قيد الانتظار',
+    ACCEPTED: 'مقبول',
+    IN_PROGRESS: 'قيد التجهيز',
+    ON_THE_WAY: 'في الطريق',
+    COMPLETED: 'مكتمل',
+    CANCELLED: 'ملغى',
+    DELIVERED: 'تم التوصيل',
+    SHIPPED: 'تم الشحن',
+    PAID: 'مدفوع',
+  };
+  const labelsEn: Record<string, string> = {
+    PENDING: 'Pending',
+    ACCEPTED: 'Accepted',
+    IN_PROGRESS: 'In Progress',
+    ON_THE_WAY: 'On the Way',
+    COMPLETED: 'Completed',
+    CANCELLED: 'Cancelled',
+    DELIVERED: 'Delivered',
+    SHIPPED: 'Shipped',
+    PAID: 'Paid',
+  };
+  if (lang === 'he') {
+    const labelsHe: Record<string, string> = {
+      PENDING: 'ממתין',
+      ACCEPTED: 'אושר',
+      IN_PROGRESS: 'בעיבוד',
+      ON_THE_WAY: 'בדרך',
+      COMPLETED: 'הושלם',
+      CANCELLED: 'בוטל',
+      PAID: 'שולם',
+    };
+    return labelsHe[s] || s;
+  }
+  const labels = lang === 'ar' ? labelsAr : labelsEn;
+  return labels[s] || s;
 }
 
 function formatOrderDate(date: string | number | undefined, lang: string): string {
@@ -105,7 +145,7 @@ export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
             const orderStatus = (o.status || o.delivery_status || '').toUpperCase();
             const isPending = orderStatus === 'PENDING';
             const isCancelled = orderStatus === 'CANCELLED';
-            const isDelivered = orderStatus === 'DELIVERED';
+            const isDelivered = orderStatus === 'DELIVERED' || orderStatus === 'COMPLETED';
             const isApiOrder = apiOrders.some((ao: any) => ao.id === o.id);
             const orderItemsFromApi = Array.isArray(o.order_items) ? o.order_items : [];
             const orderItemsFromLocal = marketStore.getOrderItems().filter((oi) => oi.order_id === o.id);
@@ -129,7 +169,7 @@ export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
                   <span
                     className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${isCancelled ? 'bg-red-50 text-red-600 border-red-100' : isDelivered ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}
                   >
-                    {mapFlashlineStatus(o.delivery_status || o.status)}
+                    {getOrderStatusLabel(o.status || o.delivery_status || '', lang)}
                   </span>
                 </div>
 

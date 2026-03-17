@@ -1,11 +1,12 @@
 /**
- * Merchant orders tab: orders table and shipment actions.
+ * Merchant orders tab: orders table, status updates, and shipment actions.
  * Lazy-loaded when the orders tab is active.
  */
 
 import React from 'react';
-import { Order } from '../../types';
+import { Order, ORDER_STATUS_NEXT } from '../../types';
 import { FlashLineService } from '../../services/flashlineService';
+import { getOrderStatusLabel } from '../customer/CustomerOrdersTab';
 import type { Language } from '../../translations';
 import { Truck, Search, Receipt, XCircle } from 'lucide-react';
 
@@ -20,7 +21,21 @@ export interface MerchantOrdersTabProps {
   createShipment: (order: Order) => void;
   handleCheckStatus: (order: Order) => void;
   handleCancelShipment: (order: Order) => void;
+  onUpdateOrderStatus?: (order: Order, newStatus: 'ACCEPTED' | 'IN_PROGRESS' | 'ON_THE_WAY' | 'COMPLETED') => void;
 }
+
+const NEXT_LABELS_AR: Record<string, string> = {
+  ACCEPTED: 'قبول الطلب',
+  IN_PROGRESS: 'قيد التجهيز',
+  ON_THE_WAY: 'في الطريق',
+  COMPLETED: 'إتمام الطلب',
+};
+const NEXT_LABELS_EN: Record<string, string> = {
+  ACCEPTED: 'Accept order',
+  IN_PROGRESS: 'In progress',
+  ON_THE_WAY: 'On the way',
+  COMPLETED: 'Mark completed',
+};
 
 export const MerchantOrdersTab: React.FC<MerchantOrdersTabProps> = ({
   lang,
@@ -33,6 +48,7 @@ export const MerchantOrdersTab: React.FC<MerchantOrdersTabProps> = ({
   createShipment,
   handleCheckStatus,
   handleCancelShipment,
+  onUpdateOrderStatus,
 }) => (
   <div className="bg-white rounded-3xl shadow-card border border-palma-border overflow-hidden hover:shadow-card-hover transition-shadow">
     <div className="p-6 sm:p-8 border-b border-slate-100 flex justify-between items-center bg-white">
@@ -127,10 +143,27 @@ export const MerchantOrdersTab: React.FC<MerchantOrdersTabProps> = ({
                 <td className="px-6 py-4 text-xs font-black text-emerald-600">{order.totalAmount} ₪</td>
                 <td className="px-6 py-4">
                   <span
-                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${['SHIPPED', 'DELIVERED'].includes(order.status) ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : order.status === 'CANCELLED' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}
+                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${['COMPLETED', 'ON_THE_WAY', 'SHIPPED', 'DELIVERED'].includes(String(order.status)) ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : order.status === 'CANCELLED' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}
                   >
-                    {order.status?.toLowerCase()}
+                    {getOrderStatusLabel(order.status || '', lang)}
                   </span>
+                  {onUpdateOrderStatus && (() => {
+                    const current = String(order.status || '').toUpperCase();
+                    if (current === 'CANCELLED' || current === 'COMPLETED') return null;
+                    const nextStatus = ORDER_STATUS_NEXT[current];
+                    if (!nextStatus) return null;
+                    const label = lang === 'ar' ? NEXT_LABELS_AR[nextStatus] : NEXT_LABELS_EN[nextStatus];
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => onUpdateOrderStatus(order, nextStatus as any)}
+                        disabled={loading}
+                        className="mt-2 block w-full text-[9px] font-bold text-palma-primary hover:bg-palma-primaryLight rounded-lg py-1.5 px-2 border border-palma-primary/30 disabled:opacity-50"
+                      >
+                        → {label}
+                      </button>
+                    );
+                  })()}
                   {order.delivery_status && (
                     <div className="text-[9px] font-bold text-slate-400 mt-1.5 flex items-center gap-1.5">
                       <Truck className="w-3 h-3 text-palma-primary" />
@@ -166,8 +199,8 @@ export const MerchantOrdersTab: React.FC<MerchantOrdersTabProps> = ({
                   )}
                 </td>
                 <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    {order.status === 'PENDING' && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {String(order.status || '').toUpperCase() === 'PENDING' && (
                       <button
                         onClick={() => createShipment(order)}
                         disabled={loading}
@@ -176,7 +209,7 @@ export const MerchantOrdersTab: React.FC<MerchantOrdersTabProps> = ({
                         <Truck className="w-3 h-3" /> {t.common.ship}
                       </button>
                     )}
-                    {(order.shipmentId || order.delivery_id) && order.status !== 'CANCELLED' && (
+                    {(order.shipmentId || order.delivery_id) && String(order.status || '').toUpperCase() !== 'CANCELLED' && (
                       <>
                         {(order.delivery_id || order.shipmentId || '').toString().startsWith('sim-') && (
                           <span className="text-[9px] text-amber-600 font-medium" title={lang === 'ar' ? 'شحنة محاكاة — أضف LOGESTECHS_EMAIL و LOGESTECHS_PASSWORD في .env أو Render ثم أعد تشغيل السيرفر / Redeploy' : 'Simulated — add LOGESTECHS_EMAIL and LOGESTECHS_PASSWORD in .env or Render, then restart / Redeploy'}>

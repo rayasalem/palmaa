@@ -100,6 +100,10 @@ export const orders = {
       )
       .allow(null),
   }),
+  /** PATCH /api/orders/:id/status — merchant only; allowed: ACCEPTED, IN_PROGRESS, ON_THE_WAY, COMPLETED */
+  statusUpdate: Joi.object({
+    status: Joi.string().valid('ACCEPTED', 'IN_PROGRESS', 'ON_THE_WAY', 'COMPLETED').required(),
+  }),
 };
 
 /** Product comment: content 1–2000 chars. */

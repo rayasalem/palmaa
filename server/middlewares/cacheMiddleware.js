@@ -15,9 +15,12 @@ const PRODUCT_KEYS_SET = 'palma:product-keys';
 /** In-memory cache for single-instance when Redis is not configured. Key -> { body, expires }. Kept small to avoid exceeding memory on Render. */
 const memoryCache = new Map();
 const memoryProductKeys = new Set();
-const MEMORY_CACHE_MAX_ENTRIES = parseInt(process.env.MEMORY_CACHE_MAX_ENTRIES || '200', 10) || 200;
+const isRender = process.env.RENDER === 'true';
+const defaultMaxEntries = isRender ? 50 : 200;
+const defaultMaxBodyBytes = isRender ? 262144 : 524288; // Render: 256KB, else 512KB
+const MEMORY_CACHE_MAX_ENTRIES = parseInt(process.env.MEMORY_CACHE_MAX_ENTRIES || String(defaultMaxEntries), 10) || defaultMaxEntries;
 /** Skip storing response body in memory if larger than this (bytes) to avoid memory spikes. */
-const MEMORY_CACHE_MAX_BODY_BYTES = parseInt(process.env.MEMORY_CACHE_MAX_BODY_BYTES || '524288', 10) || 524288; // 512KB
+const MEMORY_CACHE_MAX_BODY_BYTES = parseInt(process.env.MEMORY_CACHE_MAX_BODY_BYTES || String(defaultMaxBodyBytes), 10) || defaultMaxBodyBytes;
 
 function fullKey(key) {
   return KEY_PREFIX + key;

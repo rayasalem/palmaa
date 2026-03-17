@@ -17,6 +17,7 @@ router.get(
 );
 router.post('/', optionalAuth, validate(orderSchemas.create, 'body', 'orders.create'), asyncHandler(orderController.createOrder));
 router.patch('/:id/cancel', authenticate, asyncHandler(orderController.cancelOrder));
+router.patch('/:id/status', authenticate, requireRole('MERCHANT'), validate(orderSchemas.statusUpdate, 'body', 'orders.statusUpdate'), asyncHandler(orderController.updateOrderStatus));
 router.patch('/:id/invoice', authenticate, asyncHandler(orderController.updateOrderInvoice));
 router.patch('/:id/complete', authenticate, requireRole('ADMIN'), asyncHandler(orderController.completeOrder));
 router.get('/:id', optionalAuth, asyncHandler(orderController.getOrder));

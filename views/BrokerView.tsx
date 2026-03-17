@@ -10,6 +10,7 @@ import {
   removeSharedProduct,
   toggleSharedFeatured,
 } from '../services/brokerApi';
+import { getOrderStatusLabel } from './customer/CustomerOrdersTab';
 
 interface Props {
   lang: Language;
@@ -658,7 +659,7 @@ export const BrokerView: React.FC<Props> = ({
                       <span
                         className={`uppercase text-[9px] font-black px-2 py-1 rounded-lg ${c.status === 'PAID' ? 'bg-palma-primaryLight text-palma-primary' : 'bg-amber-50 text-amber-600'}`}
                       >
-                        {c.status}
+                        {getOrderStatusLabel(c.status || '', lang)}
                       </span>
                     </td>
                   </tr>

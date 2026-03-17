@@ -12,6 +12,17 @@ import { parsePagination } from '../utils/pagination.js';
 const ORDERS_TABLE = 'orders';
 const ORDER_ITEMS_TABLE = 'order_items';
 
+/** Allowed order statuses (DB + API). */
+const ORDER_STATUSES = ['PENDING', 'ACCEPTED', 'IN_PROGRESS', 'ON_THE_WAY', 'COMPLETED', 'CANCELLED'];
+
+/** Merchant can only move to the next status in this order. */
+const MERCHANT_NEXT_STATUS = {
+  PENDING: 'ACCEPTED',
+  ACCEPTED: 'IN_PROGRESS',
+  IN_PROGRESS: 'ON_THE_WAY',
+  ON_THE_WAY: 'COMPLETED',
+};
+
 async function createOrder(params) {
   const { recipient_name, address, phone, amount, customer_id, broker_id, items, payment_method, cityId, villageId } = params;
   const now = new Date().toISOString();
@@ -171,7 +182,8 @@ async function cancelOrder(orderId, customerId) {
   if (order.customer_id !== customerId) {
     return { data: null, error: { message: 'Not authorized to cancel this order' } };
   }
-  if (order.status !== 'PENDING' && order.status !== 'pending') {
+  const currentStatus = (order.status || '').toUpperCase();
+  if (currentStatus !== 'PENDING') {
     return { data: null, error: { message: 'Only pending orders can be cancelled' } };
   }
   const { data: updated, error: updateErr } = await supabase
@@ -213,7 +225,7 @@ async function completeOrder(orderId) {
   const { data, error } = await supabase
     .from(ORDERS_TABLE)
     .update({
-      status: 'completed',
+      status: 'COMPLETED',
       completed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
@@ -225,6 +237,47 @@ async function completeOrder(orderId) {
     return { data: null, error };
   }
   return { data, error: null };
+}
+
+/**
+ * Merchant updates order status. Only allowed transitions:
+ * PENDING → ACCEPTED, ACCEPTED → IN_PROGRESS, IN_PROGRESS → ON_THE_WAY, ON_THE_WAY → COMPLETED.
+ */
+async function updateOrderStatus(orderId, newStatus, merchantId) {
+  const { data: order, error: fetchErr } = await getOrderById(orderId);
+  if (fetchErr || !order) {
+    return { data: null, error: fetchErr || { message: 'Order not found' } };
+  }
+  if (order.merchant_id !== merchantId) {
+    return { data: null, error: { message: 'Not authorized to update this order' } };
+  }
+  const current = (order.status || '').toUpperCase();
+  const next = (newStatus || '').toUpperCase();
+  const allowedNext = MERCHANT_NEXT_STATUS[current];
+  if (!allowedNext || allowedNext !== next) {
+    return {
+      data: null,
+      error: {
+        message: `Invalid transition: current status is ${current}. Allowed next: ${allowedNext || 'none'}.`,
+      },
+    };
+  }
+  const now = new Date().toISOString();
+  const updates = { status: next, updated_at: now };
+  if (next === 'COMPLETED') {
+    updates.completed_at = now;
+  }
+  const { data: updated, error: updateErr } = await supabase
+    .from(ORDERS_TABLE)
+    .update(updates)
+    .eq('id', order.id)
+    .select()
+    .single();
+  if (updateErr) {
+    logger.error('orderService updateOrderStatus error', { message: updateErr.message });
+    return { data: null, error: updateErr };
+  }
+  return { data: updated, error: null };
 }
 
 /**
@@ -291,6 +344,9 @@ export {
   updateOrderInvoice,
   completeOrder,
   claimOrder,
+  updateOrderStatus,
+  ORDER_STATUSES,
+  MERCHANT_NEXT_STATUS,
   ORDERS_TABLE,
   ORDER_ITEMS_TABLE,
 };

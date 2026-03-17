@@ -237,4 +237,27 @@ async function claimOrder(req, res) {
   }
 }
 
-export { createOrder, getOrder, listMyOrders, listMerchantOrders, cancelOrder, updateOrderInvoice, completeOrder, claimOrder };
+async function updateOrderStatus(req, res) {
+  try {
+    const orderId = (req.params.id || '').trim();
+    const merchantId = req.auth && req.auth.sub;
+    if (!merchantId) return res.status(401).json({ success: false, error: 'Authentication required' });
+    if (!orderId) return res.status(400).json({ success: false, error: 'Order id is required' });
+    if (!isValidOrderId(orderId)) {
+      return res.status(400).json({ success: false, error: 'Invalid order id format' });
+    }
+    const { status } = req.body || {};
+    if (!status) return res.status(400).json({ success: false, error: 'status is required' });
+    const { data, error } = await orderService.updateOrderStatus(orderId, status, merchantId);
+    if (error) {
+      const code = error.message && error.message.includes('Not authorized') ? 403 : 400;
+      return res.status(code).json({ success: false, error: error.message || 'Failed to update status' });
+    }
+    return res.status(200).json({ success: true, order: data });
+  } catch (err) {
+    logger.error('orderController updateOrderStatus unexpected', { message: err.message });
+    return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
+  }
+}
+
+export { createOrder, getOrder, listMyOrders, listMerchantOrders, cancelOrder, updateOrderInvoice, completeOrder, claimOrder, updateOrderStatus };

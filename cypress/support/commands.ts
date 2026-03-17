@@ -20,6 +20,11 @@ declare global {
       loginAsAdmin(email?: string, password?: string): Chainable<void>;
 
       /**
+       * Log in as merchant. Uses env TEST_MERCHANT_EMAIL / TEST_MERCHANT_PASSWORD if no args.
+       */
+      loginAsMerchant(email?: string, password?: string): Chainable<void>;
+
+      /**
        * Log out via UI (click logout in user menu). Assumes user is logged in.
        */
       logout(): Chainable<void>;
@@ -52,6 +57,11 @@ const getAdminCredentials = (email?: string, password?: string) => ({
   password: password ?? Cypress.env('TEST_ADMIN_PASSWORD') ?? 'Admin@123456',
 });
 
+const getMerchantCredentials = (email?: string, password?: string) => ({
+  email: email ?? Cypress.env('TEST_MERCHANT_EMAIL') ?? 'merchant@palma.demo',
+  password: password ?? Cypress.env('TEST_MERCHANT_PASSWORD') ?? 'Merchant@123456',
+});
+
 Cypress.Commands.add('login', (email?: string, password?: string) => {
   const { email: e, password: p } = getLoginCredentials(email, password);
   cy.visitHash('login');
@@ -65,6 +75,16 @@ Cypress.Commands.add('login', (email?: string, password?: string) => {
 
 Cypress.Commands.add('loginAsAdmin', (email?: string, password?: string) => {
   const { email: e, password: p } = getAdminCredentials(email, password);
+  cy.visitHash('login');
+  cy.get('#login-email').should('be.visible').clear().type(e);
+  cy.get('#login-password').clear().type(p);
+  cy.get('form').submit();
+  cy.url().should('not.include', '#/login');
+  cy.get('body').should('be.visible');
+});
+
+Cypress.Commands.add('loginAsMerchant', (email?: string, password?: string) => {
+  const { email: e, password: p } = getMerchantCredentials(email, password);
   cy.visitHash('login');
   cy.get('#login-email').should('be.visible').clear().type(e);
   cy.get('#login-password').clear().type(p);

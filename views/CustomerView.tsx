@@ -21,7 +21,7 @@ import {
   getShipmentLabels,
   resolveLocationName,
 } from '../services/flashlineService';
-import { cancelOrder as cancelOrderApi, fetchMyOrders, getCities as getCitiesApi, getVillages as getVillagesApi, getDistrictsAndVillages as getDistrictsAndVillagesApi } from '../services/checkoutApi';
+import { createOrder as createOrderApi, createShipment as createShipmentApi, cancelOrder as cancelOrderApi, fetchMyOrders, getCities as getCitiesApi, getVillages as getVillagesApi, getDistrictsAndVillages as getDistrictsAndVillagesApi } from '../services/checkoutApi';
 import type { City as ApiCity, Village as ApiVillage } from '../services/checkoutApi';
 import { sendEmail, getShipmentDetailsTemplate } from '../services/emailService';
 import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense, lazy } from 'react';
@@ -257,6 +257,7 @@ export const CustomerView: React.FC<Props> = ({
       ids.forEach((id) => {
         if (!kept.has(id)) kept.add(id);
       });
+      if (kept.size === prev.size && [...kept].every((id) => prev.has(id))) return prev;
       return kept;
     });
   }, [cart]);
@@ -344,20 +345,24 @@ export const CustomerView: React.FC<Props> = ({
   }, [products, shopCategoryId, shopConditionFilter, shopSearch]);
 
   useEffect(() => {
-    if (activeTab === 'orders' && apiOrders.length === 0) {
-      const syncStatuses = async () => {
-        for (const order of myOrders) {
-          if (order.delivery_id && order.delivery_status !== 'CANCELLED' && order.delivery_status !== 'DELIVERED') {
-            const status = await getShipmentStatus(order.delivery_id);
-            if (status && status !== order.delivery_status) {
-              await marketStore.updateLocalOrderStatus(order.id, status);
-            }
+    if (activeTab !== 'orders' || apiOrders.length > 0) return;
+    const syncStatuses = async () => {
+      for (const order of myOrders) {
+        const did = order.delivery_id;
+        if (!did || order.delivery_status === 'CANCELLED' || order.delivery_status === 'DELIVERED') continue;
+        if (String(did).startsWith('FL-')) continue;
+        try {
+          const status = await getShipmentStatus(did);
+          if (status && status !== order.delivery_status) {
+            await marketStore.updateLocalOrderStatus(order.id, status);
           }
+        } catch {
+          /* ignore 400 for unknown/mock IDs */
         }
-        if (onRefresh) onRefresh();
-      };
-      syncStatuses();
-    }
+      }
+      if (onRefresh) onRefresh();
+    };
+    syncStatuses();
   }, [activeTab, apiOrders.length]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -471,71 +476,94 @@ export const CustomerView: React.FC<Props> = ({
 
       if (res.success) {
         for (const item of selectedCartItems) {
-          const orderRes = await marketStore.placeOrder(item.id, user.id, shippingData.paymentMethod, {
-            ...shippingData,
-            fullName: shippingData.fullName,
-            email: shippingData.email,
-          });
+          const finalPrice = (item as any).final_price != null ? (item as any).final_price : (item.price || item.price_ils || 0);
+          const qty = Math.max(1, (item as any).quantity ?? 1);
+          const amount = finalPrice * qty;
 
-          if (orderRes.success && orderRes.data) {
-            const order = orderRes.data;
-            const merchantId = item.merchantId || item.merchant_id || '';
-            const merchant = marketStore.getUserById(merchantId);
-            const mProfile = marketStore.getMerchantProfileByUserId(merchantId);
-
-            const flPayload = prepareShipmentPayload({
-              orderId: order.id,
-              productName: item.name,
-              category: item.category,
-              price: item.price || item.price_ils || 0,
-              customer: {
-                name: shippingData.fullName,
-                email: shippingData.email,
-                phone: shippingData.phone,
-                phone2: shippingData.phone2,
-                address: shippingData.address,
-                cityId: shippingData.cityId!,
-                villageId: shippingData.villageId!,
-                regionId: shippingData.regionId!,
-                notes: shippingData.notes,
-                type: shippingData.shipmentType,
-              },
-              merchant: {
-                name: merchant?.name || 'Palma Merchant',
-                businessName: mProfile?.business_name || 'Palma Store',
-                phone: mProfile?.phone || '0590000000',
-                phone2: '',
-                address: mProfile?.city || 'Merchant Hub',
-                cityId: 1,
-                villageId: 101,
-                regionId: 1,
-              },
+          let orderRes: { success: boolean; order?: { id: string; order_reference?: string }; error?: string };
+          try {
+            orderRes = await createOrderApi({
+              recipient_name: shippingData.fullName!.trim(),
+              address: shippingData.address!.trim(),
+              city: (shippingData.cityName || String(shippingData.cityId || '')).trim(),
+              cityId: shippingData.cityId,
+              villageId: shippingData.villageId,
+              phone: shippingData.phone!.trim(),
+              amount,
+              weight: 1,
+              payment_method: shippingData.paymentMethod || 'COD',
+              items: [{ product_id: item.id, quantity: qty, price: finalPrice }],
             });
+          } catch (e: any) {
+            orderRes = { success: false, error: (e?.message || e?.data?.error) || 'Failed to create order' };
+          }
 
-            const flResponse = await createShipment(flPayload);
+          if (!orderRes.success || !orderRes.order?.id) {
+            showToast((orderRes as any).error || t.common.error, 'error');
+            setIsProcessing(false);
+            return;
+          }
 
-            if (flResponse.success) {
-              await marketStore.updateOrderShipment(order.id, flResponse);
+          const order = orderRes.order;
+          const orderId = order.id;
+
+          const shipmentPayload = {
+            orderId,
+            addressLine1: shippingData.address!.trim(),
+            addressLine2: '',
+            cityId: String(shippingData.cityId ?? ''),
+            regionId: shippingData.regionId ? String(shippingData.regionId) : undefined,
+            villageId: String(shippingData.villageId ?? ''),
+            recipient_name: shippingData.fullName!.trim(),
+            phone: shippingData.phone!.trim(),
+            email: shippingData.email?.trim() || undefined,
+            weight: 1,
+            cod: shippingData.shipmentType === 'COD' ? amount : 0,
+            quantity: qty,
+            description: item.name || 'Product',
+            serviceType: 'STANDARD' as const,
+            shipmentType: (shippingData.shipmentType === 'PREPAID' ? 'PREPAID' : 'COD') as 'COD' | 'PREPAID',
+            invoiceNumber: orderId,
+          };
+
+          let shipRes: { success?: boolean; shipment?: any; order?: any; error?: string };
+          try {
+            shipRes = await createShipmentApi(shipmentPayload);
+          } catch (e: any) {
+            shipRes = { success: false, error: (e?.message || e?.data?.error) || 'Shipment failed' };
+          }
+
+          if (shipRes.success && shipRes.shipment) {
+            const shipment = shipRes.shipment;
+            const barcodeImage = shipment.barcodeImage || shipment.barcode_image;
+            const expectedDeliveryDate = shipment.expectedDeliveryDate || shipment.expected_delivery_date;
+            if (shippingData.email && (shipment.shipmentId || shipment.shipment_id)) {
               await sendEmail({
                 to: shippingData.email,
                 ...getShipmentDetailsTemplate({
-                  customerName: shippingData.fullName,
-                  orderId: order.id,
-                  shipmentId: flResponse.shipmentId!,
-                  barcodeImage: flResponse.barcodeImage!,
-                  cod: flPayload.pkg.cod,
-                  deliveryDate: flResponse.expectedDeliveryDate!,
+                  customerName: shippingData.fullName!,
+                  orderId,
+                  shipmentId: shipment.shipmentId || shipment.shipment_id,
+                  barcodeImage: barcodeImage || '',
+                  cod: shipmentPayload.cod,
+                  deliveryDate: expectedDeliveryDate || '',
                   notes: `Type: ${shippingData.shipmentType}`,
                 }),
               });
-            } else {
-              showToast(flResponse.error || 'Logistics Error', 'error');
-              setIsProcessing(false);
-              return;
             }
+          } else if (shipRes.success === false && shipRes.error) {
+            showToast(shipRes.error, 'error');
+            setIsProcessing(false);
+            return;
           }
         }
 
+        try {
+          const listRes = await fetchMyOrders();
+          if (listRes?.orders) setApiOrders(listRes.orders);
+        } catch {
+          /* keep existing apiOrders */
+        }
         clearCart();
         if (onRefresh) onRefresh();
         showToast(t.common.success, 'success');
@@ -575,6 +603,10 @@ export const CustomerView: React.FC<Props> = ({
     const deliveryId = order.delivery_id || order.shipmentId;
     if (!deliveryId) {
       showToast(lang === 'ar' ? 'لا يوجد رقم شحنة لهذا الطلب بعد.' : 'No shipment ID for this order yet.', 'info');
+      return;
+    }
+    if (String(deliveryId).startsWith('FL-')) {
+      showToast(lang === 'ar' ? 'شحنة تجريبية (FL-) – لا يمكن جلب الحالة من الخادم.' : 'Mock shipment (FL-) – status not available from server.', 'info');
       return;
     }
     setCheckingStatusId(order.id);

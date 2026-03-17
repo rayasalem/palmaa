@@ -151,10 +151,11 @@ app.post('/api/payments/cybersource/rest/process', paymentLimiter(), (req, res, 
 });
 logger.info('Cybersource route registered: POST /api/payments/cybersource/rest/process');
 app.use('/api/orders', ordersMinuteLimiter(), orderRoutes);
-// Product routes: allow larger JSON payloads (15MB) for product upload/edit, then apply rate limits and cache.
+// Product routes: larger JSON for upload/edit. On Render use smaller limit to reduce memory spikes (set BODY_LIMIT_PRODUCTS_MB to override).
+const productBodyLimitMb = Number(process.env.BODY_LIMIT_PRODUCTS_MB) || (process.env.RENDER === 'true' ? 5 : 15);
 app.use(
   '/api/products',
-  express.json({ limit: '15mb' }),
+  express.json({ limit: `${productBodyLimitMb}mb` }),
   productListMinuteLimiter(),
   cacheMiddleware(60),
   productRoutes
@@ -228,27 +229,34 @@ function startHttpServer() {
   process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 }
 
-// On Render/small instances, multiple workers can exceed memory. Use DISABLE_CLUSTER=1 or NODE_CLUSTER_WORKERS=1 to run single process.
-const disableCluster = process.env.DISABLE_CLUSTER === '1' || process.env.DISABLE_CLUSTER === 'true';
+// On Render/small instances, multiple workers can exceed memory. Run single process by default on Render.
+const isRender = process.env.RENDER === 'true';
+const disableCluster =
+  process.env.DISABLE_CLUSTER === '1' ||
+  process.env.DISABLE_CLUSTER === 'true' ||
+  isRender;
 const maxWorkers = disableCluster ? 0 : Math.min(
   parseInt(process.env.NODE_CLUSTER_WORKERS || '', 10) || (isProduction() ? 1 : os.cpus().length || 1),
   os.cpus().length || 1
 );
+if (isRender && disableCluster) logger.info('Render: running single process to reduce memory usage.');
 
-if (maxWorkers <= 0 || !cluster.isPrimary) {
-  startHttpServer();
-} else {
-  logger.info('Starting primary cluster process', { pid: process.pid, workerCount: maxWorkers });
-  for (let i = 0; i < maxWorkers; i += 1) {
-    cluster.fork();
-  }
-  cluster.on('exit', (worker, code, signal) => {
-    logger.error('Worker exited', { pid: worker.process.pid, code, signal });
-    if (!worker.exitedAfterDisconnect) {
-      logger.info('Restarting worker', {});
+if (process.env.NODE_ENV !== 'test') {
+  if (maxWorkers <= 0 || !cluster.isPrimary) {
+    startHttpServer();
+  } else {
+    logger.info('Starting primary cluster process', { pid: process.pid, workerCount: maxWorkers });
+    for (let i = 0; i < maxWorkers; i += 1) {
       cluster.fork();
     }
-  });
+    cluster.on('exit', (worker, code, signal) => {
+      logger.error('Worker exited', { pid: worker.process.pid, code, signal });
+      if (!worker.exitedAfterDisconnect) {
+        logger.info('Restarting worker', {});
+        cluster.fork();
+      }
+    });
+  }
 }
 
 export default app;

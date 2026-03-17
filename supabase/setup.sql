@@ -415,5 +415,20 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(use
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id_created_at ON public.notifications (user_id, created_at DESC);
 
 -- =============================================================================
+-- Order status: PENDING, ACCEPTED, IN_PROGRESS, ON_THE_WAY, COMPLETED, CANCELLED
+-- =============================================================================
+DO $$
+BEGIN
+  ALTER TABLE public.orders DROP CONSTRAINT IF EXISTS orders_status_check;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+-- Normalize legacy values to uppercase before adding constraint
+UPDATE public.orders SET status = 'COMPLETED' WHERE LOWER(TRIM(status)) = 'completed';
+UPDATE public.orders SET status = 'PENDING' WHERE LOWER(TRIM(status)) = 'pending';
+UPDATE public.orders SET status = 'CANCELLED' WHERE LOWER(TRIM(status)) = 'cancelled';
+ALTER TABLE public.orders ADD CONSTRAINT orders_status_check
+  CHECK (status IN ('PENDING', 'ACCEPTED', 'IN_PROGRESS', 'ON_THE_WAY', 'COMPLETED', 'CANCELLED'));
+
+-- =============================================================================
 -- نهاية setup.sql
 -- =============================================================================

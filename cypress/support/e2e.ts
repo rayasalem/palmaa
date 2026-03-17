@@ -13,10 +13,8 @@ Cypress.on('window:before:load', (win) => {
 });
 
 beforeEach(() => {
-  // Clear cookies between specs by default so each spec starts fresh unless using cy.login()
-  // To keep session, use a single spec or cy.login() in before() and preserve cookies
-  const preserveCookie = (Cypress as any).env('preserveSession');
-  if (!preserveCookie) {
+  const preserveSession = (Cypress as any).env('preserveSession');
+  if (!preserveSession) {
     cy.clearCookies();
   }
 });

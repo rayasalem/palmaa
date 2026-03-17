@@ -5,7 +5,7 @@ import { productService } from '../services/productService';
 import { storageService } from '../services/storageService';
 import { FlashLineService, cancelLogestechsShipment } from '../services/flashlineService';
 import { createShipmentApi, cancelShipmentApi, getShipmentStatusApi } from '../services/shipmentApi';
-import { fetchMerchantOrders, updateOrderInvoice } from '../services/checkoutApi';
+import { fetchMerchantOrders, updateOrderInvoice, updateOrderStatus } from '../services/checkoutApi';
 import { getMerchantDashboard, type MerchantDashboardResponse } from '../services/merchantDashboardService';
 import { translations, getAuthErrorMessage, type Language } from '../translations';
 import { Truck, Trash2, Search, LayoutDashboard, DollarSign, Box, XCircle, Receipt, Tag } from 'lucide-react';
@@ -641,6 +641,23 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
     }
   };
 
+  const handleUpdateOrderStatus = async (order: Order, newStatus: 'ACCEPTED' | 'IN_PROGRESS' | 'ON_THE_WAY' | 'COMPLETED') => {
+    setLoading(true);
+    try {
+      const res = await updateOrderStatus(order.id, newStatus);
+      if (res.success) {
+        showToast(lang === 'ar' ? 'تم تحديث حالة الطلب' : 'Order status updated', 'success');
+        await refreshData();
+      } else {
+        showToast((res as any).error || t.common.error, 'error');
+      }
+    } catch (e: any) {
+      showToast(getAuthErrorMessage(e?.message || '', lang) || e?.message || t.common.error, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const tabFallback = (
     <div className="p-8 text-center">
       <div className="w-8 h-8 border-4 border-slate-200 border-t-palma-primary rounded-full animate-spin mx-auto" />
@@ -732,6 +749,7 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
               createShipment={createShipment}
               handleCheckStatus={handleCheckStatus}
               handleCancelShipment={handleCancelShipment}
+              onUpdateOrderStatus={handleUpdateOrderStatus}
             />
           </Suspense>
                 )}
