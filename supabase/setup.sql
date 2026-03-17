@@ -424,8 +424,16 @@ EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 -- Normalize legacy values to uppercase before adding constraint
 UPDATE public.orders SET status = 'COMPLETED' WHERE LOWER(TRIM(status)) = 'completed';
-UPDATE public.orders SET status = 'PENDING' WHERE LOWER(TRIM(status)) = 'pending';
+UPDATE public.orders SET status = 'PENDING'   WHERE LOWER(TRIM(status)) = 'pending';
 UPDATE public.orders SET status = 'CANCELLED' WHERE LOWER(TRIM(status)) = 'cancelled';
+
+-- Force any invalid / NULL statuses to a safe default before constraint
+UPDATE public.orders
+SET status = 'PENDING'
+WHERE status IS NULL
+   OR TRIM(status) = ''
+   OR UPPER(TRIM(status)) NOT IN ('PENDING','ACCEPTED','IN_PROGRESS','ON_THE_WAY','COMPLETED','CANCELLED');
+
 ALTER TABLE public.orders ADD CONSTRAINT orders_status_check
   CHECK (status IN ('PENDING', 'ACCEPTED', 'IN_PROGRESS', 'ON_THE_WAY', 'COMPLETED', 'CANCELLED'));
 

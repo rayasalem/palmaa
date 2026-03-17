@@ -199,9 +199,29 @@ app.use('/api/chat', chatRoutes);
 app.get('/sandbox-pay', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'sandbox-pay.html'));
 });
-app.use(express.static(path.join(__dirname, 'public')));
 
-app.use((req, res) => res.status(404).json({ error: 'Not found' }));
+// Serve frontend build (copied إلى server/public بواسطة build:for-render أو أي عملية نشر)
+const clientBuildDir = path.join(__dirname, 'public');
+app.use(express.static(clientBuildDir));
+
+// SPA fallback: أي مسار ليس /api/* ولم يتمّت مطابقته يرجع index.html
+app.get('*', (req, res, next) => {
+  if (req.path && req.path.startsWith('/api/')) {
+    return next();
+  }
+  res.sendFile(path.join(clientBuildDir, 'index.html'), (err) => {
+    if (err) next();
+  });
+});
+
+// 404 JSON فقط لمسارات /api/* التي لم تُعرَّف
+app.use((req, res) => {
+  if (req.path && req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  // لو وصلنا هنا ولم يوجد index.html، نرجع 404 عادي
+  return res.status(404).send('Not found');
+});
 app.use(errorHandler);
 
 function startHttpServer() {

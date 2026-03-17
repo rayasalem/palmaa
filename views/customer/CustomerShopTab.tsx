@@ -124,7 +124,12 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
   );
 
   const topItems = React.useMemo(
-    () => filteredShopProducts.filter((p) => p.is_bestseller).slice(0, 8),
+    () =>
+      filteredShopProducts
+        .filter((p) => p.is_bestseller)
+        .slice()
+        .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+        .slice(0, 8),
     [filteredShopProducts]
   );
 
