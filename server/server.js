@@ -35,6 +35,7 @@ process.on('unhandledRejection', (reason, _promise) => {
 import express from 'express';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
+import fs from 'fs';
 
 import { validateEnv, getEnv, isProduction } from './config/env.js';
 import { corsMiddleware } from './middlewares/corsMiddleware.js';
@@ -200,8 +201,14 @@ app.get('/sandbox-pay', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'sandbox-pay.html'));
 });
 
-// Serve frontend build (copied إلى server/public بواسطة build:for-render أو أي عملية نشر)
-const clientBuildDir = path.join(__dirname, 'public');
+// Serve frontend build.
+// أولوية لـ server/public (build:for-render) ثم fallback إلى ../dist مباشرة (Vite default) لو public فاضي على السيرفر.
+const publicDir = path.join(__dirname, 'public');
+const distDir = path.join(__dirname, '..', 'dist');
+const hasPublicIndex = fs.existsSync(path.join(publicDir, 'index.html'));
+const hasDistIndex = fs.existsSync(path.join(distDir, 'index.html'));
+const clientBuildDir = hasPublicIndex ? publicDir : hasDistIndex ? distDir : publicDir;
+
 app.use(express.static(clientBuildDir));
 
 // SPA fallback: أي مسار ليس /api/* ولم يتمّت مطابقته يرجع index.html
@@ -209,9 +216,13 @@ app.get('*', (req, res, next) => {
   if (req.path && req.path.startsWith('/api/')) {
     return next();
   }
-  res.sendFile(path.join(clientBuildDir, 'index.html'), (err) => {
-    if (err) next();
-  });
+  const indexPath = path.join(clientBuildDir, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath, (err) => {
+      if (err) next();
+    });
+  }
+  return res.status(404).send('Frontend index.html not found');
 });
 
 // 404 JSON فقط لمسارات /api/* التي لم تُعرَّف
@@ -219,7 +230,6 @@ app.use((req, res) => {
   if (req.path && req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'Not found' });
   }
-  // لو وصلنا هنا ولم يوجد index.html، نرجع 404 عادي
   return res.status(404).send('Not found');
 });
 app.use(errorHandler);
