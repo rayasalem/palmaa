@@ -289,7 +289,7 @@ export const CustomerCartTab: React.FC<CustomerCartTabProps> = ({
               {lang === 'ar' ? 'شحن مجاني' : lang === 'he' ? 'משלוח חינם' : 'Free Shipping'}
             </p>
             <p className="text-xs text-slate-500">
-              {lang === 'ar' ? 'شحن مجاني للطلبات فوق حد معين' : 'Free shipping for order above threshold'}
+              {lang === 'ar' ? 'يتوفر شحن لكل المناطق في فلسطين' : 'Shipping available to all areas in Palestine'}
             </p>
           </div>
         </div>

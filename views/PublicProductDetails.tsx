@@ -255,24 +255,46 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
     }
   };
 
-  const handleSubmitReview = (e: React.FormEvent) => {
+  const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return onLoginClick();
     if (!commentInput.trim())
       return showToast(lang === 'en' ? 'Please provide a comment.' : 'يرجى كتابة تعليق.', 'warning');
 
     setIsSubmitting(true);
-    const result = marketStore.addReview(user.id, product.id, ratingInput, commentInput);
+    try {
+      const result = marketStore.addReview(user.id, product.id, ratingInput, commentInput);
 
-    if (result) {
-      showToast(t.common.success, 'success');
-      setCommentInput('');
-      setRatingInput(5);
-      if (onRefresh) onRefresh();
-    } else {
-      showToast(lang === 'en' ? 'Already reviewed.' : 'تم التقييم مسبقاً.', 'error');
+      if (result) {
+        // حفظ التعليق في الباكند حتى يظهر للتاجر ولكل المستخدمين
+        try {
+          const res = await addProductComment(product.id, commentInput);
+          if (res.success) {
+            const listRes = await getProductComments(product.id);
+            const list = (listRes.comments || []).map((c) => ({
+              id: c.id,
+              userId: c.user_id,
+              productId: product.id,
+              text: c.content,
+              createdAt: new Date(c.created_at).getTime(),
+              userName: user.id === c.user_id ? user.name : undefined,
+            }));
+            setComments(list);
+          }
+        } catch {
+          // لو فشل حفظ التعليق في الباكند، نكتفي بحفظ التقييم المحلي بدون كسر التجربة
+        }
+
+        showToast(t.common.success, 'success');
+        setCommentInput('');
+        setRatingInput(5);
+        if (onRefresh) onRefresh();
+      } else {
+        showToast(lang === 'en' ? 'Already reviewed.' : 'تم التقييم مسبقاً.', 'error');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   const handleAddToCart = () => {
@@ -665,8 +687,10 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
           <div className="flex items-center gap-4 p-5 rounded-2xl bg-amber-50/80 border border-amber-100">
             <div className="w-12 h-12 rounded-xl bg-amber-200/80 flex items-center justify-center shrink-0"><Truck className="w-6 h-6 text-amber-800" /></div>
             <div>
-              <p className="font-heading font-bold text-palma-navy">{lang === 'ar' ? 'شحن مجاني' : 'Free Shipping'}</p>
-              <p className="text-xs text-slate-500">{lang === 'ar' ? 'شحن مجاني للطلبات فوق حد معين' : 'Free shipping for order above threshold'}</p>
+              <p className="font-heading font-bold text-palma-navy">{lang === 'ar' ? 'الشحن' : 'Shipping'}</p>
+              <p className="text-xs text-slate-500">
+                {lang === 'ar' ? 'يتوفر شحن لكل المناطق في فلسطين' : 'Shipping available to all areas in Palestine'}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-4 p-5 rounded-2xl bg-amber-50/80 border border-amber-100">

@@ -596,10 +596,10 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
               <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center text-2xl">📦</div>
               <div>
                 <p className="font-bold text-slate-800 text-sm">
-                  {lang === 'ar' ? 'شحن مجاني' : 'Free Shipping'}
+                  {lang === 'ar' ? 'الشحن' : 'Shipping'}
                 </p>
                 <p className="text-xs text-slate-500">
-                  {lang === 'ar' ? 'لطلبات فوق ₪50' : 'For order above $50'}
+                  {lang === 'ar' ? 'يتوفر شحن لكل المناطق في فلسطين' : 'Shipping available to all areas in Palestine'}
                 </p>
               </div>
             </div>
