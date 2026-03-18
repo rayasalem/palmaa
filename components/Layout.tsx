@@ -292,8 +292,8 @@ const Layout: React.FC<LayoutProps> = ({
       </header>
 
       <div className="flex flex-1 max-w-[1800px] mx-auto w-full">
-        {/* Desktop Sidebar — يخفى في صفحة التسوق ليكون المتجر بعرض كامل */}
-        {activeTab !== 'shop' && (
+        {/* Desktop Sidebar — يخفى في صفحة التسوق والكتالوج ليكون المتجر بعرض كامل لأي متسوق */}
+        {activeTab !== 'shop' && activeTab !== 'catalog' && (
         <aside
           className="hidden lg:block w-72 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto py-8 pr-6 rtl:pr-0 rtl:pl-6 shrink-0"
         >
@@ -408,8 +408,8 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
         )}
 
-        <main className={`flex-1 min-w-0 p-4 sm:p-6 lg:p-8 ${activeTab === 'shop' ? 'max-w-full' : ''}`}>
-          <div className={`mx-auto animate-fade-in min-h-[60vh] ${activeTab === 'shop' ? 'max-w-[1600px]' : 'max-w-7xl'}`}>{children}</div>
+        <main className={`flex-1 min-w-0 p-4 sm:p-6 lg:p-8 ${activeTab === 'shop' || activeTab === 'catalog' ? 'max-w-full' : ''}`}>
+          <div className={`mx-auto animate-fade-in min-h-[60vh] ${activeTab === 'shop' || activeTab === 'catalog' ? 'max-w-[1600px]' : 'max-w-7xl'}`}>{children}</div>
         </main>
       </div>
 

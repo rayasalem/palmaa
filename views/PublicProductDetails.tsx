@@ -11,7 +11,6 @@ import {
   Truck,
   Heart,
   MessageCircle,
-  Send,
   Minus,
   Plus,
   ChevronLeft,
@@ -64,7 +63,6 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
   // Local State
   const [ratingInput, setRatingInput] = useState(5);
   const [commentInput, setCommentInput] = useState('');
-  const [socialCommentInput, setSocialCommentInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hoverRating, setHoverRating] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -81,7 +79,6 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
   const [likesCount, setLikesCount] = useState(0);
   const [comments, setComments] = useState<Comment[]>([]);
   const [likeLoading, setLikeLoading] = useState(false);
-  const [commentLoading, setCommentLoading] = useState(false);
 
   // Fetch Product Logic — نجلِب من الـ API دائماً (forceRefresh) لظهور آخر تعديل مثل الخصم
   useEffect(() => {
@@ -116,6 +113,7 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
           userId: c.user_id,
           productId,
           text: c.content,
+          rating: c.rating ?? 5,
           createdAt: new Date(c.created_at).getTime(),
           userName: undefined,
         }));
@@ -157,6 +155,21 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
     return all.filter((p) => p.category === product.category).slice(0, 8);
   }, [product?.id, product?.category]);
 
+  const merchantProfile = product
+    ? marketStore.getMerchantProfileByUserId(product.merchant_id || product.merchantId || '')
+    : undefined;
+  const merchantName = product
+    ? marketStore.getMerchantNameByUserId(product.merchant_id || product.merchantId || '')
+    : '';
+
+  /** التقييم والمعدل من التعليقات في DB (تقييم + تعليق = سجل واحد) */
+  const rating = useMemo(() => {
+    if (comments.length === 0)
+      return { average: Number(product?.rating) || 0, count: Number(product?.reviewCount) || 0 };
+    const sum = comments.reduce((a, c) => a + (c.rating ?? 5), 0);
+    return { average: sum / comments.length, count: comments.length };
+  }, [comments, product?.rating, product?.reviewCount]);
+
   if (isLoadingProduct) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -191,14 +204,8 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
     );
   }
 
-  const merchantProfile = marketStore.getMerchantProfileByUserId(product.merchant_id || product.merchantId || '');
-  const merchantName = marketStore.getMerchantNameByUserId(product.merchant_id || product.merchantId || '');
-
-  const reviews = marketStore.getReviewsForProduct(product.id);
-  const rating = marketStore.getProductRating(product.id);
-
   const isCustomer = user?.role === Role.CUSTOMER;
-  const alreadyReviewed = user ? reviews.some((r) => r.customer_id === user.id || r.userId === user.id) : false;
+  const alreadyReviewed = user ? comments.some((c) => c.userId === user.id) : false;
 
   const handleToggleLike = async () => {
     if (!user) return onLoginClick();
@@ -221,77 +228,40 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
     }
   };
 
-  const handleAddComment = async (e: React.FormEvent) => {
+  /** إرسال التقييم + التعليق معاً (سجل واحد في DB) */
+  const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return onLoginClick();
-    if (!socialCommentInput.trim()) return;
-    setCommentLoading(true);
+    if (!commentInput.trim())
+      return showToast(lang === 'en' ? 'Please write your experience.' : 'يرجى كتابة تجربتك.', 'warning');
+
+    setIsSubmitting(true);
     try {
-      const res = await addProductComment(product.id, socialCommentInput);
+      const res = await addProductComment(product.id, commentInput.trim(), ratingInput);
       if (res.success && res.comment) {
-        setSocialCommentInput('');
-        showToast(lang === 'en' ? 'Comment added' : 'تم إضافة التعليق', 'success');
-        // إعادة جلب التعليقات من السيرفر لضمان ظهور التعليق وإشعار التاجر
         const listRes = await getProductComments(product.id);
         const list = (listRes.comments || []).map((c) => ({
           id: c.id,
           userId: c.user_id,
           productId: product.id,
           text: c.content,
+          rating: c.rating ?? 5,
           createdAt: new Date(c.created_at).getTime(),
           userName: user.id === c.user_id ? user.name : undefined,
         }));
         setComments(list);
-      } else {
-        showToast(lang === 'en' ? 'Comment could not be saved' : 'لم يتم حفظ التعليق', 'error');
-      }
-    } catch (e: any) {
-      showToast(
-        e?.data?.error || e?.message || (lang === 'en' ? 'Failed to add comment' : 'فشل إضافة التعليق'),
-        'error'
-      );
-    } finally {
-      setCommentLoading(false);
-    }
-  };
-
-  const handleSubmitReview = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return onLoginClick();
-    if (!commentInput.trim())
-      return showToast(lang === 'en' ? 'Please provide a comment.' : 'يرجى كتابة تعليق.', 'warning');
-
-    setIsSubmitting(true);
-    try {
-      const result = marketStore.addReview(user.id, product.id, ratingInput, commentInput);
-
-      if (result) {
-        // حفظ التعليق في الباكند حتى يظهر للتاجر ولكل المستخدمين
-        try {
-          const res = await addProductComment(product.id, commentInput);
-          if (res.success) {
-            const listRes = await getProductComments(product.id);
-            const list = (listRes.comments || []).map((c) => ({
-              id: c.id,
-              userId: c.user_id,
-              productId: product.id,
-              text: c.content,
-              createdAt: new Date(c.created_at).getTime(),
-              userName: user.id === c.user_id ? user.name : undefined,
-            }));
-            setComments(list);
-          }
-        } catch {
-          // لو فشل حفظ التعليق في الباكند، نكتفي بحفظ التقييم المحلي بدون كسر التجربة
-        }
-
         showToast(t.common.success, 'success');
         setCommentInput('');
         setRatingInput(5);
         if (onRefresh) onRefresh();
       } else {
-        showToast(lang === 'en' ? 'Already reviewed.' : 'تم التقييم مسبقاً.', 'error');
+        showToast(lang === 'en' ? 'Could not save.' : 'لم يتم الحفظ.', 'error');
       }
+    } catch (err: any) {
+      showToast(
+        err?.data?.error || err?.message || (lang === 'en' ? 'Failed to submit.' : 'فشل الإرسال.'),
+        'error'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -579,8 +549,11 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
             <div className="space-y-8">
               {user && !alreadyReviewed && (
                 <form onSubmit={handleSubmitReview} className="bg-slate-50 rounded-xl p-6 space-y-4">
+                  <p className="text-sm font-bold text-palma-navy">
+                    {lang === 'ar' ? 'التقييم وكتابة تجربتك (حقل واحد في قاعدة البيانات)' : 'Rating & your experience (one record in DB)'}
+                  </p>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-600">{t.product.addReview}</span>
+                    <span className="text-xs font-bold text-slate-600">{lang === 'ar' ? 'التقييم' : 'Rating'}</span>
                     <div className="flex gap-1">
                       {[1,2,3,4,5].map((star) => (
                         <button key={star} type="button" onClick={() => setRatingInput(star)} onMouseEnter={() => setHoverRating(star)} onMouseLeave={() => setHoverRating(0)}>
@@ -589,52 +562,26 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
                       ))}
                     </div>
                   </div>
-                  <textarea value={commentInput} onChange={(e) => setCommentInput(e.target.value)} placeholder={lang === 'ar' ? 'اكتب تجربتك...' : 'Write your experience...'} className="w-full p-3 rounded-xl border border-slate-200 text-sm resize-none h-24" />
+                  <textarea value={commentInput} onChange={(e) => setCommentInput(e.target.value)} placeholder={lang === 'ar' ? 'اكتب تجربتك (هذا هو التعليق ويُحفظ مع التقييم معاً)' : 'Write your experience (saved with rating)'} className="w-full p-3 rounded-xl border border-slate-200 text-sm resize-none h-24" />
                   <button type="submit" disabled={isSubmitting} className="px-6 py-2.5 rounded-xl bg-palma-primary text-white text-sm font-bold">{isSubmitting ? '...' : t.common.save}</button>
                 </form>
               )}
               <div>
-                <h4 className="font-heading font-bold text-palma-navy mb-3">{t.common.reviews} ({reviews.length})</h4>
-                <div className="space-y-3">
-                  {reviews.length === 0 ? <p className="text-slate-400 text-sm">{t.common.noData}</p> : reviews.slice().reverse().map((rev) => (
-                    <div key={rev.id} className="flex gap-3 p-4 bg-white rounded-xl border border-slate-100">
-                      <div className="w-10 h-10 rounded-full bg-palma-primaryLight flex items-center justify-center font-bold text-palma-navy text-sm shrink-0">{rev.customer_name?.charAt(0)}</div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-bold text-palma-navy text-sm">{rev.customer_name}</span>
-                          <div className="flex gap-0.5">{[1,2,3,4,5].map((s) => <Star key={s} className={`w-3 h-3 ${s <= rev.rating ? 'fill-amber-500 text-amber-500' : 'text-slate-200'}`} />)}</div>
-                        </div>
-                        <p className="text-sm text-slate-600">"{rev.comment}"</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div>
                 <h4 className="font-heading font-bold text-palma-navy mb-3 flex items-center gap-2">
-                  <MessageCircle className="w-4 h-4" /> {lang === 'ar' ? 'التعليقات' : 'Comments'} ({comments.length})
+                  <MessageCircle className="w-4 h-4" /> {lang === 'ar' ? 'التقييمات والتعليقات' : 'Reviews & comments'} ({comments.length})
                 </h4>
-                {user && (
-                  <form onSubmit={handleAddComment} className="flex gap-2 mb-4">
-                    <input
-                      className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm"
-                      placeholder={lang === 'ar' ? 'أضف تعليقاً...' : 'Add a comment...'}
-                      value={socialCommentInput}
-                      onChange={(e) => setSocialCommentInput(e.target.value)}
-                    />
-                    <button type="submit" className="px-4 py-2.5 rounded-xl bg-palma-navy text-white text-sm font-bold disabled:opacity-50" disabled={!socialCommentInput.trim() || commentLoading}>
-                      <Send className="w-4 h-4 rtl:rotate-180" />
-                    </button>
-                  </form>
-                )}
                 <div className="space-y-3">
-                  {comments.length === 0 ? <p className="text-slate-400 text-sm">{lang === 'ar' ? 'لا تعليقات بعد.' : 'No comments yet.'}</p> : comments.map((c) => (
-                    <div key={c.id} className="p-4 bg-white rounded-xl border border-slate-100">
-                      <div className="flex justify-between items-start mb-1">
-                        <span className="text-xs font-bold text-palma-navy">{c.userName ?? (user && c.userId === user.id ? user.name : 'User')}</span>
-                        <span className="text-[10px] text-slate-400">{new Date(c.createdAt).toLocaleDateString()}</span>
+                  {comments.length === 0 ? <p className="text-slate-400 text-sm">{t.common.noData}</p> : comments.map((c) => (
+                    <div key={c.id} className="flex gap-3 p-4 bg-white rounded-xl border border-slate-100">
+                      <div className="w-10 h-10 rounded-full bg-palma-primaryLight flex items-center justify-center font-bold text-palma-navy text-sm shrink-0">{(c.userName || '?').charAt(0)}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="font-bold text-palma-navy text-sm">{c.userName ?? (user && c.userId === user.id ? user.name : 'User')}</span>
+                          <div className="flex gap-0.5">{[1,2,3,4,5].map((s) => <Star key={s} className={`w-3 h-3 ${s <= (c.rating ?? 5) ? 'fill-amber-500 text-amber-500' : 'text-slate-200'}`} />)}</div>
+                          <span className="text-[10px] text-slate-400 ml-auto">{new Date(c.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <p className="text-sm text-slate-600">{c.text}</p>
                       </div>
-                      <p className="text-sm text-slate-600">{c.text}</p>
                     </div>
                   ))}
                 </div>

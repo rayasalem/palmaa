@@ -7,13 +7,15 @@ import logger from '../utils/logger.js';
 
 const TABLE = 'product_comments';
 
-async function addComment(productId, userId, content) {
+async function addComment(productId, userId, content, rating = 5) {
+  const numRating = rating == null ? 5 : Math.min(5, Math.max(1, Number(rating) || 5));
   const { data, error } = await supabase
     .from(TABLE)
     .insert({
       product_id: productId,
       user_id: userId,
       content: String(content).trim(),
+      rating: numRating,
       created_at: new Date().toISOString(),
     })
     .select()

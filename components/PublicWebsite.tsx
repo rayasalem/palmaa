@@ -349,28 +349,17 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
         )}
       </nav>
 
-      {/* Main Content - padding-top يطابق ارتفاع الناف بار */}
+      {/* Main Content - إلغاء أي padding علوي بين الناف بار وبلوك الهيرو */}
       {/* ترتيب الأقسام: 1 هيرو، 2 الأرقام/الإحصائيات، 3 المنتجات المميزة — لا قسم «منتجات جديدة» */}
-      <main className="flex-1 w-full pt-14 sm:pt-16">
+      <main className="flex-1 w-full pt-0">
         {/* 1. Hero Section */}
         <section id="hero" aria-label={lang === 'ar' ? 'الرئيسية' : 'Hero'}>
           <ComingSoonHero lang={lang} onStartNow={onJoinRegister} onExploreProducts={onExploreProducts} />
         </section>
 
-        {/* 2. الإحصائيات – أرقام تفاعلية + رابط واضح للتسوق */}
+        {/* 2. الإحصائيات – أرقام فقط (زر تسوق الآن يكون عند المنتجات فقط) */}
         <section className="bg-white pt-2 pb-8 sm:pt-4 sm:pb-10 border-y border-palma-border relative z-10 -mt-2">
           <div className="max-w-7xl mx-auto px-6">
-            {/* زر الانتقال للتسوق — واضح ومرتب */}
-            <div className="flex justify-center mb-4 sm:mb-6">
-              <button
-                type="button"
-                onClick={onExploreProducts}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-palma-primary text-white font-bold text-sm shadow-md hover:bg-palma-primaryHover hover:shadow-lg transition-all"
-              >
-                <ShoppingBag className="w-5 h-5" />
-                {lang === 'ar' ? 'تسوق الآن من بالما' : lang === 'he' ? 'קנה עכשיו מפלמה' : 'Shop Now at Palma'}
-              </button>
-            </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
               <div className="text-center group cursor-default card-hover-lift rounded-2xl p-4 hover:bg-palma-soft/50 transition-colors duration-300">
                 <div className="font-heading text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">

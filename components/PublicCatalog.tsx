@@ -325,12 +325,12 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                 {lang === 'ar' ? 'خيارات الفلترة' : lang === 'he' ? 'אפשרויות סינון' : 'Filter Options'}
               </h3>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={resetFilters}
-                  className="text-xs font-bold text-palma-primary hover:underline"
-                >
-                  {t.common.resetFilters}
-                </button>
+              <button
+                onClick={resetFilters}
+                className="text-xs font-bold text-palma-primary hover:underline"
+              >
+                {t.common.resetFilters}
+              </button>
                 <button
                   type="button"
                   onClick={() => setIsFiltersCollapsed((c) => !c)}
@@ -705,12 +705,12 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                         ))}
                         {discountProducts.map((p) => (
                           <ProductCard
-                            key={p.id}
+                              key={p.id}
                             product={p}
                             lang={lang}
                             variant="compact"
                             onProductClick={onProductClick}
-                            onMouseEnter={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}
+                              onMouseEnter={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}
                           />
                         ))}
                       </div>
@@ -729,12 +729,12 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                       <div className="flex gap-4 min-w-0">
                         {popularProducts.map((p) => (
                           <ProductCard
-                            key={p.id}
+                              key={p.id}
                             product={p}
                             lang={lang}
                             variant="compact"
                             onProductClick={onProductClick}
-                            onMouseEnter={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}
+                              onMouseEnter={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}
                           />
                         ))}
                       </div>
@@ -753,7 +753,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                       <div className="flex gap-4 min-w-0 pb-2">
                         {newProducts.map((p) => (
                           <ProductCard
-                            key={p.id}
+                              key={p.id}
                             product={p}
                             lang={lang}
                             variant="compact"
@@ -769,7 +769,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6 pb-8">
                 {paginatedProducts.map((p) => (
                   <ProductCard
-                    key={p.id}
+                      key={p.id}
                     product={p}
                     lang={lang}
                     variant="grid"
@@ -794,8 +794,8 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
               )}
               {totalFiltered > PAGE_SIZE && !hasMore && page > 1 && (
                 <div className="flex justify-center gap-2 pt-4 pb-4">
-                  <button
-                    type="button"
+                        <button
+                          type="button"
                     onClick={() => { setPage(1); setNextCursor(null); }}
                     className="px-4 py-2 rounded-xl border border-slate-200 font-medium text-slate-600 hover:bg-slate-50"
                   >

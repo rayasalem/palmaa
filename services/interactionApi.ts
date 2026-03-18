@@ -83,20 +83,24 @@ export async function getProductIsLiked(productId: string): Promise<{ success: b
   return request(`/api/products/${productId}/liked`);
 }
 
-// --- Product comment ---
+// --- Product comment (تقييم + تعليق = سجل واحد في DB) ---
 export async function addProductComment(
   productId: string,
-  content: string
-): Promise<{ success: boolean; comment: { id: string; content: string; created_at: string; user_id: string } }> {
+  content: string,
+  rating?: number
+): Promise<{ success: boolean; comment: { id: string; content: string; rating?: number; created_at: string; user_id: string } }> {
   return request(`/api/products/${productId}/comment`, {
     method: 'POST',
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({ content, rating: rating ?? 5 }),
   });
 }
 
 export async function getProductComments(
   productId: string
-): Promise<{ success: boolean; comments: { id: string; content: string; created_at: string; user_id: string }[] }> {
+): Promise<{
+  success: boolean;
+  comments: { id: string; content: string; rating?: number; created_at: string; user_id: string }[];
+}> {
   return request(`/api/products/${productId}/comments`);
 }
 

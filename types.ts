@@ -148,6 +148,8 @@ export interface Comment {
   text: string;
   createdAt: number;
   userName?: string; // Helper for UI display
+  /** تقييم 1–5 نجوم (مع التعليق = تجربة واحدة في DB) */
+  rating?: number;
 }
 
 export interface CartItem extends Product {

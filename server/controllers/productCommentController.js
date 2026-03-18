@@ -11,7 +11,7 @@ async function addComment(req, res) {
   try {
     const userId = req.auth && req.auth.sub;
     const { id: productId } = req.params;
-    const { content } = req.body || {};
+    const { content, rating } = req.body || {};
     if (!userId) return res.status(401).json({ success: false, error: 'Authentication required' });
     if ((req.auth && req.auth.role && String(req.auth.role).toUpperCase()) !== 'CUSTOMER') {
       return res.status(403).json({ success: false, error: 'Only customers can comment' });
@@ -20,8 +20,9 @@ async function addComment(req, res) {
     const text = typeof content === 'string' ? content.trim() : '';
     if (!text || text.length < 1) return res.status(400).json({ success: false, error: 'Comment content is required' });
     if (text.length > 2000) return res.status(400).json({ success: false, error: 'Comment too long' });
+    const numRating = rating == null ? 5 : Math.min(5, Math.max(1, Number(rating) || 5));
 
-    const { data: comment, error } = await productCommentService.addComment(productId, userId, text);
+    const { data: comment, error } = await productCommentService.addComment(productId, userId, text, numRating);
     if (error) return res.status(500).json({ success: false, error: error.message || 'Failed to add comment' });
 
     const { data: product } = await productService.getProductById(productId);
@@ -43,6 +44,7 @@ async function addComment(req, res) {
         product_id: comment.product_id,
         user_id: comment.user_id,
         content: comment.content,
+        rating: comment.rating ?? 5,
         created_at: comment.created_at,
       },
     });
