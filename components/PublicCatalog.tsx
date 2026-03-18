@@ -766,7 +766,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                   </section>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6 pb-8">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 pb-8">
                 {paginatedProducts.map((p) => (
                   <ProductCard
                       key={p.id}

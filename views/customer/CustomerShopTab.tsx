@@ -384,25 +384,30 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
                   return (
                     <div
                       key={o.id}
-                      className="rounded-2xl border border-slate-100 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer"
+                      className="rounded-2xl border border-slate-100 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col h-full"
                       role="button"
                       tabIndex={0}
                       onClick={handleOfferClick}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleOfferClick(); }}
                     >
-                      <div className="w-full p-4 flex flex-col justify-between min-h-[140px] text-left">
-                        {o.image_url ? (
-                          <div className="aspect-square -m-4 mb-2 rounded-t-2xl overflow-hidden bg-slate-100">
-                            <img src={o.image_url} alt="" className="w-full h-full object-cover" />
-                          </div>
-                        ) : null}
-                        <p className="text-xs text-slate-600 line-clamp-2">{o.subtitle || o.title}</p>
-                        <span className="text-2xl font-black text-emerald-600 mt-1">%{o.discount_label || 0}</span>
-                        {isCartDiscount && (
-                          <p className="text-[10px] text-emerald-600 font-bold mt-0.5">
-                            {lang === 'ar' ? 'خصم على السلة' : 'Cart discount'}
-                          </p>
-                        )}
+                      <div className="w-full flex-1 p-4 flex flex-col justify-between text-left">
+                        <div className="aspect-square -m-4 mb-2 rounded-t-2xl overflow-hidden bg-slate-100">
+                          <img
+                            src={o.image_url || 'https://placehold.co/400x400?text=Offer'}
+                            alt=""
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-600 line-clamp-2">{o.subtitle || o.title}</p>
+                          <span className="text-2xl font-black text-emerald-600 mt-1">%{o.discount_label || 0}</span>
+                          {isCartDiscount && (
+                            <p className="text-[10px] text-emerald-600 font-bold mt-0.5">
+                              {lang === 'ar' ? 'خصم على السلة' : 'Cart discount'}
+                            </p>
+                          )}
+                        </div>
                       </div>
                       <button
                         type="button"
@@ -421,11 +426,11 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
                   return (
                     <div
                       key={p.id}
-                      className="rounded-2xl border border-slate-100 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all"
+                      className="rounded-2xl border border-slate-100 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col h-full"
                     >
                       <button
                         type="button"
-                        className="w-full p-4 flex flex-col justify-between min-h-[140px] text-left"
+                        className="w-full flex-1 p-4 flex flex-col justify-between text-left"
                         onClick={() => onViewProduct?.(p.id)}
                       >
                         <div className="aspect-square -m-4 mb-2 rounded-t-2xl overflow-hidden bg-slate-100 relative">

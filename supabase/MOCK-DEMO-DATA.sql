@@ -152,119 +152,119 @@ SELECT
   'new' AS condition,
   ARRAY[
     CASE
-      WHEN i->>'category' = 'عصائر' THEN 'https://source.unsplash.com/600x400/?fresh+juice,orange'
-      WHEN i->>'category' = 'مشروبات غازية' THEN 'https://source.unsplash.com/600x400/?soda,cola'
-      WHEN i->>'category' = 'مشروبات ساخنة' THEN 'https://source.unsplash.com/600x400/?coffee,tea'
-      WHEN i->>'category' = 'مياه' THEN 'https://source.unsplash.com/600x400/?water+bottle'
-      WHEN i->>'category' = 'مشروبات ألبان' THEN 'https://source.unsplash.com/600x400/?milk,dairy'
-      WHEN i->>'category' = 'فواكه' THEN 'https://source.unsplash.com/600x400/?fresh+fruits,apple'
-      WHEN i->>'category' = 'خضروات' THEN 'https://source.unsplash.com/600x400/?vegetables,fresh'
-      WHEN i->>'category' = 'ألبان وأجبان' THEN 'https://source.unsplash.com/600x400/?cheese,dairy'
-      WHEN i->>'category' = 'مخبوزات' THEN 'https://source.unsplash.com/600x400/?bread,bakery'
-      WHEN i->>'category' = 'لحوم ودواجن' THEN 'https://source.unsplash.com/600x400/?chicken,meat'
-      WHEN i->>'category' = 'معلبات' THEN 'https://source.unsplash.com/600x400/?canned+food'
-      WHEN i->>'category' = 'سناكات' THEN 'https://source.unsplash.com/600x400/?snacks,chips'
-      WHEN i->>'category' = 'حلويات' THEN 'https://source.unsplash.com/600x400/?dessert,sweets'
-      WHEN i->>'category' = 'بهارات وتوابل' THEN 'https://source.unsplash.com/600x400/?spices'
-      WHEN i->>'category' = 'حبوب وبقول' THEN 'https://source.unsplash.com/600x400/?rice,legumes'
-      WHEN i->>'category' = 'وجبات جاهزة' THEN 'https://source.unsplash.com/600x400/?ready+meal,food'
-      WHEN i->>'category' = 'زيوت وصلصات' THEN 'https://source.unsplash.com/600x400/?olive+oil,sauce'
-      WHEN i->>'category' = 'أطعمة مجمدة' THEN 'https://source.unsplash.com/600x400/?frozen+food'
-      WHEN i->>'category' = 'هواتف' THEN 'https://source.unsplash.com/600x400/?smartphone,iphone'
-      WHEN i->>'category' = 'حواسيب' THEN 'https://source.unsplash.com/600x400/?laptop,computer'
-      WHEN i->>'category' = 'إكسسوارات إلكترونية' THEN 'https://source.unsplash.com/600x400/?electronics,charger'
-      WHEN i->>'category' = 'أجهزة منزلية' THEN 'https://source.unsplash.com/600x400/?home+appliance'
-      WHEN i->>'category' = 'كاميرات' THEN 'https://source.unsplash.com/600x400/?camera,photography'
-      WHEN i->>'category' = 'ألعاب إلكترونية' THEN 'https://source.unsplash.com/600x400/?gaming,console'
-      WHEN i->>'category' = 'ملابس رجالية' THEN 'https://source.unsplash.com/600x400/?mens+clothing'
-      WHEN i->>'category' = 'ملابس نسائية' THEN 'https://source.unsplash.com/600x400/?womens+clothing,dress'
-      WHEN i->>'category' = 'ملابس أطفال' THEN 'https://source.unsplash.com/600x400/?kids+clothing'
-      WHEN i->>'category' = 'أحذية' THEN 'https://source.unsplash.com/600x400/?shoes,sneakers'
-      WHEN i->>'category' = 'شنط وإكسسوارات' THEN 'https://source.unsplash.com/600x400/?bag,accessories'
-      WHEN i->>'category' = 'ملابس تقليدية' THEN 'https://source.unsplash.com/600x400/?traditional+clothing'
-      WHEN i->>'category' = 'ملابس' THEN 'https://source.unsplash.com/600x400/?clothing,tshirt'
-      WHEN i->>'category' = 'أثاث' THEN 'https://source.unsplash.com/600x400/?furniture,sofa'
-      WHEN i->>'category' = 'أدوات مطبخ' THEN 'https://source.unsplash.com/600x400/?kitchen,tools'
-      WHEN i->>'category' = 'ديكور منزلي' THEN 'https://source.unsplash.com/600x400/?home+decor'
-      WHEN i->>'category' = 'حديقة ونباتات' THEN 'https://source.unsplash.com/600x400/?garden,plants'
-      WHEN i->>'category' = 'عدد وأدوات' THEN 'https://source.unsplash.com/600x400/?tools,hardware'
-      WHEN i->>'category' = 'العناية بالبشرة' THEN 'https://source.unsplash.com/600x400/?skincare,cosmetics'
-      WHEN i->>'category' = 'مكياج' THEN 'https://source.unsplash.com/600x400/?makeup,beauty'
-      WHEN i->>'category' = 'العناية بالشعر' THEN 'https://source.unsplash.com/600x400/?haircare,shampoo'
-      WHEN i->>'category' = 'عطور' THEN 'https://source.unsplash.com/600x400/?perfume,fragrance'
-      WHEN i->>'category' = 'تجميل وكوزمتكس' THEN 'https://source.unsplash.com/600x400/?cosmetics,beauty'
-      WHEN i->>'category' = 'أدوات رياضية' THEN 'https://source.unsplash.com/600x400/?sports,fitness'
-      WHEN i->>'category' = 'أدوات منزلية' THEN 'https://source.unsplash.com/600x400/?vacuum,cleaning'
-      WHEN i->>'category' = 'منتجات غذائية' THEN 'https://source.unsplash.com/600x400/?food,groceries'
-      WHEN i->>'category' = 'إلكترونيات' THEN 'https://source.unsplash.com/600x400/?electronics,gadget'
-      WHEN i->>'category' = 'مشغولات يدوية' THEN 'https://source.unsplash.com/600x400/?handicraft,craft'
-      WHEN i->>'category' = 'مستلزمات أطفال' THEN 'https://source.unsplash.com/600x400/?baby,children'
-      WHEN i->>'category' = 'مستلزمات حيوانات أليفة' THEN 'https://source.unsplash.com/600x400/?pet,dog+food'
-      WHEN i->>'category' = 'كتب وقرطاسية' THEN 'https://source.unsplash.com/600x400/?books,stationery'
-      WHEN i->>'category' = 'كماليات سيارات' THEN 'https://source.unsplash.com/600x400/?car+accessories'
-      WHEN i->>'category' = 'ألعاب وهدايا' THEN 'https://source.unsplash.com/600x400/?toys,gifts'
-      WHEN i->>'category' = 'مفروشات وأقمشة' THEN 'https://source.unsplash.com/600x400/?bedding,fabric'
-      WHEN i->>'category' = 'عقارات' THEN 'https://source.unsplash.com/600x400/?real+estate,house'
-      WHEN i->>'category' = 'خدمات' THEN 'https://source.unsplash.com/600x400/?service,delivery'
-      ELSE 'https://source.unsplash.com/600x400/?product,shopping'
+      WHEN i->>'category' = 'عصائر' THEN 'https://images.pexels.com/photos/1194028/pexels-photo-1194028.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'مشروبات غازية' THEN 'https://images.pexels.com/photos/5920745/pexels-photo-5920745.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'مشروبات ساخنة' THEN 'https://images.pexels.com/photos/374885/pexels-photo-374885.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'مياه' THEN 'https://images.pexels.com/photos/416528/pexels-photo-416528.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'مشروبات ألبان' THEN 'https://images.pexels.com/photos/3737692/pexels-photo-3737692.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'فواكه' THEN 'https://images.pexels.com/photos/1128678/pexels-photo-1128678.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'خضروات' THEN 'https://images.pexels.com/photos/143133/pexels-photo-143133.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'ألبان وأجبان' THEN 'https://images.pexels.com/photos/4109951/pexels-photo-4109951.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'مخبوزات' THEN 'https://images.pexels.com/photos/2434/bread-food-healthy-breakfast.jpg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'لحوم ودواجن' THEN 'https://images.pexels.com/photos/4106483/pexels-photo-4106483.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'معلبات' THEN 'https://images.pexels.com/photos/4110251/pexels-photo-4110251.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'سناكات' THEN 'https://images.pexels.com/photos/799268/pexels-photo-799268.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'حلويات' THEN 'https://images.pexels.com/photos/3026808/pexels-photo-3026808.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'بهارات وتوابل' THEN 'https://images.pexels.com/photos/678414/pexels-photo-678414.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'حبوب وبقول' THEN 'https://images.pexels.com/photos/4110250/pexels-photo-4110250.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'وجبات جاهزة' THEN 'https://images.pexels.com/photos/958545/pexels-photo-958545.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'زيوت وصلصات' THEN 'https://images.pexels.com/photos/1437267/pexels-photo-1437267.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'أطعمة مجمدة' THEN 'https://images.pexels.com/photos/373147/pexels-photo-373147.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'هواتف' THEN 'https://images.pexels.com/photos/404280/pexels-photo-404280.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'حواسيب' THEN 'https://images.pexels.com/photos/18105/pexels-photo.jpg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'إكسسوارات إلكترونية' THEN 'https://images.pexels.com/photos/3990842/pexels-photo-3990842.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'أجهزة منزلية' THEN 'https://images.pexels.com/photos/3737595/pexels-photo-3737595.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'كاميرات' THEN 'https://images.pexels.com/photos/51383/camera-lens-lens-zoom-photo-51383.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'ألعاب إلكترونية' THEN 'https://images.pexels.com/photos/845434/pexels-photo-845434.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'ملابس رجالية' THEN 'https://images.pexels.com/photos/325876/pexels-photo-325876.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'ملابس نسائية' THEN 'https://images.pexels.com/photos/428338/pexels-photo-428338.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'ملابس أطفال' THEN 'https://images.pexels.com/photos/1648374/pexels-photo-1648374.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'أحذية' THEN 'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'شنط وإكسسوارات' THEN 'https://images.pexels.com/photos/322207/pexels-photo-322207.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'ملابس تقليدية' THEN 'https://images.pexels.com/photos/374068/pexels-photo-374068.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'ملابس' THEN 'https://images.pexels.com/photos/2983464/pexels-photo-2983464.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'أثاث' THEN 'https://images.pexels.com/photos/1571458/pexels-photo-1571458.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'أدوات مطبخ' THEN 'https://images.pexels.com/photos/3951628/pexels-photo-3951628.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'ديكور منزلي' THEN 'https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'حديقة ونباتات' THEN 'https://images.pexels.com/photos/450326/pexels-photo-450326.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'عدد وأدوات' THEN 'https://images.pexels.com/photos/162553/tool-work-bench-hammer-tools-162553.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'العناية بالبشرة' THEN 'https://images.pexels.com/photos/3738340/pexels-photo-3738340.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'مكياج' THEN 'https://images.pexels.com/photos/3373715/pexels-photo-3373715.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'العناية بالشعر' THEN 'https://images.pexels.com/photos/3738348/pexels-photo-3738348.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'عطور' THEN 'https://images.pexels.com/photos/965989/pexels-photo-965989.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'تجميل وكوزمتكس' THEN 'https://images.pexels.com/photos/3373741/pexels-photo-3373741.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'أدوات رياضية' THEN 'https://images.pexels.com/photos/47730/the-ball-stadion-football-the-pitch-47730.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'أدوات منزلية' THEN 'https://images.pexels.com/photos/3951629/pexels-photo-3951629.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'منتجات غذائية' THEN 'https://images.pexels.com/photos/750073/pexels-photo-750073.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'إلكترونيات' THEN 'https://images.pexels.com/photos/955390/pexels-photo-955390.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'مشغولات يدوية' THEN 'https://images.pexels.com/photos/461035/pexels-photo-461035.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'مستلزمات أطفال' THEN 'https://images.pexels.com/photos/341372/pexels-photo-341372.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'مستلزمات حيوانات أليفة' THEN 'https://images.pexels.com/photos/59523/pexels-photo-59523.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'كتب وقرطاسية' THEN 'https://images.pexels.com/photos/46274/pexels-photo-46274.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'كماليات سيارات' THEN 'https://images.pexels.com/photos/244206/pexels-photo-244206.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'ألعاب وهدايا' THEN 'https://images.pexels.com/photos/3661193/pexels-photo-3661193.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'مفروشات وأقمشة' THEN 'https://images.pexels.com/photos/545012/pexels-photo-545012.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'عقارات' THEN 'https://images.pexels.com/photos/439391/pexels-photo-439391.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      WHEN i->>'category' = 'خدمات' THEN 'https://images.pexels.com/photos/3862614/pexels-photo-3862614.jpeg?auto=compress&cs=tinysrgb&w=1200'
+      ELSE 'https://images.pexels.com/photos/750073/pexels-photo-750073.jpeg?auto=compress&cs=tinysrgb&w=1200'
     END
   ]::text[] AS images,
   CASE
-    WHEN i->>'category' = 'عصائر' THEN 'https://source.unsplash.com/600x400/?fresh+juice,orange'
-    WHEN i->>'category' = 'مشروبات غازية' THEN 'https://source.unsplash.com/600x400/?soda,cola'
-    WHEN i->>'category' = 'مشروبات ساخنة' THEN 'https://source.unsplash.com/600x400/?coffee,tea'
-    WHEN i->>'category' = 'مياه' THEN 'https://source.unsplash.com/600x400/?water+bottle'
-    WHEN i->>'category' = 'مشروبات ألبان' THEN 'https://source.unsplash.com/600x400/?milk,dairy'
-    WHEN i->>'category' = 'فواكه' THEN 'https://source.unsplash.com/600x400/?fresh+fruits,apple'
-    WHEN i->>'category' = 'خضروات' THEN 'https://source.unsplash.com/600x400/?vegetables,fresh'
-    WHEN i->>'category' = 'ألبان وأجبان' THEN 'https://source.unsplash.com/600x400/?cheese,dairy'
-    WHEN i->>'category' = 'مخبوزات' THEN 'https://source.unsplash.com/600x400/?bread,bakery'
-    WHEN i->>'category' = 'لحوم ودواجن' THEN 'https://source.unsplash.com/600x400/?chicken,meat'
-    WHEN i->>'category' = 'معلبات' THEN 'https://source.unsplash.com/600x400/?canned+food'
-    WHEN i->>'category' = 'سناكات' THEN 'https://source.unsplash.com/600x400/?snacks,chips'
-    WHEN i->>'category' = 'حلويات' THEN 'https://source.unsplash.com/600x400/?dessert,sweets'
-    WHEN i->>'category' = 'بهارات وتوابل' THEN 'https://source.unsplash.com/600x400/?spices'
-    WHEN i->>'category' = 'حبوب وبقول' THEN 'https://source.unsplash.com/600x400/?rice,legumes'
-    WHEN i->>'category' = 'وجبات جاهزة' THEN 'https://source.unsplash.com/600x400/?ready+meal,food'
-    WHEN i->>'category' = 'زيوت وصلصات' THEN 'https://source.unsplash.com/600x400/?olive+oil,sauce'
-    WHEN i->>'category' = 'أطعمة مجمدة' THEN 'https://source.unsplash.com/600x400/?frozen+food'
-    WHEN i->>'category' = 'هواتف' THEN 'https://source.unsplash.com/600x400/?smartphone,iphone'
-    WHEN i->>'category' = 'حواسيب' THEN 'https://source.unsplash.com/600x400/?laptop,computer'
-    WHEN i->>'category' = 'إكسسوارات إلكترونية' THEN 'https://source.unsplash.com/600x400/?electronics,charger'
-    WHEN i->>'category' = 'أجهزة منزلية' THEN 'https://source.unsplash.com/600x400/?home+appliance'
-    WHEN i->>'category' = 'كاميرات' THEN 'https://source.unsplash.com/600x400/?camera,photography'
-    WHEN i->>'category' = 'ألعاب إلكترونية' THEN 'https://source.unsplash.com/600x400/?gaming,console'
-    WHEN i->>'category' = 'ملابس رجالية' THEN 'https://source.unsplash.com/600x400/?mens+clothing'
-    WHEN i->>'category' = 'ملابس نسائية' THEN 'https://source.unsplash.com/600x400/?womens+clothing,dress'
-    WHEN i->>'category' = 'ملابس أطفال' THEN 'https://source.unsplash.com/600x400/?kids+clothing'
-    WHEN i->>'category' = 'أحذية' THEN 'https://source.unsplash.com/600x400/?shoes,sneakers'
-    WHEN i->>'category' = 'شنط وإكسسوارات' THEN 'https://source.unsplash.com/600x400/?bag,accessories'
-    WHEN i->>'category' = 'ملابس تقليدية' THEN 'https://source.unsplash.com/600x400/?traditional+clothing'
-    WHEN i->>'category' = 'ملابس' THEN 'https://source.unsplash.com/600x400/?clothing,tshirt'
-    WHEN i->>'category' = 'أثاث' THEN 'https://source.unsplash.com/600x400/?furniture,sofa'
-    WHEN i->>'category' = 'أدوات مطبخ' THEN 'https://source.unsplash.com/600x400/?kitchen,tools'
-    WHEN i->>'category' = 'ديكور منزلي' THEN 'https://source.unsplash.com/600x400/?home+decor'
-    WHEN i->>'category' = 'حديقة ونباتات' THEN 'https://source.unsplash.com/600x400/?garden,plants'
-    WHEN i->>'category' = 'عدد وأدوات' THEN 'https://source.unsplash.com/600x400/?tools,hardware'
-    WHEN i->>'category' = 'العناية بالبشرة' THEN 'https://source.unsplash.com/600x400/?skincare,cosmetics'
-    WHEN i->>'category' = 'مكياج' THEN 'https://source.unsplash.com/600x400/?makeup,beauty'
-    WHEN i->>'category' = 'العناية بالشعر' THEN 'https://source.unsplash.com/600x400/?haircare,shampoo'
-    WHEN i->>'category' = 'عطور' THEN 'https://source.unsplash.com/600x400/?perfume,fragrance'
-    WHEN i->>'category' = 'تجميل وكوزمتكس' THEN 'https://source.unsplash.com/600x400/?cosmetics,beauty'
-    WHEN i->>'category' = 'أدوات رياضية' THEN 'https://source.unsplash.com/600x400/?sports,fitness'
-    WHEN i->>'category' = 'أدوات منزلية' THEN 'https://source.unsplash.com/600x400/?vacuum,cleaning'
-    WHEN i->>'category' = 'منتجات غذائية' THEN 'https://source.unsplash.com/600x400/?food,groceries'
-    WHEN i->>'category' = 'إلكترونيات' THEN 'https://source.unsplash.com/600x400/?electronics,gadget'
-    WHEN i->>'category' = 'مشغولات يدوية' THEN 'https://source.unsplash.com/600x400/?handicraft,craft'
-    WHEN i->>'category' = 'مستلزمات أطفال' THEN 'https://source.unsplash.com/600x400/?baby,children'
-    WHEN i->>'category' = 'مستلزمات حيوانات أليفة' THEN 'https://source.unsplash.com/600x400/?pet,dog+food'
-    WHEN i->>'category' = 'كتب وقرطاسية' THEN 'https://source.unsplash.com/600x400/?books,stationery'
-    WHEN i->>'category' = 'كماليات سيارات' THEN 'https://source.unsplash.com/600x400/?car+accessories'
-    WHEN i->>'category' = 'ألعاب وهدايا' THEN 'https://source.unsplash.com/600x400/?toys,gifts'
-    WHEN i->>'category' = 'مفروشات وأقمشة' THEN 'https://source.unsplash.com/600x400/?bedding,fabric'
-    WHEN i->>'category' = 'عقارات' THEN 'https://source.unsplash.com/600x400/?real+estate,house'
-    WHEN i->>'category' = 'خدمات' THEN 'https://source.unsplash.com/600x400/?service,delivery'
-    ELSE 'https://source.unsplash.com/600x400/?product,shopping'
+    WHEN i->>'category' = 'عصائر' THEN 'https://images.pexels.com/photos/1194028/pexels-photo-1194028.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'مشروبات غازية' THEN 'https://images.pexels.com/photos/5920745/pexels-photo-5920745.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'مشروبات ساخنة' THEN 'https://images.pexels.com/photos/374885/pexels-photo-374885.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'مياه' THEN 'https://images.pexels.com/photos/416528/pexels-photo-416528.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'مشروبات ألبان' THEN 'https://images.pexels.com/photos/3737692/pexels-photo-3737692.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'فواكه' THEN 'https://images.pexels.com/photos/1128678/pexels-photo-1128678.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'خضروات' THEN 'https://images.pexels.com/photos/143133/pexels-photo-143133.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'ألبان وأجبان' THEN 'https://images.pexels.com/photos/4109951/pexels-photo-4109951.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'مخبوزات' THEN 'https://images.pexels.com/photos/2434/bread-food-healthy-breakfast.jpg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'لحوم ودواجن' THEN 'https://images.pexels.com/photos/4106483/pexels-photo-4106483.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'معلبات' THEN 'https://images.pexels.com/photos/4110251/pexels-photo-4110251.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'سناكات' THEN 'https://images.pexels.com/photos/799268/pexels-photo-799268.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'حلويات' THEN 'https://images.pexels.com/photos/3026808/pexels-photo-3026808.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'بهارات وتوابل' THEN 'https://images.pexels.com/photos/678414/pexels-photo-678414.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'حبوب وبقول' THEN 'https://images.pexels.com/photos/4110250/pexels-photo-4110250.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'وجبات جاهزة' THEN 'https://images.pexels.com/photos/958545/pexels-photo-958545.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'زيوت وصلصات' THEN 'https://images.pexels.com/photos/1437267/pexels-photo-1437267.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'أطعمة مجمدة' THEN 'https://images.pexels.com/photos/373147/pexels-photo-373147.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'هواتف' THEN 'https://images.pexels.com/photos/404280/pexels-photo-404280.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'حواسيب' THEN 'https://images.pexels.com/photos/18105/pexels-photo.jpg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'إكسسوارات إلكترونية' THEN 'https://images.pexels.com/photos/3990842/pexels-photo-3990842.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'أجهزة منزلية' THEN 'https://images.pexels.com/photos/3737595/pexels-photo-3737595.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'كاميرات' THEN 'https://images.pexels.com/photos/51383/camera-lens-lens-zoom-photo-51383.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'ألعاب إلكترونية' THEN 'https://images.pexels.com/photos/845434/pexels-photo-845434.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'ملابس رجالية' THEN 'https://images.pexels.com/photos/325876/pexels-photo-325876.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'ملابس نسائية' THEN 'https://images.pexels.com/photos/428338/pexels-photo-428338.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'ملابس أطفال' THEN 'https://images.pexels.com/photos/1648374/pexels-photo-1648374.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'أحذية' THEN 'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'شنط وإكسسوارات' THEN 'https://images.pexels.com/photos/322207/pexels-photo-322207.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'ملابس تقليدية' THEN 'https://images.pexels.com/photos/374068/pexels-photo-374068.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'ملابس' THEN 'https://images.pexels.com/photos/2983464/pexels-photo-2983464.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'أثاث' THEN 'https://images.pexels.com/photos/1571458/pexels-photo-1571458.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'أدوات مطبخ' THEN 'https://images.pexels.com/photos/3951628/pexels-photo-3951628.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'ديكور منزلي' THEN 'https://images.pexels.com/photos/271639/pexels-photo-271639.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'حديقة ونباتات' THEN 'https://images.pexels.com/photos/450326/pexels-photo-450326.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'عدد وأدوات' THEN 'https://images.pexels.com/photos/162553/tool-work-bench-hammer-tools-162553.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'العناية بالبشرة' THEN 'https://images.pexels.com/photos/3738340/pexels-photo-3738340.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'مكياج' THEN 'https://images.pexels.com/photos/3373715/pexels-photo-3373715.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'العناية بالشعر' THEN 'https://images.pexels.com/photos/3738348/pexels-photo-3738348.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'عطور' THEN 'https://images.pexels.com/photos/965989/pexels-photo-965989.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'تجميل وكوزمتكس' THEN 'https://images.pexels.com/photos/3373741/pexels-photo-3373741.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'أدوات رياضية' THEN 'https://images.pexels.com/photos/47730/the-ball-stadion-football-the-pitch-47730.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'أدوات منزلية' THEN 'https://images.pexels.com/photos/3951629/pexels-photo-3951629.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'منتجات غذائية' THEN 'https://images.pexels.com/photos/750073/pexels-photo-750073.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'إلكترونيات' THEN 'https://images.pexels.com/photos/955390/pexels-photo-955390.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'مشغولات يدوية' THEN 'https://images.pexels.com/photos/461035/pexels-photo-461035.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'مستلزمات أطفال' THEN 'https://images.pexels.com/photos/341372/pexels-photo-341372.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'مستلزمات حيوانات أليفة' THEN 'https://images.pexels.com/photos/59523/pexels-photo-59523.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'كتب وقرطاسية' THEN 'https://images.pexels.com/photos/46274/pexels-photo-46274.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'كماليات سيارات' THEN 'https://images.pexels.com/photos/244206/pexels-photo-244206.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'ألعاب وهدايا' THEN 'https://images.pexels.com/photos/3661193/pexels-photo-3661193.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'مفروشات وأقمشة' THEN 'https://images.pexels.com/photos/545012/pexels-photo-545012.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'عقارات' THEN 'https://images.pexels.com/photos/439391/pexels-photo-439391.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    WHEN i->>'category' = 'خدمات' THEN 'https://images.pexels.com/photos/3862614/pexels-photo-3862614.jpeg?auto=compress&cs=tinysrgb&w=1200'
+    ELSE 'https://images.pexels.com/photos/750073/pexels-photo-750073.jpeg?auto=compress&cs=tinysrgb&w=1200'
   END AS image_url,
   COALESCE((i->>'is_bestseller')::boolean, false) AS is_bestseller,
   now() AS created_at,
@@ -384,7 +384,7 @@ WITH broker AS (
   SELECT id AS broker_id FROM public.users WHERE email = 'broker@palma.demo'
 ),
 prod AS (
-  SELECT id AS product_id FROM public.products ORDER BY created_at DESC LIMIT 3
+  SELECT id AS product_id FROM public.products ORDER BY created_at DESC LIMIT 5
 )
 INSERT INTO public.shared_products (
   id,
@@ -488,4 +488,82 @@ ON CONFLICT DO NOTHING;
 
 -- 6.4 + 6.5 تقييم الزبون للتاجر على الطلب (بدون جدول chats)
 -- 6.4 تقييم الزبون للتاجر على الطلب (تُدار من تطبيق آخر؛ لا يوجد جدول ratings في هذه السكيمة)
+
+-- ============================================================================
+-- 7) Demo product comments + ratings (Customer + Broker)
+-- ============================================================================
+
+WITH
+  customer_demo AS (
+    SELECT id AS customer_id
+    FROM public.users
+    WHERE email = 'customer@palma.demo'
+  ),
+  broker_demo AS (
+    SELECT id AS broker_id
+    FROM public.users
+    WHERE email = 'broker@palma.demo'
+  ),
+  prod_juice AS (
+    SELECT id AS product_id
+    FROM public.products
+    WHERE id = 'demo-prod-عصير برتقال طازج'
+    LIMIT 1
+  ),
+  prod_coffee AS (
+    SELECT id AS product_id
+    FROM public.products
+    WHERE id = 'demo-prod-قهوة عربية'
+    LIMIT 1
+  ),
+  prod_phone AS (
+    SELECT id AS product_id
+    FROM public.products
+    WHERE id = 'demo-prod-iPhone 14'
+    LIMIT 1
+  )
+INSERT INTO public.product_comments (id, product_id, user_id, content, rating, created_at)
+SELECT
+  gen_random_uuid() AS id,
+  p.product_id,
+  u.customer_id,
+  'منتج ممتاز، الجودة رائعة والتغليف مرتب.',
+  5,
+  now() - interval '3 days'
+FROM customer_demo u, prod_juice p
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.product_comments (id, product_id, user_id, content, rating, created_at)
+SELECT
+  gen_random_uuid() AS id,
+  p.product_id,
+  u.customer_id,
+  'الطعم جيد لكن السعر مرتفع قليلاً.',
+  4,
+  now() - interval '2 days'
+FROM customer_demo u, prod_coffee p
+ON CONFLICT DO NOTHING;
+
+-- Broker reviews for promoted product
+INSERT INTO public.product_comments (id, product_id, user_id, content, rating, created_at)
+SELECT
+  gen_random_uuid() AS id,
+  p.product_id,
+  b.broker_id,
+  'هاتف مناسب جداً للزبائن الذين يبحثون عن أداء قوي مع كاميرا ممتازة.',
+  5,
+  now() - interval '1 day'
+FROM broker_demo b, prod_phone p
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.product_comments (id, product_id, user_id, content, rating, created_at)
+SELECT
+  gen_random_uuid() AS id,
+  p.product_id,
+  b.broker_id,
+  'بعت أكثر من جهاز من هذا الموديل، رضا الزبائن عالي والتقييمات ممتازة.',
+  5,
+  now() - interval '6 hours'
+FROM broker_demo b, prod_phone p
+ON CONFLICT DO NOTHING;
 

@@ -397,8 +397,8 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
           </div>
         </section>
 
-        {/* 3. المنتجات المميزة — زر تسوق الآن فوق المنتجات ثم كاروسيل */}
-        <section id="featured-products" className="section-bg-6 py-24 sm:py-32 overflow-hidden">
+        {/* 3. المنتجات المميزة — تقليل المسافة الفارغة فوق وتحت السكشن */}
+        <section id="featured-products" className="section-bg-6 py-12 sm:py-16 overflow-hidden">
           <div className="max-w-7xl mx-auto px-6">
             {/* تسوق الآن — مباشرة فوق المنتجات */}
             <div className="flex justify-center mb-8">
