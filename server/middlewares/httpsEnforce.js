@@ -6,18 +6,29 @@ import { isProduction } from '../config/env.js';
 
 export function httpsEnforce(req, res, next) {
   if (!isProduction()) return next();
-  // Some reverse proxies may not set `x-forwarded-proto` correctly.
-  // Fallback to Express' `req.protocol` / `req.secure` to avoid returning 403 to clients/bots.
-  const forwardedProto = req.get('x-forwarded-proto');
-  const proto =
-    (forwardedProto ? forwardedProto.split(',')[0].trim() : '') ||
-    (req.secure ? 'https' : (req.protocol || 'http'));
 
-  if (proto === 'https') return next();
-  if (req.method === 'GET' && proto === 'http') {
+  // Some hosts/proxies may omit `x-forwarded-proto` intermittently.
+  // Enforce strictly only when proto is explicitly known; otherwise fail open.
+  const forwardedProto = req.get('x-forwarded-proto');
+  const normalizedForwarded = forwardedProto ? forwardedProto.split(',')[0].trim().toLowerCase() : '';
+
+  if (normalizedForwarded === 'https') return next();
+  if (normalizedForwarded === 'http') {
+    if (req.method === 'GET') {
+      return res.redirect(301, `https://${req.get('host')}${req.originalUrl}`);
+    }
+    return res.status(403).json({ error: 'HTTPS required' });
+  }
+
+  // Fallbacks for setups where Express can still infer secure protocol.
+  if (req.secure || req.protocol === 'https') return next();
+
+  // Unknown protocol behind proxy: do not block requests to avoid false negatives.
+  if (req.method === 'GET') {
+    // Optional best-effort redirect for plain HTTP connections when host is known.
     return res.redirect(301, `https://${req.get('host')}${req.originalUrl}`);
   }
-  return res.status(403).json({ error: 'HTTPS required' });
+  return next();
 }
 
 export default httpsEnforce;
