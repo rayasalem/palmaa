@@ -2,7 +2,6 @@
  * Offers (العروض) — public list + admin CRUD.
  */
 
-import { getApiBase } from '../api/client';
 import { api } from '../api/client';
 
 export interface ShopOffer {
@@ -25,11 +24,12 @@ export interface ShopOffer {
 
 /** عام — قائمة العروض النشطة للمتجر/الكتالوج */
 export async function getOffers(): Promise<{ success: boolean; offers: ShopOffer[] }> {
-  const base = getApiBase();
-  const res = await fetch(`${base}/api/offers`, { credentials: 'include' });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) return { success: false, offers: [] };
-  return { success: !!data.success, offers: data.offers || [] };
+  try {
+    const data = await api<{ success?: boolean; offers?: ShopOffer[] }>('/api/offers');
+    return { success: !!data.success, offers: data.offers || [] };
+  } catch {
+    return { success: false, offers: [] };
+  }
 }
 
 /** أدمن — قائمة كل العروض */

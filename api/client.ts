@@ -34,6 +34,15 @@ function getApiBase(): string {
 
 /** @deprecated Use getApiBase() so URL is resolved at request time (avoids EBADNAME). */
 const API_BASE = getApiBase();
+const hasWindow = typeof window !== 'undefined';
+
+if (hasWindow) {
+  // Runtime visibility to quickly validate the deployed frontend points to the backend API host.
+  console.log('API BASE:', API_BASE);
+  if (API_BASE.includes('palma.ps')) {
+    console.error('❌ WRONG API BASE URL');
+  }
+}
 
 /** Storage key for JWT when cross-origin. Same-origin never uses this (httpOnly cookie only). */
 const AUTH_TOKEN_KEY = 'palma_token';

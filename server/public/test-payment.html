@@ -22,13 +22,18 @@
   </div>
   <pre id="result">(response here)</pre>
   <script>
+    var API_BASE = 'https://palmaa.onrender.com';
+    console.log('API BASE:', API_BASE);
+    if (API_BASE.indexOf('palma.ps') !== -1) {
+      console.error('❌ WRONG API BASE URL');
+    }
     function post(status) {
       var orderId = document.getElementById('orderId').value.trim();
       if (!orderId) {
         document.getElementById('result').textContent = 'Enter an Order ID.';
         return;
       }
-      fetch(window.location.origin + '/api/payment/callback', {
+      fetch(API_BASE + '/api/payment/callback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId: orderId, status: status })

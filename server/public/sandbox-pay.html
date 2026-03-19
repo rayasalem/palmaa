@@ -34,9 +34,14 @@
       var url = returnUrl + (returnUrl.indexOf('?') >= 0 ? '&' : '?') + 'orderId=' + encodeURIComponent(orderId) + '&payment=' + (success ? 'success' : 'failed');
       window.location.href = url;
     }
+    var API_BASE = 'https://palmaa.onrender.com';
+    console.log('API BASE:', API_BASE);
+    if (API_BASE.indexOf('palma.ps') !== -1) {
+      console.error('❌ WRONG API BASE URL');
+    }
     function doCallback(status, success) {
       setMsg('Processing…');
-      fetch('/api/payment/callback', {
+      fetch(API_BASE + '/api/payment/callback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId: orderId, status: status })
