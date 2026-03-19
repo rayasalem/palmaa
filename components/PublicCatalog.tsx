@@ -766,18 +766,22 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                   </section>
                 )}
 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 pb-8">
-                {paginatedProducts.map((p) => (
-                  <ProductCard
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 pb-8">
+                  {paginatedProducts.map((p) => (
+                    <ProductCard
                       key={p.id}
-                    product={p}
-                    lang={lang}
-                    variant="grid"
-                    onProductClick={onProductClick}
-                    onMouseEnter={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}
-                  />
-                ))}
-              </div>
+                      product={p}
+                      lang={lang}
+                      variant="grid"
+                      className="max-w-[180px] w-full mx-auto sm:max-w-none"
+                      onProductClick={onProductClick}
+                      onMouseEnter={() => {
+                        prefetchComponent('PublicProductDetails');
+                        prefetchProductData(p.id);
+                      }}
+                    />
+                  ))}
+                </div>
 
               {/* Load more — server-side cursor/offset */}
               {hasMore && (
