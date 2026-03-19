@@ -12,9 +12,18 @@ const USERS_TABLE = 'users';
 // أعمدة أساسية (بدون token_version و mfa_enabled لتعمل إن لم تُنفَّذ migration 011)
 const selectCols = 'id, email, password, name, role, status, created_at, email_verified';
 
+function normalizeAuthInput(value) {
+  return typeof value === 'string'
+    ? value
+        .replace(/^\uFEFF/, '')
+        .replace(/[\u200B-\u200D\u2060]/g, '')
+        .trim()
+    : '';
+}
+
 export async function login(email, password) {
-  const emailNorm = email.toLowerCase().trim();
-  const passTrimmed = typeof password === 'string' ? password.trim() : '';
+  const emailNorm = normalizeAuthInput(email).toLowerCase();
+  const passTrimmed = normalizeAuthInput(password);
   if (!emailNorm || !passTrimmed) {
     return { user: null, error: { message: 'Email and password are required' } };
   }
@@ -91,6 +100,23 @@ export async function login(email, password) {
     }
   } else if (stored?.startsWith('$2') && stored.length >= 50) {
     match = await bcrypt.compare(passTrimmed, stored);
+    // Legacy compatibility: some systems store bcrypt with $2y$; Node bcrypt expects $2a$/$2b$.
+    if (!match && stored.startsWith('$2y$')) {
+      const normalizedHash = `$2b$${stored.slice(4)}`;
+      match = await bcrypt.compare(passTrimmed, normalizedHash);
+      if (match) {
+        const { error: updateErr } = await supabase
+          .from(USERS_TABLE)
+          .update({ password: normalizedHash, updated_at: new Date().toISOString() })
+          .eq('id', userRow.id);
+        if (updateErr) {
+          logger.warn('authService login: failed to persist normalized bcrypt prefix', {
+            userId: userRow.id,
+            message: updateErr.message,
+          });
+        }
+      }
+    }
     if (!match && DEMO_PASSWORDS[emailNorm] === passTrimmed) {
       const hashed = await hashPassword(passTrimmed);
       const { error: updateErr } = await supabase
@@ -118,6 +144,12 @@ export async function login(email, password) {
   }
 
   if (!match) {
+    logger.warn('authService login: password mismatch diagnostics', {
+      userId: userRow.id,
+      email: emailNorm,
+      storedPrefix: stored ? stored.slice(0, 4) : 'none',
+      storedLength: stored ? stored.length : 0,
+    });
     return { user: null, error: { message: 'Invalid credentials' } };
   }
 
