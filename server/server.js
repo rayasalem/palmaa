@@ -89,6 +89,8 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = Number(getEnv('PORT')) || 5000;
+/** Bind address: use 127.0.0.1 behind Nginx; default 0.0.0.0 for Render/Docker. */
+const HOST = getEnv('HOST') || '0.0.0.0';
 
 // CORS: only explicitly allowed origins (corsMiddleware). Do not use origin: true to avoid allowing arbitrary origins with credentials.
 app.use(corsMiddleware(getEnv('FRONTEND_URL')));
@@ -235,8 +237,9 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 function startHttpServer() {
-  const server = app.listen(PORT, () => {
+  const server = app.listen(PORT, HOST, () => {
     logger.info('Server listening', {
+      host: HOST,
       port: PORT,
       nodeEnv: getEnv('NODE_ENV') || 'development',
       pid: process.pid,

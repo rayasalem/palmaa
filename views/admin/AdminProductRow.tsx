@@ -7,6 +7,9 @@ import { Eye, EyeOff, Trash2 } from 'lucide-react';
 import { ProductConditionBadge } from '../../components/ProductConditionBadge';
 import type { Language } from '../../translations';
 import { translations } from '../../translations';
+import { secureImageSrc, setImageToPlaceholder } from '../../utils/secureUrl';
+
+const ADMIN_ROW_FALLBACK = 'https://placehold.co/100';
 
 interface AdminProductRowProps {
   product: any;
@@ -39,10 +42,11 @@ export const AdminProductRow = React.memo(function AdminProductRow({
         >
           <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 shrink-0">
             <img
-              src={p.image_url || p.images?.[0] || 'https://placehold.co/100'}
+              src={secureImageSrc(p.image_url || p.images?.[0], ADMIN_ROW_FALLBACK)}
               loading="lazy"
               alt=""
               className="w-full h-full object-cover"
+              onError={setImageToPlaceholder}
             />
           </div>
           <div className="min-w-0">

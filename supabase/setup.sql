@@ -389,6 +389,12 @@ CREATE TABLE IF NOT EXISTS public.product_comments (
 );
 CREATE INDEX IF NOT EXISTS idx_product_comments_product_id ON public.product_comments(product_id);
 
+-- تقييم مع التعليق (نفس productCommentService.js و MOCK-DEMO-DATA)
+ALTER TABLE public.product_comments
+  ADD COLUMN IF NOT EXISTS rating SMALLINT DEFAULT 5
+  CHECK (rating IS NULL OR (rating >= 1 AND rating <= 5));
+COMMENT ON COLUMN public.product_comments.rating IS 'تقييم 1–5 نجوم؛ يُحفظ مع content';
+
 -- product_likes: إعجاب بمنتج
 CREATE TABLE IF NOT EXISTS public.product_likes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -414,6 +420,39 @@ CREATE TABLE IF NOT EXISTS public.notifications (
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id_created_at ON public.notifications (user_id, created_at DESC);
 
+-- أنواع الإشعارات — نفس القائمة في server/services/notificationService.js (VALID_TYPES + welcome للديمو)
+DO $$
+BEGIN
+  ALTER TABLE public.notifications DROP CONSTRAINT IF EXISTS notifications_type_check;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+UPDATE public.notifications SET type = 'welcome' WHERE UPPER(TRIM(COALESCE(type, ''))) = 'WELCOME';
+-- أي نوع غير معروف يُحوَّل لتعليق حتى لا يفشل ADD CONSTRAINT على قواعد قديمة
+UPDATE public.notifications
+SET type = 'comment'
+WHERE type IS NOT NULL
+  AND type NOT IN (
+    'new_product',
+    'like',
+    'comment',
+    'follow',
+    'order_paid',
+    'loyalty_level_up',
+    'referral_reward',
+    'welcome'
+  );
+ALTER TABLE public.notifications ADD CONSTRAINT notifications_type_check
+  CHECK (type IN (
+    'new_product',
+    'like',
+    'comment',
+    'follow',
+    'order_paid',
+    'loyalty_level_up',
+    'referral_reward',
+    'welcome'
+  ));
+
 -- =============================================================================
 -- Order status: PENDING, ACCEPTED, IN_PROGRESS, ON_THE_WAY, COMPLETED, CANCELLED
 -- =============================================================================
@@ -436,6 +475,26 @@ WHERE status IS NULL
 
 ALTER TABLE public.orders ADD CONSTRAINT orders_status_check
   CHECK (status IN ('PENDING', 'ACCEPTED', 'IN_PROGRESS', 'ON_THE_WAY', 'COMPLETED', 'CANCELLED'));
+
+-- =============================================================================
+-- 026 — shared_products (مشاركة الوسيط لمنتجات التاجر)
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS public.shared_products (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  broker_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  product_id TEXT NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+  marketing_title TEXT,
+  marketing_description TEXT,
+  custom_discount_text TEXT,
+  is_featured BOOLEAN NOT NULL DEFAULT false,
+  clicks INT NOT NULL DEFAULT 0,
+  sales INT NOT NULL DEFAULT 0,
+  shared_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (broker_id, product_id)
+);
+CREATE INDEX IF NOT EXISTS idx_shared_products_broker_id ON public.shared_products(broker_id);
+CREATE INDEX IF NOT EXISTS idx_shared_products_product_id ON public.shared_products(product_id);
+COMMENT ON TABLE public.shared_products IS 'Broker shares merchant products with custom marketing (see sharedProductsService).';
 
 -- =============================================================================
 -- نهاية setup.sql

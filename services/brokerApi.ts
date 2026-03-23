@@ -2,7 +2,7 @@
  * Broker API – shared products (persist to Supabase).
  */
 
-import { getApiBase, getAuthHeaders } from '../api/client';
+import { getApiBase, getAuthHeaders, sanitizeJsonResponse } from '../api/client';
 
 async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${getApiBase()}${path}`, {
@@ -12,7 +12,7 @@ async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((data as any).error || (data as any).message || `HTTP ${res.status}`);
-  return data as T;
+  return sanitizeJsonResponse(data) as T;
 }
 
 export async function upsertSharedProduct(

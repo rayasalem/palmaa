@@ -20,6 +20,15 @@ import { prefetchComponent, prefetchProductData } from '../../prefetch';
 import { CATEGORY_EMOJI } from '../../types';
 import type { CartItem } from '../../types';
 import { getOffers, type ShopOffer } from '../../services/offersApi';
+import { secureImageSrc, setImageToPlaceholder } from '../../utils/secureUrl';
+import { MediatorMarketingSection } from '../../components/MediatorMarketingSection';
+import type { MediatorMarketingItem } from '../../types/mediatorMarketing';
+import mediatorMarketingMock from '../../data/mediatorMarketingMock.json';
+
+const SHOP_IMG_FALLBACK = 'https://placehold.co/400x400?text=No+Image';
+const SHOP_IMG_FALLBACK_SM = 'https://placehold.co/200x200?text=No+Image';
+const SHOP_IMG_ORDER = 'https://placehold.co/80x80?text=No+Image';
+const SHOP_IMG_OFFER = 'https://placehold.co/400x400?text=Offer';
 
 const MAIN_GROUP_IDS = [
   'food',
@@ -178,6 +187,16 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
           />
         </div>
 
+        {/* تسويق الوسيط — تبويب المتجر (تاجر/وسيط/أدمن) */}
+        <MediatorMarketingSection
+          lang={lang}
+          items={mediatorMarketingMock as MediatorMarketingItem[]}
+          onProductClick={(id) => onViewProduct?.(id)}
+          onViewMore={() => {
+            if (typeof window !== 'undefined') window.location.hash = '#/mediator';
+          }}
+        />
+
         {/* ——— التصنيفات + فلترة (حجم مضغوط) ——— */}
         <section className="space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
@@ -279,7 +298,7 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
               {popularProducts.map((p) => {
-                const img = p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/400x400?text=No+Image';
+                const img = secureImageSrc(p.images?.[0] || p.imageUrl || p.image_url, SHOP_IMG_FALLBACK);
                 const basePrice = p.price ?? p.price_ils ?? 0;
                 const finalPrice = (p as any).final_price != null ? (p as any).final_price : basePrice;
                 const hasDiscount = finalPrice < basePrice;
@@ -301,6 +320,7 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
                         alt={p.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                         loading="lazy"
+                        onError={setImageToPlaceholder}
                       />
                       <button
                         type="button"
@@ -435,9 +455,10 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
                       >
                         <div className="aspect-square -m-4 mb-2 rounded-t-2xl overflow-hidden bg-slate-100 relative">
                           <img
-                            src={p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/200x200?text=No+Image'}
+                            src={secureImageSrc(p.images?.[0] || p.imageUrl || p.image_url, SHOP_IMG_FALLBACK_SM)}
                             alt=""
                             className="w-full h-full object-cover"
+                            onError={setImageToPlaceholder}
                           />
                           <span className="absolute top-2 right-2 bg-red-600 text-white px-2 py-0.5 rounded text-xs font-black">
                             %{pct}
@@ -475,12 +496,14 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
             ) : (
               <ul className="space-y-3">
                 {lastOrderItems.slice(0, 5).map((item) => {
-                  const img =
-                    item.images?.[0] || item.imageUrl || item.image_url || 'https://placehold.co/80x80?text=No+Image';
+                  const img = secureImageSrc(
+                    item.images?.[0] || item.imageUrl || item.image_url,
+                    SHOP_IMG_ORDER
+                  );
                   return (
                     <li key={item.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50">
                       <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 shrink-0">
-                        <img src={img} alt="" className="w-full h-full object-cover" />
+                        <img src={img} alt="" className="w-full h-full object-cover" onError={setImageToPlaceholder} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-slate-800 truncate">{item.name}</p>
@@ -564,10 +587,11 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
               >
                 <div className="aspect-square overflow-hidden">
                   <img
-                    src={p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/400x400'}
+                    src={secureImageSrc(p.images?.[0] || p.imageUrl || p.image_url, SHOP_IMG_FALLBACK)}
                     alt={p.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     loading="lazy"
+                    onError={setImageToPlaceholder}
                   />
                 </div>
                 <div className="p-2">
@@ -674,15 +698,14 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
             <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="aspect-square rounded-2xl overflow-hidden bg-slate-50">
                 <img
-                  src={
-                    quickViewProduct.images?.[0] ||
-                    quickViewProduct.imageUrl ||
-                    quickViewProduct.image_url ||
-                    'https://placehold.co/400x400?text=No+Image'
-                  }
+                  src={secureImageSrc(
+                    quickViewProduct.images?.[0] || quickViewProduct.imageUrl || quickViewProduct.image_url,
+                    SHOP_IMG_FALLBACK
+                  )}
                   alt={quickViewProduct.name}
                   className="w-full h-full object-cover"
                   loading="lazy"
+                  onError={setImageToPlaceholder}
                 />
               </div>
               <div className="space-y-3">

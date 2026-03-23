@@ -8,6 +8,7 @@ import Logo from './Logo';
 import { getInternalCities, getInternalVillages } from '../services/flashlineService';
 import { useToast } from './ToastProvider';
 import { Mail, CheckCircle, RefreshCcw, FileText } from 'lucide-react';
+import { secureImageSrc, setImageToPlaceholder } from '../utils/secureUrl';
 
 interface RegisterMerchantProps {
   onRegister: (user: User) => void;
@@ -282,9 +283,10 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({ onRegister, onBackT
                 {formData.logo_url ? (
                   <div className="flex flex-col items-center">
                     <img
-                      src={formData.logo_url}
+                      src={secureImageSrc(formData.logo_url)}
                       className="w-24 h-24 rounded-2xl object-cover shadow-md mb-2"
                       alt="Logo preview"
+                      onError={setImageToPlaceholder}
                     />
                     <span className="text-[9px] font-black uppercase text-slate-400">{t.auth.clickToChange}</span>
                   </div>

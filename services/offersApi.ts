@@ -3,6 +3,7 @@
  */
 
 import { api } from '../api/client';
+import { normalizeOfferImage } from '../utils/secureUrl';
 
 export interface ShopOffer {
   id: string;
@@ -26,7 +27,8 @@ export interface ShopOffer {
 export async function getOffers(): Promise<{ success: boolean; offers: ShopOffer[] }> {
   try {
     const data = await api<{ success?: boolean; offers?: ShopOffer[] }>('/api/offers');
-    return { success: !!data.success, offers: data.offers || [] };
+    const offers = (data.offers || []).map((o) => normalizeOfferImage({ ...o }));
+    return { success: !!data.success, offers };
   } catch {
     return { success: false, offers: [] };
   }

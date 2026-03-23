@@ -46,6 +46,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({ lang, onVi
     if (type === 'order_paid') return lang === 'en' ? 'Order paid' : 'تم دفع الطلب';
     if (type === 'loyalty_level_up') return lang === 'en' ? 'Loyalty level' : 'مستوى الولاء';
     if (type === 'referral_reward') return lang === 'en' ? 'Referral reward' : 'مكافأة إحالة';
+    if (type === 'welcome') return lang === 'en' ? 'Welcome' : 'ترحيب';
     return type;
   };
 
@@ -57,6 +58,7 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({ lang, onVi
     if (type === 'order_paid') return <Package className="w-4 h-4" />;
     if (type === 'loyalty_level_up') return <Bell className="w-4 h-4" />;
     if (type === 'referral_reward') return <Bell className="w-4 h-4" />;
+    if (type === 'welcome') return <Bell className="w-4 h-4" />;
     return <Bell className="w-4 h-4" />;
   };
 
@@ -140,6 +142,9 @@ export const NotificationsView: React.FC<NotificationsViewProps> = ({ lang, onVi
                         (lang === 'en'
                           ? 'You received extra points for a successful referral.'
                           : 'حصلت على نقاط إضافية مقابل إحالة ناجحة.'))}
+                    {n.type === 'welcome' &&
+                      (n.message ||
+                        (lang === 'en' ? 'Welcome to Palma.' : 'مرحباً بك في بالما.'))}
                   </p>
                   <p className="text-[10px] text-slate-400 mt-1">
                     {new Date(n.created_at).toLocaleString(lang === 'en' ? 'en-US' : 'ar-EG')}

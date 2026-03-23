@@ -4,6 +4,7 @@
 
 import { supabase } from '../config/supabaseClient.js';
 import logger from '../utils/logger.js';
+import { sanitizeShopOfferMedia } from '../utils/ensureHttpsUrl.js';
 
 const TABLE = 'shop_offers';
 
@@ -24,7 +25,7 @@ export async function listActive() {
     logger.error('offersService listActive', { message: error.message });
     return { data: [], error };
   }
-  const list = (data || []).filter(isOfferWithinDates);
+  const list = (data || []).filter(isOfferWithinDates).map((o) => sanitizeShopOfferMedia(o));
   return { data: list, error: null };
 }
 
@@ -34,13 +35,13 @@ export async function listForAdmin() {
     logger.error('offersService listForAdmin', { message: error.message });
     return { data: [], error };
   }
-  return { data: data || [], error: null };
+  return { data: (data || []).map((o) => sanitizeShopOfferMedia(o)), error: null };
 }
 
 export async function getById(id) {
   const { data, error } = await supabase.from(TABLE).select('*').eq('id', id).single();
   if (error) return { data: null, error };
-  return { data, error: null };
+  return { data: data ? sanitizeShopOfferMedia(data) : null, error: null };
 }
 
 /** عرض منتج نشط لـ product_id معيّن (نطاق product) — للتوافق مع السلة */

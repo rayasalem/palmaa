@@ -15,6 +15,7 @@
  * | product/:id      | صفحة منتج           |
  * | profile/:id      | بروفايل عام         |
  * | broker/:id       | صفحة وسيط عام       |
+ * | mediator         | تسويق الوسيط — جميع التوصيات |
  * | dashboard        | لوحة التحكم         |
  * | subscription     | باقة الاشتراك (وسيط)|
  * | promote          | الترويج (وسيط)      |
@@ -51,6 +52,8 @@ export const ROUTES = {
   profile: (id: string) => `profile/${id}`,
   /** صفحة وسيط عام: broker/:id */
   broker: (id: string) => `broker/${id}`,
+  /** صفحة تسويق الوسيط — منتجات وعروض مروّجة */
+  MEDIATOR_SHOWCASE: 'mediator',
   // ——— مسارات للمستخدم المسجّل ———
   /** لوحة التحكم (تاجر/وسيط/أدمن) */
   DASHBOARD: 'dashboard',
@@ -92,6 +95,7 @@ export const ROUTES = {
 export const PUBLIC_TOP_ROUTES = new Set([
   '',
   ROUTES.CATALOG,
+  ROUTES.MEDIATOR_SHOWCASE,
   ROUTES.WELCOME,
   ROUTES.LOGIN,
   ROUTES.JOIN,

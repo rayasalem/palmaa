@@ -6,8 +6,9 @@
 
 import { db } from './core/storage';
 import type { Product, ActionResponse } from '../types';
-import { getApiBase, getAuthHeaders } from '../api/client';
+import { getApiBase, getAuthHeaders, sanitizeJsonResponse } from '../api/client';
 import { logger } from '../utils/logger';
+import { normalizeProductImageUrls } from '../utils/secureUrl';
 
 const PRODUCTS_FETCH_TTL_MS = 60_000;
 let lastGetAllAt = 0;
@@ -29,7 +30,7 @@ async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((data as any).error || (data as any).message || `HTTP ${res.status}`);
-  return data as T;
+  return sanitizeJsonResponse(data) as T;
 }
 
 /** يحسب السعر النهائي ونسبة الخصم من حقول الخصم إن لم يُرسَل من الباكند */
@@ -63,7 +64,7 @@ function computeDiscountDisplay(row: any, basePrice: number): { final_price: num
 function mapDbToProduct(row: any): Product {
   const basePrice = Number(row.price ?? row.price_ils) || 0;
   const { final_price, discount_percent } = computeDiscountDisplay(row, basePrice);
-  return {
+  return normalizeProductImageUrls({
     id: row.id,
     merchant_id: row.merchant_id,
     merchantId: row.merchant_id,
@@ -91,7 +92,7 @@ function mapDbToProduct(row: any): Product {
     discount_ends_at: row.discount_ends_at,
     final_price,
     discount_percent: discount_percent && discount_percent > 0 ? discount_percent : undefined,
-  };
+  }) as Product;
 }
 
 export const productService = {

@@ -4,6 +4,9 @@ import { SharedProduct, User, Role } from '../types';
 import Logo from '../components/Logo';
 import { Language, translations } from '../translations';
 import { Globe, ChevronDown } from 'lucide-react';
+import { secureImageSrc, setImageToPlaceholder } from '../utils/secureUrl';
+
+const BROKER_PAGE_IMG_FALLBACK = 'https://placehold.co/400x400?text=No+Image';
 
 const LANG_LABELS: Record<Language, string> = { ar: 'العربية', en: 'English', he: 'עברית' };
 
@@ -50,8 +53,10 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({
     );
   }
 
-  const profileImg =
-    broker.profile_image || `https://ui-avatars.com/api/?name=${broker.name}&background=1F5D42&color=fff&size=200`;
+  const profileImg = secureImageSrc(
+    broker.profile_image,
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(broker.name)}&background=1F5D42&color=fff&size=200`
+  );
   const totalSales = shared.reduce((acc, s) => acc + s.sales, 0);
 
   return (
@@ -106,7 +111,13 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({
             <div className="bg-white rounded-[3rem] p-8 border border-slate-100 shadow-xl text-center space-y-6 relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-palma-soft to-transparent"></div>
               <div className="w-32 h-32 rounded-[2rem] border-4 border-white shadow-lg overflow-hidden mx-auto relative z-10 bg-slate-100">
-                <img src={profileImg} loading="lazy" className="w-full h-full object-cover" alt={broker.name} />
+                <img
+                  src={profileImg}
+                  loading="lazy"
+                  className="w-full h-full object-cover"
+                  alt={broker.name}
+                  onError={setImageToPlaceholder}
+                />
               </div>
 
               <div className="relative z-10">
@@ -181,8 +192,10 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({
                   const p = marketStore.getProducts().find((prod) => prod.id === s.product_id);
                   if (!p) return null;
                   const mName = marketStore.getMerchantNameByUserId(p.merchant_id || '');
-                  const displayImage =
-                    p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/400x400?text=No+Image';
+                  const displayImage = secureImageSrc(
+                    p.images?.[0] || p.imageUrl || p.image_url,
+                    BROKER_PAGE_IMG_FALLBACK
+                  );
                   return (
                     <div
                       key={s.id}
@@ -201,6 +214,7 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({
                           loading="lazy"
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                           alt={p.name}
+                          onError={setImageToPlaceholder}
                         />
                         <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur py-3 px-4 rounded-2xl flex justify-between items-center shadow-lg">
                           <span className="text-[10px] font-black uppercase text-slate-400">Price</span>

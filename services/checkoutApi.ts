@@ -3,7 +3,7 @@
  * Base URL: VITE_API_URL or https://palmaa.onrender.com
  */
 
-import { getApiBase, getAuthHeaders } from '../api/client';
+import { getApiBase, getAuthHeaders, sanitizeJsonResponse } from '../api/client';
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = path.startsWith('http') ? path : `${getApiBase()}${path}`;
@@ -20,7 +20,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     (err as any).data = safeData;
     throw err;
   }
-  return safeData as T;
+  return sanitizeJsonResponse(safeData) as T;
 }
 
 export interface CreateOrderBody {

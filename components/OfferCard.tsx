@@ -5,6 +5,7 @@
 import React from 'react';
 import type { ShopOffer } from '../services/offersApi';
 import type { Language } from '../translations';
+import { secureImageSrc, setImageToPlaceholder } from '../utils/secureUrl';
 
 export interface OfferCardProps {
   offer: ShopOffer;
@@ -28,13 +29,11 @@ export const OfferCard = React.memo(function OfferCard({
       {o.image_url ? (
         <div className="aspect-square overflow-hidden bg-slate-100">
           <img
-            src={o.image_url}
+            src={secureImageSrc(o.image_url, 'https://placehold.co/400x400?text=Offer')}
             alt=""
             className="w-full h-full object-cover"
             loading="lazy"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = 'https://placehold.co/400x400?text=Offer';
-            }}
+            onError={setImageToPlaceholder}
           />
         </div>
       ) : null}

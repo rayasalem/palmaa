@@ -25,6 +25,7 @@ const MerchantView = lazy(() => import('./views/MerchantView').then((m) => ({ de
 const AdminView = lazy(() => import('./views/AdminView').then((m) => ({ default: m.AdminView })));
 const ProfileView = lazy(() => import('./views/ProfileView'));
 const PublicProductDetails = lazy(() => import('./views/PublicProductDetails'));
+const MediatorShowcasePage = lazy(() => import('./views/MediatorShowcasePage'));
 import { User, Product, CartItem } from './types';
 import { marketStore } from './store';
 import { authService } from './services/authService';
@@ -65,9 +66,15 @@ const AppContent: React.FC = () => {
   }, []);
   const { showToast } = useToast();
 
-  // Public State: 'LANDING' | 'CATALOG' | 'AUTH' | 'BROKER_PAGE' | 'PRODUCT_DETAILS' | 'PUBLIC_PROFILE'
+  // Public State: 'LANDING' | 'CATALOG' | 'AUTH' | 'BROKER_PAGE' | 'PRODUCT_DETAILS' | 'PUBLIC_PROFILE' | 'MEDIATOR_SHOWCASE'
   const [publicState, setPublicState] = useState<
-    'LANDING' | 'CATALOG' | 'AUTH' | 'BROKER_PAGE' | 'PRODUCT_DETAILS' | 'PUBLIC_PROFILE'
+    | 'LANDING'
+    | 'CATALOG'
+    | 'AUTH'
+    | 'BROKER_PAGE'
+    | 'PRODUCT_DETAILS'
+    | 'PUBLIC_PROFILE'
+    | 'MEDIATOR_SHOWCASE'
   >('LANDING');
   const [publicBrokerId, setPublicBrokerId] = useState<string | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -227,6 +234,12 @@ const AppContent: React.FC = () => {
     } else if (top === 'broker' && parts[1]) {
       setPublicBrokerId(parts[1]);
       setPublicState('BROKER_PAGE');
+    } else if (top === ROUTES.MEDIATOR_SHOWCASE) {
+      setPublicState('MEDIATOR_SHOWCASE');
+      setCurrentView('mediator_showcase');
+      setSelectedProductId(null);
+      setSelectedProfileId(null);
+      setPublicBrokerId(null);
     } else if (
       [
         ROUTES.ADMIN,
@@ -801,6 +814,26 @@ const AppContent: React.FC = () => {
       );
     }
 
+    if (publicState === 'MEDIATOR_SHOWCASE') {
+      return withLocalhostBar(
+        <>
+          <Suspense fallback={<PageLoader />}>
+            <MediatorShowcasePage
+              lang={lang}
+              setLang={setLang}
+              onBack={() => {
+                setPublicState('CATALOG');
+                updateHash(ROUTES.CATALOG);
+              }}
+              onProductClick={handleViewProduct}
+              onLoginClick={() => openAuth('LOGIN')}
+            />
+          </Suspense>
+          <SupportChat lang={lang} user={user} />
+        </>
+      );
+    }
+
     if (publicState === 'CATALOG') {
       return withLocalhostBar(
         <>
@@ -882,7 +915,34 @@ const AppContent: React.FC = () => {
         }}
         cartCount={cart.reduce((a, b) => a + b.quantity, 0)}
       >
-        {currentView === 'catalog' ? (
+        {currentView === 'mediator_showcase' ? (
+          <Suspense fallback={<PageLoader />}>
+            <MediatorShowcasePage
+              lang={lang}
+              setLang={setLang}
+              onBack={() => {
+                if (user.role === 'CUSTOMER') {
+                  setCurrentView('home');
+                  updateHash(ROUTES.HOME_APP);
+                } else {
+                  setCurrentView('shop');
+                  updateHash(ROUTES.SHOP);
+                }
+              }}
+              onProductClick={(id) => {
+                setSelectedProductId(id);
+                setCurrentView('product_details');
+                updateHash(ROUTES.product(id));
+              }}
+              onLoginClick={() => setCurrentView('profile')}
+              currentUser={user}
+              onProfileClick={() => {
+                setCurrentView('profile');
+                updateHash(ROUTES.PROFILE);
+              }}
+            />
+          </Suspense>
+        ) : currentView === 'catalog' ? (
           <Suspense fallback={<PageLoader />}>
             <PublicCatalog
               embeddedInLayout

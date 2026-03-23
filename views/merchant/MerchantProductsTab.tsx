@@ -9,6 +9,10 @@ import type { MerchantDashboardResponse } from '../../services/merchantDashboard
 import type { Language } from '../../translations';
 import { Package, Plus, Edit, Trash2, Image as ImageIcon, Box, ExternalLink, Eye, EyeOff, X } from 'lucide-react';
 import { ProductConditionBadge } from '../../components/ProductConditionBadge';
+import { secureImageSrc, setImageToPlaceholder } from '../../utils/secureUrl';
+
+const MERCH_PREVIEW_FALLBACK = 'https://placehold.co/200x200?text=صورة+المنتج';
+const MERCH_LIST_FALLBACK = 'https://placehold.co/200x200?text=No+Image';
 
 export interface MerchantProductsTabProps {
   lang: Language;
@@ -289,7 +293,7 @@ export const MerchantProductsTab: React.FC<MerchantProductsTabProps> = ({
                         }`}
                       >
                         <div className="relative aspect-square bg-slate-100">
-                          <img src={img} alt="" className="w-full h-full object-cover" />
+                          <img src={img} alt="" className="w-full h-full object-cover" onError={setImageToPlaceholder} />
                           {hasRealDiscount && (
                             <span className="absolute top-2 right-2 bg-red-600 text-white px-2.5 py-1 rounded-md text-xs font-black shadow-lg">
                               %{percentLabel} {lang === 'ar' ? 'خصم' : 'off'}
@@ -397,7 +401,13 @@ export const MerchantProductsTab: React.FC<MerchantProductsTabProps> = ({
                     key={idx}
                     className="w-16 h-16 rounded-lg overflow-hidden border border-slate-200 relative group shrink-0"
                   >
-                    <img src={url} loading="lazy" className="w-full h-full object-cover" alt="" />
+                    <img
+                      src={secureImageSrc(url)}
+                      loading="lazy"
+                      className="w-full h-full object-cover"
+                      alt=""
+                      onError={setImageToPlaceholder}
+                    />
                     <button
                       type="button"
                       onClick={(ev) => {
@@ -468,15 +478,14 @@ export const MerchantProductsTab: React.FC<MerchantProductsTabProps> = ({
                   onClick={() => onViewProduct && onViewProduct(product.id)}
                 >
                   <img
-                    src={
-                      product.images?.[0] ||
-                      product.imageUrl ||
-                      product.image_url ||
-                      'https://placehold.co/200x200?text=No+Image'
-                    }
+                    src={secureImageSrc(
+                      product.images?.[0] || product.imageUrl || product.image_url,
+                      MERCH_LIST_FALLBACK
+                    )}
                     loading="lazy"
                     className="h-full w-full object-cover"
                     alt=""
+                    onError={setImageToPlaceholder}
                   />
                   {!product.isActive && (
                     <div className="absolute inset-0 bg-black/10 flex items-center justify-center">

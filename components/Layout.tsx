@@ -3,6 +3,7 @@ import { User, Role } from '../types';
 import Logo from './Logo';
 import { Language, translations } from '../translations';
 import { prefetchForTab } from '../prefetch';
+import { secureImageSrc, setImageToPlaceholder } from '../utils/secureUrl';
 import {
   ShoppingCart,
   Menu,
@@ -49,6 +50,7 @@ function getCurrentStepLabel(activeTab: string, t: ReturnType<typeof translation
     orders_customer: t.nav.orders,
     cart: t.nav.cart,
     catalog: lang === 'ar' ? 'كل المنتجات' : lang === 'he' ? 'כל המוצרים' : 'All Products',
+    mediator_showcase: lang === 'ar' ? 'تسويق الوسيط' : lang === 'he' ? 'שיווק מתווך' : 'Mediator marketing',
   };
   return stepLabels[activeTab] || activeTab;
 }
@@ -145,8 +147,10 @@ const Layout: React.FC<LayoutProps> = ({
               { id: 'cart', label: t.nav.cart, icon: 'ShoppingCart' },
             ];
 
-  const profileImg =
-    user.avatarUrl || `https://ui-avatars.com/api/?name=${user.name}&background=1F5D42&color=fff&size=80`;
+  const profileImg = secureImageSrc(
+    user.avatarUrl,
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=1F5D42&color=fff&size=80`
+  );
 
   const homeLabel = lang === 'ar' ? 'الرئيسية' : lang === 'he' ? 'בית' : 'Home';
   const currentStep = getCurrentStepLabel(activeTab, t, lang);
@@ -270,6 +274,7 @@ const Layout: React.FC<LayoutProps> = ({
                     src={profileImg}
                     className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl border border-palma-border object-cover shadow-soft"
                     alt="Profile"
+                    onError={setImageToPlaceholder}
                   />
                   <div className="hidden sm:flex flex-col text-right rtl:text-left pr-2 rtl:pl-2">
                     <span className="text-sm font-bold text-palma-navy leading-tight">{user.name}</span>

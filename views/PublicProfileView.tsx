@@ -14,6 +14,7 @@ import {
   getPublicProfile,
 } from '../services/interactionApi';
 import { getPublicSharedProducts } from '../services/brokerApi';
+import { secureImageSrc, setImageToPlaceholder } from '../utils/secureUrl';
 
 const LANG_LABELS: Record<Language, string> = { ar: 'العربية', en: 'English', he: 'עברית' };
 
@@ -251,7 +252,13 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({
           <div className="px-8 pb-8 relative">
             <div className="flex flex-col md:flex-row gap-6 items-start -mt-16">
               <div className="w-32 h-32 rounded-[2rem] border-4 border-white shadow-lg overflow-hidden bg-slate-100 shrink-0">
-                <img src={profileImg} loading="lazy" className="w-full h-full object-cover" alt={profileUser.name} />
+                <img
+                  src={profileImg}
+                  loading="lazy"
+                  className="w-full h-full object-cover"
+                  alt={profileUser.name}
+                  onError={setImageToPlaceholder}
+                />
               </div>
 
               <div className="flex-1 pt-2 md:pt-20">
@@ -333,10 +340,11 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({
                   >
                     <div className="aspect-square rounded-[1.5rem] bg-slate-50 overflow-hidden mb-4 relative">
                       <img
-                        src={p.images?.[0] || p.imageUrl || p.image_url}
+                        src={secureImageSrc(p.images?.[0] || p.imageUrl || p.image_url)}
                         loading="lazy"
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                         alt={p.name}
+                        onError={setImageToPlaceholder}
                       />
                       <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-2.5 py-1 rounded-lg text-[10px] font-black shadow-sm">
                         ₪{p.price || p.price_ils}
@@ -377,9 +385,10 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({
                     >
                       <div className="w-24 h-24 rounded-2xl bg-slate-50 overflow-hidden shrink-0">
                         <img
-                          src={p.images?.[0] || p.imageUrl || p.image_url}
+                          src={secureImageSrc(p.images?.[0] || p.imageUrl || p.image_url)}
                           loading="lazy"
                           className="w-full h-full object-cover"
+                          onError={setImageToPlaceholder}
                         />
                       </div>
                       <div className="flex-1">

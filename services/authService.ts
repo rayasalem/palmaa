@@ -5,7 +5,7 @@
 
 import { User } from '../types';
 import type { ActionResponse } from '../types';
-import { getApiBase, setAuthToken, getAuthHeaders, isSameOrigin } from '../api/client';
+import { getApiBase, setAuthToken, getAuthHeaders, isSameOrigin, sanitizeJsonResponse } from '../api/client';
 
 function mapApiUserToUser(apiUser: any): User {
   return {
@@ -16,6 +16,11 @@ function mapApiUserToUser(apiUser: any): User {
     status: apiUser.status || 'PENDING',
     emailVerified: apiUser.is_email_verified ?? apiUser.email_verified ?? false,
     createdAt: apiUser.created_at ? new Date(apiUser.created_at).getTime() : Date.now(),
+    phone: apiUser.phone,
+    bio: apiUser.bio,
+    avatarUrl: apiUser.avatar_url || apiUser.avatarUrl,
+    profile_image: apiUser.profile_image,
+    logoUrl: apiUser.logo_url || apiUser.logoUrl,
   } as User;
 }
 
@@ -71,7 +76,8 @@ export const authService = {
         credentials: 'include',
         headers: { ...getAuthHeaders() },
       });
-      const data = await res.json().catch(() => ({}));
+      const raw = await res.json().catch(() => ({}));
+      const data = sanitizeJsonResponse(raw);
       const dataObj = data && typeof data === 'object' ? (data as Record<string, unknown>) : {};
       if (!res.ok) {
         currentUser = null;

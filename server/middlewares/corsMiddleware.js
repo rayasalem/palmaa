@@ -7,9 +7,10 @@ const ALLOWED_ORIGINS = [
   // الإنتاج الرئيسي على الدومين الرسمي
   'https://www.palma.ps',
   'https://palma.ps',
+  // API subdomain (same-site tools, redirects, admin scripts)
+  'https://api.palma.ps',
   // Render (واجهة + API قد تكون نفس المنشأ)
   'https://palmaa.onrender.com',
-  'http://palmaa.onrender.com',
   // نسخة Vercel الاحتياطية / القديمة
   'https://palmaa.vercel.app',
   // التطوير المحلي (منافذ شائعة + أي localhost/127.0.0.1 يُقبل لاحقاً)

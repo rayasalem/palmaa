@@ -9,7 +9,16 @@ import { parsePagination } from '../utils/pagination.js';
 
 const TABLE = 'notifications';
 // Extended types: do NOT remove existing ones; only append new types used by gamification/orders.
-const VALID_TYPES = ['new_product', 'like', 'comment', 'follow', 'order_paid', 'loyalty_level_up', 'referral_reward'];
+const VALID_TYPES = [
+  'new_product',
+  'like',
+  'comment',
+  'follow',
+  'order_paid',
+  'loyalty_level_up',
+  'referral_reward',
+  'welcome',
+];
 
 async function create(userId, type, referenceId, message = null) {
   if (!VALID_TYPES.includes(type)) {

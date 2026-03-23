@@ -3,6 +3,7 @@ import { productService } from '../services/productService';
 import { Product } from '../types';
 import { marketStore } from '../store';
 import { prefetchComponent, prefetchProductData } from '../prefetch';
+import { secureImageSrc, setImageToPlaceholder } from '../utils/secureUrl';
 import Logo from './Logo';
 import { ProductConditionBadge } from './ProductConditionBadge';
 import { Language, translations } from '../translations';
@@ -452,8 +453,10 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                 aria-label={lang === 'ar' ? 'المنتجات المميزة' : 'Featured products'}
               >
                 {[...products, ...products].map((p, index) => {
-                  const mainImage =
-                    p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/400x400?text=No+Image';
+                  const mainImage = secureImageSrc(
+                    p.images?.[0] || p.imageUrl || p.image_url,
+                    'https://placehold.co/400x400?text=No+Image'
+                  );
                   const mName =
                     p.merchantName || marketStore.getMerchantNameByUserId(p.merchant_id || p.merchantId || '');
                   const shortDesc = p.shortDescription || (p.description || '').slice(0, 50) || mName;
@@ -474,6 +477,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                           loading="lazy"
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           alt={p.name}
+                          onError={setImageToPlaceholder}
                         />
                         <div className="absolute top-3 left-3 bg-palma-primary text-white px-3 py-1.5 rounded-lg text-sm font-black shadow-lg">
                           ₪{p.price ?? p.price_ils ?? 0}
@@ -1066,55 +1070,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
         </section>
       </main>
 
-      {/* الشركات الداعمة — قبل الفوتر */}
-      <section
-        id="supporting-companies"
-        className="bg-gradient-to-b from-slate-50 to-white border-t border-slate-200/80 py-14"
-        aria-label={lang === 'ar' ? 'الشركات الداعمة' : 'Supporting companies'}
-      >
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
-            <a
-              href="https://cnem.ps"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex flex-col items-center justify-center rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md hover:border-palma-primary/20 px-8 py-10 transition-all duration-300"
-              title="شركة سانيم للتدريب الإلكتروني"
-            >
-              <div className="min-h-[100px] flex items-center justify-center mb-4">
-                <img
-                  src="/partners/sanim-logo.png"
-                  alt={lang === 'ar' ? 'شركة سانيم للتدريب الإلكتروني' : 'Sanim Company for Electronic Training'}
-                  className="max-h-20 w-auto max-w-[180px] object-contain group-hover:scale-105 transition-transform"
-                  onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
-                />
-              </div>
-              <span className="text-center text-sm font-bold text-palma-muted leading-snug">
-                {lang === 'ar' ? 'إدارة الموقع — شركة سانيم للتدريب الإلكتروني' : 'Site management — Sanim Co. for E‑Training'}
-              </span>
-            </a>
-            <a
-              href="https://flashline.ps"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex flex-col items-center justify-center rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md hover:border-palma-primary/20 px-8 py-10 transition-all duration-300"
-              title="فلاش لاين اكسبريس"
-            >
-              <div className="min-h-[100px] flex items-center justify-center mb-4">
-                <img
-                  src="/partners/flashline-logo.png"
-                  alt={lang === 'ar' ? 'فلاش لاين اكسبريس — إدارة الشحن' : 'Flash Line Express — Logistics'}
-                  className="max-h-20 w-auto max-w-[200px] object-contain group-hover:scale-105 transition-transform"
-                  onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
-                />
-              </div>
-              <span className="text-center text-sm font-bold text-palma-muted leading-snug">
-                {lang === 'ar' ? 'إدارة الشحن — فلاش لاين اكسبريس' : 'Logistics — Flash Line Express'}
-              </span>
-            </a>
-          </div>
-        </div>
-      </section>
+      {/* تم دمج سنيم وفلاش لاين داخل قسم الفوتر (وسائل الاتصال) بدل مربعات منفصلة */}
 
       {/* Footer — تنسيق موحّد: أعمدة بمحاذاة واحدة وسطر سفلي واحد */}
       <footer id="contact" className="footer-pattern border-t border-slate-200/80 pt-14 pb-8">
@@ -1170,6 +1126,32 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                 )}
               </a>
               <p>{lang === 'ar' ? 'فلسطين 🇵🇸' : lang === 'he' ? 'פלסטין 🇵🇸' : 'Palestine 🇵🇸'}</p>
+              {/* سنيم + فلاش لاين كسطر أسفل وسائل الاتصال (بدون مربعات مستقلة) */}
+              <div
+                className={`pt-2 text-xs font-black text-palma-muted ${lang === 'en' ? 'flex justify-start items-center gap-2' : 'flex justify-end items-center gap-2'}`}
+              >
+                <a
+                  href="https://cnem.ps"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-palma-primary cursor-pointer transition-colors"
+                >
+                  {lang === 'ar'
+                    ? 'شركة سنيم للتدريب الالكتروني'
+                    : lang === 'he'
+                      ? 'חברת סנימ להכשרה אלקטרונית'
+                      : 'Senim Company for E-Training'}
+                </a>
+                <span className="text-palma-muted/60">•</span>
+                <a
+                  href="https://flashline.ps"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-palma-primary cursor-pointer transition-colors"
+                >
+                  {lang === 'ar' ? 'فلاش لاين' : lang === 'he' ? 'פלאש ליין' : 'Flash Line'}
+                </a>
+              </div>
             </div>
             <p className="text-xs font-bold text-palma-muted mt-1">{lang === 'ar' ? 'تابعنا على:' : 'Follow us:'}</p>
             <div className={`flex gap-2.5 ${lang === 'en' ? 'flex-row' : 'flex-row-reverse'}`}>

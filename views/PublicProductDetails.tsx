@@ -28,6 +28,10 @@ import {
   getProductComments,
   addProductComment,
 } from '../services/interactionApi';
+import { secureUrl, secureImageSrc, setImageToPlaceholder } from '../utils/secureUrl';
+
+const PLACEHOLDER_PRODUCT_IMG = 'https://placehold.co/600x600?text=No+Image';
+const PLACEHOLDER_RELATED = 'https://placehold.co/300x300?text=No+Image';
 
 interface PublicProductDetailsProps {
   lang: Language;
@@ -145,8 +149,10 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
       product.images && product.images.length > 0
         ? product.images
         : [product.imageUrl || product.image_url].filter(Boolean);
-    imgs = Array.from(new Set(imgs)).filter((url) => typeof url === 'string' && url.length > 0);
-    return imgs.length > 0 ? imgs : ['https://placehold.co/600x600?text=No+Image'];
+    imgs = Array.from(new Set(imgs))
+      .filter((url) => typeof url === 'string' && url.length > 0)
+      .map((url) => secureUrl(url) ?? url);
+    return imgs.length > 0 ? imgs : [PLACEHOLDER_PRODUCT_IMG];
   }, [product]);
 
   const relatedProducts = useMemo(() => {
@@ -356,6 +362,7 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
                 src={images[activeImgIndex]}
                 className={`w-full h-full object-cover transition-all duration-500 ${isImageLoading ? 'opacity-80' : ''} group-hover:scale-105`}
                 alt={product.name || product.title || 'Product'}
+                onError={setImageToPlaceholder}
               />
               {hasDiscount && (
                 <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-black">
@@ -397,7 +404,12 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
                     onClick={() => handleImageChange(i)}
                     className={`w-16 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${activeImgIndex === i ? 'border-palma-primary ring-2 ring-palma-primary/30' : 'border-slate-200 hover:border-slate-300'}`}
                   >
-                    <img src={img} className="w-full h-full object-cover" alt="" />
+                    <img
+                      src={img}
+                      className="w-full h-full object-cover"
+                      alt=""
+                      onError={setImageToPlaceholder}
+                    />
                   </button>
                 ))}
               </div>
@@ -500,7 +512,15 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
               className="w-full bg-slate-50 rounded-xl p-4 flex items-center gap-3 border border-slate-100 hover:border-palma-primary/20 text-left rtl:text-right"
             >
               <div className="w-12 h-12 rounded-xl bg-white overflow-hidden border border-slate-100 shrink-0">
-                <img src={merchantProfile?.logo_url || `https://ui-avatars.com/api/?name=${merchantName}`} className="w-full h-full object-cover" alt="" />
+                <img
+                  src={secureImageSrc(
+                    merchantProfile?.logo_url,
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(merchantName || 'M')}`
+                  )}
+                  className="w-full h-full object-cover"
+                  alt=""
+                  onError={setImageToPlaceholder}
+                />
               </div>
               <div className="min-w-0">
                 <p className="text-[10px] font-bold text-slate-400 uppercase">{t.common.merchantName}</p>
@@ -599,7 +619,10 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {relatedProducts.map((p) => {
-                const img = p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/300x300?text=No+Image';
+                const img = secureImageSrc(
+                  p.images?.[0] || p.imageUrl || p.image_url,
+                  PLACEHOLDER_RELATED
+                );
                 const bp = Number(p.price ?? p.price_ils ?? 0);
                 const fp = (p as any).final_price != null ? Number((p as any).final_price) : bp;
                 const disc = fp < bp;
@@ -611,7 +634,12 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
                     className="bg-white rounded-2xl border border-slate-100 overflow-hidden text-left rtl:text-right hover:shadow-lg hover:border-palma-primary/20 transition-all group"
                   >
                     <div className="aspect-square relative">
-                      <img src={img} className="w-full h-full object-cover group-hover:scale-105 transition-transform" alt="" />
+                      <img
+                        src={img}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        alt=""
+                        onError={setImageToPlaceholder}
+                      />
                       {disc && <span className="absolute top-2 left-2 bg-palma-primary text-white px-2 py-0.5 rounded text-[10px] font-black">%{Math.round((1 - fp/bp) * 100)}-</span>}
                     </div>
                     <div className="p-3">

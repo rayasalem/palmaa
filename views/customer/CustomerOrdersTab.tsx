@@ -10,6 +10,9 @@ import { mapFlashlineStatus } from '../../services/flashlineService';
 import type { Language } from '../../translations';
 import { Package, Truck, RefreshCw, Check, ChevronLeft, Download } from 'lucide-react';
 import { ProductConditionBadge } from '../../components/ProductConditionBadge';
+import { secureImageSrc, setImageToPlaceholder } from '../../utils/secureUrl';
+
+const ORDER_ITEM_IMG_FALLBACK = 'https://placehold.co/100x100?text=No+Image';
 
 const TRACK_STEPS = [
   { key: 'placed', ar: 'تم الطلب', en: 'Order Placed' },
@@ -275,12 +278,14 @@ export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
                           <div key={item.id || `oi-${idx}`} className="flex items-center gap-4">
                             <div className="w-14 h-14 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden shrink-0">
                               <img
-                                src={
-                                  prod?.images?.[0] || prod?.imageUrl || 'https://placehold.co/100x100?text=No+Image'
-                                }
+                                src={secureImageSrc(
+                                  prod?.images?.[0] || prod?.imageUrl || prod?.image_url,
+                                  ORDER_ITEM_IMG_FALLBACK
+                                )}
                                 loading="lazy"
                                 className="w-full h-full object-cover"
                                 alt=""
+                                onError={setImageToPlaceholder}
                               />
                             </div>
                             <div className="min-w-0">

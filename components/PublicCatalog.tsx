@@ -10,6 +10,12 @@ import { ArrowRight, ShoppingCart, Search, Filter, ChevronDown, ChevronUp } from
 import { getOffers, type ShopOffer } from '../services/offersApi';
 import { ProductCard } from './ProductCard';
 import { OfferCard } from './OfferCard';
+import { secureImageSrc, setImageToPlaceholder } from '../utils/secureUrl';
+import { MediatorMarketingSection } from './MediatorMarketingSection';
+import type { MediatorMarketingItem } from '../types/mediatorMarketing';
+import mediatorMarketingMock from '../data/mediatorMarketingMock.json';
+
+const RECENT_IMG_FALLBACK = 'https://placehold.co/300x200?text=No+Image';
 
 const CONDITION_OPTIONS = [
   'new',
@@ -315,6 +321,16 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
             </div>
           </div>
         </section>
+
+        {/* قسم تسويق الوسيط — يظهر في صفحة المنتجات/الكتالوج فقط */}
+        <MediatorMarketingSection
+          lang={lang}
+          items={mediatorMarketingMock as MediatorMarketingItem[]}
+          onProductClick={onProductClick}
+          onViewMore={() => {
+            if (typeof window !== 'undefined') window.location.hash = '#/mediator';
+          }}
+        />
 
         <div className="flex flex-col lg:flex-row gap-10">
         {/* Sidebar — Filter Options (قابل للطي/الإظهار) */}
@@ -845,15 +861,14 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                         >
                           <div className="aspect-[4/3] overflow-hidden bg-slate-50 relative">
                             <img
-                              src={
-                                p.images?.[0] ||
-                                p.imageUrl ||
-                                p.image_url ||
-                                'https://placehold.co/300x200?text=No+Image'
-                              }
+                              src={secureImageSrc(
+                                p.images?.[0] || p.imageUrl || p.image_url,
+                                RECENT_IMG_FALLBACK
+                              )}
                               loading="lazy"
                               className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                               alt={p.name}
+                              onError={setImageToPlaceholder}
                             />
                             {hasDiscount && (
                               <span className="absolute top-2 left-2 bg-red-600 text-white px-2 py-0.5 rounded-sm text-[10px] font-black">

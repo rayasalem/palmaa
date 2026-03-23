@@ -5,6 +5,7 @@
  */
 
 import { supabase } from '../config/supabaseClient.js';
+import { sanitizeProductMedia } from '../utils/ensureHttpsUrl.js';
 import { applyDiscount } from './productService.js';
 import { getApplicableOffersForProduct } from './offersService.js';
 import { getApplicableMerchantOffersForProduct } from './merchantOffersService.js';
@@ -49,7 +50,7 @@ async function getCartWithItems(userId) {
       .select('id, name, image_url, price_ils, condition')
       .in('id', productIds);
     productMap = (products || []).reduce((acc, p) => {
-      acc[p.id] = p;
+      acc[p.id] = sanitizeProductMedia(p);
       return acc;
     }, {});
   }

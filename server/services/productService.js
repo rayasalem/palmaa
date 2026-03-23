@@ -6,6 +6,7 @@
 
 import { supabase } from '../config/supabaseClient.js';
 import logger from '../utils/logger.js';
+import { sanitizeProductMedia } from '../utils/ensureHttpsUrl.js';
 import { parsePagination } from '../utils/pagination.js';
 import * as offersService from './offersService.js';
 import { listActiveByMerchantIds } from './merchantOffersService.js';
@@ -28,7 +29,7 @@ function applyDiscount(product) {
 
   const price = Number(product.price) || 0;
   if (!active || price <= 0) {
-    return { ...product, final_price: price, discount_amount: 0, discount_percent: 0 };
+    return sanitizeProductMedia({ ...product, final_price: price, discount_amount: 0, discount_percent: 0 });
   }
 
   const value = Number(product.discount_value) || 0;
@@ -43,12 +44,12 @@ function applyDiscount(product) {
   const final = Math.max(0, price - discountAmount);
   const discountPercent = price > 0 ? Math.round((discountAmount / price) * 100) : 0;
 
-  return {
+  return sanitizeProductMedia({
     ...product,
     final_price: final,
     discount_amount: discountAmount,
     discount_percent: discountPercent,
-  };
+  });
 }
 
 /**

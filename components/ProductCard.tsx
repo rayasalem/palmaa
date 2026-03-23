@@ -7,6 +7,9 @@ import { Product } from '../types';
 import { ProductConditionBadge } from './ProductConditionBadge';
 import { marketStore } from '../store';
 import type { Language } from '../translations';
+import { secureImageSrc, setImageToPlaceholder } from '../utils/secureUrl';
+
+const IMG_FALLBACK = 'https://placehold.co/400x400?text=No+Image';
 
 export interface ProductCardProps {
   product: Product;
@@ -59,7 +62,7 @@ export const ProductCard = React.memo(function ProductCard({
 }: ProductCardProps) {
   const mName = marketStore.getMerchantNameByUserId(p.merchant_id || p.merchantId || '');
   const { average, count } = marketStore.getProductRating(p.id);
-  const displayImage = p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/400x400?text=No+Image';
+  const displayImage = secureImageSrc(p.images?.[0] || p.imageUrl || p.image_url, IMG_FALLBACK);
   const shortDesc = p.shortDescription || (p.description || '').slice(0, 60) || mName;
   const stock = p.stock ?? 0;
   const { base: basePrice, final: finalPrice, hasDiscount, discountPercent } = getDisplayPrice(p);
@@ -78,9 +81,7 @@ export const ProductCard = React.memo(function ProductCard({
           <img
             src={displayImage}
             loading="lazy"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = 'https://placehold.co/400x400?text=No+Image';
-            }}
+            onError={setImageToPlaceholder}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             alt={p.name}
           />
@@ -117,9 +118,7 @@ export const ProductCard = React.memo(function ProductCard({
         <img
           src={displayImage}
           loading="lazy"
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).src = 'https://placehold.co/400x400?text=No+Image';
-          }}
+          onError={setImageToPlaceholder}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           alt={p.name}
         />

@@ -12,11 +12,38 @@
 // Configuration
 // -----------------------------------------------------------------------------
 
+import { sanitizeApiResponseDeep, secureUrl } from '../utils/secureUrl';
+
 /** Production backend URL (Render). Never use an email or non-URL here. */
 const PRODUCTION_API = 'https://palmaa.onrender.com';
 
+/**
+ * Apply HTTPS normalization to all successful JSON API responses (nested URL fields).
+ * Use from raw fetch() helpers that bypass api().
+ */
+export function sanitizeJsonResponse<T = unknown>(data: unknown): T {
+  return sanitizeApiResponseDeep(data) as T;
+}
+
 function isHttpUrl(s: string): boolean {
   return typeof s === 'string' && (s.startsWith('http://') || s.startsWith('https://'));
+}
+
+/**
+ * When the SPA runs on HTTPS, avoid mixed-content by upgrading http:// API bases to https://.
+ * Keeps http://localhost / 127.0.0.1 for local dev on http or https.
+ */
+function upgradeHttpToHttpsIfSecurePage(base: string): string {
+  if (typeof window === 'undefined') return base;
+  if (window.location.protocol !== 'https:') return base;
+  if (!base.startsWith('http://')) return base;
+  try {
+    const host = new URL(base).hostname;
+    if (host === 'localhost' || host === '127.0.0.1') return base;
+    return base.replace(/^http:\/\//i, 'https://');
+  } catch {
+    return base;
+  }
 }
 
 /**
@@ -24,12 +51,13 @@ function isHttpUrl(s: string): boolean {
  * - If VITE_API_URL is set to a valid http/https URL → نستخدمه (مثلاً Render أو باكند محلي).
  * - غير ذلك → PRODUCTION_API (Render). للتطوير المحلي مع الباكند على Render لا تضبط شيء.
  * - لاستخدام باكند محلي: VITE_API_URL=http://localhost:5000
+ * - الإنتاج على HTTPS: يُفضّل VITE_API_URL=https://... لتجنب mixed content.
  */
 function getApiBase(): string {
   const env = (import.meta as { env?: { VITE_API_URL?: string } }).env;
   const override = (env?.VITE_API_URL ?? '').trim();
-  if (isHttpUrl(override)) return override;
-  return PRODUCTION_API;
+  if (isHttpUrl(override)) return upgradeHttpToHttpsIfSecurePage(override);
+  return upgradeHttpToHttpsIfSecurePage(PRODUCTION_API);
 }
 
 /** @deprecated Use getApiBase() so URL is resolved at request time (avoids EBADNAME). */
@@ -39,8 +67,17 @@ const hasWindow = typeof window !== 'undefined';
 if (hasWindow) {
   // Runtime visibility to quickly validate the deployed frontend points to the backend API host.
   console.log('API BASE:', API_BASE);
-  if (API_BASE.includes('palma.ps')) {
-    console.error('❌ WRONG API BASE URL');
+  try {
+    const u = new URL(API_BASE);
+    const h = u.hostname.toLowerCase();
+    // Storefront lives on palma.ps — API must be Render or api.palma.ps, not the homepage origin.
+    if (h === 'palma.ps' || h === 'www.palma.ps') {
+      console.error(
+        '❌ WRONG API BASE: use https://<service>.onrender.com or https://api.palma.ps — not https://palma.ps'
+      );
+    }
+  } catch {
+    /* ignore invalid URL */
   }
 }
 
@@ -111,7 +148,7 @@ export function getAuthHeaders(): Record<string, string> {
  * Builds full URL from path. Resolves API base on each call to avoid EBADNAME.
  */
 function buildUrl(path: string): string {
-  if (path.startsWith('http')) return path;
+  if (path.startsWith('http')) return secureUrl(path) ?? path;
   return `${getApiBase()}${path}`;
 }
 
@@ -187,7 +224,7 @@ export async function api<T = unknown>(path: string, options: RequestInit = {}):
     throw new Error(message);
   }
 
-  return data as T;
+  return sanitizeJsonResponse<T>(data);
 }
 
 export { API_BASE, getApiBase };

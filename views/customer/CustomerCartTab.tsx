@@ -7,6 +7,9 @@ import React, { useState } from 'react';
 import { CartItem } from '../../types';
 import type { Language } from '../../translations';
 import { ArrowRight, Minus, Plus, Trash2, Truck, CreditCard, Headphones } from 'lucide-react';
+import { secureImageSrc, setImageToPlaceholder } from '../../utils/secureUrl';
+
+const CART_IMG_FALLBACK = 'https://placehold.co/200x200?text=No+Image';
 
 export interface CustomerCartTabProps {
   lang: Language;
@@ -153,9 +156,13 @@ export const CustomerCartTab: React.FC<CustomerCartTabProps> = ({
                   </button>
                   <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-slate-100 shrink-0">
                     <img
-                      src={item.images?.[0] || item.imageUrl || item.image_url || 'https://placehold.co/200x200?text=No+Image'}
+                      src={secureImageSrc(
+                        item.images?.[0] || item.imageUrl || item.image_url,
+                        CART_IMG_FALLBACK
+                      )}
                       alt=""
                       className="w-full h-full object-cover"
+                      onError={setImageToPlaceholder}
                     />
                   </div>
                   <div className="min-w-0">

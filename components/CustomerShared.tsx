@@ -9,6 +9,10 @@ import { marketStore } from '../store';
 import type { Language } from '../translations';
 import { ArrowRight, Building, Minus, Plus, Search, ShoppingBag, Trash2 } from 'lucide-react';
 import { ProductConditionBadge } from './ProductConditionBadge';
+import { secureImageSrc, setImageToPlaceholder } from '../utils/secureUrl';
+
+const IMG_FALLBACK = 'https://placehold.co/400x400?text=No+Image';
+const IMG_FALLBACK_SM = 'https://placehold.co/200x200?text=No+Image';
 
 export interface ShippingInputGroupProps {
   label: string;
@@ -334,6 +338,7 @@ export const ShopProductCard = React.memo(function ShopProductCard({
           src={displayImage}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           alt={p.name}
+          onError={setImageToPlaceholder}
         />
         {/* شارة الخصم بأسلوب sdclubs — مستطيل أحمر واضح */}
         {hasDiscount && (
@@ -452,10 +457,11 @@ export const CartItemRow = React.memo(function CartItemRow({
       ) : null}
       <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-slate-50 shrink-0 border border-slate-100">
         <img
-          src={item.images?.[0] || item.imageUrl || item.image_url || 'https://placehold.co/200x200?text=No+Image'}
+          src={secureImageSrc(item.images?.[0] || item.imageUrl || item.image_url, IMG_FALLBACK_SM)}
           loading="lazy"
           className="w-full h-full object-cover"
           alt=""
+          onError={setImageToPlaceholder}
         />
       </div>
       <div className="flex-1 min-w-0">

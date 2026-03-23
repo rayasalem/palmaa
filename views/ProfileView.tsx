@@ -7,6 +7,7 @@ import { getInternalCities, getInternalVillages } from '../services/flashlineSer
 import { useToast } from '../components/ToastProvider';
 import { userService } from '../services/userService';
 import { User as UserIcon, Package, MapPin, CreditCard, KeyRound, ChevronLeft } from 'lucide-react';
+import { secureImageSrc, setImageToPlaceholder } from '../utils/secureUrl';
 
 interface ProfileViewProps {
   lang: Language;
@@ -251,8 +252,10 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
     return groups;
   }, [filteredProducts]);
 
-  const userImg =
-    formData.profile_image || `https://ui-avatars.com/api/?name=${user.name}&background=1F5D42&color=fff&size=200`;
+  const userImg = secureImageSrc(
+    formData.profile_image,
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=1F5D42&color=fff&size=200`
+  );
 
   return (
     <div className="max-w-7xl mx-auto space-y-12 animate-in fade-in duration-500 overflow-x-hidden">
@@ -357,7 +360,12 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
                     className={`aspect-square rounded-3xl border-2 border-dashed border-slate-100 bg-slate-50 flex flex-col items-center justify-center cursor-pointer transition-all ${isProductUploading ? 'opacity-50' : 'hover:border-palma-primary'}`}
                   >
                     {productForm.image_url ? (
-                      <img src={productForm.image_url} loading="lazy" className="w-full h-full object-cover" />
+                      <img
+                        src={secureImageSrc(productForm.image_url)}
+                        loading="lazy"
+                        className="w-full h-full object-cover"
+                        onError={setImageToPlaceholder}
+                      />
                     ) : (
                       <div className="text-center p-8">
                         <span className="text-4xl block mb-2">{isProductUploading ? '⌛' : '📸'}</span>
@@ -493,7 +501,13 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
             <div className="flex flex-col sm:flex-row gap-8">
               <div className="relative group shrink-0">
                 <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-slate-100 bg-slate-50 shadow-inner">
-                  <img src={userImg} loading="lazy" className="w-full h-full object-cover" alt={user.name} />
+                  <img
+                    src={userImg}
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                    alt={user.name}
+                    onError={setImageToPlaceholder}
+                  />
                 </div>
                 {isEditing && (
                   <button
@@ -743,10 +757,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
                       >
                         <div className="aspect-square rounded-[1.5rem] bg-slate-50 overflow-hidden mb-4 relative">
                           <img
-                            src={p.images?.[0] || p.imageUrl || p.image_url}
+                            src={secureImageSrc(p.images?.[0] || p.imageUrl || p.image_url)}
                             loading="lazy"
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                             alt={p.name}
+                            onError={setImageToPlaceholder}
                           />
                           <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-2.5 py-1 rounded-lg text-[10px] font-black shadow-sm">
                             ₪{p.price || p.price_ils}

@@ -3,7 +3,7 @@
  * All requests use credentials: 'include' for JWT cookie.
  */
 
-import { getApiBase, getAuthHeaders } from '../api/client';
+import { getApiBase, getAuthHeaders, sanitizeJsonResponse } from '../api/client';
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = path.startsWith('http') ? path : `${getApiBase()}${path}`;
@@ -19,7 +19,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     (err as any).data = data;
     throw err;
   }
-  return data as T;
+  return sanitizeJsonResponse(data) as T;
 }
 
 // --- Follow ---

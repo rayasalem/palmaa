@@ -11,6 +11,9 @@ import {
   toggleSharedFeatured,
 } from '../services/brokerApi';
 import { getOrderStatusLabel } from './customer/CustomerOrdersTab';
+import { secureImageSrc, setImageToPlaceholder } from '../utils/secureUrl';
+
+const BROKER_IMG_FALLBACK = 'https://placehold.co/400x400?text=No+Image';
 
 interface Props {
   lang: Language;
@@ -394,8 +397,10 @@ export const BrokerView: React.FC<Props> = ({
             {products.map((p) => {
               const mName = marketStore.getMerchantNameByUserId(p.merchant_id || p.merchantId || '');
               const existingShare = sharedMeta.find((s) => s.product_id === p.id);
-              const displayImage =
-                p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/400x400?text=No+Image';
+              const displayImage = secureImageSrc(
+                p.images?.[0] || p.imageUrl || p.image_url,
+                BROKER_IMG_FALLBACK
+              );
               return (
                 <div
                   key={p.id}
@@ -409,6 +414,7 @@ export const BrokerView: React.FC<Props> = ({
                       src={displayImage}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       alt={p.name}
+                      onError={setImageToPlaceholder}
                     />
                     <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full text-[9px] font-black uppercase shadow-lg text-palma-primary">
                       2% {lang === 'en' ? 'Commission' : 'عمولة'}
@@ -502,8 +508,10 @@ export const BrokerView: React.FC<Props> = ({
                   const p = products.find((prod) => prod.id === s.product_id);
                   if (!p) return null;
                   const mName = marketStore.getMerchantNameByUserId(p.merchant_id || p.merchantId || '');
-                  const displayImage =
-                    p.images?.[0] || p.imageUrl || p.image_url || 'https://placehold.co/400x400?text=No+Image';
+                  const displayImage = secureImageSrc(
+                    p.images?.[0] || p.imageUrl || p.image_url,
+                    BROKER_IMG_FALLBACK
+                  );
                   return (
                     <div
                       key={s.id}
@@ -523,6 +531,7 @@ export const BrokerView: React.FC<Props> = ({
                         <img
                           src={displayImage}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000"
+                          onError={setImageToPlaceholder}
                         />
                         {s.custom_discount_text && (
                           <div className="absolute bottom-6 left-6 right-6 bg-amber-400 text-amber-900 p-3 rounded-2xl text-[10px] font-black uppercase text-center shadow-xl">
