@@ -1171,9 +1171,9 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                     className="inline-flex items-center justify-center"
                   >
                     <img
-                      src="/partners/sanim-logo.png"
+                      src="/partners/sanim-logo.png?v=20260323-1"
                       alt={lang === 'ar' ? 'شعار شركة سنيم' : lang === 'he' ? 'לוגו סנימ' : 'Sanim logo'}
-                      className="h-9 w-auto object-contain"
+                      className="h-9 w-auto object-contain bg-white rounded-md p-1"
                       onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
                     />
                   </a>
