@@ -35,6 +35,25 @@ export interface MerchantDashboardResponse {
 
 export async function getMerchantDashboard(): Promise<MerchantDashboardResponse> {
   const data = await api<MerchantDashboardResponse>('/api/merchant/dashboard');
-  if (!data.success) throw new Error('Failed to load dashboard');
+  if (!data || !data.success) {
+    // Fail-safe: never break rendering on merchant dashboard.
+    return {
+      success: false,
+      subscription: {
+        subscription_type: '',
+        subscription_start_date: null,
+        subscription_end_date: null,
+        subscription_status: 'unknown',
+        is_active: false,
+      },
+      stats: {
+        total_sales: 0,
+        total_commission: 0,
+        total_tax_penalty: 0,
+        net_profit: 0,
+        transactions: [],
+      },
+    };
+  }
   return data;
 }

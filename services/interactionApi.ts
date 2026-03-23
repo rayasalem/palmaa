@@ -6,20 +6,28 @@
 import { getApiBase, getAuthHeaders, sanitizeJsonResponse } from '../api/client';
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const url = path.startsWith('http') ? path : `${getApiBase()}${path}`;
-  const res = await fetch(url, {
-    ...options,
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders(), ...(options.headers as object) },
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const err = new Error((data as any)?.error || (data as any)?.message || `HTTP ${res.status}`);
-    (err as any).status = res.status;
-    (err as any).data = data;
-    throw err;
+  try {
+    const url = path.startsWith('http') ? path : `${getApiBase()}${path}`;
+    const res = await fetch(url, {
+      ...options,
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders(), ...(options.headers as object) },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const safe = {
+        success: false,
+        error: (data as any)?.error || (data as any)?.message || `HTTP ${res.status}`,
+        statusCode: res.status,
+        data,
+      } as unknown;
+      return safe as T;
+    }
+    return sanitizeJsonResponse(data) as T;
+  } catch (e: any) {
+    const safe = { success: false, error: e?.message || 'Request failed', statusCode: 0 } as unknown;
+    return safe as T;
   }
-  return sanitizeJsonResponse(data) as T;
 }
 
 // --- Follow ---

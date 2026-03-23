@@ -39,6 +39,7 @@ import { SESSION_EXPIRED_EVENT, getApiBase } from './api/client';
 import { prefetchAfterLogin } from './prefetch';
 import { ROUTES } from './routes';
 import { openExternalUrl } from './utils/openExternalUrl';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // لم نعد نستخدم fallback من localStorage لاسترجاع جلسة بعد إعادة التحميل؛
 // الاعتماد أصبح بالكامل على /api/auth/me حتى لا يعود المستخدم "مسجّل دخول" بعد تسجيل الخروج + refresh.
@@ -88,6 +89,7 @@ const AppContent: React.FC = () => {
   const [pendingAuthAfterTerms, setPendingAuthAfterTerms] = useState<'REGISTER_MERCHANT' | null>(null);
   const [addingToCartProductId, setAddingToCartProductId] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState<{ ok: boolean; database: boolean } | null>(null);
+  const [globalError, setGlobalError] = useState<string | null>(null);
   const [dismissDbBanner, setDismissDbBanner] = useState(false);
   const isApplyingHashRef = useRef(false);
 
@@ -326,6 +328,41 @@ const AppContent: React.FC = () => {
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, [applyHashToState]);
+
+  // Runtime protection: never render a blank screen on uncaught errors.
+  // We only show a fallback UI for real JS exceptions (filter common noise like 404 resources).
+  useEffect(() => {
+    const shouldIgnore = (message: string) => {
+      const m = String(message || '').toLowerCase();
+      return (
+        m.includes('failed to load resource') ||
+        m.includes('404') ||
+        m.includes('chrome-error://chromewebdata') ||
+        m.includes('unsafe attempt to load url') ||
+        m.includes('quic')
+      );
+    };
+
+    const onWindowError = (event: ErrorEvent) => {
+      const msg = event?.message || (event.error && (event.error as any).message) || 'Runtime error';
+      if (shouldIgnore(msg)) return;
+      setGlobalError((prev) => prev || msg);
+    };
+
+    const onUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const reason = (event as any)?.reason;
+      const msg = reason?.message || String(reason || 'Unhandled promise rejection');
+      if (shouldIgnore(msg)) return;
+      setGlobalError((prev) => prev || msg);
+    };
+
+    window.addEventListener('error', onWindowError);
+    window.addEventListener('unhandledrejection', onUnhandledRejection);
+    return () => {
+      window.removeEventListener('error', onWindowError);
+      window.removeEventListener('unhandledrejection', onUnhandledRejection);
+    };
+  }, []);
 
   // Sync language with document for components that rely on DOM direction
   useEffect(() => {
@@ -729,6 +766,30 @@ const AppContent: React.FC = () => {
         />
         <SupportChat lang={lang} user={user} />
       </>
+    );
+  }
+
+  if (globalError) {
+    return withLocalhostBar(
+      <div
+        className="p-6 mt-6 bg-white rounded-2xl border border-slate-200 shadow-sm max-w-xl mx-auto text-center"
+        style={{ padding: 20 }}
+      >
+        <h1 className="font-heading text-lg font-black text-palma-navy mb-2">
+          {lang === 'ar' ? 'حصل خطأ غير متوقع' : 'An unexpected error occurred'}
+        </h1>
+        <p className="text-slate-600 text-sm">
+          {lang === 'ar' ? 'لن نفشل الصفحة. حاول تحديث الصفحة.' : 'We will keep the page working. Please refresh.'}
+        </p>
+        <p className="text-slate-400 text-xs mt-3 break-words">`{globalError}`</p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="mt-4 px-6 py-3 bg-palma-primary text-white font-bold rounded-xl hover:bg-palma-primaryHover transition-colors"
+        >
+          {lang === 'ar' ? 'تحديث الصفحة' : 'Refresh page'}
+        </button>
+      </div>
     );
   }
 
@@ -1433,9 +1494,11 @@ onNavigateToCatalog={() => {
 
 const App: React.FC = () => {
   return (
-    <ToastProvider>
-      <AppContent />
-    </ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
+    </ErrorBoundary>
   );
 };
 

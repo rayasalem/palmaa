@@ -6,21 +6,27 @@
 import { getApiBase, getAuthHeaders, sanitizeJsonResponse } from '../api/client';
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const url = path.startsWith('http') ? path : `${getApiBase()}${path}`;
-  const res = await fetch(url, {
-    ...options,
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders(), ...(options.headers as object) },
-  });
-  const data = await res.json().catch(() => ({}));
-  const safeData = data != null && typeof data === 'object' ? data : {};
-  if (!res.ok) {
-    const err = new Error((safeData as any)?.error || (safeData as any)?.message || `HTTP ${res.status}`);
-    (err as any).status = res.status;
-    (err as any).data = safeData;
-    throw err;
+  try {
+    const url = path.startsWith('http') ? path : `${getApiBase()}${path}`;
+    const res = await fetch(url, {
+      ...options,
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders(), ...(options.headers as object) },
+    });
+    const data = await res.json().catch(() => ({}));
+    const safeData = data != null && typeof data === 'object' ? data : {};
+    if (!res.ok) {
+      return {
+        success: false,
+        error: (safeData as any)?.error || (safeData as any)?.message || `HTTP ${res.status}`,
+        statusCode: res.status,
+        data: safeData,
+      } as unknown as T;
+    }
+    return sanitizeJsonResponse(safeData) as T;
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Request failed', statusCode: 0 } as unknown as T;
   }
-  return sanitizeJsonResponse(safeData) as T;
 }
 
 export interface CreateOrderBody {

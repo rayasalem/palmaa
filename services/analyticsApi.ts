@@ -26,7 +26,8 @@ export interface AnalyticsOverview {
 export async function getAdminAnalyticsOverview(): Promise<AnalyticsOverview> {
   const res = await api<{ success: boolean; data: AnalyticsOverview }>('/api/analytics/admin/overview');
   if (!res.success || !res.data) {
-    throw new Error('Failed to load admin analytics');
+    // Fail-safe: never break rendering on dashboard.
+    return { totalSales: 0, totalOrders: 0, salesByDay: [], topProducts: [] };
   }
   return res.data;
 }
@@ -34,7 +35,8 @@ export async function getAdminAnalyticsOverview(): Promise<AnalyticsOverview> {
 export async function getMerchantAnalyticsOverview(): Promise<AnalyticsOverview> {
   const res = await api<{ success: boolean; data: AnalyticsOverview }>('/api/analytics/merchant/overview');
   if (!res.success || !res.data) {
-    throw new Error('Failed to load merchant analytics');
+    // Fail-safe: never break rendering on dashboard.
+    return { totalSales: 0, totalOrders: 0, salesByDay: [], topProducts: [] };
   }
   return res.data;
 }

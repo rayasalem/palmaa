@@ -210,21 +210,30 @@ function getErrorMessage(data: unknown, status: number): string {
 export const SESSION_EXPIRED_EVENT = 'palma_session_expired';
 
 export async function api<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
-  const url = buildUrl(path);
-  const mergedOptions = mergeHeaders(options);
-  const res = await fetch(url, mergedOptions);
-  const data = await parseJson(res);
+  try {
+    const url = buildUrl(path);
+    const mergedOptions = mergeHeaders(options);
+    const res = await fetch(url, mergedOptions);
+    const data = await parseJson(res);
 
-  if (!res.ok) {
-    if (res.status === 401) {
-      setAuthToken(null);
-      if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT));
+    if (!res.ok) {
+      if (res.status === 401) {
+        setAuthToken(null);
+        if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT));
+      }
+      const message = getErrorMessage(data, res.status);
+      // Never throw from the core API client: return a safe fallback object.
+      // Most UI code checks `success` or presence of expected data.
+      const safe = { success: false, error: message, statusCode: res.status } as unknown;
+      return safe as T;
     }
-    const message = getErrorMessage(data, res.status);
-    throw new Error(message);
-  }
 
-  return sanitizeJsonResponse<T>(data);
+    return sanitizeJsonResponse<T>(data);
+  } catch (e: any) {
+    const message = e instanceof Error ? e.message : String(e);
+    const safe = { success: false, error: message || 'Request failed', statusCode: 0 } as unknown;
+    return safe as T;
+  }
 }
 
 export { API_BASE, getApiBase };

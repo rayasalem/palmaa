@@ -5,14 +5,25 @@
 import { getApiBase, getAuthHeaders, sanitizeJsonResponse } from '../api/client';
 
 async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${getApiBase()}${path}`, {
-    ...options,
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders(), ...(options.headers as object) },
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((data as any).error || (data as any).message || `HTTP ${res.status}`);
-  return sanitizeJsonResponse(data) as T;
+  try {
+    const res = await fetch(`${getApiBase()}${path}`, {
+      ...options,
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders(), ...(options.headers as object) },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return {
+        success: false,
+        error: (data as any)?.error || (data as any)?.message || `HTTP ${res.status}`,
+        statusCode: res.status,
+        data,
+      } as unknown as T;
+    }
+    return sanitizeJsonResponse(data) as T;
+  } catch (e: any) {
+    return { success: false, error: e?.message || 'Request failed', statusCode: 0 } as unknown as T;
+  }
 }
 
 export async function upsertSharedProduct(

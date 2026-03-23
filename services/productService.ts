@@ -29,7 +29,14 @@ async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
     headers: { 'Content-Type': 'application/json', ...getAuthHeaders(), ...(options.headers as object) },
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((data as any).error || (data as any).message || `HTTP ${res.status}`);
+  if (!res.ok) {
+    return {
+      success: false,
+      error: (data as any).error || (data as any).message || `HTTP ${res.status}`,
+      statusCode: res.status,
+      data,
+    } as unknown as T;
+  }
   return sanitizeJsonResponse(data) as T;
 }
 
@@ -87,6 +94,9 @@ function mapDbToProduct(row: any): Product {
     condition: row.condition,
     discount_type: row.discount_type,
     discount_value: row.discount_value != null ? Number(row.discount_value) : undefined,
+    // Shipment packaging details (merchant-managed via product add/edit)
+    weight: row.weight != null ? Number(row.weight) : undefined,
+    dimensions: row.dimensions != null ? String(row.dimensions) : undefined,
     is_discount_active: Boolean(row.is_discount_active),
     discount_starts_at: row.discount_starts_at,
     discount_ends_at: row.discount_ends_at,
