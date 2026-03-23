@@ -60,7 +60,27 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
     const final = (p as any).final_price != null ? (p as any).final_price : base;
     return s + final * p.quantity;
   }, 0);
-  const suggestedWeight = Math.max(0.5, cart.reduce((s, p) => s + p.quantity, 0) * 0.5);
+  // Weight/COD/Quantity are shipment packaging fields.
+  // They must be determined from product/merchant data and not editable by the customer.
+  const suggestedWeight = Math.max(
+    0.5,
+    cart.reduce((s, p) => s + (Number((p as any).weight) || 0.5) * (p.quantity || 1), 0)
+  );
+  const totalShipmentQuantity = Math.max(1, cart.reduce((s, p) => s + (p.quantity || 1), 0));
+
+  // Keep computed shipment fields in sync with cart/total amount.
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      weight: suggestedWeight,
+      cod: totalAmount,
+      quantity: totalShipmentQuantity,
+      // These are optional for the shipment service; we let server generate invoiceNumber.
+      invoiceNumber: '',
+      notes: '',
+      description: 'Order shipment',
+    }));
+  }, [suggestedWeight, totalAmount, totalShipmentQuantity]);
 
   useEffect(() => {
     (async () => {
@@ -127,15 +147,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm((prev) => {
-      if (name === 'weight') {
-        return { ...prev, weight: parseFloat(value) || 0.5 };
-      }
-      if (name === 'cod') {
-        return { ...prev, cod: Math.max(0, parseFloat(value) || 0) };
-      }
-      if (name === 'quantity') {
-        return { ...prev, quantity: Math.max(1, parseInt(value, 10) || 1) };
-      }
+      // Customer should not be able to modify shipment packaging fields.
+      if (name === 'weight' || name === 'cod' || name === 'quantity') return prev;
       if (name === 'cityId') {
         const city = districts.find((c) => String(c.id) === String(value));
         return {
@@ -306,6 +319,22 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
       const redirectForm = document.createElement('form');
       redirectForm.method = 'POST';
       redirectForm.action = actionUrl;
+      // Avoid hosted-checkout redirects being trapped inside iframes.
+      // This prevents "Unsafe attempt to load URL ... from frame ..." errors.
+      // In some browsers, if our app is embedded cross-origin inside an iframe,
+      // navigation to `_top` can be blocked. Fall back to `_blank` so the user
+      // still reaches the Hosted Checkout page.
+      let redirectTarget: '_top' | '_blank' = '_top';
+      if (typeof window !== 'undefined' && window.top && window.top !== window.self) {
+        try {
+          // Accessing cross-origin window.top.location throws; that indicates we
+          // likely can't navigate the top browsing context safely.
+          void window.top.location.href;
+        } catch {
+          redirectTarget = '_blank';
+        }
+      }
+      redirectForm.target = redirectTarget;
       Object.entries(fields).forEach(([name, value]) => {
         const input = document.createElement('input');
         input.type = 'hidden';
@@ -473,6 +502,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
               step="0.5"
               value={form.weight}
               onChange={handleChange}
+              disabled
               className="w-full py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
             <p className="text-xs text-slate-500 mt-1">
@@ -491,6 +521,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
                 step="1"
                 value={form.cod}
                 onChange={handleChange}
+                disabled
                 className="w-full py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
             </div>
@@ -505,6 +536,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
                 step="1"
                 value={form.quantity}
                 onChange={handleChange}
+                disabled
                 className="w-full py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
             </div>
@@ -518,6 +550,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
               name="invoiceNumber"
               value={form.invoiceNumber}
               onChange={handleChange}
+              disabled
               className="w-full py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
           </div>
@@ -530,6 +563,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
               name="notes"
               value={form.notes}
               onChange={handleChange}
+              disabled
               className="w-full py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
           </div>
