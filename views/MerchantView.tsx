@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy, useRef, useId } from 'react';
 import { User, Product, Order, PRODUCT_CATEGORIES, CATEGORY_EMOJI } from '../types';
 import { marketStore } from '../store';
 import { productService } from '../services/productService'; 
@@ -11,6 +11,7 @@ import { translations, getAuthErrorMessage, type Language } from '../translation
 import { Truck, Trash2, Search, LayoutDashboard, DollarSign, Box, XCircle, Receipt, Tag } from 'lucide-react';
 import { useToast } from '../components/ToastProvider';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 const MerchantDashboardTab = lazy(() =>
   import('./merchant/MerchantDashboardTab').then((m) => ({ default: m.MerchantDashboardTab }))
@@ -83,6 +84,28 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
   const [productToDeactivate, setProductToDeactivate] = useState<Product | null>(null);
   const [orderToCreateShipment, setOrderToCreateShipment] = useState<Order | null>(null);
   const [orderToCancelShipment, setOrderToCancelShipment] = useState<Order | null>(null);
+
+  // A11y: focus trap + aria labeling for inline upload/delete overlays
+  const invoiceDialogRef = useRef<HTMLDivElement>(null);
+  const invoiceTitleId = useId();
+  const invoiceDescId = useId();
+  useFocusTrap(invoiceDialogRef, !!orderToInvoice, {
+    onEscape: () => {
+      if (uploadingInvoice) return;
+      setOrderToInvoice(null);
+      setInvoiceUrlInput('');
+    },
+  });
+
+  const deleteDialogRef = useRef<HTMLDivElement>(null);
+  const deleteTitleId = useId();
+  const deleteDescId = useId();
+  useFocusTrap(deleteDialogRef, !!productToDelete, {
+    onEscape: () => {
+      if (deleting) return;
+      setProductToDelete(null);
+    },
+  });
 
   useEffect(() => {
     if (user.role === 'MERCHANT') {
@@ -762,6 +785,12 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
           onClick={() => !uploadingInvoice && (setOrderToInvoice(null), setInvoiceUrlInput(''))}
         >
           <div
+            ref={invoiceDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={invoiceTitleId}
+            aria-describedby={invoiceDescId}
+            tabIndex={-1}
             className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full p-6 sm:p-8 animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
             dir={lang === 'en' ? 'ltr' : 'rtl'}
@@ -771,10 +800,10 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                 <Receipt className="w-7 h-7 text-amber-600" />
                   </div>
               <div>
-                <h3 className="text-lg font-black text-palma-navy">
+                <h3 id={invoiceTitleId} className="text-lg font-black text-palma-navy">
                   {lang === 'ar' ? 'رفع الفاتورة الضريبية' : 'Upload tax invoice'}
                 </h3>
-                <p className="text-sm text-slate-500 mt-0.5">
+                <p id={invoiceDescId} className="text-sm text-slate-500 mt-0.5">
                     {lang === 'ar'
                     ? 'أدخل رابط الفاتورة (رابط عام لملف PDF أو صورة).'
                     : 'Enter the invoice link (public URL to PDF or image).'}
@@ -873,6 +902,12 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
           onClick={() => !deleting && setProductToDelete(null)}
         >
           <div
+            ref={deleteDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={deleteTitleId}
+            aria-describedby={deleteDescId}
+            tabIndex={-1}
             className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full p-6 sm:p-8 animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
             dir={lang === 'en' ? 'ltr' : 'rtl'}
@@ -882,10 +917,10 @@ export const MerchantView: React.FC<MerchantViewProps> = ({ user, view, onViewPr
                 <Trash2 className="w-7 h-7 text-red-500" />
               </div>
               <div>
-                <h3 className="text-lg font-black text-palma-navy">
+                <h3 id={deleteTitleId} className="text-lg font-black text-palma-navy">
                   {lang === 'ar' ? 'حذف المنتج' : lang === 'he' ? 'מחיקת מוצר' : 'Delete product'}
                 </h3>
-                <p className="text-sm text-slate-500 mt-0.5">
+                <p id={deleteDescId} className="text-sm text-slate-500 mt-0.5">
                   {lang === 'ar'
                     ? 'لا يمكن التراجع عن هذا الإجراء.'
                     : lang === 'he'

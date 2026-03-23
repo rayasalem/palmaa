@@ -31,13 +31,13 @@ const StatCard = ({
         <Icon className="w-5 h-5" />
       </div>
       {trend && (
-        <span className="bg-emerald-50 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-emerald-100">
+        <span className="bg-emerald-50 text-emerald-600 text-xs font-bold px-2 py-0.5 rounded-lg border border-emerald-100">
           ↗ {trend}
         </span>
       )}
     </div>
     <div className="z-10">
-      <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">{title}</h3>
+      <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{title}</h3>
       <p className="text-2xl font-black text-palma-navy tracking-tight">{value}</p>
     </div>
   </div>

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { marketStore } from '../store';
 import { productService } from '../services/productService';
-import { User, Role, Product, Comment } from '../types';
+import { User, Role, Product, Comment, SharedProduct } from '../types';
 import Logo from '../components/Logo';
 import { Language, translations } from '../translations';
 import {
@@ -28,6 +28,7 @@ import {
   getProductComments,
   addProductComment,
 } from '../services/interactionApi';
+import { getPublicSharedProducts } from '../services/brokerApi';
 import { secureUrl, secureImageSrc, setImageToPlaceholder } from '../utils/secureUrl';
 
 const PLACEHOLDER_PRODUCT_IMG = 'https://placehold.co/600x600?text=No+Image';
@@ -37,6 +38,8 @@ interface PublicProductDetailsProps {
   lang: Language;
   user: User | null;
   productId: string | null;
+  /** وسيط (broker) الحالي عند فتح المنتج من صفحة وسيط */
+  brokerId?: string | null;
   onBack: () => void;
   onLoginClick: () => void;
   onRefresh?: () => void;
@@ -52,6 +55,7 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
   lang,
   user,
   productId,
+  brokerId,
   onBack,
   onLoginClick,
   onRefresh,
@@ -167,6 +171,59 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
   const merchantName = product
     ? marketStore.getMerchantNameByUserId(product.merchant_id || product.merchantId || '')
     : '';
+
+  const [sharedProductForBroker, setSharedProductForBroker] = useState<SharedProduct | undefined>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadShared = async () => {
+      if (!brokerId || !product) {
+        setSharedProductForBroker(undefined);
+        return;
+      }
+
+      const pid = product.id || product.productId;
+      if (!pid) {
+        setSharedProductForBroker(undefined);
+        return;
+      }
+
+      // Try fetch public shared_products for this broker so the marketing block can render
+      try {
+        const res = await getPublicSharedProducts(brokerId);
+        if (!cancelled && res?.success && Array.isArray(res.shared)) {
+          for (const sp of res.shared) {
+            if (!sp || !sp.product_id) continue;
+            marketStore.upsertSharedProduct(brokerId, String(sp.product_id), {
+              marketing_title: sp.marketing_title ?? undefined,
+              marketing_description: sp.marketing_description ?? undefined,
+              custom_discount_text: sp.custom_discount_text ?? undefined,
+              is_featured: sp.is_featured ?? undefined,
+              clicks: typeof sp.clicks === 'number' ? sp.clicks : undefined,
+              sales: typeof sp.sales === 'number' ? sp.sales : undefined,
+            });
+          }
+
+          const shares = marketStore.getSharedProducts(brokerId);
+          const found = shares.find((s) => String(s.product_id) === String(pid));
+          if (!cancelled) setSharedProductForBroker(found);
+          return;
+        }
+      } catch {
+        // ignore and fallback to cache
+      }
+
+      const shares = marketStore.getSharedProducts(brokerId);
+      const found = shares.find((s) => String(s.product_id) === String(pid));
+      if (!cancelled) setSharedProductForBroker(found);
+    };
+
+    loadShared();
+    return () => {
+      cancelled = true;
+    };
+  }, [brokerId, product?.id, product?.productId]);
 
   /** التقييم والمعدل من التعليقات في DB (تقييم + تعليق = سجل واحد) */
   const rating = useMemo(() => {
@@ -316,14 +373,14 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
               >
                 <ArrowRight className="w-5 h-5 group-hover:-translate-x-1 transition-transform rtl:group-hover:translate-x-1 rtl:rotate-180" />
               </button>
-              <div onClick={onBack} className="cursor-pointer">
+              <button type="button" onClick={onBack} className="cursor-pointer p-0 hover:opacity-90">
                 <Logo size="small" />
-              </div>
+              </button>
             </div>
             <div className="flex items-center gap-4">
               <button
                 onClick={onLoginClick}
-                className="bg-palma-navy text-white px-5 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-palma-primary transition-all shadow-md"
+                className="bg-palma-navy text-white px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-palma-primary transition-all shadow-md"
               >
                 {t.auth.login}
               </button>
@@ -523,10 +580,29 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
                 />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-bold text-slate-400 uppercase">{t.common.merchantName}</p>
+                <p className="text-xs font-bold text-slate-400 uppercase">{t.common.merchantName}</p>
                 <p className="font-bold text-palma-navy truncate">{merchantName || (lang === 'ar' ? 'التاجر' : 'Merchant')}</p>
               </div>
             </button>
+
+            {/* تسويق الوسيط (shared_products) — يظهر فقط عند توفر brokerId */}
+            {sharedProductForBroker && (
+              <div className="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200/80">
+                {sharedProductForBroker.marketing_title && (
+                  <p className="text-sm font-black text-palma-navy italic line-clamp-2">
+                    "{sharedProductForBroker.marketing_title}"
+                  </p>
+                )}
+                {sharedProductForBroker.marketing_description && (
+                  <p className="text-xs text-slate-600 mt-2 line-clamp-3">{sharedProductForBroker.marketing_description}</p>
+                )}
+                {sharedProductForBroker.custom_discount_text && (
+                  <p className="mt-3 inline-flex items-center px-3 py-1 rounded-lg bg-white/80 border border-amber-200 text-xs font-black text-amber-700">
+                    {sharedProductForBroker.custom_discount_text}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -598,7 +674,7 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className="font-bold text-palma-navy text-sm">{c.userName ?? (user && c.userId === user.id ? user.name : 'User')}</span>
                           <div className="flex gap-0.5">{[1,2,3,4,5].map((s) => <Star key={s} className={`w-3 h-3 ${s <= (c.rating ?? 5) ? 'fill-amber-500 text-amber-500' : 'text-slate-200'}`} />)}</div>
-                          <span className="text-[10px] text-slate-400 ml-auto">{new Date(c.createdAt).toLocaleDateString()}</span>
+                          <span className="text-xs text-slate-400 ml-auto">{new Date(c.createdAt).toLocaleDateString()}</span>
                         </div>
                         <p className="text-sm text-slate-600">{c.text}</p>
                       </div>
@@ -640,14 +716,14 @@ const PublicProductDetails: React.FC<PublicProductDetailsProps> = ({
                         alt=""
                         onError={setImageToPlaceholder}
                       />
-                      {disc && <span className="absolute top-2 left-2 bg-palma-primary text-white px-2 py-0.5 rounded text-[10px] font-black">%{Math.round((1 - fp/bp) * 100)}-</span>}
+                      {disc && <span className="absolute top-2 left-2 bg-palma-primary text-white px-2 py-0.5 rounded text-xs font-black">%{Math.round((1 - fp/bp) * 100)}-</span>}
                     </div>
                     <div className="p-3">
-                      <p className="text-[10px] text-slate-500 uppercase font-bold truncate">{p.category}</p>
+                      <p className="text-xs text-slate-500 uppercase font-bold truncate">{p.category}</p>
                       <p className="font-bold text-palma-navy text-sm line-clamp-2">{p.name}</p>
                       <div className="flex items-center gap-1 mt-1">
                         <span className="font-black text-palma-primary text-sm">₪{fp.toFixed(2)}</span>
-                        {disc && <span className="text-[10px] text-slate-400 line-through">₪{bp.toFixed(2)}</span>}
+                        {disc && <span className="text-xs text-slate-400 line-through">₪{bp.toFixed(2)}</span>}
                       </div>
                     </div>
                   </button>

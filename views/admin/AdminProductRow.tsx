@@ -73,7 +73,7 @@ export const AdminProductRow = React.memo(function AdminProductRow({
       <td className="px-6 py-4 text-sm font-black text-palma-primary">₪{p.price ?? p.price_ils ?? 0}</td>
       <td className="px-6 py-4">
         <span
-          className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase border ${isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200'}`}
+          className={`px-3 py-1 rounded-lg text-xs font-black uppercase border ${isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200'}`}
         >
           {isActive ? t.common.active : t.common.inactive}
         </span>

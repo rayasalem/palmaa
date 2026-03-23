@@ -41,7 +41,7 @@ export const OfferCard = React.memo(function OfferCard({
         <p className="text-xs text-slate-600 line-clamp-2">{o.subtitle || o.title}</p>
         <span className="text-xl font-black text-emerald-600">%{o.discount_label ?? 0}</span>
         {(o.scope === 'all' || o.scope === 'category') && (
-          <p className="text-[10px] font-bold text-emerald-600 mt-1">
+          <p className="text-xs font-bold text-emerald-600 mt-1">
             {lang === 'ar' ? 'خصم على كل السلة' : lang === 'he' ? 'הנחה על כל העגלה' : 'Discount on entire cart'}
           </p>
         )}

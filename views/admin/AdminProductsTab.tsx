@@ -2,10 +2,11 @@
  * Admin Products tab. Lazy-loaded.
  */
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { Search, Package, Trash2 } from 'lucide-react';
 import { useAdminView } from './AdminViewContext';
 import { AdminProductRow } from './AdminProductRow';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 export default function AdminProductsTab() {
   const ctx = useAdminView();
@@ -28,6 +29,11 @@ export default function AdminProductsTab() {
     handleProductDelete,
   } = ctx;
 
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, !!productToDelete, {
+    onEscape: () => setProductToDelete(null),
+  });
+
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
       {productToDelete && (
@@ -36,6 +42,12 @@ export default function AdminProductsTab() {
           onClick={() => !productDeleteLoading && setProductToDelete(null)}
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-delete-product-title"
+            aria-describedby="admin-delete-product-desc"
+            tabIndex={-1}
+            ref={dialogRef}
             className="bg-white rounded-[2.5rem] max-w-md w-full p-8 space-y-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
@@ -44,10 +56,10 @@ export default function AdminProductsTab() {
                 <Trash2 className="w-6 h-6 text-red-600" />
               </div>
               <div>
-                <h3 className="text-lg font-black text-palma-navy">
+                <h3 id="admin-delete-product-title" className="text-lg font-black text-palma-navy">
                   {lang === 'ar' ? 'حذف المنتج' : 'Delete product'}
                 </h3>
-                <p className="text-sm text-slate-500 mt-0.5">
+                <p id="admin-delete-product-desc" className="text-sm text-slate-500 mt-0.5">
                   {lang === 'ar' ? 'هل تريد حذف هذا المنتج؟' : 'Are you sure you want to delete this product?'}
                 </p>
               </div>
@@ -112,7 +124,7 @@ export default function AdminProductsTab() {
       ) : filteredProducts.length === 0 ? (
         <div className="bg-white p-20 rounded-[3rem] text-center border-2 border-dashed border-slate-100">
           <Package className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">{t.common.noData}</p>
+          <p className="text-slate-400 font-bold uppercase text-xs tracking-widest">{t.common.noData}</p>
         </div>
       ) : (
         <div className="bg-white rounded-[2.5rem] shadow-card border border-slate-100 overflow-hidden">
@@ -120,22 +132,22 @@ export default function AdminProductsTab() {
             <table className="min-w-full text-left rtl:text-right">
               <thead className="bg-slate-50 border-b border-slate-100">
                 <tr>
-                  <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">
                     {t.common.productName}
                   </th>
-                  <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">
                     {lang === 'ar' ? 'التاجر' : 'Merchant'}
                   </th>
-                  <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">
                     {t.common.category}
                   </th>
-                  <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">
                     {t.common.price}
                   </th>
-                  <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">
                     {t.common.status}
                   </th>
-                  <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">
                     {t.common.actions}
                   </th>
                 </tr>

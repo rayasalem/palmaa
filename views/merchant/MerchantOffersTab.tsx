@@ -320,7 +320,7 @@ export default function MerchantOffersTab({ lang, t, products, onRefresh }: Merc
       ) : offers.length === 0 ? (
         <div className="bg-white p-20 rounded-[3rem] text-center border-2 border-dashed border-slate-100">
           <Tag className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">
+          <p className="text-slate-400 font-bold uppercase text-xs tracking-widest">
             {lang === 'ar' ? 'لا توجد عروض. اضغط «إضافة عرض».' : 'No offers. Click «Add offer».'}
           </p>
         </div>
@@ -329,11 +329,11 @@ export default function MerchantOffersTab({ lang, t, products, onRefresh }: Merc
           {offers.map((o) => (
             <div key={o.id} className="bg-white rounded-2xl border border-slate-100 shadow-soft p-4 flex flex-col">
               <div className="flex justify-between items-start gap-2 mb-2">
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-400">
                   {o.scope === 'all' ? (lang === 'ar' ? 'كل المنتجات' : 'All') : o.scope === 'category' ? (lang === 'ar' ? 'تصنيف' : 'Category') : lang === 'ar' ? 'منتج' : 'Product'}
                 </span>
                 {!o.is_active && (
-                  <span className="text-[10px] font-bold text-amber-600 uppercase">{lang === 'ar' ? 'غير فعّال' : 'Inactive'}</span>
+                  <span className="text-xs font-bold text-amber-600 uppercase">{lang === 'ar' ? 'غير فعّال' : 'Inactive'}</span>
                 )}
               </div>
               <h5 className="font-black text-palma-navy mb-1 line-clamp-2">{o.title || `%${o.discount_label}`}</h5>
@@ -341,7 +341,7 @@ export default function MerchantOffersTab({ lang, t, products, onRefresh }: Merc
               {o.scope === 'category' && o.category && <p className="text-xs text-slate-400 truncate">{o.category}</p>}
               {o.scope === 'product' && o.product_id && <p className="text-xs text-slate-400 truncate">{productName(o.product_id)}</p>}
               {(o.starts_at || o.ends_at) && (
-                <p className="text-[10px] text-slate-400 mt-1">
+                <p className="text-xs text-slate-400 mt-1">
                   {o.starts_at && new Date(o.starts_at).toLocaleDateString()}
                   {o.starts_at && o.ends_at ? ' – ' : ''}
                   {o.ends_at && new Date(o.ends_at).toLocaleDateString()}

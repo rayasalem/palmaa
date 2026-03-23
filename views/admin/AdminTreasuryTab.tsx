@@ -28,19 +28,19 @@ export default function AdminTreasuryTab() {
           <table className="min-w-full">
             <thead className="bg-slate-50 border-b border-slate-100">
               <tr>
-                <th className="px-8 py-5 text-left rtl:text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                <th className="px-8 py-5 text-left rtl:text-right text-xs font-black text-slate-400 uppercase tracking-widest">
                   {t.common.requestID}
                 </th>
-                <th className="px-8 py-5 text-left rtl:text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                <th className="px-8 py-5 text-left rtl:text-right text-xs font-black text-slate-400 uppercase tracking-widest">
                   {t.common.users}
                 </th>
-                <th className="px-8 py-5 text-left rtl:text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                <th className="px-8 py-5 text-left rtl:text-right text-xs font-black text-slate-400 uppercase tracking-widest">
                   {t.common.amount}
                 </th>
-                <th className="px-8 py-5 text-left rtl:text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                <th className="px-8 py-5 text-left rtl:text-right text-xs font-black text-slate-400 uppercase tracking-widest">
                   {t.common.date}
                 </th>
-                <th className="px-8 py-5 text-left rtl:text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                <th className="px-8 py-5 text-left rtl:text-right text-xs font-black text-slate-400 uppercase tracking-widest">
                   {t.common.actions}
                 </th>
               </tr>
@@ -53,7 +53,7 @@ export default function AdminTreasuryTab() {
                     <td className="px-8 py-5 text-xs font-mono text-slate-500 font-bold">{w.id.split('-')[0]}...</td>
                     <td className="px-8 py-5">
                       <div className="text-sm font-black text-slate-900">{reqUser?.name || w.userId}</div>
-                      <div className="text-[10px] text-slate-400 uppercase tracking-wider">
+                      <div className="text-xs text-slate-400 uppercase tracking-wider">
                         {reqUser ? t.roles[reqUser.role as keyof typeof t.roles] : 'Unknown'}
                       </div>
                     </td>
@@ -64,13 +64,13 @@ export default function AdminTreasuryTab() {
                     <td className="px-8 py-5 flex gap-3">
                       <button
                         onClick={() => handleWithdrawal(w.id, 'APPROVED')}
-                        className="bg-palma-primary text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition shadow-lg shadow-soft"
+                        className="bg-palma-primary text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:brightness-110 transition shadow-lg shadow-soft"
                       >
                         {t.common.approve}
                       </button>
                       <button
                         onClick={() => handleWithdrawal(w.id, 'REJECTED')}
-                        className="bg-rose-50 text-rose-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-100 transition"
+                        className="bg-rose-50 text-rose-600 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-rose-100 transition"
                       >
                         {t.common.reject}
                       </button>

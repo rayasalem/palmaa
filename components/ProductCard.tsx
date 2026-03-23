@@ -75,7 +75,7 @@ export const ProductCard = React.memo(function ProductCard({
         onClick={() => onProductClick(p.id)}
         onMouseEnter={onMouseEnter}
         onFocus={onMouseEnter}
-        className={`min-w-[180px] max-w-[220px] bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex-shrink-0 text-left overflow-hidden group ${className}`}
+        className={`min-w-[170px] sm:min-w-[180px] w-[calc(100vw-5rem)] max-w-[220px] bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex-shrink-0 text-left overflow-hidden group ${className}`}
       >
         <div className="aspect-[4/3] overflow-hidden bg-slate-50 relative">
           <img
@@ -86,17 +86,17 @@ export const ProductCard = React.memo(function ProductCard({
             alt={p.name}
           />
           {hasDiscount && (
-            <span className="absolute top-2 left-2 bg-red-600 text-white px-2 py-0.5 rounded-sm text-[10px] font-black">
+            <span className="absolute top-2 left-2 bg-red-600 text-white px-2 py-0.5 rounded-sm text-xs font-black">
               %{discountPercent ?? Math.round((1 - finalPrice / basePrice) * 100)} {lang === 'ar' ? 'خصم' : 'off'}
             </span>
           )}
           {(p.rating ?? 0) > 0 && (
-            <span className="absolute bottom-2 left-2 bg-amber-400 text-amber-900 px-2 py-0.5 rounded text-[10px] font-bold">★ {Number(p.rating).toFixed(1)}</span>
+            <span className="absolute bottom-2 left-2 bg-amber-400 text-amber-900 px-2 py-0.5 rounded text-xs font-bold">★ {Number(p.rating).toFixed(1)}</span>
           )}
         </div>
         <div className="p-3 space-y-1">
-          <p className="text-[11px] font-bold text-palma-navy line-clamp-2">{p.name}</p>
-          <p className="text-[11px] font-semibold text-palma-primary">
+          <p className="text-xs font-bold text-palma-navy line-clamp-2">{p.name}</p>
+          <p className="text-xs font-semibold text-palma-primary">
             {hasDiscount ? <><span className="text-red-600 font-bold">₪{finalPrice}</span> <span className="line-through text-slate-400">₪{basePrice}</span></> : <>₪{basePrice}</>}
           </p>
         </div>
@@ -127,6 +127,16 @@ export const ProductCard = React.memo(function ProductCard({
             {discountPercent != null && discountPercent > 0 ? <span>%{discountPercent}-</span> : <span>{lang === 'ar' ? 'تخفيضات!' : 'Sale!'}</span>}
           </div>
         )}
+        {(p as any).is_bestseller && (
+          <div className="absolute top-3 left-24 bg-amber-500 text-white px-2.5 py-1 rounded-sm text-xs font-black shadow-lg">
+            {lang === 'ar' ? 'الأكثر مبيعًا' : 'Best seller'}
+          </div>
+        )}
+        {((p as any).createdAt && Date.now() - Number((p as any).createdAt) < 1000 * 60 * 60 * 24 * 14) && (
+          <div className="absolute top-12 left-3 bg-emerald-600 text-white px-2.5 py-1 rounded-sm text-xs font-black shadow-lg">
+            {lang === 'ar' ? 'جديد' : 'New'}
+          </div>
+        )}
         <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg text-xs font-bold shadow-lg text-palma-navy border border-slate-200/80">
           {hasDiscount ? (
             <span className="flex items-baseline gap-1.5"><span className="text-sm font-bold text-red-600">₪{finalPrice}</span><span className="line-through text-[11px] text-slate-400">₪{basePrice}</span></span>
@@ -135,23 +145,33 @@ export const ProductCard = React.memo(function ProductCard({
           )}
         </div>
         {flashLabel && (
-          <div className="absolute bottom-3 left-3 right-3 bg-red-600/95 text-white px-3 py-1.5 rounded-xl text-[10px] font-black shadow-lg flex items-center justify-between gap-2">
+          <div className="absolute bottom-3 left-3 right-3 bg-red-600/95 text-white px-3 py-1.5 rounded-xl text-xs font-black shadow-lg flex items-center justify-between gap-2">
             <span className="truncate">{flashLabel}</span><span className="text-xs">⏳</span>
           </div>
         )}
-        {average >= 4.5 && count >= 1 && <div className="absolute top-3 right-3 bg-amber-400 text-amber-900 px-2 py-0.5 rounded-lg text-[9px] font-black">⭐</div>}
+        {average >= 4.5 && count >= 1 && <div className="absolute top-3 right-3 bg-amber-400 text-amber-900 px-2 py-0.5 rounded-lg text-xs font-black">⭐</div>}
       </div>
       <div className="p-4 flex-1 flex flex-col">
         <h4 className="font-black text-palma-navy text-base mb-1 group-hover:text-palma-primary transition-colors line-clamp-2">{p.name}</h4>
         <p className="text-xs text-slate-500 mb-2 line-clamp-1">{shortDesc}</p>
         <div className="flex flex-wrap items-center gap-2 mb-3">
-          {stock > 0 && <span className="text-[10px] font-bold text-slate-600">{lang === 'ar' ? `متوفر: ${stock}` : `Available: ${stock}`}</span>}
+          {stock > 0 && <span className="text-xs font-bold text-slate-600">{lang === 'ar' ? `متوفر: ${stock}` : `Available: ${stock}`}</span>}
           <ProductConditionBadge condition={p.condition} lang={lang} className="shrink-0" />
         </div>
         <div className="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between gap-2 min-h-0">
-          <span className="text-xs sm:text-[10px] font-bold text-slate-400 truncate min-w-0" title={mName}>{mName}</span>
+          <span className="text-xs sm:text-xs font-bold text-slate-400 truncate min-w-0" title={mName}>{mName}</span>
           <span className="w-8 h-8 rounded-full bg-palma-navy text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow">→</span>
         </div>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onProductClick(p.id);
+          }}
+          className="mt-3 w-full btn-primary py-2.5 text-xs font-bold"
+        >
+          {lang === 'ar' ? 'عرض المنتج' : lang === 'he' ? 'צפה במוצר' : 'View Product'}
+        </button>
       </div>
     </div>
   );

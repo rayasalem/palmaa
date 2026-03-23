@@ -74,25 +74,25 @@ export const AdminUserRow = React.memo(function AdminUserRow({
           </div>
           <div>
             <div className="text-sm font-black text-slate-900 leading-tight">{user.name}</div>
-            <div className="text-[10px] text-slate-400 font-mono mt-0.5">{user.email}</div>
+            <div className="text-xs text-slate-400 font-mono mt-0.5">{user.email}</div>
           </div>
         </div>
       </td>
       <td className="px-8 py-5">
-        <span className="bg-white border border-slate-100 px-3 py-1.5 rounded-lg text-[10px] font-black text-slate-600 uppercase tracking-wide shadow-sm">
+        <span className="bg-white border border-slate-100 px-3 py-1.5 rounded-lg text-xs font-black text-slate-600 uppercase tracking-wide shadow-sm">
           {t.roles[user.role as keyof typeof t.roles] || user.role}
         </span>
       </td>
       <td className="px-8 py-5">
         <span
-          className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border ${statusColor}`}
+          className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest border ${statusColor}`}
         >
           {statusLabel}
         </span>
       </td>
       <td className="px-8 py-5">
         <span
-          className={`flex items-center gap-1.5 w-fit px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest ${sourceMeta.color}`}
+          className={`flex items-center gap-1.5 w-fit px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest ${sourceMeta.color}`}
         >
           {sourceMeta.icon}
           {sourceMeta.label}

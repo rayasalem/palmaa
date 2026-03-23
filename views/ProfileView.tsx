@@ -282,12 +282,12 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
             <form onSubmit={handleAddProductSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
               <div className="space-y-6">
                 {productFormError && (
-                  <p className="bg-rose-50 text-rose-600 p-4 rounded-xl text-[10px] font-black uppercase text-center">
+                  <p className="bg-rose-50 text-rose-600 p-4 rounded-xl text-xs font-black uppercase text-center">
                     {productFormError}
                   </p>
                 )}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-400 px-1">
+                  <label className="text-xs font-black uppercase text-slate-400 px-1">
                     {t.common.productName} *
                   </label>
                   <input
@@ -300,7 +300,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-400 px-1">
+                  <label className="text-xs font-black uppercase text-slate-400 px-1">
                     {t.common.category || 'Category'} *
                   </label>
                   <select
@@ -321,7 +321,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-400 px-1">
+                  <label className="text-xs font-black uppercase text-slate-400 px-1">
                     {t.common.description} *
                   </label>
                   <textarea
@@ -352,7 +352,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
               </div>
               <div className="space-y-8">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-slate-400 px-1">
+                  <label className="text-xs font-black uppercase text-slate-400 px-1">
                     {lang === 'en' ? 'Product Media' : 'صور المنتج'} *
                   </label>
                   <div
@@ -369,7 +369,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
                     ) : (
                       <div className="text-center p-8">
                         <span className="text-4xl block mb-2">{isProductUploading ? '⌛' : '📸'}</span>
-                        <p className="text-[9px] font-black uppercase text-slate-300 tracking-widest">
+                        <p className="text-xs font-black uppercase text-slate-300 tracking-widest">
                           {isProductUploading ? 'Cloud Sync...' : 'Product Image'}
                         </p>
                       </div>
@@ -650,7 +650,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
             <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">{t.common.editProfile}</h3>
             <div className="space-y-4">
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase text-slate-400 px-1">{t.auth.phone}</label>
+                <label className="text-xs font-black uppercase text-slate-400 px-1">{t.auth.phone}</label>
                 <input
                   name="phone"
                   disabled={!isEditing}
@@ -660,7 +660,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase text-slate-400 px-1">
+                <label className="text-xs font-black uppercase text-slate-400 px-1">
                   {lang === 'en' ? 'Bio' : 'النبذة التعريفية'}
                 </label>
                 <textarea
@@ -675,11 +675,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
               {user.role === Role.MERCHANT && (
                 <>
                   <div className="pt-4 border-t border-slate-50 space-y-4">
-                    <p className="text-[10px] font-black uppercase text-palma-primary tracking-widest">
+                    <p className="text-xs font-black uppercase text-palma-primary tracking-widest">
                       Business Information
                     </p>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase text-slate-400 px-1">
+                      <label className="text-xs font-black uppercase text-slate-400 px-1">
                         {t.auth.businessName}
                       </label>
                       <input
@@ -691,7 +691,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
                       />
                     </div>
                     <div className="space-y-3">
-                      <label className="text-[10px] font-black uppercase text-slate-400 px-1">
+                      <label className="text-xs font-black uppercase text-slate-400 px-1">
                         {lang === 'ar' ? 'مقر المتجر الرئيسي' : 'Store Origin HQ'} *
                       </label>
                       <select
@@ -763,13 +763,13 @@ const ProfileView: React.FC<ProfileViewProps> = ({ lang, user, onRefresh, onView
                             alt={p.name}
                             onError={setImageToPlaceholder}
                           />
-                          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-2.5 py-1 rounded-lg text-[10px] font-black shadow-sm">
+                          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-2.5 py-1 rounded-lg text-xs font-black shadow-sm">
                             ₪{p.price || p.price_ils}
                           </div>
                         </div>
                         <div className="px-2 pb-2">
                           <h4 className="font-bold text-slate-900 text-sm truncate mb-1">{p.name}</h4>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
                             {t.categories[p.category as keyof typeof t.categories] || p.category}
                           </p>
                         </div>

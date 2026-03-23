@@ -147,9 +147,9 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
             <>
               {/* Header */}
               <div className="heading-block heading-block-lg space-y-3 text-left">
-                <div className="inline-block mb-4" onClick={onBackToLogin}>
+                <button type="button" onClick={onBackToLogin} className="inline-block mb-4 p-0 bg-transparent">
                   <Logo size="small" />
-                </div>
+                </button>
                 <h1 className="heading-block-title font-heading text-3xl">
                   {lang === 'en' ? 'Create Account' : 'إنشاء حساب جديد'}
                 </h1>
@@ -167,7 +167,7 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Full name */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-400 px-1">
                     {t.auth.name}
                   </label>
                   <div className="relative group">
@@ -186,7 +186,7 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
 
                 {/* Email */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-400 px-1">
                     {t.auth.email}
                   </label>
                   <div className="relative group">
@@ -205,7 +205,7 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
 
                 {/* Phone */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-400 px-1">
                     {t.auth.phone}
                   </label>
                   <div className="relative group">
@@ -225,7 +225,7 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
                 {/* Passwords */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 px-1">
                       {t.auth.password}
                     </label>
                     <div className="relative group">
@@ -243,7 +243,7 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-400 px-1">
                       {lang === 'en' ? 'Confirm Password' : 'تأكيد كلمة المرور'}
                     </label>
                     <div className="relative group">
@@ -337,7 +337,7 @@ const RegisterCustomer: React.FC<RegisterCustomerProps> = ({ onRegister, onBackT
                     type="button"
                     onClick={handleResend}
                     disabled={loading}
-                    className="w-full py-3 bg-white text-slate-400 border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all"
+                    className="w-full py-3 bg-white text-slate-400 border border-slate-200 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all"
                   >
                     {lang === 'en' ? 'Resend Code' : 'إعادة إرسال الرمز'}
                   </button>

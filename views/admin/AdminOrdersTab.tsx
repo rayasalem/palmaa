@@ -31,7 +31,7 @@ export default function AdminOrdersTab() {
       ) : orders.length === 0 ? (
         <div className="bg-white p-20 rounded-[3rem] text-center border-2 border-dashed border-slate-100">
           <Database className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">{t.common.noData}</p>
+          <p className="text-slate-400 font-bold uppercase text-xs tracking-widest">{t.common.noData}</p>
         </div>
       ) : (
         <div className="bg-white rounded-[2.5rem] shadow-card border border-slate-100 overflow-hidden">
@@ -39,19 +39,19 @@ export default function AdminOrdersTab() {
             <table className="min-w-full text-left rtl:text-right">
               <thead className="bg-slate-50 border-b border-slate-100">
                 <tr>
-                  <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">
                     {t.common.orderRef}
                   </th>
-                  <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">
                     {t.common.customer}
                   </th>
-                  <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">
                     {t.common.amount}
                   </th>
-                  <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">
                     {t.common.status}
                   </th>
-                  <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">
                     {t.common.date}
                   </th>
                 </tr>
@@ -64,14 +64,20 @@ export default function AdminOrdersTab() {
                       <td className="px-6 py-4 text-xs font-mono text-slate-600">{o.id}</td>
                       <td className="px-6 py-4">
                         <span className="text-sm text-slate-900">{o.shipping_name || o.recipient_name || '-'}</span>
-                        <span className="block text-[10px] text-slate-500">{o.shipping_phone || o.phone || ''}</span>
+                        <span className="block text-xs text-slate-500">{o.shipping_phone || o.phone || ''}</span>
                       </td>
                       <td className="px-6 py-4 text-sm font-black text-palma-primary">
                         ₪{o.total_amount ?? o.amount ?? 0}
                       </td>
                       <td className="px-6 py-4">
                         <span
-                          className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase border ${status === 'CANCELLED' ? 'bg-red-50 text-red-600 border-red-100' : status === 'PAID' || status === 'DELIVERED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}
+                          className={`px-3 py-1 rounded-lg text-xs font-black uppercase border ${
+                            status === 'CANCELLED'
+                              ? 'bg-red-50 text-red-600 border-red-100'
+                              : status === 'PAID' || status === 'DELIVERED' || status === 'ACCEPTED'
+                                ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                : 'bg-amber-50 text-amber-600 border-amber-100'
+                          }`}
                         >
                           {status}
                         </span>

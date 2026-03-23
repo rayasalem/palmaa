@@ -222,7 +222,7 @@ const Layout: React.FC<LayoutProps> = ({
                 >
                   <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6 group-hover:scale-105 transition-transform" />
                   {cartCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-palma-primary text-[10px] font-bold text-white shadow-soft ring-2 ring-white">
+                    <span className="absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-palma-primary text-xs font-bold text-white shadow-soft ring-2 ring-white">
                       {cartCount}
                     </span>
                   )}
@@ -243,7 +243,12 @@ const Layout: React.FC<LayoutProps> = ({
                 </button>
                 {langMenuOpen && (
                   <>
-                    <div className="fixed inset-0 z-40" aria-hidden onClick={() => setLangMenuOpen(false)} />
+                    <button
+                      type="button"
+                      className="fixed inset-0 z-40"
+                      aria-label="Close language menu"
+                      onClick={() => setLangMenuOpen(false)}
+                    />
                     <div className="absolute top-full mt-1 end-0 min-w-[140px] py-1 rounded-xl border border-palma-border bg-white shadow-lg z-50">
                       {(['ar', 'en', 'he'] as const).map((l) => (
                         <button
@@ -278,7 +283,7 @@ const Layout: React.FC<LayoutProps> = ({
                   />
                   <div className="hidden sm:flex flex-col text-right rtl:text-left pr-2 rtl:pl-2">
                     <span className="text-sm font-bold text-palma-navy leading-tight">{user.name}</span>
-                    <span className="text-[10px] font-medium text-palma-muted uppercase tracking-wide">
+                    <span className="text-xs font-medium text-palma-muted uppercase tracking-wide">
                       {getRoleLabel(user.role)}
                     </span>
                   </div>
@@ -309,7 +314,7 @@ const Layout: React.FC<LayoutProps> = ({
                   ? (lang === 'ar' ? 'القائمة' : lang === 'he' ? 'תפריט' : 'Menu')
                   : t.common.dashboard}
               </h3>
-              <p className="text-[10px] font-bold text-palma-muted mt-1.5">
+              <p className="text-xs font-bold text-palma-muted mt-1.5">
                 {lang === 'ar' ? 'أنت هنا: ' : lang === 'he' ? 'אתה כאן: ' : 'You are: '}
                 <span className="text-palma-primary">{currentStep}</span>
               </p>
@@ -348,7 +353,7 @@ const Layout: React.FC<LayoutProps> = ({
                   </div>
                   <div>
                     <p className="text-xs font-bold text-palma-navy">Palma Business</p>
-                    <p className="text-[10px] text-palma-muted font-medium">Pro Plan Active</p>
+                    <p className="text-xs text-palma-muted font-medium">Pro Plan Active</p>
                   </div>
                 </div>
               </div>
@@ -413,13 +418,16 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
         )}
 
-        <main className={`flex-1 min-w-0 p-4 sm:p-6 lg:p-8 ${activeTab === 'shop' || activeTab === 'catalog' ? 'max-w-full' : ''}`}>
+        <main className={`flex-1 min-w-0 p-4 sm:p-6 lg:p-8 pb-28 lg:pb-8 ${activeTab === 'shop' || activeTab === 'catalog' ? 'max-w-full' : ''}`}>
           <div className={`mx-auto animate-fade-in min-h-[60vh] ${activeTab === 'shop' || activeTab === 'catalog' ? 'max-w-[1600px]' : 'max-w-7xl'}`}>{children}</div>
         </main>
       </div>
 
       {!isProfessional && (
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-palma-border pb-safe z-50 shadow-soft">
+        <nav
+          className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-palma-border z-50 shadow-soft pb-[env(safe-area-inset-bottom)]"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        >
           <div className="flex justify-around items-center h-20 pb-2">
             {userMenuItems.map((item) => (
               <button
@@ -434,7 +442,7 @@ const Layout: React.FC<LayoutProps> = ({
                 >
                   <span className="inline-flex items-center justify-center text-current">{getIcon(item.icon, 22)}</span>
                 </div>
-                <span className={`text-[10px] font-semibold ${activeTab === item.id ? 'text-palma-navy' : ''}`}>
+                <span className={`text-xs font-semibold ${activeTab === item.id ? 'text-palma-navy' : ''}`}>
                   {item.label}
                 </span>
               </button>

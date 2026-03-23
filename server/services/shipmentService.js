@@ -134,7 +134,8 @@ async function updateOrderShipment(orderId, shipmentId, shipmentStatus) {
   if (isDelivered) {
     updatePayload.completed_at = now;
     updatePayload.delivery_confirmed_at = now;
-    updatePayload.status = 'completed';
+    // DB constraint expects uppercase: 'COMPLETED'
+    updatePayload.status = 'COMPLETED';
   } else if (isCancelled) {
     updatePayload.status = 'CANCELLED';
     updatePayload.cancelled_at = now;

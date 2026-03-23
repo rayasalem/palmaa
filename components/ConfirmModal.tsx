@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useId, useRef } from 'react';
 import { AlertCircle } from 'lucide-react';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -29,6 +30,14 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const descId = useId();
+
+  useFocusTrap(dialogRef, isOpen, {
+    onEscape: () => !isLoading && onCancel(),
+  });
+
   const variantStyles = {
     danger: 'bg-red-50 text-red-600',
     warning: 'bg-amber-50 text-amber-600',
@@ -46,16 +55,26 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
       onClick={() => !isLoading && onCancel()}
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descId}
         className="bg-white rounded-[2.5rem] max-w-md w-full p-8 space-y-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
+        tabIndex={-1}
       >
         <div className="flex items-center gap-4">
           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${variantStyles[variant]}`}>
             <AlertCircle className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-lg font-black text-palma-navy">{title}</h3>
-            <p className="text-sm text-slate-500 mt-0.5">{message}</p>
+            <h3 id={titleId} className="text-lg font-black text-palma-navy">
+              {title}
+            </h3>
+            <p id={descId} className="text-sm text-slate-500 mt-0.5">
+              {message}
+            </p>
           </div>
         </div>
         <div className="flex gap-3">

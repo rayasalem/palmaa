@@ -27,6 +27,18 @@ svg.lucide {
   --palma-radius-xl: 1.25rem;
 }
 
+:root {
+  --palma-primary: #e10600;
+  --palma-primary-hover: #c20500;
+  --palma-primary-light: #fff5f5;
+  --palma-navy: #1e293b;
+  --palma-border: #e2e8f0;
+  --palma-shadow-soft: 0 2px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+  --palma-radius: 0.75rem;
+  --palma-radius-lg: 1rem;
+  --palma-radius-xl: 1.25rem;
+}
+
 @layer base {
   html {
     /* دعم الأجهزة ذات النوتش (آيفون إكس وما بعده) */
@@ -305,6 +317,28 @@ svg.lucide {
   animation: countPop 0.5s ease-out forwards;
 }
 
+/* Reduced motion: disable non-essential animations/transitions */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-fade-in,
+  .animate-slide-up,
+  .animate-in,
+  .animate-float,
+  .animate-glow-pulse,
+  .animate-count-pop,
+  .animate-spin {
+    animation: none !important;
+  }
+}
+
 /* تفاعلات جذب الزبون */
 .card-hover-lift {
   @apply transition-all duration-300;
@@ -392,7 +426,7 @@ textarea:focus {
   @apply bg-slate-50/80 border-b border-slate-100;
 }
 .dashboard-table th {
-  @apply px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-left rtl:text-right;
+  @apply px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-left rtl:text-right;
 }
 .dashboard-table tbody tr {
   @apply border-b border-slate-50 hover:bg-slate-50/50 transition-colors;
@@ -407,7 +441,7 @@ textarea:focus {
   @apply inline-flex flex-wrap gap-2 p-1.5 bg-slate-50 rounded-xl border border-slate-200;
 }
 .dashboard-filter-pill {
-  @apply px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all;
+  @apply px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all;
 }
 .dashboard-empty {
   @apply flex flex-col items-center justify-center py-16 px-8 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 text-slate-400;

@@ -64,7 +64,7 @@ export default function AdminPlatformTab() {
               <p className="text-2xl font-black text-palma-primary">
                 ₪{platformEarnings?.platform_earnings?.toFixed(2) ?? '0.00'}
               </p>
-              <p className="text-[10px] text-slate-500 mt-1">
+              <p className="text-xs text-slate-500 mt-1">
                 {platformEarnings?.transactions_count ?? 0} {lang === 'ar' ? 'عملية تسوية' : 'settlements'}
               </p>
             </div>

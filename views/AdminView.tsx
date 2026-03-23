@@ -659,7 +659,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
             >
               <Users className="w-3.5 h-3.5" /> {t.common.users}
               {pendingCount > 0 && (
-                <span className="bg-red-500 text-white min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[9px] font-bold px-1">
+                <span className="bg-red-500 text-white min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-xs font-bold px-1">
                   {pendingCount}
                 </span>
               )}
@@ -682,7 +682,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ view = 'users', onViewProd
             >
               <Banknote className="w-3.5 h-3.5" /> {t.common.withdrawals}
               {pendingWithdrawals.length > 0 && (
-                <span className="bg-red-500 text-white min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[9px] font-bold px-1">
+                <span className="bg-red-500 text-white min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-xs font-bold px-1">
                   {pendingWithdrawals.length}
                 </span>
               )}

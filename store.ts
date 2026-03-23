@@ -134,12 +134,12 @@ export const marketStore = {
         broker_id: brokerId,
         product_id: productId,
         shared_at: new Date().toISOString(),
-        clicks: 0,
-        sales: 0,
+        clicks: typeof data.clicks === 'number' ? data.clicks : 0,
+        sales: typeof data.sales === 'number' ? data.sales : 0,
         marketing_title: data.marketing_title,
         marketing_description: data.marketing_description,
         custom_discount_text: data.custom_discount_text,
-        is_featured: false,
+        is_featured: data.is_featured ?? false,
       };
       db.addItem('sharedProducts', newShare);
     }

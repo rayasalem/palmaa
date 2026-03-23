@@ -189,14 +189,14 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({
       {!currentUser && (
         <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-100 shadow-sm">
           <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <div onClick={onBack} className="cursor-pointer">
+            <button type="button" onClick={onBack} className="cursor-pointer p-0 hover:opacity-90">
               <Logo size="small" />
-            </div>
+            </button>
             <div className="flex items-center gap-4">
               <div className="relative">
                 <button
                   onClick={() => setLangMenuOpen((prev) => !prev)}
-                  className="flex items-center gap-1.5 text-[10px] font-black uppercase text-slate-400 hover:text-slate-900"
+                  className="flex items-center gap-1.5 text-xs font-black uppercase text-slate-400 hover:text-slate-900"
                 >
                   <Globe className="w-3.5 h-3.5" />
                   <span>{LANG_LABELS[lang]}</span>
@@ -204,7 +204,12 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({
                 </button>
                 {langMenuOpen && (
                   <>
-                    <div className="fixed inset-0 z-40" aria-hidden onClick={() => setLangMenuOpen(false)} />
+                    <button
+                      type="button"
+                      className="fixed inset-0 z-40"
+                      aria-label="Close language menu"
+                      onClick={() => setLangMenuOpen(false)}
+                    />
                     <div className="absolute top-full mt-1 end-0 min-w-[120px] py-1 rounded-lg border border-slate-200 bg-white shadow-lg z-50">
                       {(['ar', 'en', 'he'] as const).map((l) => (
                         <button
@@ -223,7 +228,7 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({
                   </>
                 )}
               </div>
-              <button onClick={onLoginClick} className="btn-primary px-6 py-2.5 text-[10px] uppercase tracking-widest">
+              <button onClick={onLoginClick} className="btn-primary px-6 py-2.5 text-xs uppercase tracking-widest">
                 {t.auth.login}
               </button>
             </div>
@@ -346,13 +351,13 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({
                         alt={p.name}
                         onError={setImageToPlaceholder}
                       />
-                      <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-2.5 py-1 rounded-lg text-[10px] font-black shadow-sm">
+                      <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-2.5 py-1 rounded-lg text-xs font-black shadow-sm">
                         ₪{p.price || p.price_ils}
                       </div>
                     </div>
                     <div className="px-2 pb-2">
                       <h4 className="font-bold text-slate-900 text-sm truncate mb-1">{p.name}</h4>
-                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
                         {t.categories[p.category as keyof typeof t.categories] || p.category}
                       </p>
                     </div>
@@ -399,7 +404,7 @@ const PublicProfileView: React.FC<PublicProfileViewProps> = ({
                         <p className="text-xs text-slate-500 mt-2 line-clamp-2">{s.marketing_description}</p>
                       </div>
                       <div className="hidden sm:block">
-                        <button className="bg-slate-900 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-palma-primary transition-all">
+                        <button className="bg-slate-900 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-palma-primary transition-all">
                           {t.common.viewDetails}
                         </button>
                       </div>

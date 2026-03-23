@@ -8,10 +8,7 @@ import { Product } from '../../types';
 import type { Language } from '../../translations';
 import {
   Search,
-  ChevronLeft,
-  ChevronRight,
   Filter,
-  Heart,
   Plus,
   ShoppingBag,
 } from 'lucide-react';
@@ -30,26 +27,6 @@ const SHOP_IMG_FALLBACK_SM = 'https://placehold.co/200x200?text=No+Image';
 const SHOP_IMG_ORDER = 'https://placehold.co/80x80?text=No+Image';
 const SHOP_IMG_OFFER = 'https://placehold.co/400x400?text=Offer';
 
-const MAIN_GROUP_IDS = [
-  'food',
-  'fashion',
-  'electronics',
-  'home',
-  'kids',
-  'automotive',
-  'personalCare',
-  'services',
-] as const;
-const MAIN_GROUP_ICONS: Record<string, string> = {
-  food: '🛒',
-  fashion: '👗',
-  electronics: '📱',
-  home: '🏠',
-  kids: '👶',
-  automotive: '🚗',
-  personalCare: '💄',
-  services: '🔧',
-};
 const MOST_POPULAR_CATEGORY_IDS = ['fruits', 'vegetables', 'dairy', 'phones', 'men_clothing', 'snacks'];
 /** عدد المنتجات المعروضة في قسم «كل المنتجات» قبل زر المزيد */
 const ALL_PRODUCTS_PREVIEW_SIZE = 8;
@@ -107,8 +84,6 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
 }) => {
   const common = t.common as Record<string, string>;
   const categoriesScrollRef = useRef<HTMLDivElement>(null);
-  const popularScrollRef = useRef<HTMLDivElement>(null);
-  const topItemsScrollRef = useRef<HTMLDivElement>(null);
   const [filterOpen, setFilterOpen] = React.useState(false);
   const [offers, setOffers] = React.useState<ShopOffer[]>([]);
   React.useEffect(() => {
@@ -116,12 +91,6 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
       if (res.success && res.offers) setOffers(res.offers);
     });
   }, []);
-
-  const scroll = (ref: React.RefObject<HTMLDivElement | null>, dir: 'left' | 'right') => {
-    if (!ref.current) return;
-    const step = ref.current.clientWidth * 0.8;
-    ref.current.scrollBy({ left: dir === 'left' ? -step : step, behavior: 'smooth' });
-  };
 
   const popularProducts = React.useMemo(
     () =>
@@ -157,37 +126,60 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
 
   return (
     <div
-      className="rounded-2xl"
+      className="rounded-3xl"
       style={{
-        background: 'linear-gradient(180deg, rgba(236, 253, 245, 0.5) 0%, rgba(255,255,255,0.9) 30%)',
+        background:
+          'radial-gradient(1200px 500px at 50% -100px, rgba(16,185,129,0.12), transparent 60%), linear-gradient(180deg, rgba(236, 253, 245, 0.35) 0%, rgba(255,255,255,0.92) 30%)',
       }}
     >
-      <div className="space-y-4 sm:space-y-6 p-3 sm:p-5">
-        {/* ——— شريط البحث (مضغوط) ——— */}
-        <div className="relative max-w-xl">
-          <Search
-            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600 left-3 rtl:left-auto rtl:right-3"
-            aria-hidden
-          />
-          <input
-            type="text"
-            placeholder={
-              lang === 'ar'
-                ? 'ابحث عن منتجاتك...'
-                : lang === 'he'
-                  ? 'חפש מוצרים...'
-                  : 'Search your grocery products etc....'
-            }
-            className="w-full pl-10 rtl:pl-4 pr-4 rtl:pr-10 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none shadow-sm transition"
-            value={shopSearch || categorySearch}
-            onChange={(e) => {
-              setShopSearch(e.target.value);
-              setCategorySearch(e.target.value);
-            }}
-          />
-        </div>
+      <div className="mx-auto w-full max-w-[1380px] p-3 sm:p-5 lg:p-6 space-y-5 sm:space-y-6">
+        <section className="rounded-3xl border border-emerald-100 bg-gradient-to-r from-emerald-700 to-emerald-600 text-white p-4 sm:p-6 shadow-lg">
+          <div className="flex flex-col gap-4">
+            <div className="space-y-1">
+              <h2 className="text-lg sm:text-2xl font-black">
+                {lang === 'ar' ? 'تسوق مرتب، سريع، وفخم' : 'Clean, fast and premium shopping'}
+              </h2>
+              <p className="text-xs sm:text-sm text-emerald-50/95">
+                {lang === 'ar'
+                  ? 'اختَر المنتجات بسهولة، فلترة ذكية، وتجربة واضحة من أول لحظة.'
+                  : 'Browse faster with clear sections, smart filters, and premium layout.'}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-center">
+              <div className="relative">
+                <Search
+                  className="absolute top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-700 left-3 rtl:left-auto rtl:right-3"
+                  aria-hidden
+                />
+                <input
+                  type="text"
+                  placeholder={
+                    lang === 'ar'
+                      ? 'ابحث عن منتجاتك...'
+                      : lang === 'he'
+                        ? 'חפש מוצרים...'
+                        : 'Search products...'
+                  }
+                  className="w-full pl-10 rtl:pl-4 pr-4 rtl:pr-10 py-3 rounded-2xl border border-white/40 bg-white text-sm text-slate-800 placeholder:text-slate-400 focus:border-emerald-200 focus:ring-2 focus:ring-white/60 outline-none shadow-sm"
+                  value={shopSearch || categorySearch}
+                  onChange={(e) => {
+                    setShopSearch(e.target.value);
+                    setCategorySearch(e.target.value);
+                  }}
+                />
+              </div>
+              <div className="flex items-center gap-2 text-[11px] sm:text-xs font-bold">
+                <span className="px-3 py-1.5 rounded-full bg-white/15 border border-white/30">
+                  {lang === 'ar' ? 'توصيل سريع' : 'Fast Delivery'}
+                </span>
+                <span className="px-3 py-1.5 rounded-full bg-white/15 border border-white/30">
+                  {lang === 'ar' ? 'منتجات محلية' : 'Local Products'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
 
-        {/* تسويق الوسيط — تبويب المتجر (تاجر/وسيط/أدمن) */}
         <MediatorMarketingSection
           lang={lang}
           items={mediatorMarketingMock as MediatorMarketingItem[]}
@@ -197,35 +189,33 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
           }}
         />
 
-        {/* ——— التصنيفات + فلترة (حجم مضغوط) ——— */}
-        <section className="space-y-2">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-            <h3 className="text-sm font-black text-slate-800">
-              {lang === 'ar' ? 'التصنيفات' : lang === 'he' ? 'קטגוריות' : 'Categories'}
+        <section className="rounded-2xl border border-slate-100 bg-white p-3 sm:p-4 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <h3 className="text-sm sm:text-base font-black text-slate-800">
+              {lang === 'ar' ? 'التصنيفات والفلترة' : lang === 'he' ? 'קטגוריות וסינון' : 'Categories & Filters'}
             </h3>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setFilterOpen(!filterOpen)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold shadow-sm hover:bg-emerald-700 transition"
+                onClick={() => setFilterOpen((v) => !v)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition"
               >
                 <Filter className="w-3.5 h-3.5" />
                 {lang === 'ar' ? 'فلتر' : 'Filter'}
               </button>
-              <div className="flex rounded-full bg-white border border-slate-200 overflow-hidden shadow-sm">
-                <button type="button" onClick={() => scroll(categoriesScrollRef, lang === 'en' ? 'left' : 'right')} className="p-1.5 text-slate-600 hover:bg-slate-50">
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button type="button" onClick={() => scroll(categoriesScrollRef, lang === 'en' ? 'right' : 'left')} className="p-1.5 text-slate-600 hover:bg-slate-50">
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => (onNavigateToCatalog ? onNavigateToCatalog() : onCategorySelect('all'))}
+                className="text-xs sm:text-sm font-bold text-emerald-700 hover:underline"
+              >
+                {lang === 'ar' ? 'عرض الكل' : 'View all'}
+              </button>
             </div>
           </div>
           {filterOpen && (
-            <div className="flex flex-wrap gap-2 mb-2 p-2 bg-white rounded-lg border border-slate-100">
+            <div className="mb-3 p-2.5 rounded-xl border border-slate-200 bg-slate-50">
               <select
-                className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[11px] font-bold text-slate-600 outline-none focus:border-emerald-500"
+                className="w-full sm:w-auto rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-emerald-500"
                 value={shopConditionFilter}
                 onChange={(e) => setShopConditionFilter(e.target.value)}
               >
@@ -239,7 +229,7 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
           )}
           <div
             ref={categoriesScrollRef}
-            className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide"
+            className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {MOST_POPULAR_CATEGORY_IDS.map((catId) => {
@@ -251,142 +241,92 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
                   key={catId}
                   type="button"
                   onClick={() => onCategorySelect(shopCategoryId === catId ? 'all' : catId)}
-                  className={`flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border-2 min-w-[80px] shrink-0 transition-all ${
+                  className={`flex flex-col items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border min-w-[92px] shrink-0 transition ${
                     isActive
                       ? 'bg-emerald-600 border-emerald-600 text-white shadow-md'
-                      : 'bg-white border-slate-100 text-slate-700 hover:border-emerald-200 hover:bg-emerald-50'
+                      : 'bg-white border-slate-200 text-slate-700 hover:border-emerald-300 hover:bg-emerald-50'
                   }`}
                 >
                   <span className="text-xl">{emoji}</span>
-                  <span className="text-[10px] font-bold text-center line-clamp-2">{label}</span>
+                  <span className="text-xs font-bold text-center line-clamp-2">{label}</span>
                 </button>
               );
             })}
             <button
               type="button"
               onClick={() => onCategorySelect('all')}
-              className={`flex flex-col items-center justify-center gap-1 p-2.5 rounded-xl border-2 min-w-[80px] shrink-0 transition-all ${
+              className={`flex flex-col items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border min-w-[92px] shrink-0 transition ${
                 shopCategoryId === 'all'
                   ? 'bg-emerald-600 border-emerald-600 text-white shadow-md'
-                  : 'bg-white border-slate-100 text-slate-700 hover:border-emerald-200'
+                  : 'bg-white border-slate-200 text-slate-700 hover:border-emerald-300'
               }`}
             >
               <span className="text-xl">📦</span>
-              <span className="text-[10px] font-bold text-center">{t.common.allCategories}</span>
+              <span className="text-xs font-bold text-center">{t.common.allCategories}</span>
             </button>
           </div>
         </section>
 
-        {/* ——— المنتجات الشائعة (أفقي + عرض المزيد) ——— */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-black text-slate-800">
+        <section className="rounded-2xl border border-slate-100 bg-white p-3 sm:p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <h3 className="text-base sm:text-lg font-black text-slate-800">
               {lang === 'ar' ? 'المنتجات الشائعة' : lang === 'he' ? 'מוצרים פופולריים' : 'Popular Products'}
             </h3>
             <button
               type="button"
               onClick={() => (onNavigateToCatalog ? onNavigateToCatalog() : onCategorySelect('all'))}
-              className="text-sm font-bold text-emerald-600 hover:underline"
+              className="text-xs sm:text-sm font-bold text-emerald-700 hover:underline"
             >
               {lang === 'ar' ? 'عرض المزيد' : 'View More'}
             </button>
           </div>
-          <div className="relative">
-            <div
-              ref={popularScrollRef}
-              className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide"
-              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-            >
-              {popularProducts.map((p) => {
-                const img = secureImageSrc(p.images?.[0] || p.imageUrl || p.image_url, SHOP_IMG_FALLBACK);
-                const basePrice = p.price ?? p.price_ils ?? 0;
-                const finalPrice = (p as any).final_price != null ? (p as any).final_price : basePrice;
-                const hasDiscount = finalPrice < basePrice;
-                return (
-                  <div
-                    key={p.id}
-                    className="flex-shrink-0 w-[200px] sm:w-[220px] bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden group hover:shadow-md transition-all"
-                    onMouseEnter={() => {
-                      prefetchComponent('PublicProductDetails');
-                      prefetchProductData(p.id);
-                    }}
-                  >
-                    <div
-                      className="relative aspect-square cursor-pointer"
-                      onClick={() => onViewProduct?.(p.id)}
-                    >
-                      <img
-                        src={img}
-                        alt={p.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                        loading="lazy"
-                        onError={setImageToPlaceholder}
-                      />
-                      <button
-                        type="button"
-                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 flex items-center justify-center text-slate-500 hover:text-red-500 shadow"
-                      >
-                        <Heart className="w-4 h-4" />
-                      </button>
-                      {hasDiscount && (
-                        <span className="absolute top-2 left-2 bg-red-600 text-white text-xs font-black px-2 py-0.5 rounded">
-                          %{Math.round((1 - finalPrice / basePrice) * 100)}
-                        </span>
-                      )}
-                    </div>
-                    <div className="p-3">
-                      <h4
-                        className="font-bold text-slate-800 text-sm line-clamp-2 cursor-pointer hover:text-emerald-600"
-                        onClick={() => onViewProduct?.(p.id)}
-                      >
-                        {p.name}
-                      </h4>
-                      <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">
-                        {p.shortDescription || (p.description || '').slice(0, 40) || 'Lorem ipsum dolor sit amet,'}
-                      </p>
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="text-sm font-black text-emerald-600">
-                          ₪{finalPrice}
-                          {basePrice > finalPrice && (
-                            <span className="text-xs font-normal text-slate-400 line-through mr-1">₪{basePrice}</span>
-                          )}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => onAddToCart(p)}
-                          disabled={addingToCartProductId === p.id}
-                          className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center hover:bg-emerald-700 shadow-md disabled:opacity-70"
-                        >
-                          {addingToCartProductId === p.id ? (
-                            <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                          ) : (
-                            <Plus className="w-5 h-5" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+            {popularProducts.slice(0, 8).map((p) => (
+              <div
+                key={p.id}
+                onMouseEnter={() => {
+                  prefetchComponent('PublicProductDetails');
+                  prefetchProductData(p.id);
+                }}
+              >
+                <ShopProductCard
+                  product={p}
+                  lang={lang}
+                  t={t}
+                  onViewProduct={onViewProduct}
+                  onViewProfile={onViewProfile}
+                  onAddToCart={onAddToCart}
+                  isAddingToCart={addingToCartProductId === p.id}
+                  onQuickView={setQuickViewProduct}
+                />
+              </div>
+            ))}
           </div>
         </section>
 
-        {/* ——— تخفيضات (عروض من الإدمن) + آخر طلب ——— */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <section className="lg:col-span-2">
-            <h3 className="text-lg font-black text-slate-800 mb-4">
-              {lang === 'ar' ? 'تخفيضات' : lang === 'he' ? 'הנחות' : 'Discount Shop'}
-            </h3>
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+          <section className="xl:col-span-2 rounded-2xl border border-slate-100 bg-white p-3 sm:p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-2 mb-4">
+              <h3 className="text-base sm:text-lg font-black text-slate-800">
+                {lang === 'ar' ? 'تخفيضات وعروض' : lang === 'he' ? 'מבצעים והנחות' : 'Offers & Discounts'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => (onNavigateToCatalog ? onNavigateToCatalog() : onCategorySelect('all'))}
+                className="text-xs sm:text-sm font-bold text-emerald-700 hover:underline"
+              >
+                {lang === 'ar' ? 'عرض المزيد' : 'View More'}
+              </button>
+            </div>
             {offers.length === 0 && discountProducts.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/30 p-8 text-center min-h-[140px] flex flex-col items-center justify-center">
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
                 <p className="text-slate-500 font-medium">
                   {lang === 'ar' ? 'لا عروض حالياً' : lang === 'he' ? 'אין מבצעים כרגע' : 'No offers at the moment'}
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {offers.map((o) => {
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {offers.slice(0, 4).map((o) => {
                   const goToCatalog = () => {
                     onNavigateToCatalog?.();
                     if (typeof window !== 'undefined' && window.location.hash !== '#/catalog') {
@@ -394,152 +334,107 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
                     }
                   };
                   const handleOfferClick = () => {
-                    if (o.type === 'product' && o.product_id) {
-                      onViewProduct?.(o.product_id);
-                    } else {
-                      goToCatalog();
-                    }
+                    if (o.type === 'product' && o.product_id) onViewProduct?.(o.product_id);
+                    else goToCatalog();
                   };
-                  const isCartDiscount = (o.scope === 'all' || o.scope === 'category') && (o.discount_label ?? 0) > 0;
                   return (
-                    <div
+                    <button
                       key={o.id}
-                      className="rounded-2xl border border-slate-100 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col h-full"
-                      role="button"
-                      tabIndex={0}
+                      type="button"
+                      className="text-left rounded-2xl border border-slate-100 bg-white overflow-hidden shadow-sm hover:shadow-md transition"
                       onClick={handleOfferClick}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleOfferClick(); }}
                     >
-                      <div className="w-full flex-1 p-4 flex flex-col justify-between text-left">
-                        <div className="aspect-square -m-4 mb-2 rounded-t-2xl overflow-hidden bg-slate-100">
-                          <img
-                            src={o.image_url || 'https://placehold.co/400x400?text=Offer'}
-                            alt=""
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-600 line-clamp-2">{o.subtitle || o.title}</p>
-                          <span className="text-2xl font-black text-emerald-600 mt-1">%{o.discount_label || 0}</span>
-                          {isCartDiscount && (
-                            <p className="text-[10px] text-emerald-600 font-bold mt-0.5">
-                              {lang === 'ar' ? 'خصم على السلة' : 'Cart discount'}
-                            </p>
-                          )}
-                        </div>
+                      <div className="aspect-square bg-slate-100">
+                        <img
+                          src={o.image_url || SHOP_IMG_OFFER}
+                          alt={o.title || 'Offer'}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
                       </div>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); handleOfferClick(); }}
-                        className="w-full py-2 bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700"
-                      >
-                        {lang === 'ar' ? 'تسوق الآن' : 'Shop Now'}
-                      </button>
-                    </div>
+                      <div className="p-2.5">
+                        <p className="text-xs text-slate-600 line-clamp-2">{o.subtitle || o.title}</p>
+                        <p className="text-lg font-black text-emerald-600">%{o.discount_label || 0}</p>
+                      </div>
+                    </button>
                   );
                 })}
-                {discountProducts.map((p) => {
+                {discountProducts.slice(0, 4).map((p) => {
                   const basePrice = p.price ?? p.price_ils ?? 0;
                   const finalPrice = (p as any).final_price != null ? (p as any).final_price : basePrice;
                   const pct = Math.round((1 - finalPrice / basePrice) * 100);
                   return (
-                    <div
+                    <button
                       key={p.id}
-                      className="rounded-2xl border border-slate-100 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col h-full"
+                      type="button"
+                      className="text-left rounded-2xl border border-slate-100 bg-white overflow-hidden shadow-sm hover:shadow-md transition"
+                      onClick={() => onViewProduct?.(p.id)}
                     >
-                      <button
-                        type="button"
-                        className="w-full flex-1 p-4 flex flex-col justify-between text-left"
-                        onClick={() => onViewProduct?.(p.id)}
-                      >
-                        <div className="aspect-square -m-4 mb-2 rounded-t-2xl overflow-hidden bg-slate-100 relative">
-                          <img
-                            src={secureImageSrc(p.images?.[0] || p.imageUrl || p.image_url, SHOP_IMG_FALLBACK_SM)}
-                            alt=""
-                            className="w-full h-full object-cover"
-                            onError={setImageToPlaceholder}
-                          />
-                          <span className="absolute top-2 right-2 bg-red-600 text-white px-2 py-0.5 rounded text-xs font-black">
-                            %{pct}
-                          </span>
-                        </div>
+                      <div className="aspect-square bg-slate-100 relative">
+                        <img
+                          src={secureImageSrc(p.images?.[0] || p.imageUrl || p.image_url, SHOP_IMG_FALLBACK_SM)}
+                          alt={p.name}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          onError={setImageToPlaceholder}
+                        />
+                        <span className="absolute top-2 right-2 bg-red-600 text-white px-2 py-0.5 rounded text-xs font-black">
+                          %{pct}
+                        </span>
+                      </div>
+                      <div className="p-2.5">
                         <p className="text-xs font-bold text-slate-800 line-clamp-2">{p.name}</p>
-                        <span className="text-lg font-black text-emerald-600">
+                        <p className="text-sm font-black text-emerald-600">
                           ₪{finalPrice.toFixed(2)}
                           <span className="text-xs text-slate-400 line-through mr-1">₪{basePrice.toFixed(2)}</span>
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onViewProduct?.(p.id)}
-                        className="w-full py-2 bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700"
-                      >
-                        {lang === 'ar' ? 'تسوق الآن' : 'Shop Now'}
-                      </button>
-                    </div>
+                        </p>
+                      </div>
+                    </button>
                   );
                 })}
               </div>
             )}
           </section>
 
-          {/* آخر طلب */}
-          <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-            <h3 className="text-lg font-black text-slate-800 mb-4">
+          <section className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+            <h3 className="text-base sm:text-lg font-black text-slate-800 mb-3">
               {lang === 'ar' ? 'آخر طلب' : lang === 'he' ? 'ההזמנה האחרונה' : 'Last Order'}
             </h3>
             {lastOrderItems.length === 0 ? (
-              <p className="text-sm text-slate-500 py-4">
+              <p className="text-sm text-slate-500 py-3">
                 {lang === 'ar' ? 'لا توجد طلبات سابقة' : 'No recent orders'}
               </p>
             ) : (
-              <ul className="space-y-3">
+              <ul className="space-y-2">
                 {lastOrderItems.slice(0, 5).map((item) => {
-                  const img = secureImageSrc(
-                    item.images?.[0] || item.imageUrl || item.image_url,
-                    SHOP_IMG_ORDER
-                  );
+                  const img = secureImageSrc(item.images?.[0] || item.imageUrl || item.image_url, SHOP_IMG_ORDER);
                   return (
-                    <li key={item.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50">
-                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 shrink-0">
-                        <img src={img} alt="" className="w-full h-full object-cover" onError={setImageToPlaceholder} />
+                    <li key={item.id} className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-slate-50">
+                      <div className="w-11 h-11 rounded-lg overflow-hidden bg-slate-100 shrink-0">
+                        <img src={img} alt={item.name} className="w-full h-full object-cover" onError={setImageToPlaceholder} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-slate-800 truncate">{item.name}</p>
+                        <p className="text-xs font-bold text-slate-800 truncate">{item.name}</p>
                         <p className="text-xs text-slate-500">
                           {lang === 'ar' ? `الكمية ${item.quantity}` : `Qty ${item.quantity}`}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {onUpdateLastOrderQuantity && (
-                          <div className="flex items-center bg-slate-100 rounded-lg">
-                            <button
-                              type="button"
-                              onClick={() => onUpdateLastOrderQuantity(item.id, -1)}
-                              className="p-1.5 text-slate-600"
-                            >
-                              −
-                            </button>
-                            <span className="text-xs font-bold w-6 text-center">{item.quantity}</span>
-                            <button
-                              type="button"
-                              onClick={() => onUpdateLastOrderQuantity(item.id, 1)}
-                              className="p-1.5 text-slate-600"
-                            >
-                              +
-                            </button>
-                          </div>
-                        )}
-                        <span className="text-sm font-black text-emerald-600">
-                          ₪{(item.price ?? item.price_ils ?? 0) * item.quantity}
-                        </span>
-                      </div>
+                      {onUpdateLastOrderQuantity && (
+                        <div className="flex items-center bg-slate-100 rounded-lg">
+                          <button type="button" onClick={() => onUpdateLastOrderQuantity(item.id, -1)} className="px-2 py-1 text-slate-600">
+                            −
+                          </button>
+                          <span className="text-xs font-bold w-5 text-center">{item.quantity}</span>
+                          <button type="button" onClick={() => onUpdateLastOrderQuantity(item.id, 1)} className="px-2 py-1 text-slate-600">
+                            +
+                          </button>
+                        </div>
+                      )}
                       <button
                         type="button"
                         onClick={() => onAddToCart(item)}
                         disabled={addingToCartProductId === item.id}
-                        className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0"
+                        className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 disabled:opacity-70"
                       >
                         <Plus className="w-4 h-4" />
                       </button>
@@ -551,78 +446,60 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
           </section>
         </div>
 
-        {/* ——— أفضل المنتجات (أفقي + أسهم) ——— */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-black text-slate-800">
-              {lang === 'ar' ? 'أفضل المنتجات' : lang === 'he' ? 'מוצרים מובילים' : 'Top Items'}
+        <section className="rounded-2xl border border-slate-100 bg-white p-3 sm:p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <h3 className="text-base sm:text-lg font-black text-slate-800">
+              {lang === 'ar' ? 'الأكثر مبيعًا' : lang === 'he' ? 'הנמכרים ביותר' : 'Best Sellers'}
             </h3>
-            <div className="flex rounded-full bg-white border border-slate-200 overflow-hidden shadow-sm">
-              <button
-                type="button"
-                onClick={() => scroll(topItemsScrollRef, lang === 'en' ? 'left' : 'right')}
-                className="p-2 text-slate-600 hover:bg-slate-50"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => scroll(topItemsScrollRef, lang === 'en' ? 'right' : 'left')}
-                className="p-2 text-slate-600 hover:bg-slate-50"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => (onNavigateToCatalog ? onNavigateToCatalog() : onCategorySelect('all'))}
+              className="text-xs sm:text-sm font-bold text-emerald-700 hover:underline"
+            >
+              {lang === 'ar' ? 'عرض المزيد' : 'View More'}
+            </button>
           </div>
-          <div
-            ref={topItemsScrollRef}
-            className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
-            {(topItems.length ? topItems : filteredShopProducts.slice(0, 6)).map((p) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+            {(topItems.length ? topItems : filteredShopProducts).slice(0, 8).map((p) => (
               <div
                 key={p.id}
-                className="flex-shrink-0 w-[160px] sm:w-[180px] bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden group cursor-pointer"
-                onClick={() => onViewProduct?.(p.id)}
+                onMouseEnter={() => {
+                  prefetchComponent('PublicProductDetails');
+                  prefetchProductData(p.id);
+                }}
               >
-                <div className="aspect-square overflow-hidden">
-                  <img
-                    src={secureImageSrc(p.images?.[0] || p.imageUrl || p.image_url, SHOP_IMG_FALLBACK)}
-                    alt={p.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    loading="lazy"
-                    onError={setImageToPlaceholder}
-                  />
-                </div>
-                <div className="p-2">
-                  <p className="text-xs font-bold text-slate-800 line-clamp-2">{p.name}</p>
-                  <p className="text-sm font-black text-emerald-600 mt-0.5">
-                    ₪{p.price ?? p.price_ils ?? 0}
-                  </p>
-                </div>
+                <ShopProductCard
+                  product={p}
+                  lang={lang}
+                  t={t}
+                  onViewProduct={onViewProduct}
+                  onViewProfile={onViewProfile}
+                  onAddToCart={onAddToCart}
+                  isAddingToCart={addingToCartProductId === p.id}
+                  onQuickView={setQuickViewProduct}
+                />
               </div>
             ))}
           </div>
         </section>
 
-        {/* ——— كل المنتجات: عرض جزء منها + زر المزيد ينتقل لصفحة الكتالوج ——— */}
-        <section>
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
-            <h3 className="text-lg font-black text-slate-800">
+        <section className="rounded-2xl border border-slate-100 bg-white p-3 sm:p-4 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+            <h3 className="text-base sm:text-lg font-black text-slate-800">
               {lang === 'ar' ? 'كل المنتجات' : lang === 'he' ? 'כל המוצרים' : 'All Products'}
             </h3>
             {onNavigateToCatalog && filteredShopProducts.length > 0 && (
               <button
                 type="button"
                 onClick={onNavigateToCatalog}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-palma-primary text-white font-bold text-sm shadow-md hover:bg-palma-primaryHover transition"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-palma-primary text-white font-bold text-xs sm:text-sm shadow-md hover:bg-palma-primaryHover transition"
               >
                 <ShoppingBag className="w-4 h-4" />
-                {lang === 'ar' ? 'عرض المزيد — كل المنتجات' : lang === 'he' ? 'עוד — כל המוצרים' : 'Show more — all products'}
+                {lang === 'ar' ? 'عرض المزيد — كل المنتجات' : 'Show more — all products'}
               </button>
             )}
           </div>
-          <p className="text-sm text-slate-500 mb-4">
+          <p className="text-xs sm:text-sm text-slate-500 mb-4">
             {filteredShopProducts.length === 0
               ? (lang === 'ar' ? 'لا توجد منتجات تطابق البحث أو التصنيف.' : lang === 'he' ? 'אין מוצרים תואמים.' : 'No products match your filters.')
               : lang === 'ar'
@@ -632,49 +509,35 @@ export const CustomerShopTab: React.FC<CustomerShopTabProps> = ({
                   : `Showing part of products (${Math.min(ALL_PRODUCTS_PREVIEW_SIZE, filteredShopProducts.length)}${filteredShopProducts.length > ALL_PRODUCTS_PREVIEW_SIZE ? ` of ${filteredShopProducts.length}` : ''})`}
           </p>
           {filteredShopProducts.length === 0 ? (
-            <div className="py-16 rounded-2xl bg-white border border-slate-100 text-center">
-              <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+            <div className="py-12 rounded-2xl bg-slate-50 border border-slate-100 text-center">
+              <ShoppingBag className="w-10 h-10 text-slate-300 mx-auto mb-2" />
               <p className="text-slate-500 font-medium">
                 {lang === 'ar' ? 'لا توجد منتجات تطابق البحث أو التصنيف.' : 'No products match your filters.'}
               </p>
             </div>
           ) : (
-            <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {filteredShopProducts.slice(0, ALL_PRODUCTS_PREVIEW_SIZE).map((p) => (
-                  <div
-                    key={p.id}
-                    onMouseEnter={() => {
-                      prefetchComponent('PublicProductDetails');
-                      prefetchProductData(p.id);
-                    }}
-                  >
-                    <ShopProductCard
-                      product={p}
-                      lang={lang}
-                      t={t}
-                      onViewProduct={onViewProduct}
-                      onViewProfile={onViewProfile}
-                      onAddToCart={onAddToCart}
-                      isAddingToCart={addingToCartProductId === p.id}
-                      onQuickView={setQuickViewProduct}
-                    />
-                  </div>
-                ))}
-              </div>
-              {onNavigateToCatalog && (
-                <div className="mt-6 flex justify-center">
-                  <button
-                    type="button"
-                    onClick={onNavigateToCatalog}
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-palma-primary text-white font-bold text-sm shadow-md hover:bg-palma-primaryHover transition"
-                  >
-                    <ShoppingBag className="w-5 h-5" />
-                    {lang === 'ar' ? 'المزيد — عرض كل المنتجات' : lang === 'he' ? 'עוד — כל המוצרים' : 'More — view all products'}
-                  </button>
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+              {filteredShopProducts.slice(0, ALL_PRODUCTS_PREVIEW_SIZE).map((p) => (
+                <div
+                  key={p.id}
+                  onMouseEnter={() => {
+                    prefetchComponent('PublicProductDetails');
+                    prefetchProductData(p.id);
+                  }}
+                >
+                  <ShopProductCard
+                    product={p}
+                    lang={lang}
+                    t={t}
+                    onViewProduct={onViewProduct}
+                    onViewProfile={onViewProfile}
+                    onAddToCart={onAddToCart}
+                    isAddingToCart={addingToCartProductId === p.id}
+                    onQuickView={setQuickViewProduct}
+                  />
                 </div>
-              )}
-            </>
+              ))}
+            </div>
           )}
         </section>
       </div>

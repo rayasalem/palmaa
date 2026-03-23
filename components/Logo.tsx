@@ -119,7 +119,7 @@ const Logo: React.FC<LogoProps> = ({
       )}
       {showText && (
         <span
-          className={`text-[10px] font-bold uppercase tracking-[0.2em] opacity-90 self-center ${theme === 'light' ? 'text-palma-muted' : 'text-white/80'}`}
+          className={`text-xs font-bold uppercase tracking-[0.2em] opacity-90 self-center ${theme === 'light' ? 'text-palma-muted' : 'text-white/80'}`}
         >
           Marketplace
         </span>

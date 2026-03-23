@@ -2,10 +2,11 @@
  * Admin Users tab: list, filters, delete modal, user actions. Lazy-loaded.
  */
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { Search } from 'lucide-react';
 import { useAdminView } from './AdminViewContext';
 import { AdminUserRow } from './AdminUserRow';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 export default function AdminUsersTab() {
   const {
@@ -28,6 +29,10 @@ export default function AdminUsersTab() {
     confirmDeleteUser,
   } = useAdminView();
   const { userToDelete, deleteReason, deleteLoading } = deleteModal;
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, !!userToDelete, {
+    onEscape: closeDeleteUserModal,
+  });
 
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
@@ -37,13 +42,19 @@ export default function AdminUsersTab() {
           onClick={closeDeleteUserModal}
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-delete-user-title"
+            aria-describedby="admin-delete-user-desc"
+            tabIndex={-1}
+            ref={dialogRef}
             className="bg-white rounded-[2.5rem] max-w-lg w-full p-8 space-y-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-xl font-black text-palma-navy mb-2">
+            <h3 id="admin-delete-user-title" className="text-xl font-black text-palma-navy mb-2">
               {lang === 'ar' ? 'تأكيد حذف المستخدم' : 'Confirm user deletion'}
             </h3>
-            <p className="text-sm text-slate-600">
+            <p id="admin-delete-user-desc" className="text-sm text-slate-600">
               {lang === 'ar'
                 ? 'سيتم نقل الحساب إلى وضع المسودة ولن يتمكن صاحبه من تسجيل الدخول، وسيُحذف نهائياً بعد 30 يوماً ما لم يتم استرجاعه.'
                 : 'The account will be moved to draft, the user will not be able to log in, and it will be permanently removed after 30 days unless restored.'}
@@ -55,7 +66,7 @@ export default function AdminUsersTab() {
             <div>
               <label
                 htmlFor="admin-delete-reason"
-                className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2"
+                className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2"
               >
                 {lang === 'ar' ? 'سبب الحذف (يظهر في السجل الداخلي)' : 'Deletion reason (internal log)'}
               </label>
@@ -92,7 +103,7 @@ export default function AdminUsersTab() {
               <button
                 onClick={closeDeleteUserModal}
                 disabled={deleteLoading}
-                className="flex-1 py-3.5 bg-slate-100 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 active:scale-95 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex-1 py-3.5 bg-slate-100 text-slate-500 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-200 active:scale-95 transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {t.common.cancel}
               </button>

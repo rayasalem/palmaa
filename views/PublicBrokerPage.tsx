@@ -63,14 +63,14 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900" dir={lang === 'en' ? 'ltr' : 'rtl'}>
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div onClick={onBack} className="cursor-pointer">
+          <button type="button" onClick={onBack} className="cursor-pointer p-0 hover:opacity-90">
             <Logo size="small" />
-          </div>
+          </button>
           <div className="flex items-center gap-4">
             <div className="relative">
               <button
                 onClick={() => setLangMenuOpen((prev) => !prev)}
-                className="flex items-center gap-1.5 text-[10px] font-black uppercase text-slate-400 hover:text-slate-900"
+                className="flex items-center gap-1.5 text-xs font-black uppercase text-slate-400 hover:text-slate-900"
               >
                 <Globe className="w-3.5 h-3.5" />
                 <span>{LANG_LABELS[lang]}</span>
@@ -78,7 +78,12 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({
               </button>
               {langMenuOpen && (
                 <>
-                  <div className="fixed inset-0 z-40" aria-hidden onClick={() => setLangMenuOpen(false)} />
+                  <button
+                    type="button"
+                    className="fixed inset-0 z-40"
+                    aria-label="Close language menu"
+                    onClick={() => setLangMenuOpen(false)}
+                  />
                   <div className="absolute top-full mt-1 end-0 min-w-[120px] py-1 rounded-lg border border-slate-200 bg-white shadow-lg z-50">
                     {(['ar', 'en', 'he'] as const).map((l) => (
                       <button
@@ -97,7 +102,7 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({
                 </>
               )}
             </div>
-            <button onClick={onLoginClick} className="btn-primary px-6 py-2.5 text-[10px] uppercase tracking-widest">
+            <button onClick={onLoginClick} className="btn-primary px-6 py-2.5 text-xs uppercase tracking-widest">
               {t.auth.login}
             </button>
           </div>
@@ -121,11 +126,11 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({
               </div>
 
               <div className="relative z-10">
-                <span className="bg-palma-primary/10 text-palma-primary px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest inline-block mb-2">
+                <span className="bg-palma-primary/10 text-palma-primary px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest inline-block mb-2">
                   Certified Partner
                 </span>
                 <h1 className="font-heading text-2xl font-black text-palma-navy leading-tight">{broker.name}</h1>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Verified Broker</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Verified Broker</p>
               </div>
 
               <div className="pt-6 border-t border-slate-50 grid grid-cols-2 gap-4">
@@ -140,7 +145,7 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({
               </div>
 
               <div className="pt-6 border-t border-slate-50 text-left rtl:text-right">
-                <p className="text-[9px] font-black text-slate-300 uppercase mb-3 tracking-widest">About</p>
+                <p className="text-xs font-black text-slate-300 uppercase mb-3 tracking-widest">About</p>
                 <p className="text-xs text-slate-500 font-medium leading-relaxed italic">
                   "
                   {broker.bio ||
@@ -156,7 +161,7 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({
                 <p className="text-white/60 text-xs leading-relaxed mt-2 font-medium">
                   Chat with this broker for personalized assistance on your shopping journey.
                 </p>
-                <button className="w-full py-4 bg-white text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest mt-6 shadow-lg hover:scale-105 transition-transform active:scale-95">
+                <button className="w-full py-4 bg-white text-slate-900 rounded-2xl text-xs font-black uppercase tracking-widest mt-6 shadow-lg hover:scale-105 transition-transform active:scale-95">
                   Message Broker
                 </button>
               </div>
@@ -217,7 +222,7 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({
                           onError={setImageToPlaceholder}
                         />
                         <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur py-3 px-4 rounded-2xl flex justify-between items-center shadow-lg">
-                          <span className="text-[10px] font-black uppercase text-slate-400">Price</span>
+                          <span className="text-xs font-black uppercase text-slate-400">Price</span>
                           <span className="text-base font-black text-palma-primary">₪{p.price || p.price_ils}</span>
                         </div>
                       </div>
@@ -226,11 +231,11 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({
                         <div className="space-y-6">
                           <div>
                             <div className="flex items-center gap-3 mb-3">
-                              <span className="bg-slate-100 text-slate-500 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                              <span className="bg-slate-100 text-slate-500 px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest">
                                 {p.category}
                               </span>
                               <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
                                 {mName}
                               </span>
                             </div>
@@ -260,7 +265,7 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({
                         <div className="flex items-center gap-4 mt-6 md:mt-0">
                           <button
                             onClick={() => onProductClick(p.id)}
-                            className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-palma-primary transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2 group-hover:gap-3"
+                            className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-palma-primary transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2 group-hover:gap-3"
                           >
                             {t.common.details} <span className="transition-all">→</span>
                           </button>
@@ -268,7 +273,7 @@ const PublicBrokerPage: React.FC<PublicBrokerPageProps> = ({
                             <p className="text-[8px] font-black text-slate-400 uppercase mb-0.5">Popularity</p>
                             <div className="flex justify-center gap-0.5">
                               {[1, 2, 3, 4, 5].map((i) => (
-                                <span key={i} className="text-[10px] text-palma-gold">
+                                <span key={i} className="text-xs text-palma-gold">
                                   ★
                                 </span>
                               ))}

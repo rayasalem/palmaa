@@ -1,0 +1,25 @@
+# Palma Node API behind Nginx — copy to /etc/systemd/system/palma-api.service
+# sudo systemctl daemon-reload && sudo systemctl enable --now palma-api
+#
+# Adjust WorkingDirectory and EnvironmentFile to your server paths.
+
+[Unit]
+Description=Palma Marketplace API (Node.js)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/palma-marketplace/server
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=5000
+EnvironmentFile=-/var/www/palma-marketplace/server/.env
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

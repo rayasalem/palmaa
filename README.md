@@ -79,6 +79,7 @@ VITE_SUPABASE_ANON_KEY=your_anon_key
    ```bash
    # اجعل الفرونت يتصل بالباكند الصحيح (مثلاً Render)
    VITE_API_URL=https://palmaa.onrender.com npm run build
-   npm run build
    ```
    ثم انشر مجلد `dist/` على الاستضافة (مثلاً cPanel أو Vercel). الباكند يحتاج متغيرات بيئة خاصة (راجع `server/README.md`).
+
+- **دليل نشر كامل (cPanel + Render، HTTPS، بدون mixed content):** [`docs/DEPLOYMENT-CPANEL-RENDER.md`](docs/DEPLOYMENT-CPANEL-RENDER.md)

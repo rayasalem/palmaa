@@ -47,7 +47,7 @@ const ComingSoonHero: React.FC<Props> = ({ lang, onStartNow, onExploreProducts }
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-70" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
             </span>
-            <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider">
+            <span className="text-xs font-bold text-amber-800 uppercase tracking-wider">
               {t.comingSoon.earlyAccess}
             </span>
           </div>

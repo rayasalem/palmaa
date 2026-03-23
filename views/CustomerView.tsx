@@ -24,7 +24,7 @@ import {
 import { createOrder as createOrderApi, createShipment as createShipmentApi, cancelOrder as cancelOrderApi, fetchMyOrders, getCities as getCitiesApi, getVillages as getVillagesApi, getDistrictsAndVillages as getDistrictsAndVillagesApi } from '../services/checkoutApi';
 import type { City as ApiCity, Village as ApiVillage } from '../services/checkoutApi';
 import { sendEmail, getShipmentDetailsTemplate } from '../services/emailService';
-import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense, lazy, useId } from 'react';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { ShippingInputGroup } from '../components/CustomerShared';
 import {
@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import { DistrictVillageSelect } from '../components/CustomerShared';
 import { useToast } from '../components/ToastProvider';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 const CustomerShopTab = lazy(() => import('./customer/CustomerShopTab').then((m) => ({ default: m.CustomerShopTab })));
 const CustomerCartTab = lazy(() => import('./customer/CustomerCartTab').then((m) => ({ default: m.CustomerCartTab })));
@@ -115,6 +116,20 @@ export const CustomerView: React.FC<Props> = ({
   const [checkoutStep, setCheckoutStep] = useState<'form' | 'summary'>('form');
   const [showJsonPayload, setShowJsonPayload] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, boolean>>({});
+
+  // A11y: focus trap + aria labeling for checkout/cancel overlays
+  const cancelDialogRef = useRef<HTMLDivElement>(null);
+  const checkoutDialogRef = useRef<HTMLDivElement>(null);
+  const cancelTitleId = useId();
+  const cancelDescId = useId();
+  const checkoutTitleId = useId();
+  const checkoutDescId = useId();
+  useFocusTrap(cancelDialogRef, !!orderToCancel, {
+    onEscape: () => setOrderToCancel(null),
+  });
+  useFocusTrap(checkoutDialogRef, showCheckoutForm, {
+    onEscape: () => setShowCheckoutForm(false),
+  });
 
   // Districts (محافظات) and villages (قرى) from API – single load from get-villages-districts when possible
   const [districts, setDistricts] = useState<ApiCity[]>([]);
@@ -284,7 +299,10 @@ export const CustomerView: React.FC<Props> = ({
   useEffect(() => {
     if (!user || !clearCart) return;
     if (!displayOrders || displayOrders.length === 0) return;
-    const hasPaid = displayOrders.some((o) => String(o.status || o.delivery_status || '').toUpperCase() === 'PAID');
+    const hasPaid = displayOrders.some((o) => {
+      const s = String(o.status || o.delivery_status || '').toUpperCase();
+      return s === 'PAID' || s === 'ACCEPTED';
+    });
     if (!hasPaid) return;
     const key = `palma_cart_cleared_after_paid_${user.id}`;
     try {
@@ -760,7 +778,7 @@ export const CustomerView: React.FC<Props> = ({
         >
           {lang === 'ar' ? 'السلة' : 'Cart'}
           {cart.length > 0 && (
-            <span className="bg-white/20 text-current text-[10px] font-bold min-w-[20px] h-5 rounded-full flex items-center justify-center px-1.5">
+            <span className="bg-white/20 text-current text-xs font-bold min-w-[20px] h-5 rounded-full flex items-center justify-center px-1.5">
               {cart.reduce((a, b) => a + b.quantity, 0)}
             </span>
           )}
@@ -777,15 +795,23 @@ export const CustomerView: React.FC<Props> = ({
       {/* Cancellation Modal */}
       {orderToCancel && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/70 backdrop-blur-md p-6 animate-in fade-in duration-300">
-          <div className="bg-white rounded-[3rem] p-10 max-w-md w-full shadow-2xl space-y-8 animate-in zoom-in-95 duration-300">
+          <div
+            ref={cancelDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={cancelTitleId}
+            aria-describedby={cancelDescId}
+            tabIndex={-1}
+            className="bg-white rounded-[3rem] p-10 max-w-md w-full shadow-2xl space-y-8 animate-in zoom-in-95 duration-300"
+          >
             <div className="text-center space-y-4">
               <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-2 shadow-inner">
                 ⚠️
               </div>
-              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">
+              <h3 id={cancelTitleId} className="text-xl font-black text-slate-900 uppercase tracking-tight">
                 {lang === 'ar' ? 'تأكيد إلغاء الشحنة' : 'Confirm Cancellation'}
               </h3>
-              <p className="text-slate-500 font-medium leading-relaxed text-sm">
+              <p id={cancelDescId} className="text-slate-500 font-medium leading-relaxed text-sm">
                 {lang === 'ar'
                   ? `هل أنت متأكد من رغبتك في إلغاء الشحنة رقم (${orderToCancel.delivery_id})؟ لا يمكن التراجع عن هذا الإجراء.`
                   : `Are you sure you want to cancel shipment (${orderToCancel.delivery_id})? This action cannot be undone.`}
@@ -795,13 +821,13 @@ export const CustomerView: React.FC<Props> = ({
             <div className="flex flex-col gap-3">
               <button
                 onClick={executeCancellation}
-                className="w-full py-5 bg-rose-600 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl hover:bg-rose-700 active:scale-95 transition-all"
+                className="w-full py-5 bg-rose-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:bg-rose-700 active:scale-95 transition-all"
               >
                 {lang === 'ar' ? 'تأكيد الإلغاء النهائي' : 'Confirm Final Cancellation'}
               </button>
               <button
                 onClick={() => setOrderToCancel(null)}
-                className="w-full py-4 bg-slate-50 text-slate-400 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-100 transition-all"
+                className="w-full py-4 bg-slate-50 text-slate-400 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-100 transition-all"
               >
                 {lang === 'ar' ? 'الاحتفاظ بالطلب' : 'Keep Order'}
               </button>
@@ -817,6 +843,12 @@ export const CustomerView: React.FC<Props> = ({
           onClick={() => setShowCheckoutForm(false)}
         >
           <div
+            ref={checkoutDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={checkoutTitleId}
+            aria-describedby={checkoutDescId}
+            tabIndex={-1}
             className="bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] w-full max-w-4xl shadow-2xl relative flex flex-col md:flex-row overflow-hidden min-h-[85vh] sm:min-h-[600px] max-h-[95vh] animate-in zoom-in-95 duration-300"
             onClick={(e) => e.stopPropagation()}
           >
@@ -824,10 +856,10 @@ export const CustomerView: React.FC<Props> = ({
             {/* Left Panel */}
             <div className="md:w-1/3 bg-slate-50 border-r border-slate-100 p-8 flex flex-col justify-between">
               <div>
-                <h3 className="font-heading text-2xl font-black text-palma-navy tracking-tight mb-1">
+                <h3 id={checkoutTitleId} className="font-heading text-2xl font-black text-palma-navy tracking-tight mb-1">
                   {t.common.checkout}
                 </h3>
-                <p className="text-xs font-bold text-slate-400 mb-8">
+                <p id={checkoutDescId} className="text-xs font-bold text-slate-400 mb-8">
                   {checkoutStep === 'form'
                     ? lang === 'ar'
                       ? 'بيانات الشحن'
@@ -871,7 +903,7 @@ export const CustomerView: React.FC<Props> = ({
               </div>
               <div className="pt-8 border-t border-slate-200 mt-8">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-[10px] font-black uppercase text-slate-400">{t.cart.total}</span>
+                  <span className="text-xs font-black uppercase text-slate-400">{t.cart.total}</span>
                   <span className="text-xl font-black text-palma-navy">₪{totalAmount}</span>
                 </div>
               </div>
@@ -1023,13 +1055,13 @@ export const CustomerView: React.FC<Props> = ({
                   <div className="bg-palma-soft rounded-[2rem] p-8 border border-slate-100 flex-1 space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
                       <div className="space-y-1">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest">
                           {lang === 'ar' ? 'المستلم' : 'Recipient'}
                         </p>
                         <p className="font-bold text-slate-800">{shippingData.fullName}</p>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest">
                           {lang === 'ar' ? 'الدفع' : 'Payment'}
                         </p>
                         <p className="font-bold text-slate-800">
@@ -1049,7 +1081,7 @@ export const CustomerView: React.FC<Props> = ({
                     <button
                       onClick={() => setCheckoutStep('form')}
                       disabled={isProcessing}
-                      className="w-full py-4 text-slate-400 font-black uppercase text-[10px] tracking-widest hover:text-slate-800 transition-colors flex items-center justify-center gap-2"
+                      className="w-full py-4 text-slate-400 font-black uppercase text-xs tracking-widest hover:text-slate-800 transition-colors flex items-center justify-center gap-2"
                     >
                       <ArrowLeft className="w-4 h-4" /> {lang === 'ar' ? 'العودة للتعديل' : 'Back to Edit'}
                     </button>

@@ -57,7 +57,7 @@ export const MerchantOrdersTab: React.FC<MerchantOrdersTabProps> = ({
         type="button"
         onClick={() => refreshData()}
         disabled={loading}
-        className="text-[10px] font-bold text-palma-primary hover:bg-palma-primaryLight flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-palma-border transition-colors disabled:opacity-50"
+        className="text-xs font-bold text-palma-primary hover:bg-palma-primaryLight flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-palma-border transition-colors disabled:opacity-50"
       >
         {loading
           ? lang === 'ar'
@@ -100,22 +100,22 @@ export const MerchantOrdersTab: React.FC<MerchantOrdersTabProps> = ({
         <table className="min-w-full text-left rtl:text-right whitespace-nowrap">
           <thead className="bg-slate-50/80">
             <tr>
-              <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+              <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">
                 {t.common.orderDetails}
               </th>
-              <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+              <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">
                 {t.common.customerInfo}
               </th>
-              <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+              <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">
                 {t.common.amount}
               </th>
-              <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+              <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">
                 {t.common.status}
               </th>
-              <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+              <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">
                 {lang === 'ar' ? 'الفاتورة' : 'Invoice'}
               </th>
-              <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+              <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">
                 {t.common.actions}
               </th>
             </tr>
@@ -125,7 +125,7 @@ export const MerchantOrdersTab: React.FC<MerchantOrdersTabProps> = ({
               <tr key={order.id} className="hover:bg-slate-50/50 transition-colors group">
                 <td className="px-6 py-4">
                   <span className="block text-xs font-bold text-palma-navy font-mono mb-0.5">{order.id}</span>
-                  <div className="text-[10px] font-medium text-slate-400">
+                  <div className="text-xs font-medium text-slate-400">
                     {order.date ? new Date(order.date).toLocaleDateString() : 'Just now'}
                   </div>
                 </td>
@@ -136,14 +136,14 @@ export const MerchantOrdersTab: React.FC<MerchantOrdersTabProps> = ({
                     </div>
                     <div>
                       <div className="text-xs font-bold text-palma-navy">{order.shippingAddress?.cityName || '—'}</div>
-                      <div className="text-[10px] text-slate-400 font-mono">{order.shipping_phone}</div>
+                      <div className="text-xs text-slate-400 font-mono">{order.shipping_phone}</div>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 text-xs font-black text-emerald-600">{order.totalAmount} ₪</td>
                 <td className="px-6 py-4">
                   <span
-                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${['COMPLETED', 'ON_THE_WAY', 'SHIPPED', 'DELIVERED'].includes(String(order.status)) ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : order.status === 'CANCELLED' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}
+                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider ${['COMPLETED', 'ON_THE_WAY', 'SHIPPED', 'DELIVERED'].includes(String(order.status)) ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : order.status === 'CANCELLED' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}
                   >
                     {getOrderStatusLabel(order.status || '', lang)}
                   </span>
@@ -158,14 +158,14 @@ export const MerchantOrdersTab: React.FC<MerchantOrdersTabProps> = ({
                         type="button"
                         onClick={() => onUpdateOrderStatus(order, nextStatus as any)}
                         disabled={loading}
-                        className="mt-2 block w-full text-[9px] font-bold text-palma-primary hover:bg-palma-primaryLight rounded-lg py-1.5 px-2 border border-palma-primary/30 disabled:opacity-50"
+                        className="mt-2 block w-full text-xs font-bold text-palma-primary hover:bg-palma-primaryLight rounded-lg py-1.5 px-2 border border-palma-primary/30 disabled:opacity-50"
                       >
                         → {label}
                       </button>
                     );
                   })()}
                   {order.delivery_status && (
-                    <div className="text-[9px] font-bold text-slate-400 mt-1.5 flex items-center gap-1.5">
+                    <div className="text-xs font-bold text-slate-400 mt-1.5 flex items-center gap-1.5">
                       <Truck className="w-3 h-3 text-palma-primary" />
                       {FlashLineService.mapFlashlineStatus(order.delivery_status)}
                     </div>
@@ -178,7 +178,7 @@ export const MerchantOrdersTab: React.FC<MerchantOrdersTabProps> = ({
                         href={order.invoice_file_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 hover:underline"
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:underline"
                       >
                         <Receipt className="w-3.5 h-3.5" /> {lang === 'ar' ? 'مرفوعة — عرض' : 'Uploaded — View'}
                       </a>
@@ -189,13 +189,13 @@ export const MerchantOrdersTab: React.FC<MerchantOrdersTabProps> = ({
                           setOrderToInvoice(order);
                           setInvoiceUrlInput('');
                         }}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition"
                       >
                         <Receipt className="w-3.5 h-3.5" /> {lang === 'ar' ? 'رفع الفاتورة' : 'Upload invoice'}
                       </button>
                     )
                   ) : (
-                    <span className="text-[10px] text-slate-400">—</span>
+                    <span className="text-xs text-slate-400">—</span>
                   )}
                 </td>
                 <td className="px-6 py-4">
@@ -204,7 +204,7 @@ export const MerchantOrdersTab: React.FC<MerchantOrdersTabProps> = ({
                       <button
                         onClick={() => createShipment(order)}
                         disabled={loading}
-                        className="bg-palma-navy text-white px-3 py-1.5 rounded-lg text-[9px] font-bold hover:bg-palma-primary transition shadow-sm flex items-center gap-1.5"
+                        className="bg-palma-navy text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-palma-primary transition shadow-sm flex items-center gap-1.5"
                       >
                         <Truck className="w-3 h-3" /> {t.common.ship}
                       </button>
@@ -212,14 +212,14 @@ export const MerchantOrdersTab: React.FC<MerchantOrdersTabProps> = ({
                     {(order.shipmentId || order.delivery_id) && String(order.status || '').toUpperCase() !== 'CANCELLED' && (
                       <>
                         {(order.delivery_id || order.shipmentId || '').toString().startsWith('sim-') && (
-                          <span className="text-[9px] text-amber-600 font-medium" title={lang === 'ar' ? 'شحنة محاكاة — أضف LOGESTECHS_EMAIL و LOGESTECHS_PASSWORD في .env أو Render ثم أعد تشغيل السيرفر / Redeploy' : 'Simulated — add LOGESTECHS_EMAIL and LOGESTECHS_PASSWORD in .env or Render, then restart / Redeploy'}>
+                          <span className="text-xs text-amber-600 font-medium" title={lang === 'ar' ? 'شحنة محاكاة — أضف LOGESTECHS_EMAIL و LOGESTECHS_PASSWORD في .env أو Render ثم أعد تشغيل السيرفر / Redeploy' : 'Simulated — add LOGESTECHS_EMAIL and LOGESTECHS_PASSWORD in .env or Render, then restart / Redeploy'}>
                             {lang === 'ar' ? 'محاكاة' : 'Sim'}
                           </span>
                         )}
                         <button
                           onClick={() => handleCheckStatus(order)}
                           disabled={loading}
-                          className="inline-flex items-center gap-1.5 px-3 py-2 text-[10px] font-bold text-palma-primary hover:bg-palma-primaryLight rounded-xl border border-palma-primary/30 bg-white shadow-sm transition"
+                          className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-palma-primary hover:bg-palma-primaryLight rounded-xl border border-palma-primary/30 bg-white shadow-sm transition"
                           title={t.common.checkStatus}
                         >
                           <Search className="w-3.5 h-3.5" />

@@ -6,10 +6,9 @@ import Logo from '../components/Logo';
 import { ProductConditionBadge } from './ProductConditionBadge';
 import { prefetchComponent, prefetchProductData } from '../prefetch';
 import { Language, translations } from '../translations';
-import { ArrowRight, ShoppingCart, Search, Filter, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowRight, Search, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { getOffers, type ShopOffer } from '../services/offersApi';
 import { ProductCard } from './ProductCard';
-import { OfferCard } from './OfferCard';
 import { secureImageSrc, setImageToPlaceholder } from '../utils/secureUrl';
 import { MediatorMarketingSection } from './MediatorMarketingSection';
 import type { MediatorMarketingItem } from '../types/mediatorMarketing';
@@ -63,6 +62,16 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
   const [isLoading, setIsLoading] = useState(true);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(false);
+  const [showAllCategories, setShowAllCategories] = useState(false);
+  const [showAllOffers, setShowAllOffers] = useState(false);
+  const [openFilterSections, setOpenFilterSections] = useState<Record<string, boolean>>({
+    category: true,
+    price: true,
+    review: true,
+    brand: true,
+    condition: true,
+    availability: true,
+  });
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 24;
   /** عروض الإدمن (قسم تخفيضات) */
@@ -171,6 +180,26 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
   const totalFiltered = filteredProducts.length;
   // Server-side page: show accumulated pages (no client slice)
   const paginatedProducts = filteredProducts;
+  const featuredProducts = useMemo(
+    () =>
+      [...filteredProducts]
+        .sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0) || (b.createdAt ?? 0) - (a.createdAt ?? 0))
+        .slice(0, 8),
+    [filteredProducts]
+  );
+  const bestSellerProducts = useMemo(
+    () =>
+      filteredProducts
+        .filter((p) => (p as any).is_bestseller || (p as any).isBestSeller)
+        .slice(0, 8),
+    [filteredProducts]
+  );
+
+  const navigateToCatalogWithParams = (params: Record<string, string>) => {
+    if (typeof window === 'undefined') return;
+    const query = new URLSearchParams(params).toString();
+    window.location.hash = query ? `#/catalog?${query}` : '#/catalog';
+  };
 
   const resetFilters = () => {
     setSearchTerm('');
@@ -183,6 +212,10 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
     setMerchantId('all');
     setAvailability('all');
     setPage(1);
+  };
+
+  const toggleFilterSection = (key: string) => {
+    setOpenFilterSections((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const removeFilter = (key: string) => {
@@ -243,9 +276,13 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                 {lang === 'ar' ? 'الرئيسية' : lang === 'he' ? 'בית' : 'Home'}
               </span>
             </button>
-            <div onClick={onBack} className="sm:hidden cursor-pointer hover:opacity-90 transition-opacity">
+            <button
+              type="button"
+              onClick={onBack}
+              className="sm:hidden cursor-pointer hover:opacity-90 transition-opacity"
+            >
               <Logo size="small" />
-            </div>
+            </button>
           </div>
           <button
             onClick={onLoginClick}
@@ -272,6 +309,22 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                 ? 'גלה מוצרים ממרכולים מהימנים'
                 : 'Discover products from trusted merchants — browse, compare, order with ease'}
           </p>
+          <div className="flex flex-wrap justify-center gap-3 mb-8">
+            <button
+              type="button"
+              onClick={() => catalogProductsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="btn-primary px-6 py-3 text-sm"
+            >
+              {lang === 'ar' ? 'ابدأ التسوق' : lang === 'he' ? 'התחל לקנות' : 'Start Shopping'}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigateToCatalogWithParams({ featured: 'true' })}
+              className="btn-secondary px-6 py-3 text-sm"
+            >
+              {lang === 'ar' ? 'تصفح المنتجات' : lang === 'he' ? 'עיין במוצרים' : 'Browse Products'}
+            </button>
+          </div>
           {/* شريط ثقة سريع */}
           <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-sm font-bold text-palma-navy/80">
             <span className="flex items-center gap-2">
@@ -290,13 +343,22 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
         </div>
       </section>
 
-      <main className="pt-8 pb-20 px-4 sm:px-8 max-w-[1600px] mx-auto flex flex-col gap-8 bg-gradient-to-b from-white to-slate-50/50 min-h-[60vh]">
+      <main className="pt-8 pb-20 px-4 sm:px-6 lg:px-8 max-w-[1440px] mx-auto flex flex-col gap-6 bg-gradient-to-b from-white to-slate-50/50 min-h-[60vh] overflow-x-clip">
         {/* 2. شريط التصنيفات الأفقي */}
         <section className="w-full rounded-2xl bg-white/80 backdrop-blur-sm border border-slate-100 p-4 shadow-sm" aria-label={lang === 'ar' ? 'التصنيفات' : 'Categories'}>
-          <h2 className="text-sm font-black text-palma-navy uppercase tracking-wider mb-4 px-1 flex items-center gap-2">
-            <span aria-hidden>📦</span>
-            {lang === 'ar' ? 'تصفّح حسب التصنيف' : lang === 'he' ? 'עיון לפי קטגוריה' : 'Browse by category'}
-          </h2>
+          <div className="flex items-center justify-between gap-3 mb-4 px-1">
+            <h2 className="text-sm font-black text-palma-navy uppercase tracking-wider flex items-center gap-2">
+              <span aria-hidden>📦</span>
+              {lang === 'ar' ? 'تصفّح حسب التصنيف' : lang === 'he' ? 'עיון לפי קטגוריה' : 'Browse by category'}
+            </h2>
+            <button
+              type="button"
+              onClick={() => navigateToCatalogWithParams({ view: 'categories' })}
+              className="text-sm font-bold text-palma-primary hover:underline"
+            >
+              {lang === 'ar' ? 'عرض الكل' : lang === 'he' ? 'הצג הכל' : 'View all'}
+            </button>
+          </div>
           <div className="overflow-x-auto scrollbar-hide pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             <div className="flex gap-3 min-w-max">
               <button
@@ -307,7 +369,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                 <span>📂</span>
                 {t.common.allCategories}
               </button>
-              {categories.slice(0, 16).map((cat) => (
+              {(showAllCategories ? categories : categories.slice(0, 16)).map((cat) => (
                 <button
                   key={cat}
                   type="button"
@@ -318,6 +380,21 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                   {t.categories[cat as keyof typeof t.categories] || cat}
                 </button>
               ))}
+              {categories.length > 16 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllCategories((s) => !s)}
+                  className="flex-shrink-0 px-4 py-3 rounded-2xl border-2 border-slate-200 bg-white text-slate-700 hover:border-palma-primary/50 hover:bg-palma-primaryLight/20 font-bold text-sm"
+                >
+                  {showAllCategories
+                    ? lang === 'ar'
+                      ? 'عرض أقل'
+                      : 'View less'
+                    : lang === 'ar'
+                      ? 'عرض الكل'
+                      : 'View all'}
+                </button>
+              )}
             </div>
           </div>
         </section>
@@ -332,10 +409,10 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
           }}
         />
 
-        <div className="flex flex-col lg:flex-row gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-4 lg:gap-6 items-start">
         {/* Sidebar — Filter Options (قابل للطي/الإظهار) */}
-        <aside className={`hidden lg:block w-80 shrink-0 sticky h-fit animate-slide-up ${embeddedInLayout ? 'top-20' : 'top-28'}`}>
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <aside className={`hidden lg:block animate-slide-up ${embeddedInLayout ? 'top-20' : 'top-28'}`}>
+          <div className={`bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden sticky ${embeddedInLayout ? 'top-20' : 'top-24'}`}>
             <div className="flex justify-between items-center p-4 border-b border-slate-200 bg-slate-50/50">
               <h3 className="text-base font-bold text-palma-navy">
                 {lang === 'ar' ? 'خيارات الفلترة' : lang === 'he' ? 'אפשרויות סינון' : 'Filter Options'}
@@ -359,12 +436,14 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
             </div>
 
             {!isFiltersCollapsed && (
-            <div className="p-6">
+            <div className="p-4 space-y-1 max-h-[80vh] overflow-y-auto">
             {/* Category */}
-            <div className="pb-5 border-b border-slate-100">
-              <p className="text-xs font-bold text-slate-600 mb-3 uppercase tracking-wide">
-                {t.common.category}
-              </p>
+            <div className="pb-4 border-b border-slate-100">
+              <button type="button" onClick={() => toggleFilterSection('category')} className="w-full flex items-center justify-between text-xs font-bold text-slate-600 mb-3 uppercase tracking-wide">
+                <span>{t.common.category}</span>
+                {openFilterSections.category ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+              {openFilterSections.category && (
               <ul className="space-y-1.5">
                 <li>
                   <button
@@ -387,39 +466,47 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                   </li>
                 ))}
               </ul>
+              )}
             </div>
 
             {/* Price — نطاق السعر + حقول */}
-            <div className="py-5 border-b border-slate-100">
-              <p className="text-xs font-bold text-slate-600 mb-3 uppercase tracking-wide">
-                {t.common.priceRange}
-              </p>
-              <div className="grid grid-cols-2 gap-2 mb-2">
-                <input
-                  type="number"
-                  placeholder={t.common.minPrice}
-                  className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium outline-none focus:ring-2 focus:ring-palma-primary"
-                  value={minPrice}
-                  onChange={(e) => setMinPrice(e.target.value)}
-                />
-                <input
-                  type="number"
-                  placeholder={t.common.maxPrice}
-                  className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium outline-none focus:ring-2 focus:ring-palma-primary"
-                  value={maxPrice}
-                  onChange={(e) => setMaxPrice(e.target.value)}
-                />
-              </div>
-              <p className="text-xs text-slate-500 font-medium">
-                ₪{minPrice || '0'} – ₪{maxPrice || priceRange.max}
-              </p>
+            <div className="py-4 border-b border-slate-100">
+              <button type="button" onClick={() => toggleFilterSection('price')} className="w-full flex items-center justify-between text-xs font-bold text-slate-600 mb-3 uppercase tracking-wide">
+                <span>{t.common.priceRange}</span>
+                {openFilterSections.price ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+              {openFilterSections.price && (
+                <>
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <input
+                      type="number"
+                      placeholder={t.common.minPrice}
+                      className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium outline-none focus:ring-2 focus:ring-palma-primary"
+                      value={minPrice}
+                      onChange={(e) => setMinPrice(e.target.value)}
+                    />
+                    <input
+                      type="number"
+                      placeholder={t.common.maxPrice}
+                      className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium outline-none focus:ring-2 focus:ring-palma-primary"
+                      value={maxPrice}
+                      onChange={(e) => setMaxPrice(e.target.value)}
+                    />
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium">
+                    ₪{minPrice || '0'} – ₪{maxPrice || priceRange.max}
+                  </p>
+                </>
+              )}
             </div>
 
             {/* Review — تقييم بالنجوم */}
-            <div className="py-5 border-b border-slate-100">
-              <p className="text-xs font-bold text-slate-600 mb-3 uppercase tracking-wide">
-                {lang === 'ar' ? 'التقييم' : 'Review'}
-              </p>
+            <div className="py-4 border-b border-slate-100">
+              <button type="button" onClick={() => toggleFilterSection('review')} className="w-full flex items-center justify-between text-xs font-bold text-slate-600 mb-3 uppercase tracking-wide">
+                <span>{lang === 'ar' ? 'التقييم' : 'Review'}</span>
+                {openFilterSections.review ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+              {openFilterSections.review && (
               <div className="space-y-2">
                 {[5, 4, 3, 2, 1].map((stars) => (
                   <button
@@ -440,14 +527,17 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                   </button>
                 ))}
               </div>
+              )}
             </div>
 
             {/* Brand / Merchant */}
             {merchantsList.length > 0 && (
-              <div className="py-5 border-b border-slate-100">
-                <p className="text-xs font-bold text-slate-600 mb-3 uppercase tracking-wide">
-                  {lang === 'ar' ? 'التاجر / العلامة' : 'Brand'}
-                </p>
+              <div className="py-4 border-b border-slate-100">
+                <button type="button" onClick={() => toggleFilterSection('brand')} className="w-full flex items-center justify-between text-xs font-bold text-slate-600 mb-3 uppercase tracking-wide">
+                  <span>{lang === 'ar' ? 'التاجر / العلامة' : 'Brand'}</span>
+                  {openFilterSections.brand ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
+                {openFilterSections.brand && (
                 <ul className="space-y-1.5 max-h-40 overflow-y-auto">
                   <li>
                     <button
@@ -470,14 +560,17 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                     </li>
                   ))}
                 </ul>
+                )}
               </div>
             )}
 
             {/* Product Type (Condition) */}
-            <div className="py-5 border-b border-slate-100">
-              <p className="text-xs font-bold text-slate-600 mb-3 uppercase tracking-wide">
-                {lang === 'ar' ? 'نوع المنتج' : 'Product Type'}
-              </p>
+            <div className="py-4 border-b border-slate-100">
+              <button type="button" onClick={() => toggleFilterSection('condition')} className="w-full flex items-center justify-between text-xs font-bold text-slate-600 mb-3 uppercase tracking-wide">
+                <span>{lang === 'ar' ? 'نوع المنتج' : 'Product Type'}</span>
+                {openFilterSections.condition ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+              {openFilterSections.condition && (
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => setConditionId('all')}
@@ -495,13 +588,16 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                   </button>
                 ))}
               </div>
+              )}
             </div>
 
             {/* Availability */}
-            <div className="pt-5">
-              <p className="text-xs font-bold text-slate-600 mb-3 uppercase tracking-wide">
-                {lang === 'ar' ? 'التوفر' : 'Availability'}
-              </p>
+            <div className="pt-4">
+              <button type="button" onClick={() => toggleFilterSection('availability')} className="w-full flex items-center justify-between text-xs font-bold text-slate-600 mb-3 uppercase tracking-wide">
+                <span>{lang === 'ar' ? 'التوفر' : 'Availability'}</span>
+                {openFilterSections.availability ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+              {openFilterSections.availability && (
               <div className="space-y-2">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -522,6 +618,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                   <span className="text-sm font-medium text-slate-600">{lang === 'ar' ? 'غير متوفر' : 'Out of Stock'}</span>
                 </label>
               </div>
+              )}
             </div>
             </div>
             )}
@@ -529,9 +626,9 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
         </aside>
 
         {/* Catalog Content */}
-        <div className="flex-1 space-y-8 min-w-0 animate-fade-in">
+        <div className="space-y-6 min-w-0 w-full animate-fade-in overflow-x-hidden">
           {/* Top Bar (Search + Sort) */}
-          <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-md shadow-slate-200/50 flex flex-col md:flex-row items-center gap-4">
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row items-center gap-3 sm:gap-4">
             <div className="relative flex-1 w-full">
               <Search
                 className={`absolute top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 rtl:right-6 rtl:left-auto ltr:left-6 ltr:right-auto`}
@@ -545,11 +642,11 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
               />
             </div>
 
-            <div className="flex items-center gap-4 w-full md:w-auto shrink-0">
+            <div className="flex items-center gap-3 w-full md:w-auto shrink-0">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="flex-1 md:w-56 bg-slate-50 border border-transparent rounded-2xl px-5 py-4 text-xs sm:text-[10px] font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-palma-primary cursor-pointer text-palma-navy appearance-none min-h-[44px]"
+                className="flex-1 md:w-56 bg-slate-50 border border-transparent rounded-2xl px-5 py-4 text-xs sm:text-xs font-black uppercase tracking-widest outline-none focus:ring-2 focus:ring-palma-primary cursor-pointer text-palma-navy appearance-none min-h-[44px]"
               >
                 <option value="newest">{t.common.newest}</option>
                 <option value="most_sold">{t.common.mostSold}</option>
@@ -561,7 +658,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
 
               <button
                 onClick={() => setIsMobileFilterOpen(true)}
-                className="lg:hidden flex items-center gap-2 min-h-[44px] px-4 sm:px-5 py-3 sm:py-4 bg-palma-primary rounded-2xl text-white shadow-md font-bold text-[11px] uppercase tracking-widest hover:bg-palma-primaryHover transition-colors"
+                className="lg:hidden flex items-center gap-2 min-h-[44px] px-4 py-3 bg-palma-primary rounded-xl text-white shadow-sm font-bold text-xs uppercase tracking-wide hover:bg-palma-primaryHover transition-colors"
               >
                 <Filter className="w-5 h-5 shrink-0" />
                 <span>{t.common.specificProducts}</span>
@@ -641,7 +738,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
           )}
 
           {/* 5. كل المنتجات */}
-          <div className="rounded-2xl bg-white/90 border border-slate-100 p-4 sm:p-5 shadow-sm">
+          <div className="rounded-2xl bg-white border border-slate-100 p-4 sm:p-5 shadow-sm overflow-hidden">
           <h3 className="text-base font-black uppercase tracking-widest text-palma-navy px-2 mb-4 flex items-center gap-2">
             <span aria-hidden>📋</span>
             {lang === 'ar' ? 'كل المنتجات' : lang === 'he' ? 'כל המוצרים' : 'All products'}
@@ -693,12 +790,56 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
               </div>
             ) : (
               <>
-                {/* 3. 🏷️ تخفيضات وعروض — عروض الإدمن + منتجات عليها خصم */}
+                {/* Featured products (grid) */}
+                {featuredProducts.length > 0 && (
+                  <section className="mb-8" aria-label={lang === 'ar' ? 'منتجات مميزة' : 'Featured products'}>
+                    <div className="flex items-center justify-between gap-3 mb-4">
+                      <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+                        <span aria-hidden>✨</span>
+                        {lang === 'ar' ? 'منتجات مميزة' : lang === 'he' ? 'מוצרים מומלצים' : 'Featured products'}
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => navigateToCatalogWithParams({ featured: 'true' })}
+                        className="text-sm font-bold text-palma-primary hover:underline"
+                      >
+                        {lang === 'ar' ? 'عرض المزيد' : lang === 'he' ? 'הצג עוד' : 'View more'}
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                      {featuredProducts.slice(0, 8).map((p) => (
+                        <ProductCard
+                          key={`featured-${p.id}`}
+                          product={p}
+                          lang={lang}
+                          variant="grid"
+                          className="w-full h-full"
+                          onProductClick={onProductClick}
+                          onMouseEnter={() => {
+                            prefetchComponent('PublicProductDetails');
+                            prefetchProductData(p.id);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* Offers grid (no horizontal carousel) */}
                 <section className="mb-8" aria-label={lang === 'ar' ? 'تخفيضات وعروض' : 'Discounts & Offers'}>
-                  <h3 className="text-lg font-black text-slate-800 mb-4 flex items-center gap-2">
-                    <span aria-hidden>🏷️</span>
-                    {lang === 'ar' ? 'تخفيضات وعروض' : lang === 'he' ? 'הנחות ומבצעים' : 'Discounts & Offers'}
-                  </h3>
+                  <div className="flex items-center justify-between gap-3 mb-4">
+                    <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+                      <span aria-hidden>🏷️</span>
+                      {lang === 'ar' ? 'تخفيضات وعروض' : lang === 'he' ? 'הנחות ומבצעים' : 'Discounts & Offers'}
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => navigateToCatalogWithParams({ offers: 'true' })}
+                      className="text-sm font-bold text-palma-primary hover:underline"
+                    >
+                      {lang === 'ar' ? 'عرض كل العروض' : lang === 'he' ? 'כל המבצעים' : 'View all offers'}
+                    </button>
+                  </div>
                   {offers.length === 0 && discountProducts.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/30 p-8 text-center min-h-[120px] flex flex-col items-center justify-center">
                       <p className="text-slate-500 font-medium">
@@ -706,90 +847,92 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                       </p>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-300 pb-2">
-                      <div className="flex gap-4 min-w-0">
-                        {offers.map((o) => (
-                          <OfferCard
-                            key={o.id}
-                            offer={o}
-                            lang={lang}
-                            onShopNow={() => {
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                      {(showAllOffers ? offers : offers.slice(0, 4)).map((o) => (
+                        <div key={`offer-${o.id}`} className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col">
+                          <div className="p-3 border-b border-slate-100 bg-slate-50/60">
+                            <span className="inline-flex items-center text-xs font-black bg-red-600 text-white px-2 py-1 rounded">
+                              {lang === 'ar' ? 'عرض خاص' : 'Special'}
+                            </span>
+                          </div>
+                          <div className="p-4 flex-1 space-y-2">
+                            <p className="text-sm font-bold text-slate-800 line-clamp-2">{o.title || o.subtitle || 'Offer'}</p>
+                            <p className="text-xs text-slate-500 line-clamp-2">{o.subtitle || o.title}</p>
+                            <p className="text-lg font-black text-palma-primary">-{o.discount_label || 0}%</p>
+                          </div>
+                          <button
+                            type="button"
+                            className="btn-primary rounded-none py-2.5 text-xs"
+                            onClick={() => {
                               if (o.type === 'product' && o.product_id) onProductClick(o.product_id);
-                              else catalogProductsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                              else navigateToCatalogWithParams({ offers: 'true' });
                             }}
-                          />
-                        ))}
-                        {discountProducts.map((p) => (
-                          <ProductCard
-                              key={p.id}
-                            product={p}
-                            lang={lang}
-                            variant="compact"
-                            onProductClick={onProductClick}
-                              onMouseEnter={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}
-                          />
-                        ))}
-                      </div>
+                          >
+                            {lang === 'ar' ? 'تسوق الآن' : 'Shop now'}
+                          </button>
+                        </div>
+                      ))}
+                      {(showAllOffers ? discountProducts : discountProducts.slice(0, 4)).map((p) => (
+                        <ProductCard
+                          key={`discount-${p.id}`}
+                          product={p}
+                          lang={lang}
+                          variant="grid"
+                          className="w-full h-full"
+                          onProductClick={onProductClick}
+                          onMouseEnter={() => {
+                            prefetchComponent('PublicProductDetails');
+                            prefetchProductData(p.id);
+                          }}
+                        />
+                      ))}
                     </div>
                   )}
                 </section>
 
-                {/* 3b. ⭐ المنتجات الشائعة — أفقي */}
-                {popularProducts.length > 0 && (
-                  <section className="mb-8 space-y-3" aria-label={lang === 'ar' ? 'المنتجات الشائعة' : 'Popular products'}>
-                    <h3 className="text-sm font-black uppercase tracking-widest text-palma-navy px-1 flex items-center gap-2">
-                      <span aria-hidden>⭐</span>
-                      {lang === 'ar' ? 'المنتجات الشائعة' : lang === 'he' ? 'מוצרים פופולריים' : 'Popular products'}
-                    </h3>
-                    <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-300 pb-2">
-                      <div className="flex gap-4 min-w-0">
-                        {popularProducts.map((p) => (
-                          <ProductCard
-                              key={p.id}
-                            product={p}
-                            lang={lang}
-                            variant="compact"
-                            onProductClick={onProductClick}
-                              onMouseEnter={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}
-                          />
-                        ))}
-                      </div>
+                {/* Best sellers / trending (optional grid) */}
+                {(bestSellerProducts.length > 0 || popularProducts.length > 0) && (
+                  <section className="mb-8" aria-label={lang === 'ar' ? 'الأكثر مبيعًا' : 'Best sellers'}>
+                    <div className="flex items-center justify-between gap-3 mb-4">
+                      <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+                        <span aria-hidden>🔥</span>
+                        {lang === 'ar' ? 'الأكثر مبيعًا' : lang === 'he' ? 'הנמכרים ביותר' : 'Best sellers'}
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => navigateToCatalogWithParams({ trending: 'true' })}
+                        className="text-sm font-bold text-palma-primary hover:underline"
+                      >
+                        {lang === 'ar' ? 'عرض المزيد' : lang === 'he' ? 'הצג עוד' : 'View more'}
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                      {(bestSellerProducts.length > 0 ? bestSellerProducts : popularProducts).slice(0, 8).map((p) => (
+                        <ProductCard
+                          key={`best-${p.id}`}
+                          product={p}
+                          lang={lang}
+                          variant="grid"
+                          className="w-full h-full"
+                          onProductClick={onProductClick}
+                          onMouseEnter={() => {
+                            prefetchComponent('PublicProductDetails');
+                            prefetchProductData(p.id);
+                          }}
+                        />
+                      ))}
                     </div>
                   </section>
                 )}
 
-                {/* 4. 🆕 منتجات جديدة — آخر المنتجات المضافة */}
-                {newProducts.length > 0 && (
-                  <section className="mb-8 space-y-3" aria-label={lang === 'ar' ? 'منتجات جديدة' : lang === 'he' ? 'מוצרים חדשים' : 'New arrivals'}>
-                    <h3 className="text-sm font-black uppercase tracking-widest text-palma-navy px-1 flex items-center gap-2">
-                      <span aria-hidden>🆕</span>
-                      {lang === 'ar' ? 'منتجات جديدة' : lang === 'he' ? 'מוצרים חדשים' : 'New arrivals'}
-                    </h3>
-                    <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
-                      <div className="flex gap-4 min-w-0 pb-2">
-                        {newProducts.map((p) => (
-                          <ProductCard
-                              key={p.id}
-                            product={p}
-                            lang={lang}
-                            variant="compact"
-                            onProductClick={onProductClick}
-                            onMouseEnter={() => { prefetchComponent('PublicProductDetails'); prefetchProductData(p.id); }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </section>
-                )}
-
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 pb-8">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 pb-8">
                   {paginatedProducts.map((p) => (
                     <ProductCard
                       key={p.id}
                       product={p}
                       lang={lang}
                       variant="grid"
-                      className="max-w-[180px] w-full mx-auto sm:max-w-none"
+                      className="w-full h-full"
                       onProductClick={onProductClick}
                       onMouseEnter={() => {
                         prefetchComponent('PublicProductDetails');
@@ -843,10 +986,16 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                         ? 'נצפה לאחרונה'
                         : 'Recently Viewed'}
                   </h3>
+                  <button
+                    type="button"
+                    onClick={() => navigateToCatalogWithParams({ view: 'recent' })}
+                    className="text-sm font-bold text-palma-primary hover:underline"
+                  >
+                    {lang === 'ar' ? 'عرض المزيد' : lang === 'he' ? 'הצג עוד' : 'View more'}
+                  </button>
                 </div>
-                <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
-                  <div className="flex gap-4 min-w-0 px-2 pb-2">
-                    {recentlyViewed.slice(0, 12).map((p) => {
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 px-2 pb-2">
+                    {recentlyViewed.slice(0, 8).map((p) => {
                       const basePrice = p.price ?? p.price_ils ?? 0;
                       const finalPrice = (p as any).final_price != null ? (p as any).final_price : basePrice;
                       const hasDiscount = finalPrice < basePrice;
@@ -857,7 +1006,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                           key={p.id}
                           type="button"
                           onClick={() => onProductClick(p.id)}
-                          className="min-w-[180px] max-w-[220px] bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex-shrink-0 text-left overflow-hidden"
+                          className="w-full bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all text-left overflow-hidden"
                         >
                           <div className="aspect-[4/3] overflow-hidden bg-slate-50 relative">
                             <img
@@ -871,18 +1020,18 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                               onError={setImageToPlaceholder}
                             />
                             {hasDiscount && (
-                              <span className="absolute top-2 left-2 bg-red-600 text-white px-2 py-0.5 rounded-sm text-[10px] font-black">
+                              <span className="absolute top-2 left-2 bg-red-600 text-white px-2 py-0.5 rounded-sm text-xs font-black">
                                 {discountPercent > 0 ? `%${discountPercent}-` : (lang === 'ar' ? 'تخفيضات!' : 'Sale!')}
                               </span>
                             )}
                           </div>
                           <div className="p-3 space-y-1">
-                            <p className="text-[11px] font-bold text-palma-navy line-clamp-2">{p.name}</p>
-                            <p className="text-[11px] font-semibold text-palma-primary">
+                            <p className="text-xs font-bold text-palma-navy line-clamp-2">{p.name}</p>
+                            <p className="text-xs font-semibold text-palma-primary">
                               {hasDiscount ? (
                                 <>
                                   <span className="text-red-600 font-bold">₪{finalPrice}</span>
-                                  <span className="line-through text-[10px] text-slate-400 mr-1">₪{basePrice}</span>
+                                  <span className="line-through text-xs text-slate-400 mr-1">₪{basePrice}</span>
                                 </>
                               ) : (
                                 <>₪{basePrice}</>
@@ -892,7 +1041,6 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                         </button>
                       );
                     })}
-                  </div>
                 </div>
               </section>
             );
@@ -902,10 +1050,18 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
       </main>
 
       {isMobileFilterOpen && (
-        <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-md lg:hidden animate-fade-in">
-          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[3rem] p-6 sm:p-8 pb-[calc(2rem+env(safe-area-inset-bottom))] space-y-8 animate-slide-up max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-md lg:hidden animate-fade-in overflow-hidden">
+          <div
+            className="absolute bottom-0 left-0 right-0 w-full bg-white rounded-t-[2rem] p-5 sm:p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] space-y-6 animate-slide-up max-h-[90vh] overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mobile-filter-title"
+            tabIndex={-1}
+          >
             <div className="flex justify-between items-center">
-              <h3 className="text-xl font-black uppercase tracking-tight text-palma-navy">🔍 {t.common.filters}</h3>
+              <h3 id="mobile-filter-title" className="text-xl font-black uppercase tracking-tight text-palma-navy">
+                🔍 {t.common.filters}
+              </h3>
               <button
                 onClick={() => setIsMobileFilterOpen(false)}
                 className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-palma-navy hover:bg-slate-200 transition"
@@ -914,17 +1070,17 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
               </button>
             </div>
             <div className="space-y-8">
-              <p className="text-[10px] text-slate-400 font-medium">
+              <p className="text-xs text-slate-400 font-medium">
                 💡 {(t.common as Record<string, string>).clickAgainToClearFilter ?? 'اضغط مرة ثانية لإلغاء الفلتر'}
               </p>
               <div className="space-y-3">
-                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                <p className="text-xs font-black uppercase text-slate-400 tracking-widest">
                   📂 {t.common.category}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => setCategoryId('all')}
-                    className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase min-h-[44px] ${categoryId === 'all' ? 'bg-palma-navy text-white' : 'bg-slate-50 text-slate-500'}`}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase min-h-[44px] ${categoryId === 'all' ? 'bg-palma-navy text-white' : 'bg-slate-50 text-slate-500'}`}
                   >
                     {t.common.allCategories}
                   </button>
@@ -932,7 +1088,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                     <button
                       key={cat}
                       onClick={() => setCategoryId(categoryId === cat ? 'all' : cat)}
-                      className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase min-h-[44px] ${categoryId === cat ? 'bg-palma-navy text-white' : 'bg-slate-50 text-slate-500'}`}
+                      className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase min-h-[44px] ${categoryId === cat ? 'bg-palma-navy text-white' : 'bg-slate-50 text-slate-500'}`}
                     >
                       {(CATEGORY_EMOJI[cat] || '') + ' ' + (t.categories[cat as keyof typeof t.categories] || cat)}
                     </button>
@@ -940,13 +1096,13 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                 </div>
               </div>
               <div className="space-y-3">
-                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                <p className="text-xs font-black uppercase text-slate-400 tracking-widest">
                   🏷️ {lang === 'ar' ? 'حالة المنتج' : 'Condition'}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => setConditionId('all')}
-                    className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase min-h-[44px] ${conditionId === 'all' ? 'bg-palma-navy text-white' : 'bg-slate-50 text-slate-500'}`}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase min-h-[44px] ${conditionId === 'all' ? 'bg-palma-navy text-white' : 'bg-slate-50 text-slate-500'}`}
                   >
                     {lang === 'ar' ? 'الكل' : 'All'}
                   </button>
@@ -954,7 +1110,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                     <button
                       key={c}
                       onClick={() => setConditionId(conditionId === c ? 'all' : c)}
-                      className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase min-h-[44px] ${conditionId === c ? 'bg-palma-navy text-white' : 'bg-slate-50 text-slate-500'}`}
+                      className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase min-h-[44px] ${conditionId === c ? 'bg-palma-navy text-white' : 'bg-slate-50 text-slate-500'}`}
                     >
                       <ProductConditionBadge condition={c} lang={lang} />
                     </button>
@@ -962,7 +1118,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                 </div>
               </div>
               <div className="space-y-3">
-                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                <p className="text-xs font-black uppercase text-slate-400 tracking-widest">
                   💰 {t.common.priceRange}
                 </p>
                 <div className="grid grid-cols-2 gap-3">
@@ -983,7 +1139,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                 </div>
               </div>
               <div className="space-y-3">
-                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                <p className="text-xs font-black uppercase text-slate-400 tracking-widest">
                   ⭐ {lang === 'ar' ? 'التقييم' : 'Review'}
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -991,7 +1147,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                     <button
                       key={stars}
                       onClick={() => setMinRating(minRating === stars ? 0 : stars)}
-                      className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase ${minRating === stars ? 'bg-amber-500 text-white' : 'bg-slate-50 text-slate-500'}`}
+                      className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase ${minRating === stars ? 'bg-amber-500 text-white' : 'bg-slate-50 text-slate-500'}`}
                     >
                       {stars}★+
                     </button>
@@ -1000,13 +1156,13 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
               </div>
               {merchantsList.length > 0 && (
                 <div className="space-y-3">
-                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                  <p className="text-xs font-black uppercase text-slate-400 tracking-widest">
                     {lang === 'ar' ? 'التاجر / العلامة' : 'Brand'}
                   </p>
                   <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
                     <button
                       onClick={() => setMerchantId('all')}
-                      className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase min-h-[44px] ${merchantId === 'all' ? 'bg-palma-navy text-white' : 'bg-slate-50 text-slate-500'}`}
+                      className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase min-h-[44px] ${merchantId === 'all' ? 'bg-palma-navy text-white' : 'bg-slate-50 text-slate-500'}`}
                     >
                       {lang === 'ar' ? 'الكل' : 'All'}
                     </button>
@@ -1014,7 +1170,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                       <button
                         key={m.id}
                         onClick={() => setMerchantId(merchantId === m.id ? 'all' : m.id)}
-                        className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase min-h-[44px] truncate max-w-[140px] ${merchantId === m.id ? 'bg-palma-navy text-white' : 'bg-slate-50 text-slate-500'}`}
+                        className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase min-h-[44px] truncate max-w-[140px] ${merchantId === m.id ? 'bg-palma-navy text-white' : 'bg-slate-50 text-slate-500'}`}
                       >
                         {m.name}
                       </button>
@@ -1023,7 +1179,7 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
                 </div>
               )}
               <div className="space-y-3">
-                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                <p className="text-xs font-black uppercase text-slate-400 tracking-widest">
                   {lang === 'ar' ? 'التوفر' : 'Availability'}
                 </p>
                 <div className="flex flex-wrap gap-4">
@@ -1051,13 +1207,13 @@ const PublicCatalog: React.FC<PublicCatalogProps> = ({ onBack, onProductClick, o
             <div className="flex gap-4 pt-4">
               <button
                 onClick={resetFilters}
-                className="flex-1 py-5 bg-slate-100 text-slate-500 rounded-2xl font-black uppercase text-[11px] tracking-widest"
+                className="flex-1 py-5 bg-slate-100 text-slate-500 rounded-2xl font-black uppercase text-xs tracking-widest"
               >
                 {t.common.resetFilters}
               </button>
               <button
                 onClick={() => setIsMobileFilterOpen(false)}
-                className="btn-primary flex-[2] py-5 text-[11px] uppercase tracking-widest"
+                className="btn-primary flex-[2] py-5 text-xs uppercase tracking-widest"
               >
                 {lang === 'ar' ? 'عرض النتائج' : 'Show Results'}
               </button>

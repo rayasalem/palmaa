@@ -20,14 +20,14 @@ async function getAdminOverview() {
     const byDay = {};
     for (const o of rows) {
       const st = String(o.status || '').toUpperCase();
-      if (st === 'PAID' || st === 'COMPLETED') {
+      if (st === 'PAID' || st === 'ACCEPTED' || st === 'COMPLETED') {
         totalSales += Number(o.total_amount ?? 0);
       }
       totalOrders += 1;
       const day = (o.created_at || '').slice(0, 10);
       if (!byDay[day]) byDay[day] = { date: day, orders: 0, sales: 0 };
       byDay[day].orders += 1;
-      if (st === 'PAID' || st === 'COMPLETED') {
+      if (st === 'PAID' || st === 'ACCEPTED' || st === 'COMPLETED') {
         byDay[day].sales += Number(o.total_amount ?? 0);
       }
     }
@@ -83,14 +83,14 @@ async function getMerchantOverview(merchantId) {
     const byDay = {};
     for (const o of rows) {
       const st = String(o.status || '').toUpperCase();
-      if (st === 'PAID' || st === 'COMPLETED') {
+      if (st === 'PAID' || st === 'ACCEPTED' || st === 'COMPLETED') {
         totalSales += Number(o.total_amount ?? 0);
       }
       totalOrders += 1;
       const day = (o.created_at || '').slice(0, 10);
       if (!byDay[day]) byDay[day] = { date: day, orders: 0, sales: 0 };
       byDay[day].orders += 1;
-      if (st === 'PAID' || st === 'COMPLETED') {
+      if (st === 'PAID' || st === 'ACCEPTED' || st === 'COMPLETED') {
         byDay[day].sales += Number(o.total_amount ?? 0);
       }
     }

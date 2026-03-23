@@ -90,7 +90,7 @@ export const MerchantProductsTab: React.FC<MerchantProductsTabProps> = ({
                       : 'Edit Product'
                   : t.common.addProduct}
               </h3>
-              <p className="text-[10px] text-palma-muted font-bold mt-1 uppercase tracking-wider">
+              <p className="text-xs text-palma-muted font-bold mt-1 uppercase tracking-wider">
                 {t.common.createListing}
               </p>
             </div>
@@ -104,7 +104,7 @@ export const MerchantProductsTab: React.FC<MerchantProductsTabProps> = ({
 
         <form onSubmit={handleProductSubmit} className="space-y-5">
           <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5">
               {t.common.productName} *
             </label>
             <input
@@ -117,7 +117,7 @@ export const MerchantProductsTab: React.FC<MerchantProductsTabProps> = ({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5">
                 {t.common.price} * ({lang === 'ar' ? 'موجب فقط' : 'Positive only'})
               </label>
               <div className="relative">
@@ -138,7 +138,7 @@ export const MerchantProductsTab: React.FC<MerchantProductsTabProps> = ({
               </div>
             </div>
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5">
                 {t.common.stock} * ({lang === 'ar' ? 'موجب فقط' : 'Positive only'})
               </label>
               <input
@@ -156,7 +156,7 @@ export const MerchantProductsTab: React.FC<MerchantProductsTabProps> = ({
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5">
               {lang === 'ar' ? 'حالة المنتج' : lang === 'he' ? 'סטטוס המוצר' : 'Product condition'} *
             </label>
             <select
@@ -194,7 +194,7 @@ export const MerchantProductsTab: React.FC<MerchantProductsTabProps> = ({
             {productForm.is_discount_active && (
               <>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5">
                     {lang === 'ar' ? 'نوع الخصم' : 'Discount type'}
                   </label>
                   <select
@@ -209,7 +209,7 @@ export const MerchantProductsTab: React.FC<MerchantProductsTabProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5">
                     {productForm.discount_type === 'AMOUNT'
                       ? lang === 'ar'
                         ? 'قيمة الخصم (₪)'
@@ -241,7 +241,7 @@ export const MerchantProductsTab: React.FC<MerchantProductsTabProps> = ({
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5">
                     {lang === 'ar' ? 'انتهاء الخصم (اختياري)' : 'Discount ends (optional)'}
                   </label>
                   <input
@@ -277,7 +277,7 @@ export const MerchantProductsTab: React.FC<MerchantProductsTabProps> = ({
                       : 'https://placehold.co/200x200?text=صورة+المنتج';
                   return (
                     <div className="mt-4 pt-4 border-t border-slate-200">
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">
+                      <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">
                         {lang === 'ar' ? 'معاينة منظر المنتج للزبون' : 'How the product will look'}
                       </p>
                       {!hasRealDiscount && (
@@ -328,7 +328,7 @@ export const MerchantProductsTab: React.FC<MerchantProductsTabProps> = ({
             )}
           </div>
           <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5">
               {t.common.category} *
             </label>
             <select
@@ -349,7 +349,7 @@ export const MerchantProductsTab: React.FC<MerchantProductsTabProps> = ({
             </select>
           </div>
           <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5">
               {t.common.description}
             </label>
             <textarea
@@ -361,10 +361,10 @@ export const MerchantProductsTab: React.FC<MerchantProductsTabProps> = ({
             />
           </div>
           <div>
-            <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+            <span className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5">
               {(t.product && t.product.image) || 'Image'} (Max 5) *
             </span>
-            <p className="text-[10px] text-slate-400 mb-2">
+            <p className="text-xs text-slate-400 mb-2">
               {lang === 'ar'
                 ? 'مسموح حتى ٥ صور، كل صورة أقل من ٢ ميجا وبصيغة JPG أو PNG أو WebP.'
                 : lang === 'he'
@@ -390,7 +390,7 @@ export const MerchantProductsTab: React.FC<MerchantProductsTabProps> = ({
               <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center mx-auto mb-2 text-palma-muted group-hover:bg-white group-hover:text-palma-primary group-hover:shadow-md transition-all">
                 <ImageIcon className="w-5 h-5" />
               </div>
-              <p className="text-[10px] font-bold text-slate-400 group-hover:text-palma-navy transition-colors">
+              <p className="text-xs font-bold text-slate-400 group-hover:text-palma-navy transition-colors">
                 {uploadQueue.length > 0 ? `${uploadQueue.length} ${t.common.filesSelected}` : t.common.uploadHint}
               </p>
             </label>
@@ -450,7 +450,7 @@ export const MerchantProductsTab: React.FC<MerchantProductsTabProps> = ({
             </div>
             <h3 className="font-bold text-palma-navy text-lg">{t.common.inventory}</h3>
           </div>
-          <span className="text-[10px] font-black text-palma-primary bg-palma-primary/5 px-3 py-2 rounded-lg border border-palma-primary/10 whitespace-nowrap">
+          <span className="text-xs font-black text-palma-primary bg-palma-primary/5 px-3 py-2 rounded-lg border border-palma-primary/10 whitespace-nowrap">
             {products.length} {t.common.items}
           </span>
         </div>
@@ -502,7 +502,7 @@ export const MerchantProductsTab: React.FC<MerchantProductsTabProps> = ({
                       {product.name}
                     </h4>
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-wider">
                         {(CATEGORY_EMOJI[product.category] || '') +
                           ' ' +
                           (t.categories?.[product.category] || product.category)}
@@ -527,7 +527,7 @@ export const MerchantProductsTab: React.FC<MerchantProductsTabProps> = ({
                             <span className="text-sm sm:text-base font-black text-palma-navy">₪{baseP.toFixed(2)}</span>
                           )}
                           {hasDisc && pct > 0 && (
-                            <span className="text-[9px] font-black bg-red-100 text-red-600 px-2 py-0.5 rounded-md mt-1 inline-flex">
+                            <span className="text-xs font-black bg-red-100 text-red-600 px-2 py-0.5 rounded-md mt-1 inline-flex">
                               %{pct} {lang === 'ar' ? 'خصم' : 'off'}
                             </span>
                           )}
@@ -535,7 +535,7 @@ export const MerchantProductsTab: React.FC<MerchantProductsTabProps> = ({
                       );
                     })()}
                     <span
-                      className={`text-[9px] font-bold px-2 py-0.5 rounded-md mt-1 inline-flex ${product.stock > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}
+                      className={`text-xs font-bold px-2 py-0.5 rounded-md mt-1 inline-flex ${product.stock > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}
                     >
                       {product.stock > 0 ? `${product.stock} ${t.common.available}` : t.common.outOfStock}
                     </span>

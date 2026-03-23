@@ -184,7 +184,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                 setView('LOGIN');
                 setError('');
               }}
-              className={`py-3.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all duration-200 ${view === 'LOGIN' ? 'bg-white text-palma-navy shadow-soft border border-palma-border' : 'text-slate-400 hover:text-palma-navy'}`}
+              className={`py-3.5 text-xs font-bold uppercase tracking-widest rounded-lg transition-all duration-200 ${view === 'LOGIN' ? 'bg-white text-palma-navy shadow-soft border border-palma-border' : 'text-slate-400 hover:text-palma-navy'}`}
             >
               {t.auth.login}
             </button>
@@ -193,7 +193,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                 setView('ROLE_SELECT');
                 setError('');
               }}
-              className={`py-3.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all duration-200 ${view !== 'LOGIN' ? 'bg-white text-palma-navy shadow-soft border border-palma-border' : 'text-slate-400 hover:text-palma-navy'}`}
+              className={`py-3.5 text-xs font-bold uppercase tracking-widest rounded-lg transition-all duration-200 ${view !== 'LOGIN' ? 'bg-white text-palma-navy shadow-soft border border-palma-border' : 'text-slate-400 hover:text-palma-navy'}`}
             >
               {t.auth.register}
             </button>
@@ -214,7 +214,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                   <span>{error}</span>
                 </div>
                 {!showForgotPassword && (
-                  <p className="text-[10px] text-slate-500 text-center">{t.auth.checkEmailAndPassword}</p>
+                  <p className="text-xs text-slate-500 text-center">{t.auth.checkEmailAndPassword}</p>
                 )}
               </div>
             )}
@@ -269,7 +269,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                   >
                     <label
                       htmlFor="forgot-email"
-                      className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2"
+                      className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-2"
                     >
                       {t.auth.email}
                     </label>
@@ -303,7 +303,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                     <div>
                       <label
                         htmlFor="forgot-otp"
-                        className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2"
+                        className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-2"
                       >
                         {t.auth.verificationCode6}
                       </label>
@@ -391,7 +391,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                     <div>
                       <label
                         htmlFor="forgot-new-password"
-                        className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2"
+                        className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-2"
                       >
                         {t.auth.newPassword}
                       </label>
@@ -410,7 +410,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                     <div>
                       <label
                         htmlFor="forgot-confirm-password"
-                        className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2"
+                        className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-2"
                       >
                         {t.auth.confirmPassword}
                       </label>
@@ -510,7 +510,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                   <div>
                     <label
                       htmlFor="login-verification-code"
-                      className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2"
+                      className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2"
                     >
                       {t.auth.verificationCode6}
                     </label>
@@ -596,7 +596,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                 <div className="space-y-2">
                   <label
                     htmlFor="login-email"
-                    className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1"
+                    className="text-xs font-black text-slate-400 uppercase tracking-widest px-1"
                   >
                     {t.auth.email}
                   </label>
@@ -620,7 +620,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                   <div className="flex justify-between items-center px-1">
                     <label
                       htmlFor="login-password"
-                      className="text-[10px] font-black text-slate-400 uppercase tracking-widest"
+                      className="text-xs font-black text-slate-400 uppercase tracking-widest"
                     >
                       {t.auth.password}
                     </label>
@@ -635,7 +635,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                         setForgotNewPassword('');
                         setForgotConfirmPassword('');
                       }}
-                      className="text-[10px] font-bold text-palma-primary hover:underline"
+                      className="text-xs font-bold text-palma-primary hover:underline"
                     >
                       {t.auth.forgot}
                     </button>
@@ -697,7 +697,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
                         >
                           {r.label}
                         </span>
-                        <span className="text-[9px] font-bold text-slate-400">{r.desc}</span>
+                        <span className="text-xs font-bold text-slate-400">{r.desc}</span>
                       </div>
                     </button>
                   ))}
@@ -717,7 +717,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, initialView = 'LOGIN', onOp
         </div>
 
         <div className="mt-8 text-center">
-          <p className="text-[10px] font-bold text-slate-300">© 2024 Palma Commerce. All rights reserved.</p>
+          <p className="text-xs font-bold text-slate-300">© 2024 Palma Commerce. All rights reserved.</p>
         </div>
       </div>
     </div>

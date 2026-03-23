@@ -14,7 +14,7 @@ VALUES
   ('00000000-0000-4000-8000-000000000002', 'broker@palma.demo',   'Demo Broker',   'BROKER',   'APPROVED', 'free', 'active'),
   ('00000000-0000-4000-8000-000000000003', 'customer@palma.demo', 'Demo Customer', 'CUSTOMER', 'APPROVED', 'free', 'active'),
   ('00000000-0000-4000-8000-000000000004', 'admin@palma.demo',    'Demo Admin',    'ADMIN',    'APPROVED', 'free', 'active')
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (email) DO NOTHING;
 
 -- ملف تعريف التاجر (merchant_profiles) – إن لم يكن موجوداً يمكنك تجاهل هذا القسم أو تعديله
 INSERT INTO public.merchant_profiles (user_id, business_name, logo_url)
@@ -333,6 +333,8 @@ WHERE NOT EXISTS (
 -- 6) بيانات بسيطة للزبون: عربة فارغة + إشعار ترحيبي (اختياري)
 -- ============================================================================
 
+ALTER TABLE public.notifications ADD COLUMN IF NOT EXISTS reference_id TEXT;
+
 INSERT INTO public.notifications (id, user_id, type, message, reference_id, is_read)
 SELECT
   'e0000001-0000-4000-8000-000000000001'::uuid,
@@ -349,32 +351,36 @@ ON CONFLICT (id) DO NOTHING;
 WITH customer AS (
   SELECT id AS customer_id FROM public.users WHERE email = 'customer@palma.demo'
 ),
-cart_row AS (
+cart_existing AS (
   SELECT ct.id, ct.user_id
   FROM public.carts ct
   JOIN customer c ON ct.user_id = c.customer_id
   LIMIT 1
+),
+cart_inserted AS (
+  INSERT INTO public.carts (id, user_id, created_at, updated_at)
+  SELECT
+    '00000000-0000-5000-8000-000000000001' AS id,
+    c.customer_id,
+    now() AS created_at,
+    now() AS updated_at
+  FROM customer c
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM public.carts ct2
+    WHERE ct2.user_id = c.customer_id
+  )
+  RETURNING id, user_id
+),
+cart_row AS (
+  SELECT id, user_id FROM cart_existing
   UNION ALL
-  SELECT ins.id, ins.user_id
-  FROM (
-    INSERT INTO public.carts (id, user_id, created_at, updated_at)
-    SELECT
-      '00000000-0000-5000-8000-000000000001' AS id,
-      c.customer_id,
-      now() AS created_at,
-      now() AS updated_at
-    FROM customer c
-    WHERE NOT EXISTS (
-      SELECT 1
-      FROM public.carts ct2
-      WHERE ct2.user_id = c.customer_id
-    )
-    RETURNING id, user_id
-  ) ins
+  SELECT id, user_id FROM cart_inserted
 ),
 sample_products AS (
-  SELECT id, price FROM public.products ORDER BY created_at ASC LIMIT 3
+  SELECT id, price FROM public.products ORDER BY created_at ASC LIMIT 3 ) /*
 )
+*/
 INSERT INTO public.cart_items (id, cart_id, product_id, quantity, price)
 SELECT
   gen_random_uuid() AS id,
@@ -435,7 +441,8 @@ SET total_amount = sub.sum_line
 FROM (
   SELECT order_id, SUM(quantity * price) AS sum_line
   FROM public.order_items
-  WHERE order_id = '00000000-0000-6000-8000-000000000001'::uuid
+  -- order_items.order_id is TEXT in this schema; compare as TEXT to avoid type mismatch
+  WHERE order_id = '00000000-0000-6000-8000-000000000001'::text
   GROUP BY order_id
 ) sub
 WHERE o.id = sub.order_id;

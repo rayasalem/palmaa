@@ -215,7 +215,7 @@ export const BrokerView: React.FC<Props> = ({
 
             <div className="space-y-4">
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase text-slate-400 px-1 tracking-widest">
+                <label className="text-xs font-black uppercase text-slate-400 px-1 tracking-widest">
                   {lang === 'en' ? 'Catchy Headline' : 'عنوان جذاب'}
                 </label>
                 <input
@@ -227,7 +227,7 @@ export const BrokerView: React.FC<Props> = ({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase text-slate-400 px-1 tracking-widest">
+                <label className="text-xs font-black uppercase text-slate-400 px-1 tracking-widest">
                   {lang === 'en' ? 'Your Personal Recommendation' : 'توصيتك الشخصية'} *
                 </label>
                 <textarea
@@ -243,7 +243,7 @@ export const BrokerView: React.FC<Props> = ({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase text-slate-400 px-1 tracking-widest">
+                <label className="text-xs font-black uppercase text-slate-400 px-1 tracking-widest">
                   {lang === 'en' ? 'Special Note / Discount' : 'ملاحظة خاصة / خصم'}
                 </label>
                 <input
@@ -270,7 +270,7 @@ export const BrokerView: React.FC<Props> = ({
               <button
                 onClick={() => setMarketingModal(null)}
                 disabled={savingShare}
-                className="w-full py-4 bg-slate-50 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full py-4 bg-slate-50 text-slate-400 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-100 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {t.common.cancel}
               </button>
@@ -283,11 +283,11 @@ export const BrokerView: React.FC<Props> = ({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
         <div className="bg-palma-primary p-8 rounded-2xl text-white shadow-card-hover relative group overflow-hidden">
           <div className="relative z-10">
-            <p className="text-[10px] font-black uppercase opacity-60 mb-2 tracking-widest">
+            <p className="text-xs font-black uppercase opacity-60 mb-2 tracking-widest">
               {lang === 'en' ? 'Total Balance' : 'الرصيد الكلي'}
             </p>
             <h3 className="text-3xl font-black">₪{user.balance?.toFixed(0) || 0}</h3>
-            <p className="text-[10px] font-bold opacity-80 mt-2">
+            <p className="text-xs font-bold opacity-80 mt-2">
               {lang === 'en' ? 'Available for payout' : 'متاح للسحب'}
             </p>
           </div>
@@ -296,18 +296,18 @@ export const BrokerView: React.FC<Props> = ({
           </div>
         </div>
         <div className="bg-white p-8 rounded-[2.5rem] border border-palma-border shadow-card group hover:shadow-card-hover transition-all">
-          <p className="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-widest">
+          <p className="text-xs font-black uppercase text-slate-400 mb-2 tracking-widest">
             {lang === 'en' ? 'Pending Commission' : 'عمولات معلقة'}
           </p>
           <h3 className="text-3xl font-black text-slate-900">₪{pendingCommission.toFixed(0)}</h3>
-          <p className="text-[10px] font-bold text-amber-500 mt-2">
+          <p className="text-xs font-bold text-amber-500 mt-2">
             {lang === 'en' ? 'Processing orders' : 'طلبات قيد التنفيذ'}
           </p>
         </div>
         <div className="bg-white p-8 rounded-[2.5rem] border border-palma-border shadow-card group hover:shadow-card-hover transition-all">
-          <p className="text-[10px] font-black uppercase text-slate-400 mb-2 tracking-widest">{t.common.clicks}</p>
+          <p className="text-xs font-black uppercase text-slate-400 mb-2 tracking-widest">{t.common.clicks}</p>
           <h3 className="text-3xl font-black text-slate-900">{user.clicks || 0}</h3>
-          <p className="text-[10px] font-bold text-palma-primary mt-2">
+          <p className="text-xs font-bold text-palma-primary mt-2">
             {lang === 'en' ? 'Traffic generated' : 'زيارات تم جلبها'}
           </p>
         </div>
@@ -325,7 +325,7 @@ export const BrokerView: React.FC<Props> = ({
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id as any)}
-            className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all whitespace-nowrap ${
+            className={`px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-3 transition-all whitespace-nowrap ${
               activeTab === tab.id || (activeTab === 'dashboard' && tab.id === 'subscription')
                 ? 'bg-palma-primary text-white shadow-soft'
                 : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
@@ -360,7 +360,7 @@ export const BrokerView: React.FC<Props> = ({
                   ? '6 months free to try the platform, then choose a plan to continue.'
                   : '٦ أشهر مجانية لتجربة المنصة، ثم اختر باقة للمتابعة.'}
               </p>
-              <span className="inline-block text-[10px] font-black uppercase bg-palma-primaryLight text-palma-primary px-3 py-1.5 rounded-full">
+              <span className="inline-block text-xs font-black uppercase bg-palma-primaryLight text-palma-primary px-3 py-1.5 rounded-full">
                 {lang === 'en' ? 'Current default' : 'الافتراضي الحالي'}
               </span>
             </div>
@@ -416,7 +416,7 @@ export const BrokerView: React.FC<Props> = ({
                       alt={p.name}
                       onError={setImageToPlaceholder}
                     />
-                    <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full text-[9px] font-black uppercase shadow-lg text-palma-primary">
+                    <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full text-xs font-black uppercase shadow-lg text-palma-primary">
                       2% {lang === 'en' ? 'Commission' : 'عمولة'}
                     </div>
                   </div>
@@ -435,13 +435,13 @@ export const BrokerView: React.FC<Props> = ({
                           const mid = p.merchant_id || p.merchantId;
                           if (mid && onViewProfile) onViewProfile(mid);
                         }}
-                        className="text-[9px] font-bold text-slate-400 uppercase tracking-widest hover:text-palma-primary hover:underline text-left"
+                        className="text-xs font-bold text-slate-400 uppercase tracking-widest hover:text-palma-primary hover:underline text-left"
                       >
                         {t.common.merchantName}: {mName}
                       </button>
                     </div>
                     <div className="flex justify-between items-center bg-slate-50 px-4 py-2 rounded-xl">
-                      <span className="text-[9px] font-black uppercase text-slate-300">{t.common.yield}</span>
+                      <span className="text-xs font-black uppercase text-slate-300">{t.common.yield}</span>
                       <span className="text-sm font-black text-palma-primary">
                         ₪{((p.price || p.price_ils || 0) * 0.02).toFixed(1)}
                       </span>
@@ -450,7 +450,7 @@ export const BrokerView: React.FC<Props> = ({
                   <div className="grid grid-cols-1 gap-2">
                     <button
                       onClick={() => openShareModal(p.id, existingShare)}
-                      className="w-full py-3 bg-slate-900 text-white rounded-[1.2rem] text-[9px] font-black uppercase tracking-widest hover:bg-palma-primary transition-all shadow-md flex items-center justify-center gap-2"
+                      className="w-full py-3 bg-slate-900 text-white rounded-[1.2rem] text-xs font-black uppercase tracking-widest hover:bg-palma-primary transition-all shadow-md flex items-center justify-center gap-2"
                     >
                       <span>🚀</span>{' '}
                       {existingShare
@@ -464,7 +464,7 @@ export const BrokerView: React.FC<Props> = ({
                     {existingShare && (
                       <button
                         onClick={() => handleGenLink(p.id)}
-                        className="w-full py-2.5 bg-slate-50 text-slate-400 rounded-[1.2rem] text-[9px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100"
+                        className="w-full py-2.5 bg-slate-50 text-slate-400 rounded-[1.2rem] text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100"
                       >
                         🔗 {lang === 'en' ? 'Copy Link' : 'نسخ الرابط'}
                       </button>
@@ -493,7 +493,7 @@ export const BrokerView: React.FC<Props> = ({
           {sharedMeta.length === 0 ? (
             <div className="bg-white p-20 rounded-[3rem] text-center border-2 border-dashed border-slate-100">
               <span className="text-5xl block mb-6">🏜️</span>
-              <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">
+              <p className="text-slate-400 font-bold uppercase text-xs tracking-widest">
                 {lang === 'en'
                   ? 'Your portfolio is empty. Endorse products to start.'
                   : 'محفظتك فارغة. ابدأ بترويج المنتجات الآن.'}
@@ -519,7 +519,7 @@ export const BrokerView: React.FC<Props> = ({
                     >
                       {/* Featured Ribbon */}
                       {s.is_featured && (
-                        <div className="absolute top-0 right-12 bg-palma-primary text-white px-6 py-2 rounded-b-2xl text-[9px] font-black uppercase tracking-widest shadow-lg z-10">
+                        <div className="absolute top-0 right-12 bg-palma-primary text-white px-6 py-2 rounded-b-2xl text-xs font-black uppercase tracking-widest shadow-lg z-10">
                           ⭐ Pinned Promotion
                         </div>
                       )}
@@ -534,7 +534,7 @@ export const BrokerView: React.FC<Props> = ({
                           onError={setImageToPlaceholder}
                         />
                         {s.custom_discount_text && (
-                          <div className="absolute bottom-6 left-6 right-6 bg-amber-400 text-amber-900 p-3 rounded-2xl text-[10px] font-black uppercase text-center shadow-xl">
+                          <div className="absolute bottom-6 left-6 right-6 bg-amber-400 text-amber-900 p-3 rounded-2xl text-xs font-black uppercase text-center shadow-xl">
                             {s.custom_discount_text}
                           </div>
                         )}
@@ -544,7 +544,7 @@ export const BrokerView: React.FC<Props> = ({
                         <div className="space-y-4">
                           <div className="flex justify-between items-start">
                             <div className="space-y-1">
-                              <span className="bg-palma-primaryLight text-palma-primary px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">
+                              <span className="bg-palma-primaryLight text-palma-primary px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest">
                                 {lang === 'en' ? 'Promoted by' : 'ترويج بواسطة'} {user.name}
                               </span>
                               <h4
@@ -559,7 +559,7 @@ export const BrokerView: React.FC<Props> = ({
                                   const mid = p.merchant_id || p.merchantId;
                                   if (mid && onViewProfile) onViewProfile(mid);
                                 }}
-                                className="text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-palma-primary hover:underline text-left"
+                                className="text-xs font-bold text-slate-400 uppercase tracking-widest hover:text-palma-primary hover:underline text-left"
                               >
                                 {t.common.merchantName}: {mName}
                               </button>
@@ -619,7 +619,7 @@ export const BrokerView: React.FC<Props> = ({
                           <div className="flex-1 w-full flex gap-3">
                             <button
                               onClick={() => handleGenLink(p.id)}
-                              className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-palma-primary transition-all shadow-lg active:scale-95"
+                              className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-palma-primary transition-all shadow-lg active:scale-95"
                             >
                               {lang === 'en' ? 'Copy Referral Link' : 'نسخ رابط الإحالة'}
                             </button>
@@ -638,7 +638,7 @@ export const BrokerView: React.FC<Props> = ({
         <div className="bg-white border border-slate-100 rounded-[2rem] overflow-hidden shadow-sm animate-in fade-in duration-500">
           <div className="p-8 border-b border-slate-100 flex justify-between items-center">
             <h3 className="font-heading text-lg font-black text-palma-navy">{t.common.earnings} History</h3>
-            <span className="text-[10px] font-black uppercase bg-palma-primaryLight text-palma-primary px-3 py-1 rounded-lg">
+            <span className="text-xs font-black uppercase bg-palma-primaryLight text-palma-primary px-3 py-1 rounded-lg">
               Total: ₪{totalEarned.toFixed(2)}
             </span>
           </div>
@@ -661,12 +661,16 @@ export const BrokerView: React.FC<Props> = ({
               ) : (
                 myCommissions.map((c) => (
                   <tr key={c.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-8 py-5 font-mono text-[10px] text-slate-400">{c.order_id}</td>
+                    <td className="px-8 py-5 font-mono text-xs text-slate-400">{c.order_id}</td>
                     <td className="px-8 py-5 text-palma-primary">₪{c.amount.toFixed(2)}</td>
                     <td className="px-8 py-5 text-slate-400">{new Date(c.date).toLocaleDateString()}</td>
                     <td className="px-8 py-5">
                       <span
-                        className={`uppercase text-[9px] font-black px-2 py-1 rounded-lg ${c.status === 'PAID' ? 'bg-palma-primaryLight text-palma-primary' : 'bg-amber-50 text-amber-600'}`}
+                        className={`uppercase text-xs font-black px-2 py-1 rounded-lg ${
+                          c.status === 'PAID' || c.status === 'ACCEPTED'
+                            ? 'bg-palma-primaryLight text-palma-primary'
+                            : 'bg-amber-50 text-amber-600'
+                        }`}
                       >
                         {getOrderStatusLabel(c.status || '', lang)}
                       </span>
@@ -720,7 +724,7 @@ export const BrokerView: React.FC<Props> = ({
                   {lang === 'en' ? 'Next Payout' : 'الدفعة القادمة'}
                 </h4>
                 <h3 className="text-4xl font-black mb-6">₪{user.balance?.toFixed(0) || 0}</h3>
-                <button className="bg-palma-primary text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all">
+                <button className="bg-palma-primary text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:brightness-110 transition-all">
                   {lang === 'en' ? 'Request Withdrawal' : 'طلب سحب'}
                 </button>
               </div>

@@ -10,6 +10,7 @@ import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { getOrder, createShipment, printAWB, claimOrder } from '../services/checkoutApi';
 import type { Language } from '../translations';
 import type { User } from '../types';
+import { useToast } from '../components/ToastProvider';
 
 const POLL_MS = 2000;
 const TIMEOUT_MS = 60000;
@@ -33,10 +34,12 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({
   clearCart,
   onBack,
 }) => {
+  const { showToast } = useToast();
   const [step, setStep] = useState<Step>(paymentParam === 'success' ? 'waiting_payment' : 'payment_failed');
   const [order, setOrder] = useState<any>(null);
   const [shipment, setShipment] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [canRetry, setCanRetry] = useState(false);
   const [awbIds, setAwbIds] = useState<string[]>([]);
   const [claimed, setClaimed] = useState(false);
   const [cartCleared, setCartCleared] = useState(false);
@@ -49,17 +52,12 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({
   }, [paymentParam, cartCleared, clearCart]);
 
   const fetchOrder = useCallback(async () => {
-    try {
-      const res = await getOrder(orderId);
-      if (res.success && res.order) {
-        setOrder(res.order);
-        return res.order.status;
-      }
-      return null;
-    } catch (e) {
-      setError((e as Error).message);
-      return null;
+    const res = await getOrder(orderId);
+    if (res.success && res.order) {
+      setOrder(res.order);
+      return res.order.status;
     }
+    return null;
   }, [orderId]);
 
   useEffect(() => {
@@ -67,18 +65,45 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({
     let cancelled = false;
     const start = Date.now();
     const poll = async () => {
-      if (cancelled || Date.now() - start > TIMEOUT_MS) return;
-      const status = await fetchOrder();
       if (cancelled) return;
-      if (status === 'paid') {
-        setStep('paid_creating_shipment');
+      if (Date.now() - start > TIMEOUT_MS) {
+        const timeoutMsg =
+          lang === 'ar' ? 'تأخر تأكيد الدفع. حاول مرة أخرى.' : 'Payment confirmation timed out. Please try again.';
+        setError(timeoutMsg);
+        setCanRetry(true);
+        setStep('error');
         return;
       }
-      if (status === 'failed') {
-        setStep('payment_failed');
-        return;
+      try {
+        const status = await fetchOrder();
+        if (cancelled) return;
+
+        if (status == null) {
+          setError(lang === 'ar' ? 'تعذر تأكيد حالة الدفع. حاول مرة أخرى.' : 'Unable to confirm payment status. Please try again.');
+          setCanRetry(true);
+          setStep('error');
+          return;
+        }
+
+        const s = String(status || '').toUpperCase();
+        if (s === 'ACCEPTED' || s === 'COMPLETED') {
+          setCanRetry(false);
+          setStep('paid_creating_shipment');
+          return;
+        }
+        if (s === 'CANCELLED') {
+          setCanRetry(false);
+          setStep('payment_failed');
+          return;
+        }
+
+        setTimeout(poll, POLL_MS);
+      } catch (e) {
+        if (cancelled) return;
+        setError((e as Error)?.message || (lang === 'ar' ? 'حدث خطأ أثناء تأكيد الدفع.' : 'An error occurred while confirming payment.'));
+        setCanRetry(true);
+        setStep('error');
       }
-      setTimeout(poll, POLL_MS);
     };
     poll();
     return () => {
@@ -94,6 +119,27 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({
       clearCart();
     }
   }, [step, cartCleared, clearCart]);
+
+  // Toast for critical payment/shipping states (once per step transition)
+  const lastNotifiedStepRef = React.useRef<Step | null>(null);
+  useEffect(() => {
+    if (lastNotifiedStepRef.current === step) return;
+    lastNotifiedStepRef.current = step;
+
+    if (step === 'payment_failed') {
+      showToast(lang === 'ar' ? 'فشل تأكيد الدفع.' : 'Payment confirmation failed.', 'error');
+    } else if (step === 'done') {
+      showToast(lang === 'ar' ? 'تم تأكيد الدفع وإنشاء الشحنة.' : 'Payment and shipment completed.', 'success');
+    } else if (step === 'error' && error) {
+      showToast(error, 'error');
+    }
+  }, [step, error, lang, showToast]);
+
+  const handleRetryPayment = () => {
+    setError(null);
+    setCanRetry(false);
+    setStep('waiting_payment');
+  };
 
   // ربط الطلب بالمستخدم عند العودة من الدفع حتى يظهر في "طلباتي"
   useEffect(() => {
@@ -200,7 +246,11 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({
           <p className="text-slate-600 text-sm mb-6">
             {lang === 'ar' ? 'لم يتم تأكيد الدفع.' : 'Payment was not confirmed.'}
           </p>
-          <button type="button" onClick={onBack} className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold">
+          <button
+            type="button"
+            onClick={onBack}
+            className="btn-primary w-full py-3 flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
+          >
             {lang === 'ar' ? 'العودة للتسوق' : 'Back to shop'}
           </button>
         </div>
@@ -257,9 +307,24 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({
             {lang === 'ar' ? 'حدث خطأ' : 'Something went wrong'}
           </h1>
           <p className="text-slate-600 text-sm mb-6">{error}</p>
-          <button type="button" onClick={onBack} className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold">
-            {lang === 'ar' ? 'العودة' : 'Back'}
-          </button>
+          <div className="flex flex-col gap-3">
+            {canRetry && (
+              <button
+                type="button"
+                onClick={handleRetryPayment}
+                className="btn-primary w-full py-3 flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {lang === 'ar' ? 'إعادة المحاولة' : 'Retry'}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onBack}
+              className="btn-primary w-full py-3 flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {lang === 'ar' ? 'العودة' : 'Back'}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -320,7 +385,7 @@ export const CheckoutReturnPage: React.FC<CheckoutReturnPageProps> = ({
             if (clearCart) await clearCart();
             onBack();
           }}
-          className="w-full py-3 bg-green-600 text-white rounded-xl font-bold"
+          className="btn-primary w-full py-3 flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
         >
           {lang === 'ar' ? 'العودة للتسوق' : 'Back to shop'}
         </button>

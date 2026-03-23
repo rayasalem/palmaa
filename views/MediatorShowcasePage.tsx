@@ -109,7 +109,12 @@ const MediatorShowcasePage: React.FC<MediatorShowcasePageProps> = ({
               </button>
               {langMenuOpen && (
                 <>
-                  <div className="fixed inset-0 z-40" aria-hidden onClick={() => setLangMenuOpen(false)} />
+                  <button
+                    type="button"
+                    className="fixed inset-0 z-40"
+                    aria-label="Close language menu"
+                    onClick={() => setLangMenuOpen(false)}
+                  />
                   <div className="absolute top-full end-0 mt-1 min-w-[130px] py-1 rounded-lg border border-slate-200 bg-white shadow-lg z-50">
                     {(['ar', 'en', 'he'] as const).map((l) => (
                       <button
@@ -262,12 +267,12 @@ const MediatorShowcasePage: React.FC<MediatorShowcasePageProps> = ({
                           loading="lazy"
                           onError={setImageToPlaceholder}
                         />
-                        <span className="absolute top-2 end-2 px-2.5 py-1 rounded-lg text-[10px] font-black text-white bg-gradient-to-r from-amber-500 to-orange-600 shadow-md max-w-[55%] text-center leading-tight">
+                        <span className="absolute top-2 end-2 px-2.5 py-1 rounded-lg text-xs font-black text-white bg-gradient-to-r from-amber-500 to-orange-600 shadow-md max-w-[55%] text-center leading-tight">
                           {badge}
                         </span>
                       </div>
                       <div className="p-4 flex-1 flex flex-col">
-                        <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-700">{item.category}</span>
+                        <span className="text-xs font-bold uppercase tracking-wide text-emerald-700">{item.category}</span>
                         <h3 className="font-black text-slate-900 text-lg mt-1">{item.productName}</h3>
                         <p className="text-sm text-slate-600 mt-1 flex-1 line-clamp-2">{item.tagline}</p>
                         <p className="mt-3 text-xl font-black text-emerald-700">₪{item.price.toFixed(item.price % 1 === 0 ? 0 : 2)}</p>

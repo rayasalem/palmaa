@@ -109,9 +109,13 @@ async function handlePaymentCallback(orderId, status, idempotencyKey) {
     if (cached) return cached.result;
   }
   const normalized = String(status).toLowerCase();
-  const newStatus = normalized === 'success' ? 'paid' : 'failed';
-  const result = await updateOrderStatus(orderId, newStatus);
-  if (!result.error && newStatus === 'paid') {
+  // Keep internal payment result for business logic (stock/profits),
+  // but update `orders.status` using DB-safe values (orders_status_check).
+  const paymentResult = normalized === 'success' ? 'paid' : 'failed';
+  const orderStatus = normalized === 'success' ? 'ACCEPTED' : 'CANCELLED';
+
+  const result = await updateOrderStatus(orderId, orderStatus);
+  if (!result.error && paymentResult === 'paid') {
     await decrementStockForOrder(orderId);
     const { error: profitErr } = await profitService.recordProfitsForOrder(orderId);
     if (profitErr) {
@@ -192,7 +196,7 @@ async function handlePaymentCallback(orderId, status, idempotencyKey) {
       order &&
       (cityId != null && String(cityId).trim() !== '') &&
       (villageId != null && String(villageId).trim() !== '');
-    if (!hasShippingAddress && order && newStatus === 'paid') {
+    if (!hasShippingAddress && order && paymentResult === 'paid') {
       logger.warn('paymentService createShipment skipped: order missing shipping_city_id or shipping_village_id (required for LogesTechs)', {
         orderId,
         hasCityId: !!(cityId != null && String(cityId).trim() !== ''),
@@ -238,7 +242,7 @@ async function processCybersourceCardPayment(orderId, amount, currency, card) {
     return { success: false, decision: 'ERROR', error: orderErr || new Error('Order not found') };
   }
   const currentStatus = String(order.status || '').toUpperCase();
-  if (currentStatus === 'PAID' || currentStatus === 'COMPLETED') {
+  if (currentStatus === 'PAID' || currentStatus === 'ACCEPTED' || currentStatus === 'COMPLETED') {
     return { success: false, decision: 'ERROR', error: new Error('Order already paid') };
   }
 

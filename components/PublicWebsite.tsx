@@ -100,6 +100,16 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
     const el = featuredScrollRef.current;
     if (!el || products.length < 2) return;
 
+    // Respect reduced motion preference: disable auto-scroll entirely.
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+      setAutoScrollPaused(true);
+      return;
+    }
+
     let rafId: number | null = null;
     let lastTime = 0;
     const stepPx = 1.2;
@@ -210,7 +220,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
             <div className="relative flex items-center">
               <button
                 onClick={() => setLangMenuOpen((prev) => !prev)}
-                className="flex items-center gap-1.5 text-[10px] font-semibold uppercase text-palma-muted hover:text-palma-primary transition tracking-wider py-2"
+                className="flex items-center gap-1.5 text-xs font-semibold uppercase text-palma-muted hover:text-palma-primary transition tracking-wider py-2"
               >
                 <Globe className="w-3.5 h-3.5 shrink-0" />
                 <span>{LANG_LABELS[lang]}</span>
@@ -220,7 +230,12 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
               </button>
               {langMenuOpen && (
                 <>
-                  <div className="fixed inset-0 z-[99]" aria-hidden onClick={() => setLangMenuOpen(false)} />
+                  <button
+                    type="button"
+                    className="fixed inset-0 z-[99]"
+                    aria-label="Close language menu"
+                    onClick={() => setLangMenuOpen(false)}
+                  />
                   <div className="absolute top-full mt-1 end-0 min-w-[120px] py-1 rounded-lg border border-palma-border bg-white shadow-lg z-[100]">
                     {(['ar', 'en', 'he'] as const).map((l) => (
                       <button
@@ -255,7 +270,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
             </button>
             <button
               onClick={onJoinRegister}
-              className="btn-primary px-4 py-2 text-[10px] sm:text-xs tracking-wide h-9 flex items-center justify-center"
+              className="btn-primary px-4 py-2 text-xs sm:text-xs tracking-wide h-9 flex items-center justify-center"
             >
               {lang === 'ar' ? 'انضم لبالما' : lang === 'he' ? 'הצטרף לפלמה' : 'Join Palma'}
             </button>
@@ -302,7 +317,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                 <div className="relative w-full flex justify-center">
                   <button
                     onClick={() => setLangMenuOpen((prev) => !prev)}
-                    className="flex items-center gap-2 text-[10px] font-semibold uppercase text-palma-muted hover:text-palma-primary tracking-widest"
+                    className="flex items-center gap-2 text-xs font-semibold uppercase text-palma-muted hover:text-palma-primary tracking-widest"
                   >
                     <Globe className="w-4 h-4" />
                     <span>{LANG_LABELS[lang]}</span>
@@ -340,7 +355,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                     onJoinRegister();
                     setMobileMenuOpen(false);
                   }}
-                  className="btn-primary w-full py-3.5 text-[10px] tracking-wide"
+                  className="btn-primary w-full py-3.5 text-xs tracking-wide"
                 >
                   {lang === 'ar' ? 'انضم لبالما' : lang === 'he' ? 'הצטרף לפלמה' : 'Join Palma'}
                 </button>
@@ -366,7 +381,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                 <div className="font-heading text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">
                   +500
                 </div>
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-palma-muted">
+                <div className="text-xs font-black uppercase tracking-[0.2em] text-palma-muted">
                   {lang === 'ar' ? 'تاجر جديد شهريا' : 'New merchants per month'}
                 </div>
               </div>
@@ -374,7 +389,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                 <div className="font-heading text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">
                   10K
                 </div>
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-palma-muted">
+                <div className="text-xs font-black uppercase tracking-[0.2em] text-palma-muted">
                   {lang === 'ar' ? '10 الاف منتج' : '10,000 products'}
                 </div>
               </div>
@@ -382,7 +397,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                 <div className="font-heading text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">
                   50K
                 </div>
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-palma-muted">
+                <div className="text-xs font-black uppercase tracking-[0.2em] text-palma-muted">
                   {lang === 'ar' ? '50 الف زبون شهريا' : '50K customers per month'}
                 </div>
               </div>
@@ -390,7 +405,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                 <div className="font-heading text-4xl sm:text-5xl font-black text-palma-navy mb-3 group-hover:scale-110 transition-transform duration-500 group-hover:text-palma-primary">
                   1M
                 </div>
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-palma-muted">
+                <div className="text-xs font-black uppercase tracking-[0.2em] text-palma-muted">
                   {lang === 'ar' ? '1 مليون زائر موثّق سنوياً' : '1M verified visits per year'}
                 </div>
               </div>
@@ -441,6 +456,11 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                 ref={featuredScrollRef}
                 onMouseEnter={() => setAutoScrollPaused(true)}
                 onMouseLeave={() => setAutoScrollPaused(false)}
+                onPointerDown={() => setAutoScrollPaused(true)}
+                onPointerUp={() => setAutoScrollPaused(false)}
+                onPointerCancel={() => setAutoScrollPaused(false)}
+                onTouchStart={() => setAutoScrollPaused(true)}
+                onTouchEnd={() => setAutoScrollPaused(false)}
                 className="flex gap-6 overflow-x-auto overflow-y-hidden pb-4 pt-0 scrollbar-hide w-full"
                 style={{
                   scrollbarWidth: 'none',
@@ -490,7 +510,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                         <p className="text-xs text-slate-500 mb-2 line-clamp-1">{shortDesc}</p>
                         <div className="flex flex-wrap items-center gap-2 mb-2">
                           {stock > 0 && (
-                            <span className="text-[10px] font-bold text-slate-600">
+                            <span className="text-xs font-bold text-slate-600">
                               {lang === 'ar'
                                 ? `متوفر: ${stock}`
                                 : lang === 'he'
@@ -500,14 +520,14 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                           )}
                           <ProductConditionBadge condition={p.condition} lang={lang} className="shrink-0" />
                         </div>
-                        <p className="text-[10px] font-bold text-slate-400">{mName}</p>
+                        <p className="text-xs font-bold text-slate-400">{mName}</p>
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             onViewProduct && onViewProduct(p.id);
                           }}
-                          className="mt-3 w-full py-2.5 bg-palma-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-palma-primaryHover transition-colors"
+                          className="mt-3 w-full py-2.5 bg-palma-primary text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-palma-primaryHover transition-colors"
                         >
                           {t.common.details}
                         </button>
@@ -530,7 +550,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
           <div className="absolute top-0 left-0 w-full h-full bg-palma-primaryLight/30 -skew-y-3 transform origin-top-left z-0 pointer-events-none" />
           <div className="max-w-7xl mx-auto px-6 relative z-10">
             <div className="heading-block mb-14 text-center max-w-4xl mx-auto">
-              <span className="inline-block text-palma-primary font-bold uppercase tracking-widest text-[10px] bg-palma-primaryLight/90 px-4 py-2 rounded-full border border-palma-primary/15 mb-4">
+              <span className="inline-block text-palma-primary font-bold uppercase tracking-widest text-xs bg-palma-primaryLight/90 px-4 py-2 rounded-full border border-palma-primary/15 mb-4">
                 {t.landing.aboutSubtitle}
               </span>
               <h2 className="heading-block-title heading-block-title-creative font-heading text-3xl sm:text-4xl md:text-5xl mb-4">
@@ -558,7 +578,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                   {t.landing.features.merchantTitle}
                 </h3>
                 <p className="heading-block-sub text-slate-500 mb-4">{t.landing.features.merchantDesc}</p>
-                <span className="text-[10px] font-black uppercase tracking-widest text-palma-primary group-hover:underline">
+                <span className="text-xs font-black uppercase tracking-widest text-palma-primary group-hover:underline">
                   {lang === 'ar' ? 'سجّل كتاجر ←' : 'Register as merchant ←'}
                 </span>
               </div>
@@ -576,7 +596,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                 <p className="text-sm text-slate-300 font-medium leading-relaxed relative z-10 mb-4">
                   {t.landing.features.brokerDesc}
                 </p>
-                <span className="relative z-10 text-[10px] font-black uppercase tracking-widest text-white/90 group-hover:underline">
+                <span className="relative z-10 text-xs font-black uppercase tracking-widest text-white/90 group-hover:underline">
                   {lang === 'ar' ? 'سجّل كمسوق ←' : 'Register as marketer ←'}
                 </span>
               </div>
@@ -593,7 +613,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                   {t.landing.features.customerTitle}
                 </h3>
                 <p className="heading-block-sub text-slate-500 mb-4">{t.landing.features.customerDesc}</p>
-                <span className="text-[10px] font-black uppercase tracking-widest text-palma-primary group-hover:underline">
+                <span className="text-xs font-black uppercase tracking-widest text-palma-primary group-hover:underline">
                   {lang === 'ar' ? 'سجّل كزبون ←' : 'Register as customer ←'}
                 </span>
               </div>
@@ -1006,7 +1026,7 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                   key={idx}
                   className="bg-white rounded-2xl shadow-soft border border-palma-border/70 p-6 flex flex-col gap-3"
                 >
-                  <span className="inline-flex text-[10px] font-black uppercase tracking-[0.2em] text-palma-primary bg-palma-primaryLight px-3 py-1 rounded-full w-fit">
+                  <span className="inline-flex text-xs font-black uppercase tracking-[0.2em] text-palma-primary bg-palma-primaryLight px-3 py-1 rounded-full w-fit">
                     {lang === 'ar' ? item.tagAr : item.tagEn}
                   </span>
                   <h3 className="font-heading text-base font-black text-palma-navy leading-snug">
@@ -1082,28 +1102,32 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
           </div>
           {/* عمود 2: روابط سريعة */}
           <div className={`flex flex-col gap-4 ${lang === 'en' ? 'text-left' : 'text-right'}`}>
-            <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-palma-navy">{t.footer.links}</h5>
+            <h5 className="text-xs font-black uppercase tracking-[0.2em] text-palma-navy">{t.footer.links}</h5>
             <ul className="space-y-2.5 text-xs font-bold text-palma-muted">
-              <li
-                onClick={onJoinMerchant}
-                className="hover:text-palma-primary cursor-pointer transition-colors duration-200"
-              >
-                {t.nav.merchant}
+              <li>
+                <button
+                  type="button"
+                  onClick={onJoinMerchant}
+                  className="hover:text-palma-primary cursor-pointer transition-colors duration-200"
+                >
+                  {t.nav.merchant}
+                </button>
               </li>
-              <li
-                onClick={onJoinBroker}
-                className="hover:text-palma-primary cursor-pointer transition-colors duration-200"
-              >
-                {t.nav.broker}
+              <li>
+                <button
+                  type="button"
+                  onClick={onJoinBroker}
+                  className="hover:text-palma-primary cursor-pointer transition-colors duration-200"
+                >
+                  {t.nav.broker}
+                </button>
               </li>
-              <li className="hover:text-palma-primary cursor-pointer transition-colors duration-200">
-                {t.nav.contact}
-              </li>
+              <li>{t.nav.contact}</li>
             </ul>
           </div>
           {/* عمود 3: تواصل + أيقونات */}
           <div className={`flex flex-col gap-4 ${lang === 'en' ? 'text-left' : 'text-right'}`}>
-            <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-palma-navy">{t.nav.contact}</h5>
+            <h5 className="text-xs font-black uppercase tracking-[0.2em] text-palma-navy">{t.nav.contact}</h5>
             <div className="space-y-1 text-sm font-bold text-palma-muted">
               <a
                 href={`mailto:${FOOTER_CONTACT_EMAIL}`}
@@ -1126,31 +1150,54 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
                 )}
               </a>
               <p>{lang === 'ar' ? 'فلسطين 🇵🇸' : lang === 'he' ? 'פלסטין 🇵🇸' : 'Palestine 🇵🇸'}</p>
-              {/* سنيم + فلاش لاين كسطر أسفل وسائل الاتصال (بدون مربعات مستقلة) */}
-              <div
-                className={`pt-2 text-xs font-black text-palma-muted ${lang === 'en' ? 'flex justify-start items-center gap-2' : 'flex justify-end items-center gap-2'}`}
-              >
-                <a
-                  href="https://cnem.ps"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-palma-primary cursor-pointer transition-colors"
+              {/* سنيم + فلاش لاين Chip واحد (ديزاين واحد) */}
+              <div className="pt-2">
+                <div
+                  className={`inline-flex items-center gap-3 px-4 py-2 rounded-xl border border-slate-200/80 bg-white/70 shadow-sm ${
+                    lang === 'en' ? 'flex-row justify-start' : 'flex-row-reverse justify-end'
+                  }`}
                 >
-                  {lang === 'ar'
-                    ? 'شركة سنيم للتدريب الالكتروني'
-                    : lang === 'he'
-                      ? 'חברת סנימ להכשרה אלקטרונית'
-                      : 'Senim Company for E-Training'}
-                </a>
-                <span className="text-palma-muted/60">•</span>
-                <a
-                  href="https://flashline.ps"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-palma-primary cursor-pointer transition-colors"
-                >
-                  {lang === 'ar' ? 'فلاش لاين' : lang === 'he' ? 'פלאש ליין' : 'Flash Line'}
-                </a>
+                  <a
+                    href="https://cnem.ps"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={
+                      lang === 'ar'
+                        ? 'شركة سنيم للتدريب الالكتروني'
+                        : lang === 'he'
+                          ? 'חברת סנימ להכשרה אלקטרונית'
+                          : 'Senim Company for E-Training'
+                    }
+                    className="inline-flex items-center justify-center"
+                  >
+                    <img
+                      src="/partners/sanim-logo.png"
+                      alt={lang === 'ar' ? 'شعار شركة سنيم' : lang === 'he' ? 'לוגו סנימ' : 'Sanim logo'}
+                      className="h-9 w-auto object-contain"
+                      onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
+                    />
+                  </a>
+                  <a
+                    href="https://flashline.ps"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={
+                      lang === 'ar'
+                        ? 'فلاش لاين اكسبريس'
+                        : lang === 'he'
+                          ? 'פלאש ליין אקספרס'
+                          : 'Flash Line Express'
+                    }
+                    className="inline-flex items-center justify-center"
+                  >
+                    <img
+                      src="/partners/flashline-logo.png"
+                      alt={lang === 'ar' ? 'شعار فلاش لاين' : lang === 'he' ? 'לוגו פלאש ליין' : 'Flash Line logo'}
+                      className="h-9 w-auto object-contain"
+                      onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
+                    />
+                  </a>
+                </div>
               </div>
             </div>
             <p className="text-xs font-bold text-palma-muted mt-1">{lang === 'ar' ? 'تابعنا على:' : 'Follow us:'}</p>
@@ -1187,14 +1234,14 @@ const PublicWebsite: React.FC<PublicWebsiteProps> = ({
         </div>
         {/* سطر واحد للحقوق والروابط — محاذاة أفقية واحدة */}
         <div className="max-w-7xl mx-auto px-6 pt-10 mt-10 border-t border-slate-200/80 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-[10px] font-bold text-palma-muted uppercase tracking-widest order-2 sm:order-1">
+          <p className="text-xs font-bold text-palma-muted uppercase tracking-widest order-2 sm:order-1">
             {lang === 'ar'
               ? `© ${new Date().getFullYear()} فلسطين 🇵🇸`
               : lang === 'he'
                 ? `© ${new Date().getFullYear()} פלסטין 🇵🇸`
                 : `© ${new Date().getFullYear()} Palestine 🇵🇸`}
           </p>
-          <div className="flex gap-6 sm:gap-8 text-[9px] font-black uppercase text-palma-muted/60 order-1 sm:order-2">
+          <div className="flex gap-6 sm:gap-8 text-xs font-black uppercase text-palma-muted/60 order-1 sm:order-2">
             <span className="hover:text-palma-navy cursor-pointer transition-colors">{t.footer.privacy}</span>
             <span
               onClick={onOpenTerms}

@@ -165,12 +165,12 @@ export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
                       <Package className="w-5 h-5 text-palma-muted" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{lang === 'ar' ? 'رقم الطلب' : 'Order Ref'}</p>
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{lang === 'ar' ? 'رقم الطلب' : 'Order Ref'}</p>
                       <p className="text-xs font-mono font-bold text-slate-900">{o.order_reference || o.id}</p>
                     </div>
                   </div>
                   <span
-                    className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${isCancelled ? 'bg-red-50 text-red-600 border-red-100' : isDelivered ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}
+                    className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border ${isCancelled ? 'bg-red-50 text-red-600 border-red-100' : isDelivered ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}
                   >
                     {getOrderStatusLabel(o.status || o.delivery_status || '', lang)}
                   </span>
@@ -247,8 +247,8 @@ export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
                               >
                                 {done ? <Check className="w-5 h-5" /> : <span className="text-xs font-bold">{idx + 1}</span>}
                               </div>
-                              <p className="text-[10px] font-bold text-slate-700 mt-2 text-center">{label}</p>
-                              <p className="text-[9px] text-slate-500 mt-0.5 text-center">{dateStr}</p>
+                              <p className="text-xs font-bold text-slate-700 mt-2 text-center">{label}</p>
+                              <p className="text-xs text-slate-500 mt-0.5 text-center">{dateStr}</p>
                             </div>
                             {!isLast && (
                               <div
@@ -291,7 +291,7 @@ export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
                             <div className="min-w-0">
                               <p className="text-xs font-bold text-slate-900 truncate mb-0.5">{prod?.name}</p>
                               <div className="flex items-center gap-2 mb-0.5">
-                                <p className="text-[10px] font-medium text-slate-500">
+                                <p className="text-xs font-medium text-slate-500">
                                   Qty: {item.quantity} × ₪{item.price ?? item.price_ils ?? 0}
                                 </p>
                                 <ProductConditionBadge condition={prod?.condition || 'new'} lang={lang} />
@@ -309,7 +309,7 @@ export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
 
                   <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 flex flex-col justify-center space-y-4">
                     <div className="space-y-3">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
                         {lang === 'ar' ? 'تفاصيل الطلب' : 'Order details'}
                       </p>
                       <div className="text-xs text-slate-700 space-y-2">
@@ -375,7 +375,7 @@ export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
                           type="button"
                           onClick={() => onCheckOrderStatus(o)}
                           disabled={checkingStatusId === o.id}
-                          className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-palma-primary text-white hover:bg-palma-navy transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                          className="w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest bg-palma-primary text-white hover:bg-palma-navy transition-all flex items-center justify-center gap-2 disabled:opacity-60"
                         >
                           {checkingStatusId === o.id ? (
                             <>
@@ -390,14 +390,14 @@ export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
                         </button>
                         {trackingDisplay && trackingDisplay.orderId === o.id && (
                           <div className="mt-3 p-3 rounded-lg bg-palma-primary/10 border border-palma-primary/30 text-center">
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">
                               {lang === 'ar' ? 'حالة الطلب' : 'Order status'}
                             </p>
                             <p className="text-sm font-bold text-palma-navy mt-1">
                               {trackingDisplay.status}
                             </p>
                             {(o.delivery_id || o.shipmentId || '').toString().startsWith('sim-') && (
-                              <p className="text-[10px] text-amber-700 mt-2">
+                              <p className="text-xs text-amber-700 mt-2">
                                 {lang === 'ar'
                                   ? 'شحنة محاكاة — لظهور الطلب على موقع لوجستيك: أضف LOGESTECHS_EMAIL و LOGESTECHS_PASSWORD في ملف .env (محلياً) أو في Render Environment، ثم أعد تشغيل السيرفر أو اعمل Redeploy.'
                                   : 'Simulated shipment — add LOGESTECHS_EMAIL and LOGESTECHS_PASSWORD in .env (local) or Render Environment, then restart the server or Redeploy.'}
@@ -412,7 +412,7 @@ export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
                         <button
                           onClick={() => setCancelConfirmOrderId(o.id)}
                           disabled={processingCancelId === o.id}
-                          className={`w-full py-2.5 rounded-xl text-[9px] font-black uppercase transition-all flex items-center justify-center gap-2 border ${
+                          className={`w-full py-2.5 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-center gap-2 border ${
                             processingCancelId === o.id
                               ? 'bg-slate-100 text-slate-400 border-transparent cursor-not-allowed'
                               : 'bg-white text-red-500 border-red-100 hover:bg-red-50'
@@ -431,7 +431,7 @@ export const CustomerOrdersTab: React.FC<CustomerOrdersTabProps> = ({
                         <button
                           onClick={() => setOrderToCancel(o)}
                           disabled={processingCancelId === o.id}
-                          className={`w-full py-2.5 rounded-xl text-[9px] font-black uppercase transition-all flex items-center justify-center gap-2 border ${
+                          className={`w-full py-2.5 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-center gap-2 border ${
                             processingCancelId === o.id
                               ? 'bg-slate-100 text-slate-400 border-transparent cursor-not-allowed'
                               : 'bg-white text-red-500 border-red-100 hover:bg-red-50'

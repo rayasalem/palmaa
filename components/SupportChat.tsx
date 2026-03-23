@@ -344,7 +344,8 @@ export const SupportChat: React.FC<SupportChatProps> = ({ lang, user }) => {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-5 right-5 z-[99998] flex h-14 w-14 items-center justify-center rounded-full bg-palma-primary text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-palma-primary focus:ring-offset-2 rtl:right-auto rtl:left-5"
+        className="fixed right-4 sm:right-5 rtl:right-auto rtl:left-4 sm:rtl:left-5 z-[99998] flex h-14 w-14 items-center justify-center rounded-full bg-palma-primary text-white shadow-lg transition-all hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-palma-primary focus:ring-offset-2"
+        style={{ bottom: 'calc(5.5rem + env(safe-area-inset-bottom))' }}
         aria-label={t.title}
       >
         {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
@@ -352,7 +353,8 @@ export const SupportChat: React.FC<SupportChatProps> = ({ lang, user }) => {
 
       {open && (
         <div
-          className="fixed bottom-20 right-5 z-[99999] flex h-[420px] w-[340px] flex-col overflow-hidden rounded-2xl border border-palma-border bg-white shadow-xl rtl:right-auto rtl:left-5 sm:h-[480px] sm:w-[380px]"
+          className="fixed right-4 sm:right-5 rtl:right-auto rtl:left-4 sm:rtl:left-5 z-[99999] flex h-[420px] max-h-[70vh] w-[min(92vw,380px)] flex-col overflow-hidden rounded-2xl border border-palma-border bg-white shadow-xl sm:h-[480px]"
+          style={{ bottom: 'calc(6.5rem + env(safe-area-inset-bottom))' }}
           role="dialog"
           aria-label={t.title}
         >
@@ -375,7 +377,7 @@ export const SupportChat: React.FC<SupportChatProps> = ({ lang, user }) => {
           {quickOptions.length > 0 && (
             <div className="border-t border-slate-100 px-3 pt-2 pb-1">
               {quickOptionsTitle && (
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-2">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
                   {quickOptionsTitle}
                 </p>
               )}

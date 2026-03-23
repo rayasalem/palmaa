@@ -46,7 +46,7 @@ export const ShippingInputGroup = React.memo(function ShippingInputGroup({
   const displayValue = type === 'select' ? inputValue : String(inputValue);
   return (
     <div className="space-y-1.5 w-full">
-      <label className="text-[10px] font-black uppercase text-palma-muted tracking-widest flex items-center gap-1">
+      <label className="text-xs font-black uppercase text-palma-muted tracking-widest flex items-center gap-1">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       <div className="relative group">
@@ -166,7 +166,7 @@ export const DistrictVillageSelect = React.memo(function DistrictVillageSelect({
   return (
     <div className="grid md:grid-cols-2 gap-5 w-full">
       <div className="space-y-1.5 w-full">
-        <label className="text-[10px] font-black uppercase text-palma-muted tracking-widest flex items-center gap-1">
+        <label className="text-xs font-black uppercase text-palma-muted tracking-widest flex items-center gap-1">
           {lang === 'ar' ? 'المحافظة' : 'District'} {required && <span className="text-red-500">*</span>}
         </label>
         <div className="relative group">
@@ -195,12 +195,12 @@ export const DistrictVillageSelect = React.memo(function DistrictVillageSelect({
           </div>
         </div>
         {errorDistrict && (
-          <p className="text-[10px] text-red-500 font-medium">{lang === 'ar' ? 'يرجى اختيار المحافظة' : 'Please select district'}</p>
+          <p className="text-xs text-red-500 font-medium">{lang === 'ar' ? 'يرجى اختيار المحافظة' : 'Please select district'}</p>
         )}
       </div>
 
       <div ref={villageDropdownRef} className="space-y-1.5 w-full">
-        <label className="text-[10px] font-black uppercase text-palma-muted tracking-widest flex items-center gap-1">
+        <label className="text-xs font-black uppercase text-palma-muted tracking-widest flex items-center gap-1">
           {lang === 'ar' ? 'القرية / الحي' : 'Village / District'} {required && <span className="text-red-500">*</span>}
         </label>
         <div className="relative group">
@@ -252,7 +252,7 @@ export const DistrictVillageSelect = React.memo(function DistrictVillageSelect({
           )}
         </div>
         {errorVillage && (
-          <p className="text-[10px] text-red-500 font-medium">{lang === 'ar' ? 'يرجى اختيار القرية أو الحي' : 'Please select village'}</p>
+          <p className="text-xs text-red-500 font-medium">{lang === 'ar' ? 'يرجى اختيار القرية أو الحي' : 'Please select village'}</p>
         )}
       </div>
     </div>
@@ -365,7 +365,7 @@ export const ShopProductCard = React.memo(function ShopProductCard({
           )}
         </div>
         {flashLabel && (
-          <div className="absolute bottom-3 left-3 right-3 bg-red-600/95 text-white px-3 py-1.5 rounded-xl text-[10px] font-black shadow-lg flex items-center justify-between gap-2">
+          <div className="absolute bottom-3 left-3 right-3 bg-red-600/95 text-white px-3 py-1.5 rounded-xl text-xs font-black shadow-lg flex items-center justify-between gap-2">
             <span className="truncate">{flashLabel}</span>
             <span className="text-xs">⏳</span>
           </div>
@@ -382,7 +382,7 @@ export const ShopProductCard = React.memo(function ShopProductCard({
               e.stopPropagation();
               if (merchantId && onViewProfile) onViewProfile(merchantId);
             }}
-            className="text-[9px] font-black text-palma-muted uppercase tracking-widest mb-1 block text-left hover:text-palma-primary hover:underline transition-colors"
+            className="text-xs font-black text-palma-muted uppercase tracking-widest mb-1 block text-left hover:text-palma-primary hover:underline transition-colors"
           >
             {merchantName || (lang === 'ar' ? 'التاجر' : 'Merchant')}
           </button>
@@ -400,7 +400,7 @@ export const ShopProductCard = React.memo(function ShopProductCard({
               e.stopPropagation();
               onQuickView(p);
             }}
-            className="w-full mb-2 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl border border-slate-200 text-slate-700 bg-slate-50 hover:bg-slate-100 transition-colors"
+            className="w-full mb-2 py-2 text-xs font-black uppercase tracking-widest rounded-xl border border-slate-200 text-slate-700 bg-slate-50 hover:bg-slate-100 transition-colors"
           >
             {lang === 'ar' ? 'عرض سريع' : lang === 'he' ? 'תצוגה מהירה' : 'Quick View'}
           </button>
@@ -409,7 +409,7 @@ export const ShopProductCard = React.memo(function ShopProductCard({
           type="button"
           onClick={() => onAddToCart(p)}
           disabled={isAddingToCart}
-          className="btn-primary w-full py-3 text-[10px] uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:pointer-events-none"
+          className="btn-primary w-full py-3 text-xs uppercase tracking-widest active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:pointer-events-none"
         >
           {isAddingToCart ? (
             <>
@@ -467,7 +467,7 @@ export const CartItemRow = React.memo(function CartItemRow({
       <div className="flex-1 min-w-0">
         <h4 className="font-bold text-slate-900 text-sm sm:text-base mb-1 truncate">{item.name}</h4>
         <div className="flex flex-wrap items-center gap-2 mb-3">
-          <p className="text-[10px] font-black text-palma-muted uppercase tracking-widest">{item.category}</p>
+          <p className="text-xs font-black text-palma-muted uppercase tracking-widest">{item.category}</p>
           <ProductConditionBadge condition={item.condition || 'new'} lang={lang} />
         </div>
         <div className="flex items-center gap-4">

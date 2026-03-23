@@ -573,7 +573,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 bg-green-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-70"
+            className="btn-primary w-full py-4 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <span className="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

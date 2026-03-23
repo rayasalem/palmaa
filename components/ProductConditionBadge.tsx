@@ -78,14 +78,14 @@ export const ProductConditionBadge = React.memo(function ProductConditionBadge({
     };
     const label = lang === 'he' ? fallback.labelHe : lang === 'en' ? fallback.labelEn : fallback.labelAr;
     const baseClasses =
-      'inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border';
+      'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-widest border';
     return <span className={`${baseClasses} ${fallback.className} ${className ?? ''}`}>{label}</span>;
   }
 
   const label = lang === 'he' ? meta.labelHe : lang === 'en' ? meta.labelEn : meta.labelAr;
 
   const baseClasses =
-    'inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border';
+    'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-widest border';
 
   return <span className={`${baseClasses} ${meta.className} ${className ?? ''}`}>{label}</span>;
 });

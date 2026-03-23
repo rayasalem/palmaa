@@ -37,13 +37,13 @@ export const PendingReview: React.FC<PendingReviewProps> = ({ user, onLogout, la
         </div>
 
         <div className="bg-slate-50 rounded-2xl p-6 mb-12 border border-slate-100">
-          <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">{t.auth.accountId}</p>
+          <p className="text-xs font-black uppercase text-slate-400 tracking-widest mb-1">{t.auth.accountId}</p>
           <p className="text-sm font-mono text-slate-900 font-bold">{user.id}</p>
         </div>
 
         <button
           onClick={onLogout}
-          className={`px-10 py-4 ${isRejected ? 'bg-red-600 hover:bg-red-700' : 'bg-palma-primary hover:bg-emerald-800'} text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 mx-auto hover:scale-105 duration-300`}
+          className={`px-10 py-4 ${isRejected ? 'bg-red-600 hover:bg-red-700' : 'bg-palma-primary hover:bg-emerald-800'} text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 mx-auto hover:scale-105 duration-300`}
         >
           <LogOut className="w-4 h-4" />
           {t.common.logout}

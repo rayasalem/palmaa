@@ -153,13 +153,13 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
 
         <form onSubmit={handleSubmit} className={`p-10 space-y-5 ${lang === 'en' ? 'text-left' : 'text-right'}`}>
           {error && (
-            <div className="p-4 bg-red-50 text-red-600 text-[10px] font-black rounded-2xl text-center uppercase">
+            <div className="p-4 bg-red-50 text-red-600 text-xs font-black rounded-2xl text-center uppercase">
               {error}
             </div>
           )}
 
           <div className="space-y-1">
-            <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.name} *</label>
+            <label className="text-xs font-black uppercase text-slate-500">{t.auth.name} *</label>
             <input
               required
               name="name"
@@ -170,7 +170,7 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.phone} *</label>
+            <label className="text-xs font-black uppercase text-slate-500">{t.auth.phone} *</label>
             <input
               required
               name="phone"
@@ -182,7 +182,7 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.city} *</label>
+              <label className="text-xs font-black uppercase text-slate-500">{t.auth.city} *</label>
               <select
                 required
                 className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none appearance-none"
@@ -198,7 +198,7 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase text-slate-500">
+              <label className="text-xs font-black uppercase text-slate-500">
                 {lang === 'ar' ? 'المنطقة' : lang === 'he' ? 'אזור' : 'Area'} *
               </label>
               <select
@@ -219,7 +219,7 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.companyName}</label>
+            <label className="text-xs font-black uppercase text-slate-500">{t.auth.companyName}</label>
             <input
               name="company_name"
               className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none"
@@ -229,7 +229,7 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.email} *</label>
+            <label className="text-xs font-black uppercase text-slate-500">{t.auth.email} *</label>
             <input
               required
               type="email"
@@ -241,7 +241,7 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.password} *</label>
+            <label className="text-xs font-black uppercase text-slate-500">{t.auth.password} *</label>
             <input
               required
               type="password"
@@ -263,7 +263,7 @@ const RegisterBroker: React.FC<RegisterBrokerProps> = ({ onRegister, onBackToLog
             <button
               type="button"
               onClick={onBackToLogin}
-              className="text-[10px] font-black uppercase text-slate-400 hover:text-palma-primary"
+              className="text-xs font-black uppercase text-slate-400 hover:text-palma-primary"
             >
               {t.common.back}
             </button>

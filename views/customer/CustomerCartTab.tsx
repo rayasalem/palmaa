@@ -168,7 +168,7 @@ export const CustomerCartTab: React.FC<CustomerCartTabProps> = ({
                   <div className="min-w-0">
                     <p className="font-bold text-palma-navy text-sm truncate">{item.name || item.title}</p>
                     {item.category && (
-                      <p className="text-[10px] text-slate-400 uppercase tracking-wide truncate">{item.category}</p>
+                      <p className="text-xs text-slate-400 uppercase tracking-wide truncate">{item.category}</p>
                     )}
                   </div>
                 </div>

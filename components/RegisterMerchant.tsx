@@ -237,14 +237,14 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({ onRegister, onBackT
         {step === 'FORM' ? (
           <form onSubmit={handleSubmit} className={`space-y-6 ${lang === 'en' ? 'text-left' : 'text-right'}`}>
             {error && (
-              <div className="p-4 bg-red-50 text-red-600 text-[10px] font-black rounded-2xl text-center uppercase">
+              <div className="p-4 bg-red-50 text-red-600 text-xs font-black rounded-2xl text-center uppercase">
                 {error}
               </div>
             )}
 
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.businessName} *</label>
+                <label className="text-xs font-black uppercase text-slate-500">{t.auth.businessName} *</label>
                 <input
                   required
                   name="business_name"
@@ -254,7 +254,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({ onRegister, onBackT
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.ownerName} *</label>
+                <label className="text-xs font-black uppercase text-slate-500">{t.auth.ownerName} *</label>
                 <input
                   required
                   name="owner_name"
@@ -266,7 +266,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({ onRegister, onBackT
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.storeLogo}</label>
+              <label className="text-xs font-black uppercase text-slate-500">{t.auth.storeLogo}</label>
               <div
                 onClick={() => !isUploading && fileInputRef.current?.click()}
                 className={`relative flex items-center justify-center border-2 border-dashed border-slate-200 rounded-[2rem] p-4 bg-slate-50 transition-all cursor-pointer min-h-[140px] ${
@@ -288,12 +288,12 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({ onRegister, onBackT
                       alt="Logo preview"
                       onError={setImageToPlaceholder}
                     />
-                    <span className="text-[9px] font-black uppercase text-slate-400">{t.auth.clickToChange}</span>
+                    <span className="text-xs font-black uppercase text-slate-400">{t.auth.clickToChange}</span>
                   </div>
                 ) : (
                   <div className="text-center">
                     <span className="text-3xl mb-2 block">{isUploading ? '⌛' : '🏢'}</span>
-                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                    <p className="text-xs font-black uppercase text-slate-400 tracking-widest">
                       {isUploading ? t.common.uploading : t.auth.uploadLogo}
                     </p>
                   </div>
@@ -302,7 +302,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({ onRegister, onBackT
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.email} *</label>
+              <label className="text-xs font-black uppercase text-slate-500">{t.auth.email} *</label>
               <input
                 required
                 type="email"
@@ -315,7 +315,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({ onRegister, onBackT
 
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.phone} *</label>
+                <label className="text-xs font-black uppercase text-slate-500">{t.auth.phone} *</label>
                 <input
                   required
                   name="phone"
@@ -326,7 +326,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({ onRegister, onBackT
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.city} *</label>
+                <label className="text-xs font-black uppercase text-slate-500">{t.auth.city} *</label>
                 <select
                   required
                   className="w-full p-4 rounded-2xl border border-slate-100 bg-slate-50 text-sm focus:ring-2 focus:ring-palma-primary outline-none appearance-none"
@@ -346,7 +346,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({ onRegister, onBackT
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-slate-500">
+              <label className="text-xs font-black uppercase text-slate-500">
                 {lang === 'en' ? 'Area / Village' : 'المنطقة / القرية'} *
               </label>
               <select
@@ -368,7 +368,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({ onRegister, onBackT
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-slate-500">{t.auth.password} *</label>
+              <label className="text-xs font-black uppercase text-slate-500">{t.auth.password} *</label>
               <input
                 required
                 type="password"
@@ -390,7 +390,7 @@ const RegisterMerchant: React.FC<RegisterMerchantProps> = ({ onRegister, onBackT
             <button
               type="button"
               onClick={onBackToLogin}
-              className="w-full text-[10px] font-black uppercase text-slate-400 hover:text-palma-primary"
+              className="w-full text-xs font-black uppercase text-slate-400 hover:text-palma-primary"
             >
               {t.common.back}
             </button>

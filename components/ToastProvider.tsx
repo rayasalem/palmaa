@@ -25,6 +25,7 @@ export const useToast = () => {
 
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const isRtl = typeof document !== 'undefined' && document.documentElement.dir === 'rtl';
 
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
@@ -42,7 +43,15 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="fixed top-24 right-4 sm:right-8 z-[150] flex flex-col gap-3 pointer-events-none">
+      <div
+        className={[
+          'fixed top-24 z-[100000] flex flex-col gap-3 pointer-events-none',
+          isRtl ? 'left-4 sm:left-8 right-auto' : 'right-4 sm:right-8 left-auto',
+        ].join(' ')}
+        role="status"
+        aria-live="polite"
+        aria-relevant="additions removals"
+      >
         {toasts.map((toast) => (
           <div
             key={toast.id}
@@ -52,6 +61,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               ${toast.type === 'warning' ? 'bg-amber-500 text-white border-amber-400/50' : ''}
               ${toast.type === 'info' ? 'bg-slate-700 text-white border-slate-600/50' : ''}
             `}
+            aria-label={toast.message}
           >
             <span className="shrink-0">
               {toast.type === 'success' && <CheckCircle className="w-5 h-5" />}
@@ -59,10 +69,11 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               {toast.type === 'warning' && <AlertTriangle className="w-5 h-5" />}
               {toast.type === 'info' && <Info className="w-5 h-5" />}
             </span>
-            <p className="text-[11px] font-black uppercase tracking-widest flex-1 leading-relaxed">{toast.message}</p>
+            <p className="text-xs font-black uppercase tracking-widest flex-1 leading-relaxed">{toast.message}</p>
             <button
               onClick={() => removeToast(toast.id)}
               className="p-1 hover:bg-white/20 rounded-lg transition-colors"
+              aria-label="Close notification"
             >
               <X className="w-4 h-4" />
             </button>
