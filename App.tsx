@@ -38,6 +38,7 @@ import * as cartApi from './services/cartApi';
 import { SESSION_EXPIRED_EVENT, getApiBase } from './api/client';
 import { prefetchAfterLogin } from './prefetch';
 import { ROUTES } from './routes';
+import { openExternalUrl } from './utils/openExternalUrl';
 
 // لم نعد نستخدم fallback من localStorage لاسترجاع جلسة بعد إعادة التحميل؛
 // الاعتماد أصبح بالكامل على /api/auth/me حتى لا يعود المستخدم "مسجّل دخول" بعد تسجيل الخروج + refresh.
@@ -113,6 +114,10 @@ const AppContent: React.FC = () => {
         href="https://palma.ps/"
         target="_blank"
         rel="noopener noreferrer"
+        onClick={(e) => {
+          e.preventDefault();
+          openExternalUrl('https://palma.ps/');
+        }}
         style={{ color: '#fff', textDecoration: 'underline', fontWeight: 600 }}
       >
         {lang === 'ar' ? 'انتقل للموقع المرفوع (palma.ps)' : 'Go to live site (palma.ps)'}
@@ -177,6 +182,9 @@ const AppContent: React.FC = () => {
     }
   }, []);
 
+  // Keep broker context across hash navigation/refresh on public product details.
+  const PUBLIC_BROKER_STORAGE_KEY = 'palma_public_broker_id';
+
   /** الصفحة الأولى للزائر — تُستخدم عند المسار الفارغ أو غير المعروف */
   const defaultPublicRoute = ROUTES.WELCOME;
 
@@ -196,6 +204,11 @@ const AppContent: React.FC = () => {
       setSelectedProductId(null);
       setSelectedProfileId(null);
       setPublicBrokerId(null);
+      try {
+        sessionStorage.removeItem(PUBLIC_BROKER_STORAGE_KEY);
+      } catch {
+        /* ignore */
+      }
       if (typeof window !== 'undefined' && (raw === '' || raw === ROUTES.HOME)) {
         updateHash(defaultPublicRoute);
       }
@@ -227,6 +240,18 @@ const AppContent: React.FC = () => {
       setSelectedProductId(parts[1]);
       setPublicState('PRODUCT_DETAILS');
       setCurrentView('product_details');
+
+      // If user opened the product page directly (refresh) we can lose broker context.
+      // Restore from sessionStorage if present.
+      try {
+        if (!publicBrokerId && !sessionStorage.getItem(PUBLIC_BROKER_STORAGE_KEY)) {
+          // no-op: storage empty
+        }
+        const storedBrokerId = sessionStorage.getItem(PUBLIC_BROKER_STORAGE_KEY);
+        if (storedBrokerId) setPublicBrokerId(storedBrokerId);
+      } catch {
+        /* ignore */
+      }
     } else if (top === 'profile' && parts[1]) {
       setSelectedProfileId(parts[1]);
       setPublicState('PUBLIC_PROFILE');
@@ -234,12 +259,22 @@ const AppContent: React.FC = () => {
     } else if (top === 'broker' && parts[1]) {
       setPublicBrokerId(parts[1]);
       setPublicState('BROKER_PAGE');
+      try {
+        sessionStorage.setItem(PUBLIC_BROKER_STORAGE_KEY, parts[1]);
+      } catch {
+        /* ignore */
+      }
     } else if (top === ROUTES.MEDIATOR_SHOWCASE) {
       setPublicState('MEDIATOR_SHOWCASE');
       setCurrentView('mediator_showcase');
       setSelectedProductId(null);
       setSelectedProfileId(null);
       setPublicBrokerId(null);
+      try {
+        sessionStorage.removeItem(PUBLIC_BROKER_STORAGE_KEY);
+      } catch {
+        /* ignore */
+      }
     } else if (
       [
         ROUTES.ADMIN,
@@ -271,6 +306,11 @@ const AppContent: React.FC = () => {
       setSelectedProductId(null);
       setSelectedProfileId(null);
       setPublicBrokerId(null);
+      try {
+        sessionStorage.removeItem(PUBLIC_BROKER_STORAGE_KEY);
+      } catch {
+        /* ignore */
+      }
       if (typeof window !== 'undefined') {
         updateHash(defaultPublicRoute);
       }
@@ -647,6 +687,27 @@ const AppContent: React.FC = () => {
     }
   };
 
+  // If opened via file://, navigation/requests can break (and hosted payment redirects are not safe).
+  // Show a clear instruction instead of a broken app.
+  const isFileProtocol = typeof window !== 'undefined' && window.location.protocol === 'file:';
+  if (isFileProtocol) {
+    return withLocalhostBar(
+      <div
+        className="p-6 mt-6 bg-white rounded-2xl border border-slate-200 shadow-sm max-w-xl mx-auto text-center"
+        style={{ padding: 20 }}
+      >
+        <h1 className="font-heading text-lg font-black text-palma-navy mb-2">
+          {lang === 'ar' ? 'تشغيل الموقع من file:// ممنوع' : 'Do not run the app from file://'}
+        </h1>
+        <p className="text-slate-600 text-sm">
+          {lang === 'ar'
+            ? 'شغّل المشروع عبر خادم محلي مثل: `npm run dev` أو `vite preview`، وليس عبر فتح ملف HTML مباشرة.'
+            : 'Run it using a local server like `npm run dev` or `vite preview`, not by opening the HTML file directly.'}
+        </p>
+      </div>
+    );
+  }
+
   if (checkoutReturnOrderId && String(checkoutReturnOrderId).trim() && checkoutReturnPayment) {
     return withLocalhostBar(
       <>
@@ -703,6 +764,7 @@ const AppContent: React.FC = () => {
               lang={lang}
               user={null}
               productId={selectedProductId}
+              brokerId={publicBrokerId}
               onBack={() => {
                 setPublicState('CATALOG');
                 updateHash(ROUTES.CATALOG);
@@ -983,6 +1045,7 @@ const AppContent: React.FC = () => {
               lang={lang}
               user={user}
               productId={selectedProductId}
+              brokerId={publicBrokerId}
               onBack={() => setCurrentView(user?.role === 'CUSTOMER' ? 'home' : 'shop')}
               onLoginClick={() => {}}
               onRefresh={refreshUser}

@@ -321,20 +321,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
       redirectForm.action = actionUrl;
       // Avoid hosted-checkout redirects being trapped inside iframes.
       // This prevents "Unsafe attempt to load URL ... from frame ..." errors.
-      // In some browsers, if our app is embedded cross-origin inside an iframe,
-      // navigation to `_top` can be blocked. Fall back to `_blank` so the user
-      // still reaches the Hosted Checkout page.
-      let redirectTarget: '_top' | '_blank' = '_top';
-      if (typeof window !== 'undefined' && window.top && window.top !== window.self) {
-        try {
-          // Accessing cross-origin window.top.location throws; that indicates we
-          // likely can't navigate the top browsing context safely.
-          void window.top.location.href;
-        } catch {
-          redirectTarget = '_blank';
-        }
-      }
-      redirectForm.target = redirectTarget;
+      // Always open in a new browsing context to prevent cross-origin frame
+      // navigation errors.
+      redirectForm.target = '_blank';
       Object.entries(fields).forEach(([name, value]) => {
         const input = document.createElement('input');
         input.type = 'hidden';
