@@ -352,71 +352,89 @@ export const SupportChat: React.FC<SupportChatProps> = ({ lang, user }) => {
       </button>
 
       {open && (
-        <div
-          className="fixed right-4 sm:right-5 rtl:right-auto rtl:left-4 sm:rtl:left-5 z-[99999] flex h-[420px] max-h-[70vh] w-[min(92vw,380px)] flex-col overflow-hidden rounded-2xl border border-palma-border bg-white shadow-xl sm:h-[480px]"
-          style={{ bottom: 'calc(6.5rem + env(safe-area-inset-bottom))' }}
-          role="dialog"
-          aria-label={t.title}
-        >
-          <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-4 py-3">
-            <span className="font-bold text-palma-navy">{t.title}</span>
-          </div>
-          <div ref={listRef} className="flex-1 overflow-y-auto p-4 space-y-3">
-            {messages.map((m) => (
-              <div key={m.id} className={`flex ${m.isBot ? 'justify-start' : 'justify-end'}`}>
-                <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
-                    m.isBot ? 'bg-slate-100 text-slate-700' : 'bg-palma-primary text-white'
-                  }`}
-                >
-                  {m.text}
-                </div>
-              </div>
-            ))}
-          </div>
-          {quickOptions.length > 0 && (
-            <div className="border-t border-slate-100 px-3 pt-2 pb-1">
-              {quickOptionsTitle && (
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
-                  {quickOptionsTitle}
-                </p>
-              )}
-              <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
-                {quickOptions.map((opt, idx) => (
-                  <button
-                    key={`${safeLang}-${idx}`}
-                    type="button"
-                    onClick={() => handleQuickSelect(opt.query)}
-                    className="rounded-lg px-2.5 py-1.5 text-[11px] font-medium bg-slate-100 text-slate-700 hover:bg-palma-primary hover:text-white border border-slate-200 hover:border-palma-primary transition-colors shrink-0"
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          <div className="border-t border-slate-100 p-3">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder={t.placeholder}
-                className="flex-1 rounded-xl border border-palma-border bg-white px-4 py-2.5 text-sm outline-none focus:border-palma-primary focus:ring-1 focus:ring-palma-primary"
-              />
+        <>
+          {/* Backdrop for mobile: tap outside to close chat */}
+          <button
+            type="button"
+            aria-label={safeLang === 'ar' ? 'إغلاق الدردشة' : safeLang === 'he' ? 'סגור צ׳אט' : 'Close chat'}
+            onClick={() => setOpen(false)}
+            className="fixed inset-0 z-[99998] bg-black/20 sm:bg-transparent"
+          />
+
+          <div
+            className="fixed right-4 sm:right-5 rtl:right-auto rtl:left-4 sm:rtl:left-5 z-[99999] flex h-[420px] max-h-[70vh] w-[min(92vw,380px)] flex-col overflow-hidden rounded-2xl border border-palma-border bg-white shadow-xl sm:h-[480px]"
+            style={{ bottom: 'calc(6.5rem + env(safe-area-inset-bottom))' }}
+            role="dialog"
+            aria-label={t.title}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-4 py-3">
+              <span className="font-bold text-palma-navy">{t.title}</span>
               <button
                 type="button"
-                onClick={handleSend}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-palma-primary text-white transition-colors hover:bg-palma-primaryHover focus:outline-none focus:ring-2 focus:ring-palma-primary focus:ring-offset-2"
-                aria-label={t.send}
+                onClick={() => setOpen(false)}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                aria-label={safeLang === 'ar' ? 'إغلاق' : safeLang === 'he' ? 'סגירה' : 'Close'}
               >
-                <Send className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
-            <p className="mt-2 text-xs text-slate-400">{t.contactHint}</p>
+            <div ref={listRef} className="flex-1 overflow-y-auto p-4 space-y-3">
+              {messages.map((m) => (
+                <div key={m.id} className={`flex ${m.isBot ? 'justify-start' : 'justify-end'}`}>
+                  <div
+                    className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
+                      m.isBot ? 'bg-slate-100 text-slate-700' : 'bg-palma-primary text-white'
+                    }`}
+                  >
+                    {m.text}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {quickOptions.length > 0 && (
+              <div className="border-t border-slate-100 px-3 pt-2 pb-1">
+                {quickOptionsTitle && (
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
+                    {quickOptionsTitle}
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                  {quickOptions.map((opt, idx) => (
+                    <button
+                      key={`${safeLang}-${idx}`}
+                      type="button"
+                      onClick={() => handleQuickSelect(opt.query)}
+                      className="rounded-lg px-2.5 py-1.5 text-[11px] font-medium bg-slate-100 text-slate-700 hover:bg-palma-primary hover:text-white border border-slate-200 hover:border-palma-primary transition-colors shrink-0"
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="border-t border-slate-100 p-3">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                  placeholder={t.placeholder}
+                  className="flex-1 rounded-xl border border-palma-border bg-white px-4 py-2.5 text-sm outline-none focus:border-palma-primary focus:ring-1 focus:ring-palma-primary"
+                />
+                <button
+                  type="button"
+                  onClick={handleSend}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-palma-primary text-white transition-colors hover:bg-palma-primaryHover focus:outline-none focus:ring-2 focus:ring-palma-primary focus:ring-offset-2"
+                  aria-label={t.send}
+                >
+                  <Send className="h-5 w-5" />
+                </button>
+              </div>
+              <p className="mt-2 text-xs text-slate-400">{t.contactHint}</p>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </>
   );
