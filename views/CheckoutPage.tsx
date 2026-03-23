@@ -332,7 +332,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ lang, cart, clearCar
         redirectForm.appendChild(input);
       });
       document.body.appendChild(redirectForm);
-      redirectForm.submit();
+      try {
+        redirectForm.submit();
+      } catch {
+        setError(lang === 'ar' ? 'تعذر فتح صفحة الدفع. حاول مرة أخرى.' : 'Unable to open the payment page. Please try again.');
+        setLoading(false);
+      }
       return;
     } catch (err: any) {
       console.error('[Checkout] Error:', err);
