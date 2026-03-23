@@ -1,0 +1,90 @@
+[
+  {
+    "productName": "زيت زيتون بكر ممتاز",
+    "price": 55,
+    "currency": "ILS",
+    "imageURL": "https://images.pexels.com/photos/1437267/pexels-photo-1437267.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    "tagline": "أصالة المذاق من مزارع فلسطين",
+    "badgeText": "مسوق لها",
+    "badgeTextEn": "Recommended by Mediator",
+    "category": "زيوت وصلصات",
+    "productLink": "product/demo-prod-زيت زيتون 1 لتر"
+  },
+  {
+    "productName": "عصير برتقال طازج",
+    "price": 12,
+    "currency": "ILS",
+    "imageURL": "https://images.pexels.com/photos/158053/fresh-orange-juice-oranges-158053.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    "tagline": "فيتامين سي يومياً بكأس واحد",
+    "badgeText": "مسوق لها",
+    "badgeTextEn": "Recommended by Mediator",
+    "category": "عصائر",
+    "productLink": "product/demo-prod-عصير برتقال طازج"
+  },
+  {
+    "productName": "iPhone 14",
+    "price": 3500,
+    "currency": "ILS",
+    "imageURL": "https://images.pexels.com/photos/7889179/pexels-photo-7889179.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    "tagline": "أداء قوي وكاميرا احترافية",
+    "badgeText": "مسوق لها",
+    "badgeTextEn": "Recommended by Mediator",
+    "category": "هواتف",
+    "productLink": "product/demo-prod-iPhone 14"
+  },
+  {
+    "productName": "حذاء رياضي",
+    "price": 180,
+    "currency": "ILS",
+    "imageURL": "https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    "tagline": "راحة يومية لخطواتك النشيطة",
+    "badgeText": "مسوق لها",
+    "badgeTextEn": "Recommended by Mediator",
+    "category": "أحذية",
+    "productLink": "product/demo-prod-حذاء رياضي"
+  },
+  {
+    "productName": "قهوة عربية",
+    "price": 45,
+    "currency": "ILS",
+    "imageURL": "https://images.pexels.com/photos/691954/pexels-photo-691954.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    "tagline": "هوية الضيافة في كل فنجان",
+    "badgeText": "مسوق لها",
+    "badgeTextEn": "Recommended by Mediator",
+    "category": "مشروبات ساخنة",
+    "productLink": "product/demo-prod-قهوة عربية"
+  },
+  {
+    "productName": "كنبة ثلاثية",
+    "price": 1500,
+    "currency": "ILS",
+    "imageURL": "https://images.pexels.com/photos/1571458/pexels-photo-1571458.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    "tagline": "راحة العائلة في غرفة المعيشة",
+    "badgeText": "مسوق لها",
+    "badgeTextEn": "Recommended by Mediator",
+    "category": "أثاث",
+    "productLink": "product/demo-prod-كنبة ثلاثية"
+  },
+  {
+    "productName": "عسل طبيعي",
+    "price": 70,
+    "currency": "ILS",
+    "imageURL": "https://images.pexels.com/photos/750073/pexels-photo-750073.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    "tagline": "حلاوة طبيعية من الخلية إلى المائدة",
+    "badgeText": "مسوق لها",
+    "badgeTextEn": "Recommended by Mediator",
+    "category": "منتجات غذائية",
+    "productLink": "product/demo-prod-عسل طبيعي"
+  },
+  {
+    "productName": "ساعة ذكية",
+    "price": 450,
+    "currency": "ILS",
+    "imageURL": "https://images.pexels.com/photos/4370379/pexels-photo-4370379.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    "tagline": "تتبع صحتك بلمسة واحدة",
+    "badgeText": "مسوق لها",
+    "badgeTextEn": "Recommended by Mediator",
+    "category": "إلكترونيات",
+    "productLink": "product/demo-prod-ساعة ذكية"
+  }
+]
